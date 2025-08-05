@@ -1896,7 +1896,7 @@
         let isDarkMode = localStorage.getItem('darkMode') === 'true';
         let socket = null;
         let songs = [];
-        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        let favorites = [];
         let keepScreenOn = false;
         let autoScrollSpeed = localStorage.getItem('autoScrollSpeed') || 1500;
         let suggestedSongsDrawerOpen = false;
@@ -1906,38 +1906,14 @@
     
         async function loadSongsFromFile() {
             try {
-                const pathsToTry = [
-                    './songs.json',
-                    '/songs.json',
-                    'songs.json',
-                    `${window.location.pathname.split('/')[1]}/songs.json`
-                ];
-    
-                for (const path of pathsToTry) {
-                    try {
-                        const response = await fetch(path);
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (Array.isArray(data)) {
-                                return data;
-                            } else if (Array.isArray(data.songs)) {
-                                return data.songs;
-                            }
-                        }
-                    } catch (e) {
-                        console.log(`Failed to load from ${path}`, e);
-                    }
+                const response = await fetch('http://localhost:3001/api/songs');
+                if (response.ok) {
+                    const data = await response.json();
+                    return Array.isArray(data) ? data : [];
                 }
-                
-                const embedded = document.getElementById('embeddedSongs');
-                if (embedded && embedded.textContent.trim() !== '[]') {
-                    const embeddedData = JSON.parse(embedded.textContent);
-                    return Array.isArray(embeddedData) ? embeddedData : [];
-                }
-                
                 return [];
             } catch (err) {
-                console.error('Error loading songs:', err);
+                console.error('Error loading songs from API:', err);
                 return [];
             }
         }
@@ -1956,8 +1932,8 @@
             document.getElementById('OldCount').textContent = songs.filter(s => s.category === 'Old').length;
         }
     
-        let NewSetlist = JSON.parse(localStorage.getItem('NewSetlist')) || [];
-        let OldSetlist = JSON.parse(localStorage.getItem('OldSetlist')) || [];
+        let NewSetlist = [];
+        let OldSetlist = [];
     
         // DOM Elements
         const NewTab = document.getElementById('NewTab');
@@ -2017,6 +1993,7 @@
         let isNavigatingHistory = false;
         let isAnyModalOpen = false;
         let currentModal = null;
+        
 
         // Search history
         let searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
@@ -2035,6 +2012,7 @@
             }
             
             loadSettings();
+            await loadUserData();
             addEventListeners();
             addPanelToggles();
             renderSongs('New', '', '');
@@ -2420,21 +2398,34 @@
         // Call periodically (every 5 minutes)
         setInterval(optimizeMemoryUsage, 300000);
     
-        function saveSetlists() {
-            localStorage.setItem('NewSetlist', JSON.stringify(NewSetlist));
-            localStorage.setItem('OldSetlist', JSON.stringify(OldSetlist));
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({
-                    type: 'update',
-                    songs: songs,
-                    NewSetlist: NewSetlist,
-                    OldSetlist: OldSetlist
-                }));
+
+        async function loadSetlists() {
+            const response = await fetch('http://localhost:3001/api/userdata');
+            if (response.ok) {
+                const data = await response.json();
+                favorites = data.favorites || [];
+                NewSetlist = data.NewSetlist || [];
+                OldSetlist = data.OldSetlist || [];
             }
         }
     
-        function saveFavorites() {
-            localStorage.setItem('favorites', JSON.stringify(favorites));
+
+        async function loadUserData() {
+            const response = await fetch('http://localhost:3001/api/userdata');
+            if (response.ok) {
+                const data = await response.json();
+                favorites = data.favorites || [];
+                NewSetlist = data.NewSetlist || [];
+                OldSetlist = data.OldSetlist || [];
+            }
+        }
+
+        async function saveUserData() {
+            await fetch('http://localhost:3001/api/userdata', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ favorites, NewSetlist, OldSetlist })
+            });
         }
     
         function downloadSongs() {
@@ -2468,8 +2459,8 @@
                         OldSetlist = data.OldSetlist || [];
                         favorites = data.favorites || [];
                         saveSongs();
-                        saveSetlists();
-                        saveFavorites();
+                        saveUserData();
+                        loadUserData();
                         if (NewTab.classList.contains('active')) {
                             renderSongs('New', keyFilter.value, genreFilter.value);
                         } else {
@@ -3161,7 +3152,8 @@
                 OldSetlist = newList;
             }
     
-            saveSetlists();
+            saveUserData();
+            loadUserData();
             renderSetlist(category);
         }
 
@@ -3580,7 +3572,8 @@
             const setlist = song.category === 'New' ? NewSetlist : OldSetlist;
             if (!setlist.some(s => s.id === id)) {
                 setlist.push(song);
-                saveSetlists();
+                saveUserData();
+                loadUserData();
                 showNotification(`"${song.title}" added to ${song.category} setlist`);
                 
                 updateSetlistButton(id, true);
@@ -3604,7 +3597,8 @@
             } else {
                 OldSetlist = OldSetlist.filter(s => s.id !== id);
             }
-            saveSetlists();
+            saveUserData();
+            loadUserData();
             showNotification(`"${song.title}" removed from ${category} setlist`);
             
             updateSetlistButton(id, false);
@@ -3630,7 +3624,7 @@
         function toggleFavorite(id) {
             const index = favorites.indexOf(id);
             const song = songs.find(s => s.id === id);
-            
+
             if (index === -1) {
                 favorites.push(id);
                 showNotification(`"${song.title}" added to favorites`);
@@ -3638,14 +3632,15 @@
                 favorites.splice(index, 1);
                 showNotification(`"${song.title}" removed from favorites`);
             }
-            
-            saveFavorites();
-            
+
+            saveUserData();
+            loadUserData();
+
             const favButtons = document.querySelectorAll(`.favorite-btn[data-song-id="${id}"]`);
             favButtons.forEach(btn => {
                 btn.classList.toggle('favorited', index === -1);
             });
-            
+
             if (songPreviewEl.dataset.songId == id) {
                 const previewBtn = document.getElementById('previewFavoriteBtn');
                 if (previewBtn) {
@@ -3736,9 +3731,9 @@
         }
     
         function editSong(id) {
-            const song = songs.find(s => s.id === id);
+            const song = songs.find(s => s.id === id || s.id === id);
             if (!song) return;
-            document.getElementById('editSongId').value = song.id;
+            document.getElementById('editSongId').value = Number(song.id);
             document.getElementById('editSongTitle').value = song.title;
             document.getElementById('editSongCategory').value = song.category;
             document.getElementById('editSongKey').value = song.key;
@@ -3773,7 +3768,7 @@
         function openDeleteSongModal(id) {
             const song = songs.find(s => s.id === id);
             if (!song) return;
-            document.getElementById('deleteSongId').value = song.id;
+            document.getElementById('deleteSongId').value = Number(song.id);
             document.getElementById('deleteSongTitle').textContent = song.title;
             deleteSongModal.style.display = 'flex';
         }
@@ -4189,26 +4184,15 @@
             }
     
             // Form submissions
-            newSongForm.addEventListener('submit', (e) => {
+            newSongForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const title = document.getElementById('songTitle').value;
                 const lyrics = document.getElementById('songLyrics').value;
-                
-                if (isDuplicateSong(title, lyrics)) {
-                    showNotification('A song with this title and lyrics already exists!');
-                    return;
-                }
-                
+
                 const selectedGenres = Array.from(document.querySelectorAll('#genreDropdown .multiselect-option.selected'))
                     .map(opt => opt.dataset.value);
-                
-                if (selectedGenres.length === 0) {
-                    showNotification('Please select at least one genre');
-                    return;
-                }
-                
+
                 const newSong = {
-                    id: Math.max(...songs.map(s => s.id), 0) + 1,
                     title: title,
                     category: document.getElementById('songCategory').value,
                     key: document.getElementById('songKey').value,
@@ -4218,45 +4202,39 @@
                     genres: selectedGenres,
                     lyrics: lyrics
                 };
-                
-                songs.push(newSong);
-                saveSongs();
-                
-                if (deleteSection.style.display === 'block') {
-                    renderDeleteSongs();
-                } else if (NewTab.classList.contains('active')) {
-                    renderSongs('New', keyFilter.value, genreFilter.value);
-                } else {
-                    renderSongs('Old', keyFilter.value, genreFilter.value);
+
+                try {
+                    const response = await fetch('http://localhost:3001/api/songs', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newSong)
+                    });
+                    if (response.ok) {
+                        showNotification('Song added successfully!');
+                        addSongModal.style.display = 'none';
+                        newSongForm.reset();
+                        document.getElementById('selectedGenres').innerHTML = '';
+                        // Reload songs from backend
+                        songs = await loadSongsFromFile();
+                        renderSongs('New', keyFilter.value, genreFilter.value);
+                    } else {
+                        showNotification('Failed to add song');
+                    }
+                } catch (err) {
+                    showNotification('Error adding song');
                 }
-                
-                showNotification('Song added successfully!');
-                addSongModal.style.display = 'none';
-                newSongForm.reset();
-                document.getElementById('selectedGenres').innerHTML = '';
             });
     
-            editSongForm.addEventListener('submit', (e) => {
+            editSongForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const id = parseInt(document.getElementById('editSongId').value);
+                const id = document.getElementById('editSongId').value;
                 const title = document.getElementById('editSongTitle').value;
                 const lyrics = document.getElementById('editSongLyrics').value;
-                
-                if (isDuplicateSong(title, lyrics, id)) {
-                    showNotification('A song with this title and lyrics already exists!');
-                    return;
-                }
-                
+
                 const selectedGenres = Array.from(document.querySelectorAll('#editGenreDropdown .multiselect-option.selected'))
                     .map(opt => opt.dataset.value);
-                
-                if (selectedGenres.length === 0) {
-                    showNotification('Please select at least one genre');
-                    return;
-                }
-                
+
                 const updatedSong = {
-                    id,
                     title: title,
                     category: document.getElementById('editSongCategory').value,
                     key: document.getElementById('editSongKey').value,
@@ -4266,67 +4244,51 @@
                     genres: selectedGenres,
                     lyrics: lyrics
                 };
-    
-                songs = songs.map(song => song.id === id ? updatedSong : song);
-                saveSongs();
-    
-                NewSetlist = NewSetlist.map(song => song.id === id ? updatedSong : song);
-                OldSetlist = OldSetlist.map(song => song.id === id ? updatedSong : song);
-                saveSetlists();
-    
-                if (deleteSection.style.display === 'block') {
-                    renderDeleteSongs();
-                } else if (setlistSection.style.display === 'block') {
-                    renderSetlist(NewSetlistTab.classList.contains('active') ? 'New' : 'Old');
-                } else if (NewTab.classList.contains('active')) {
-                    renderSongs('New', keyFilter.value, genreFilter.value);
-                } else {
-                    renderSongs('Old', keyFilter.value, genreFilter.value);
+
+                try {
+                    const response = await fetch(`http://localhost:3001/api/songs/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedSong)
+                    });
+                    if (response.ok) {
+                        showNotification('Song updated successfully!');
+                        editSongModal.style.display = 'none';
+                        editSongForm.reset();
+                        // Reload songs from backend
+                        songs = await loadSongsFromFile();
+                        renderSongs('New', keyFilter.value, genreFilter.value);
+                    } else {
+                        showNotification('Failed to update song');
+                    }
+                } catch (err) {
+                    showNotification('Error updating song');
                 }
-    
-                if (songPreviewEl.dataset.songId == id) {
-                    showPreview(updatedSong);
-                }
-    
-                showNotification('Song updated successfully!');
-                editSongModal.style.display = 'none';
-                editSongForm.reset();
             });
     
             cancelDeleteSong.addEventListener('click', () => {
                 deleteSongModal.style.display = 'none';
             });
     
-            deleteSongForm.addEventListener('submit', (e) => {
+            deleteSongForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const id = parseInt(document.getElementById('deleteSongId').value);
-                const song = songs.find(s => s.id === id);
-                
-                songs = songs.filter(s => s.id !== id);
-                saveSongs();
-    
-                NewSetlist = NewSetlist.filter(s => s.id !== id);
-                OldSetlist = OldSetlist.filter(s => s.id !== id);
-                saveSetlists();
-                
-                const favIndex = favorites.indexOf(id);
-                if (favIndex !== -1) {
-                    favorites.splice(favIndex, 1);
-                    saveFavorites();
-                }
-    
-                if (songPreviewEl.dataset.songId == id) {
-                    songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics"></div>';
-                    songPreviewEl.dataset.songId = '';
-                    if (autoScrollInterval) {
-                        clearInterval(autoScrollInterval);
-                        autoScrollInterval = null;
+                const id = document.getElementById('deleteSongId').value;
+                try {
+                    const response = await fetch(`http://localhost:3001/api/songs/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        showNotification('Song deleted successfully!');
+                        deleteSongModal.style.display = 'none';
+                        // Reload songs from backend
+                        songs = await loadSongsFromFile();
+                        renderSongs('New', keyFilter.value, genreFilter.value);
+                    } else {
+                        showNotification('Failed to delete song');
                     }
+                } catch (err) {
+                    showNotification('Error deleting song');
                 }
-    
-                renderDeleteSongs();
-                showNotification(`"${song.title}" deleted successfully`);
-                deleteSongModal.style.display = 'none';
             });
     
             // Preview scrolling
@@ -4365,8 +4327,8 @@
                 OldSetlist = [];
                 favorites = [];
                 saveSongs();
-                saveSetlists();
-                saveFavorites();
+                saveUserData();
+                loadUserData();
                 if (NewTab.classList.contains('active')) {
                     renderSongs('New', keyFilter.value, genreFilter.value);
                 } else {
