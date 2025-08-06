@@ -2486,10 +2486,17 @@
 
         async function saveUserData() {
             try {
+                const user = await auth0.getUser();
                 const response = await authFetch('https://oldandnew.onrender.com/api/userdata', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ favorites, NewSetlist, OldSetlist })
+                    body: JSON.stringify({
+                        favorites,
+                        NewSetlist,
+                        OldSetlist,
+                        name: user?.name || '',
+                        email: user?.email || ''
+                    })
                 });
                 if (!response.ok) {
                     showNotification('Failed to save user data');
