@@ -1514,9 +1514,6 @@
                         <button class="sidebar-btn btn-delete" id="deleteAllSongsBtn">
                             <i class="fas fa-trash-alt"></i> Delete All Songs
                         </button>
-                        <button class="sidebar-btn btn-delete" id="resetAppBtn">
-                            <i class="fas fa-redo"></i> Reset Application
-                        </button>
                     </div>
                 </div>
             </div>
@@ -2190,12 +2187,10 @@
                 document.getElementById('uploadSongsBtn').style.display = 'block';
                 document.getElementById('mergeSongsBtn').style.display = 'block';
                 document.getElementById('deleteAllSongsBtn').style.display = 'block';
-                document.getElementById('resetAppBtn').style.display = 'block';
             } else {
                 document.getElementById('uploadSongsBtn').style.display = 'none';
                 document.getElementById('mergeSongsBtn').style.display = 'none';
                 document.getElementById('deleteAllSongsBtn').style.display = 'none';
-                document.getElementById('resetAppBtn').style.display = 'none';
             }
 
             // Optionally, hide the delete section if user logs out
@@ -4092,20 +4087,7 @@
                 NewSetlistSongs.style.display = 'none';
                 renderSetlist('Old');
             });
-
-                document.getElementById('resetAppBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to reset the application?\n\nThis will:' + 
-                            '\n- Clear all songs and setlists' +
-                            '\n- Reset all settings to defaults' +
-                            '\n- Clear search history' +
-                            '\n- Remove all favorites')) {
-                    resetApplicationState();
-                }
-            });
-
-
-            
+          
             let touchStartX = 0;
             let isScrolling = false;
 
