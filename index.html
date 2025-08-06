@@ -3404,6 +3404,11 @@
                     <button class="btn btn-edit" id="previewEditBtn">
                         <i class="fas fa-edit"></i> Edit
                     </button>
+                    ${isAdmin() ? `
+                    <button class="btn btn-delete" id="previewDeleteBtn">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                ` : ''}
                     </div>
                 </div>
 
@@ -3463,25 +3468,6 @@
             document.getElementById('previewEditBtn').addEventListener('click', (e) => {
                 editSong(song.id);
             });
-
-            isAdmin().then(isAdminUser => {
-                if (isAdminUser) {
-                    const actionsDiv = document.querySelector('.preview-actions');
-                    if (actionsDiv && !document.getElementById('previewDeleteBtn')) {
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'btn btn-delete';
-                        deleteBtn.id = 'previewDeleteBtn';
-                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
-                        deleteBtn.addEventListener('click', () => openDeleteSongModal(song.id));
-                        actionsDiv.appendChild(deleteBtn);
-                    }
-                }
-            });
-
-            const deleteBtn = document.getElementById('previewDeleteBtn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => openDeleteSongModal(song.id));
-            }
             
             document.getElementById('transpose-up').addEventListener('click', () => {
                 const currentLevel = parseInt(document.getElementById('transpose-level').textContent);
