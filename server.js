@@ -127,13 +127,13 @@ app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/userdata', authMiddleware, requireAdmin, async (req, res) => {
+app.get('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.auth.sub;
   const doc = await db.collection('UserData').findOne({ _id: userId });
   res.json(doc || { favorites: [], NewSetlist: [], OldSetlist: [] });
 });
 
-app.put('/api/userdata', authMiddleware, requireAdmin, async (req, res) => {
+app.put('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.auth.sub;
   const { favorites, NewSetlist, OldSetlist } = req.body;
   await db.collection('UserData').updateOne(
