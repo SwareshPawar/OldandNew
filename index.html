@@ -2741,6 +2741,7 @@
                         ${isInSetlist ? 'Remove' : 'Add'}
                     </button>
                     <button class="btn btn-edit edit-song">Edit</button>
+                    <button class="btn btn-delete delete-song" style="display:none;">Delete</button>
                 </div>
             `;
                
@@ -2769,6 +2770,18 @@
                 div.querySelector('.edit-song').addEventListener('click', (e) => {
                     e.stopPropagation();
                     editSong(song.id);
+                });
+
+                // Show delete button only for admins
+                const deleteBtn = div.querySelector('.delete-song');
+                isAdmin().then(isAdminUser => {
+                    if (isAdminUser) {
+                        deleteBtn.style.display = '';
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openDeleteSongModal(song.id);
+                        });
+                    }
                 });
                 
                 div.addEventListener('click', () => {
