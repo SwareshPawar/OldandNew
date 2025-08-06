@@ -78,7 +78,7 @@ app.get('/api/songs', async (req, res) => {
 });
 
 // Protected: only logged-in users can add, update, or delete songs
-app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
+app.post('/api/songs', authMiddleware, async (req, res) => {
   try {
     if (typeof req.body.id !== 'number') {
       const last = await songsCollection.find().sort({ id: -1 }).limit(1).toArray();
