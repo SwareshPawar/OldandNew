@@ -1916,13 +1916,15 @@
 
         const AUTH0_DOMAIN = 'dev-yr80e6pevtcdjxvg.us.auth0.com'; // e.g. dev-xxxxxx.us.auth0.com
         const AUTH0_CLIENT_ID = 'Q1PyriLbgLVsC21MrBBC8RJgcnaTx6SV';
-    
+            
         async function loadSongsFromFile() {
             try {
                 const response = await authFetch('https://oldandnew.onrender.com/api/songs');
                 if (response.ok) {
                     const data = await response.json();
                     return Array.isArray(data) ? data : [];
+                } else {
+                    console.error('API error:', response.status, await response.text());
                 }
                 return [];
             } catch (err) {
@@ -2209,7 +2211,9 @@
 
         async function authFetch(url, options = {}) {
             if (await auth0.isAuthenticated()) {
-                const token = await auth0.getTokenSilently();
+                const token = await auth0.getTokenSilently({
+                    audience: 'https://oldandnew.onrender.com/api'
+                });
                 options.headers = options.headers || {};
                 options.headers['Authorization'] = `Bearer ${token}`;
             }
@@ -4806,10 +4810,14 @@
 
         async function login() {
             window.removeEventListener('beforeunload', beforeUnloadHandler);
-            await auth0.loginWithRedirect({
-                redirect_uri: window.location.origin + window.location.pathname
-            });
+        await auth0.loginWithRedirect({
+            redirect_uri: window.location.origin + window.location.pathname,
+            audience: 'https://oldandnew.onrender.com/api', // <-- use your API identifier
+            scope: 'openid profile email',
+            prompt: 'consent'
+        });
         }
+
         function beforeUnloadHandler(e) {
             const hasUnsavedSetlists = NewSetlist.length > 0 || OldSetlist.length > 0;
             const isEditing = isAnyModalOpen;
