@@ -2689,7 +2689,7 @@
             return text.replace(regex, match => `<span class="highlight">${match}</span>`);
         }
     
-        async function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue) {
+        function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue) {
             let songsToRender;
             let container;
             if (typeof categoryOrSongs === 'string') {
@@ -2741,7 +2741,6 @@
                         ${isInSetlist ? 'Remove' : 'Add'}
                     </button>
                     <button class="btn btn-edit edit-song">Edit</button>
-                    ${admin ? '<button class="btn btn-delete delete-song">Delete</button>' : ''}
                 </div>
             `;
                
@@ -2771,12 +2770,6 @@
                     e.stopPropagation();
                     editSong(song.id);
                 });
-                if (admin) {
-                    div.querySelector('.delete-song').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        openDeleteSongModal(song.id);
-                    });
-                }
                 
                 div.addEventListener('click', () => {
                     showPreview(song);
@@ -3147,7 +3140,6 @@
         }
     
         function renderDeleteSongs() {
-            
             deleteContent.innerHTML = '';
             if (songs.length === 0) {
                 deleteContent.innerHTML = '<p>No songs available to delete.</p>';
