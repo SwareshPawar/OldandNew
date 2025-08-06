@@ -4278,7 +4278,7 @@
                 };
 
                 try {
-                    const response = await fetch(`http://localhost:3001/api/songs/${id}`, {
+                    const response = await fetch(`https://oldandnew.onrender.com/api/songs/${id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updatedSong)
@@ -4306,7 +4306,7 @@
                 e.preventDefault();
                 const id = document.getElementById('deleteSongId').value;
                 try {
-                    const response = await fetch(`http://localhost:3001/api/songs/${id}`, {
+                    const response = await fetch(`https://oldandnew.onrender.com/api/songs/${id}`, {
                         method: 'DELETE'
                     });
                     if (response.ok) {
