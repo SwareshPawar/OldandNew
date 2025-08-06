@@ -127,13 +127,13 @@ app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/userdata1', authMiddleware, async (req, res) => {
+app.get('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.auth.sub;
   const doc = await db.collection('UserData').findOne({ _id: userId });
   res.json(doc || { favorites: [], NewSetlist: [], OldSetlist: [] });
 });
 
-app.put('/api/userdata1', authMiddleware, async (req, res) => {
+app.put('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.auth.sub;
   const { favorites, NewSetlist, OldSetlist, name, email } = req.body;
   await db.collection('UserData').updateOne(
@@ -143,6 +143,52 @@ app.put('/api/userdata1', authMiddleware, async (req, res) => {
   );
   res.json({ message: 'User data updated' });
 });
+
+// app.get('/api/favorites', async (req, res) => {
+//   try {
+//     const doc = await db.collection('UserData').findOne({ _id: 'userdata' });
+//     res.json({ favorites: (doc && doc.favorites) || [] });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+// app.put('/api/favorites', async (req, res) => {
+//   try {
+//     const { favorites } = req.body;
+//     await db.collection('UserData').updateOne(
+//       { _id: 'userdata' },
+//       { $set: { favorites } },
+//       { upsert: true }
+//     );
+//     res.json({ message: 'Favorites updated' });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+// app.get('/api/setlists', async (req, res) => {
+//   try {
+//     const doc = await db.collection('UserData').findOne({ _id: 'userdata' });
+//     res.json({ NewSetlist: (doc && doc.NewSetlist) || [], OldSetlist: (doc && doc.OldSetlist) || [] });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+// app.put('/api/setlists', async (req, res) => {
+//   try {
+//     const { NewSetlist, OldSetlist } = req.body;
+//     await db.collection('UserData').updateOne(
+//       { _id: 'userdata' },
+//       { $set: { NewSetlist, OldSetlist } },
+//       { upsert: true }
+//     );
+//     res.json({ message: 'Setlists updated' });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 main().then(() => {
   const PORT = process.env.PORT || 3001;
