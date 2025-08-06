@@ -532,8 +532,11 @@
             }
 
         .sidebar-header {
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         }
 
         .sidebar-menu {
@@ -1321,6 +1324,12 @@
                 color: var(--favorite-color);
             }
 
+            .sidebar-header h2 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            }
 
         /* Settings layout */
         .settings-grid {
