@@ -21,10 +21,11 @@ app.use(cors({
     'http://localhost:3000',
     'http://127.0.0.1:5501',
     'http://localhost:5501',
-    'https://oldandnew.onrender.com'
+    'https://oldandnew.onrender.com',
+    'https://swareshpawar.github.io' // <-- Add this line
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'], // <-- Add 'Authorization' if not present
 }));
 app.use(express.json());
 app.use(express.static('public'));
