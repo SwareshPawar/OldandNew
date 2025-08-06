@@ -1470,8 +1470,7 @@
                 <button id="loginBtn">Login</button>
                 <button id="logoutBtn" style="display:none;">Logout</button>
                 <li><a href="#" class="active" id="showAll">All Songs</a></li>
-                <li><a href="#" id="showSetlist">Setlist</a></li>
-                <li><a href="#" id="showDelete" class="requires-login">Delete Songs</a></li>    
+                <li><a href="#" id="showSetlist">Setlist</a></li>   
                 <li><a href="#" id="showFavorites">Favorites</a></li>
                 <li><a href="SONGSADMINCHURCHCHORDS.html"><i class="fas fa-cogs"></i> Admin Portal</a></li>
 
@@ -1960,7 +1959,6 @@
         const songPreviewEl = document.getElementById('songPreview');
         const showSetlistEl = document.getElementById('showSetlist');
         const showAllEl = document.getElementById('showAll');
-        const showDeleteEl = document.getElementById('showDelete');
         const showFavoritesEl = document.getElementById('showFavorites');
         const setlistSection = document.getElementById('setlistSection');
         const NewSetlistSongs = document.getElementById('NewSetlistSongs');
@@ -2189,13 +2187,11 @@
 
             // Show/hide Delete Songs menu item
             if (await isAdmin()) {
-                document.getElementById('showDelete').style.display = 'block';
                 document.getElementById('uploadSongsBtn').style.display = 'block';
                 document.getElementById('mergeSongsBtn').style.display = 'block';
                 document.getElementById('deleteAllSongsBtn').style.display = 'block';
                 document.getElementById('resetAppBtn').style.display = 'block';
             } else {
-                document.getElementById('showDelete').style.display = 'none';
                 document.getElementById('uploadSongsBtn').style.display = 'none';
                 document.getElementById('mergeSongsBtn').style.display = 'none';
                 document.getElementById('deleteAllSongsBtn').style.display = 'none';
@@ -3979,22 +3975,6 @@
                 }
             });
 
-            showDeleteEl.addEventListener('click', async (e) => {
-                e.preventDefault();
-                if (!(await auth0.isAuthenticated())) {
-                    showNotification('Please log in to access Delete Songs.');
-                    return;
-                }
-                NewContent.classList.remove('active');
-                OldContent.classList.remove('active');
-                setlistSection.style.display = 'none';
-                deleteSection.style.display = 'block';
-                favoritesSection.style.display = 'none';
-                renderDeleteSongs();
-                document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-                e.target.classList.add('active');
-                // ...rest of your code...
-            });
     
             OldTab.addEventListener('click', () => {
                 setlistSection.style.display = 'none';
@@ -4075,25 +4055,7 @@
                     document.querySelector('.preview-section').classList.remove('full-width');
                 }
             });
-    
-            showDeleteEl.addEventListener('click', (e) => {
-                e.preventDefault();
-                NewContent.classList.remove('active');
-                OldContent.classList.remove('active');
-                setlistSection.style.display = 'none';
-                deleteSection.style.display = 'block';
-                favoritesSection.style.display = 'none';
-                renderDeleteSongs();
-                document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-                e.target.classList.add('active');
-                
-                // Mobile view: show songs panel and hide sidebar
-                if (window.innerWidth <= 768) {
-                    document.querySelector('.songs-section').classList.remove('hidden');
-                    document.querySelector('.sidebar').classList.add('hidden');
-                    document.querySelector('.preview-section').classList.remove('full-width');
-                }
-            });
+
     
             showFavoritesEl.addEventListener('click', (e) => {
                 e.preventDefault();
