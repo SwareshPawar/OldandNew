@@ -4794,7 +4794,7 @@
         async function login() {
             window.removeEventListener('beforeunload', beforeUnloadHandler);
             await auth0.loginWithRedirect({
-                redirect_uri: window.location.origin
+                redirect_uri: window.location.origin + window.location.pathname
             });
         }
         function beforeUnloadHandler(e) {
