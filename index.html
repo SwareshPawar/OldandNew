@@ -2188,10 +2188,16 @@
             // Show/hide Delete Songs menu item
             if (await isAdmin()) {
                 document.getElementById('showDelete').style.display = 'block';
-                // Show edit/delete buttons in song actions
+                document.getElementById('uploadSongsBtn').style.display = 'block';
+                document.getElementById('mergeSongsBtn').style.display = 'block';
+                document.getElementById('deleteAllSongsBtn').style.display = 'block';
+                document.getElementById('resetAppBtn').style.display = 'block';
             } else {
                 document.getElementById('showDelete').style.display = 'none';
-                // Hide edit/delete buttons in song actions
+                document.getElementById('uploadSongsBtn').style.display = 'none';
+                document.getElementById('mergeSongsBtn').style.display = 'none';
+                document.getElementById('deleteAllSongsBtn').style.display = 'none';
+                document.getElementById('resetAppBtn').style.display = 'none';
             }
 
             // Optionally, hide the delete section if user logs out
