@@ -135,10 +135,10 @@ app.get('/api/userdata', authMiddleware, async (req, res) => {
 
 app.put('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.auth.sub;
-  const { favorites, NewSetlist, OldSetlist } = req.body;
+  const { favorites, NewSetlist, OldSetlist, name, email } = req.body;
   await db.collection('UserData').updateOne(
     { _id: userId },
-    { $set: { favorites, NewSetlist, OldSetlist } },
+    { $set: { favorites, NewSetlist, OldSetlist, name, email } },
     { upsert: true }
   );
   res.json({ message: 'User data updated' });
