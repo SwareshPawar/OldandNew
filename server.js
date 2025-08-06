@@ -40,7 +40,7 @@ const authMiddleware = jwt({
     jwksRequestsPerMinute: 5,
     jwksUri: `https://dev-yr80e6pevtcdjxvg.us.auth0.com/.well-known/jwks.json`
   }),
-  audience: "Q1PyriLbgLVsC21MrBBC8RJgcnaTx6SV",
+  audience: "https://dev-yr80e6pevtcdjxvg.us.auth0.com/api/v2/",
   issuer: `https://dev-yr80e6pevtcdjxvg.us.auth0.com/`,
   algorithms: ["RS256"]
 });
