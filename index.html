@@ -3154,7 +3154,7 @@
         async function isAdmin() {
             const token = await auth0.getIdTokenClaims();
             const roles = token && token[`${NAMESPACE}roles`];
-            return roles && roles.includes('admin');
+            return roles && (roles.includes('Admin') || roles.includes('admin'));
         }
     
         function renderSetlist(category) {
