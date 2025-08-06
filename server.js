@@ -144,51 +144,51 @@ app.put('/api/userdata', authMiddleware, async (req, res) => {
   res.json({ message: 'User data updated' });
 });
 
-app.get('/api/favorites', async (req, res) => {
-  try {
-    const doc = await db.collection('UserData').findOne({ _id: 'userdata' });
-    res.json({ favorites: (doc && doc.favorites) || [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// app.get('/api/favorites', async (req, res) => {
+//   try {
+//     const doc = await db.collection('UserData').findOne({ _id: 'userdata' });
+//     res.json({ favorites: (doc && doc.favorites) || [] });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
-app.put('/api/favorites', async (req, res) => {
-  try {
-    const { favorites } = req.body;
-    await db.collection('UserData').updateOne(
-      { _id: 'userdata' },
-      { $set: { favorites } },
-      { upsert: true }
-    );
-    res.json({ message: 'Favorites updated' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// app.put('/api/favorites', async (req, res) => {
+//   try {
+//     const { favorites } = req.body;
+//     await db.collection('UserData').updateOne(
+//       { _id: 'userdata' },
+//       { $set: { favorites } },
+//       { upsert: true }
+//     );
+//     res.json({ message: 'Favorites updated' });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
-app.get('/api/setlists', async (req, res) => {
-  try {
-    const doc = await db.collection('UserData').findOne({ _id: 'userdata' });
-    res.json({ NewSetlist: (doc && doc.NewSetlist) || [], OldSetlist: (doc && doc.OldSetlist) || [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// app.get('/api/setlists', async (req, res) => {
+//   try {
+//     const doc = await db.collection('UserData').findOne({ _id: 'userdata' });
+//     res.json({ NewSetlist: (doc && doc.NewSetlist) || [], OldSetlist: (doc && doc.OldSetlist) || [] });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
-app.put('/api/setlists', async (req, res) => {
-  try {
-    const { NewSetlist, OldSetlist } = req.body;
-    await db.collection('UserData').updateOne(
-      { _id: 'userdata' },
-      { $set: { NewSetlist, OldSetlist } },
-      { upsert: true }
-    );
-    res.json({ message: 'Setlists updated' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// app.put('/api/setlists', async (req, res) => {
+//   try {
+//     const { NewSetlist, OldSetlist } = req.body;
+//     await db.collection('UserData').updateOne(
+//       { _id: 'userdata' },
+//       { $set: { NewSetlist, OldSetlist } },
+//       { upsert: true }
+//     );
+//     res.json({ message: 'Setlists updated' });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 main().then(() => {
   const PORT = process.env.PORT || 3001;
