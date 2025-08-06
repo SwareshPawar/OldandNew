@@ -92,7 +92,7 @@ app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
+app.put('/api/songs/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const update = { $set: req.body };
