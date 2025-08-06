@@ -4811,7 +4811,7 @@
         async function login() {
             window.removeEventListener('beforeunload', beforeUnloadHandler);
         await auth0.loginWithRedirect({
-            redirect_uri: window.location.origin + window.location.pathname,
+            redirect_uri: 'https://swareshpawar.github.io/OldandNew/',
             audience: 'https://oldandnew.onrender.com/api', // <-- use your API identifier
             scope: 'openid profile email',
             prompt: 'consent'
