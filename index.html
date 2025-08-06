@@ -4818,6 +4818,15 @@
             await auth0.logout({
                 returnTo: window.location.origin
             });
+            favorites = [];
+            NewSetlist = [];
+            OldSetlist = [];
+            localStorage.removeItem('favorites');
+            localStorage.removeItem('NewSetlist');
+            localStorage.removeItem('OldSetlist');
+            renderFavorites();
+            renderSetlist('New');
+            renderSetlist('Old');
         }
 
 
