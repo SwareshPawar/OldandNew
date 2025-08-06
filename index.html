@@ -1505,12 +1505,6 @@
                         <button class="sidebar-btn" id="downloadSongsBtn">
                             <i class="fas fa-download"></i> Download Songs
                         </button>
-                        <button class="sidebar-btn" id="uploadSongsBtn">
-                            <i class="fas fa-upload"></i> Upload Reset Songs
-                        </button>
-                        <button class="sidebar-btn" id="mergeSongsBtn">
-                            <i class="fas fa-compress-arrows-alt"></i> Upload Merge Songs
-                        </button>
                         <button class="sidebar-btn btn-delete" id="deleteAllSongsBtn">
                             <i class="fas fa-trash-alt"></i> Delete All Songs
                         </button>
@@ -1975,7 +1969,6 @@
         const deleteSongForm = document.getElementById('deleteSongForm');
         const cancelDeleteSong = document.getElementById('cancelDeleteSong');
         const downloadBtn = document.getElementById('downloadSongsBtn');
-        const uploadBtn = document.getElementById('uploadSongsBtn');
         const deleteAllSongsBtn = document.getElementById('deleteAllSongsBtn');
         const confirmDeleteAllModal = document.getElementById('confirmDeleteAllModal');
         const cancelDeleteAll = document.getElementById('cancelDeleteAll');
@@ -1985,7 +1978,6 @@
         const toggleSidebarBtn = document.getElementById('toggle-sidebar');
         const toggleSongsBtn = document.getElementById('toggle-songs');
         const toggleAllPanelsBtn = document.getElementById('toggle-all-panels');
-        const mergeBtn = document.getElementById('mergeSongsBtn');
         const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
         const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
         const notificationEl = document.getElementById('notification');
@@ -2184,12 +2176,8 @@
 
             // Show/hide Delete Songs menu item
             if (await isAdmin()) {
-                document.getElementById('uploadSongsBtn').style.display = 'block';
-                document.getElementById('mergeSongsBtn').style.display = 'block';
                 document.getElementById('deleteAllSongsBtn').style.display = 'block';
             } else {
-                document.getElementById('uploadSongsBtn').style.display = 'none';
-                document.getElementById('mergeSongsBtn').style.display = 'none';
                 document.getElementById('deleteAllSongsBtn').style.display = 'none';
             }
 
@@ -4387,16 +4375,6 @@
                 confirmDeleteAllModal.style.display = 'flex';
             });
     
-            mergeBtn.addEventListener('click', () => {
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = '.json';
-                fileInput.style.display = 'none';
-                fileInput.addEventListener('change', handleMergeUpload);
-                document.body.appendChild(fileInput);
-                fileInput.click();
-                document.body.removeChild(fileInput);
-            });
     
             cancelDeleteAll.addEventListener('click', () => {
                 confirmDeleteAllModal.style.display = 'none';
@@ -4531,16 +4509,6 @@
     
             // Download/upload
             downloadBtn.addEventListener('click', downloadSongs);
-            uploadBtn.addEventListener('click', () => {
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = '.json';
-                fileInput.style.display = 'none';
-                fileInput.addEventListener('change', handleFileUpload);
-                document.body.appendChild(fileInput);
-                fileInput.click();
-                document.body.removeChild(fileInput);
-            });
     
             // HTML download
             document.getElementById('downloadHtmlWithSongsBtn').addEventListener('click', () => {
