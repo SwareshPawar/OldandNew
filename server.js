@@ -29,6 +29,24 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('public'));
 
+const { expressjwt: jwt } = require("express-jwt");
+const jwksRsa = require("jwks-rsa");
+
+const authMiddleware = jwt({
+  secret: jwksRsa.expressJwtSecret({
+    cache: true,
+    rateLimit: true,
+    jwksRequestsPerMinute: 5,
+    jwksUri: `https://dev-yr80e6pevtcdjxvg.us.auth0.com/.well-known/jwks.json`
+  }),
+  audience: "Q1PyriLbgLVsC21MrBBC8RJgcnaTx6SV",
+  issuer: `https://dev-yr80e6pevtcdjxvg.us.auth0.com/`,
+  algorithms: ["RS256"]
+});
+
+// Do NOT use global auth middleware
+// Only use authMiddleware on protected routes below
+
 async function main() {
   try {
     await client.connect();
@@ -41,6 +59,14 @@ async function main() {
   }
 }
 
+function requireAdmin(req, res, next) {
+    const roles = req.auth && req.auth['https://oldandnew.example.com/roles'];
+    if (roles && roles.includes('admin')) {
+        return next();
+    }
+    return res.status(403).json({ error: 'Admin access required' });
+}
+
 app.get('/api/songs', async (req, res) => {
   try {
     const songs = await songsCollection.find({}).toArray();
@@ -50,7 +76,8 @@ app.get('/api/songs', async (req, res) => {
   }
 });
 
-app.post('/api/songs', async (req, res) => {
+// Protected: only logged-in users can add, update, or delete songs
+app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   try {
     if (typeof req.body.id !== 'number') {
       const last = await songsCollection.find().sort({ id: -1 }).limit(1).toArray();
@@ -64,7 +91,7 @@ app.post('/api/songs', async (req, res) => {
   }
 });
 
-app.put('/api/songs/:id', async (req, res) => {
+app.put('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const update = { $set: req.body };
@@ -78,7 +105,7 @@ app.put('/api/songs/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/songs/:id', async (req, res) => {
+app.delete('/api/songs/:id', authMiddleware,requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await songsCollection.deleteOne({ id: parseInt(id) });
@@ -91,7 +118,7 @@ app.delete('/api/songs/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/songs', async (req, res) => {
+app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   try {
     await songsCollection.deleteMany({});
     res.json({ message: 'All songs deleted' });
@@ -100,27 +127,21 @@ app.delete('/api/songs', async (req, res) => {
   }
 });
 
-app.get('/api/userdata', async (req, res) => {
-  try {
-    const doc = await db.collection('UserData').findOne({ _id: 'userdata' });
-    res.json(doc || { favorites: [], NewSetlist: [], OldSetlist: [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.get('/api/userdata', authMiddleware, requireAdmin, async (req, res) => {
+  const userId = req.auth.sub;
+  const doc = await db.collection('UserData').findOne({ _id: userId });
+  res.json(doc || { favorites: [], NewSetlist: [], OldSetlist: [] });
 });
 
-app.put('/api/userdata', async (req, res) => {
-  try {
-    const { favorites, NewSetlist, OldSetlist } = req.body;
-    await db.collection('UserData').updateOne(
-      { _id: 'userdata' },
-      { $set: { favorites, NewSetlist, OldSetlist } },
-      { upsert: true }
-    );
-    res.json({ message: 'User data updated' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.put('/api/userdata', authMiddleware, requireAdmin, async (req, res) => {
+  const userId = req.auth.sub;
+  const { favorites, NewSetlist, OldSetlist } = req.body;
+  await db.collection('UserData').updateOne(
+    { _id: userId },
+    { $set: { favorites, NewSetlist, OldSetlist } },
+    { upsert: true }
+  );
+  res.json({ message: 'User data updated' });
 });
 
 app.get('/api/favorites', async (req, res) => {
