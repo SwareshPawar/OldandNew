@@ -1442,6 +1442,28 @@
             .theme-toggle span {
                 margin-left: 8px;
             }
+        
+        .btn-login {
+        background: linear-gradient(90deg, #ff4f4f, #d1215b);
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        margin: 10px 0;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(79,140,255,0.1);
+        transition: background 0.2s, box-shadow 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        }
+        .btn-login:hover, .btn-login:focus {
+        background: linear-gradient(90deg, #1e62d0, #4f8cff);
+        box-shadow: 0 4px 16px rgba(79,140,255,0.2);
+        outline: none;
+        }
     </style>
 </head>
 <body>
@@ -1467,8 +1489,8 @@
                 <h2>New & Old</h2>
             </div>
             <ul class="sidebar-menu">
-                <button id="loginBtn">Login</button>
-                <button id="logoutBtn" style="display:none;">Logout</button>
+                <button id="loginBtn" class="sidebar-btn btn-login"><i class="fas fa-sign-in-alt"></i> Login</button>
+                <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 <li><a href="#" class="active" id="showAll">All Songs</a></li>
                 <li><a href="#" id="showSetlist">Setlist</a></li>   
                 <li><a href="#" id="showFavorites">Favorites</a></li>
