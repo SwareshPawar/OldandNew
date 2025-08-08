@@ -4317,6 +4317,7 @@
                         // Reload songs from backend
                         songs = await loadSongsFromFile();
                         renderSongs('New', keyFilter.value, genreFilter.value);
+                        updateSongCount();
                     } else {
                         showNotification('Failed to add song');
                     }
