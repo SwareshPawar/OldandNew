@@ -1,7 +1,129 @@
+    <style>
+    /* Admin Panel Styles */
+    #adminPanelModal .modal-content {
+        background: #fffbe7;
+        border-radius: 12px;
+        padding: 30px 32px 24px 32px;
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+        border: 1.5px solid #e0c97f;
+        position: relative;
+    }
+    #adminPanelModal h2 {
+        color: #b38a00;
+        margin-bottom: 18px;
+        font-size: 1.7rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .admin-tabs-modern {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+        border-bottom: 2px solid #e0c97f;
+        padding-bottom: 6px;
+    }
+    .admin-tab-btn-modern {
+        background: #fff3b0;
+        color: #b38a00;
+        border: none;
+        border-radius: 6px 6px 0 0;
+        padding: 10px 28px;
+        font-size: 1.08em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        margin-bottom: -2px;
+    }
+    .admin-tab-btn-modern.active, .admin-tab-btn-modern:focus {
+        background: #ffe066;
+        color: #6b4f00;
+        outline: none;
+    }
+    .admin-tab-btn-modern:hover {
+        background: #ffe066;
+        color: #b38a00;
+    }
+    .admin-tab-content-modern {
+        display: none;
+        margin-top: 10px;
+    }
+    .admin-tab-content-modern.active {
+        display: block;
+    }
+    /* Recommendation Weights Form Modern */
+    .weights-form-modern {
+        margin-top: 10px;
+    }
+    .weights-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px 24px;
+        margin-bottom: 18px;
+    }
+    .weight-field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .weight-field label {
+        font-weight: 600;
+        color: #b38a00;
+        margin-bottom: 2px;
+    }
+    .weight-field input[type="number"] {
+        padding: 7px 10px;
+        border: 1.2px solid #e0c97f;
+        border-radius: 5px;
+        font-size: 1em;
+        background: #fff;
+        color: #6b4f00;
+        outline: none;
+        transition: border 0.2s;
+    }
+    .weight-field input[type="number"]:focus {
+        border-color: #b38a00;
+    }
+    .weights-form-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    #weightsSaveStatus {
+        font-size: 1em;
+        color: #2a9d8f;
+        margin-left: 10px;
+    }
+    /* Users Table (keep existing styles) */
+    #adminUsersTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    #adminUsersTable th, #adminUsersTable td {
+        border: 1px solid #e0c97f;
+        padding: 8px 10px;
+        text-align: left;
+    }
+    #adminUsersTable th { background: #fff3b0; }
+    .admin-action-btn {
+        margin-right: 6px;
+        padding: 3px 10px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95em;
+    }
+    .admin-action-btn.promote { background: #e0c97f; color: #6b4f00; }
+    .admin-action-btn.delete { background: #e88a8a; color: #fff; }
+    </style>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.19/auth0-spa-js.production.js"></script>
+    <!-- Auth0 script removed -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New & Old Songs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -1476,6 +1598,37 @@
     </style>
 </head>
 <body>
+    <!-- Admin Panel Modal -->
+    <div class="modal" id="adminPanelModal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" id="closeAdminPanelModal" aria-label="Close">×</span>
+            <h2>Admin Panel</h2>
+            <div class="admin-tabs-modern">
+                <button class="admin-tab-btn-modern" id="adminUsersTabBtn">Users</button>
+                <button class="admin-tab-btn-modern" id="adminWeightsTabBtn">Recommendation Weights</button>
+            </div>
+            <div id="adminUsersTab" class="admin-tab-content-modern">
+                <button id="loadUsersBtn" class="btn btn-primary">Load All Users</button>
+                <div id="adminUsersContainer"></div>
+            </div>
+            <div id="adminWeightsTab" class="admin-tab-content-modern">
+                <form id="weightsForm" class="weights-form-modern">
+                    <div class="weights-grid">
+                        <div class="weight-field"><label for="weightLanguage">Language</label><input type="number" id="weightLanguage" min="0" max="100" required></div>
+                        <div class="weight-field"><label for="weightScale">Scale</label><input type="number" id="weightScale" min="0" max="100" required></div>
+                        <div class="weight-field"><label for="weightTimeSignature">Time Signature</label><input type="number" id="weightTimeSignature" min="0" max="100" required></div>
+                        <div class="weight-field"><label for="weightTaal">Taal</label><input type="number" id="weightTaal" min="0" max="100" required></div>
+                        <div class="weight-field"><label for="weightTempo">Tempo</label><input type="number" id="weightTempo" min="0" max="100" required></div>
+                        <div class="weight-field"><label for="weightGenre">Genre</label><input type="number" id="weightGenre" min="0" max="100" required></div>
+                    </div>
+                    <div class="weights-form-actions">
+                        <button type="submit" class="btn btn-primary">Save Weights</button>
+                        <span id="weightsSaveStatus"></span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <div class="app-container">
         <button class="panel-toggle draggable" id="toggle-sidebar"><i class="fas fa-home"></i></button>
         <button class="panel-toggle draggable" id="toggle-songs"><i class="fas fa-list"></i></button>
@@ -1500,10 +1653,11 @@
             <ul class="sidebar-menu">
                 <button id="loginBtn" class="sidebar-btn btn-login"><i class="fas fa-sign-in-alt"></i> Login</button>
                 <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <button id="adminPanelBtn" class="sidebar-btn btn-edit" style="display:none;"><i class="fas fa-user-shield"></i> Admin Panel</button>
                 <li><a href="#" class="active" id="showAll">All Songs</a></li>
                 <li><a href="#" id="showSetlist">Setlist</a></li>   
                 <li><a href="#" id="showFavorites">Favorites</a></li>
-                <li><a href="SONGSADMINCHURCHCHORDS.html"><i class="fas fa-cogs"></i> Admin Portal</a></li>
+                <li><button id="addSongBtn" class="sidebar-btn btn-primary"><i class="fas fa-plus"></i> Add New Song</button></li>
 
             </ul>
             </ul>
@@ -1521,25 +1675,20 @@
                     </div>
 
                     <button class="sidebar-btn" id="downloadHtmlWithSongsBtn">
-                        <i class="fas fa-file-export"></i> Download HTML with Songs
-                    </button>
+                        <button class="sidebar-btn" id="downloadDbDataBtn">
+                            <i class="fas fa-download"></i> Download All Data (Excel/JSON)
+                        </button>
+                        <div id="downloadFormatModal" class="modal" style="display:none;z-index:2000;">
+                            <div class="modal-content" style="max-width:320px;text-align:center;">
+                                <span class="close-modal" id="closeDownloadFormatModal" aria-label="Close">×</span>
+                                <h3>Download Format</h3>
+                                <button class="btn btn-primary" id="downloadAsJson">Download as JSON</button>
+                                <button class="btn btn-primary" id="downloadAsExcel">Download as Excel</button>
+                            </div>
+                        </div>
                 </div>
                 <div class="sidebar-folder">
-                    <div class="folder-toggle" id="toggleSongTools">
-                        <i class="fas fa-folder-open"></i> Song Tools
-                        <i class="fas fa-caret-down folder-caret"></i>
-                    </div>
-                    <div class="folder-content" id="songToolsContent">
-                        <button class="sidebar-btn" id="openAddSongModal">
-                            <i class="fa fa-plus"></i> Add New Song
-                        </button>
-                        <button class="sidebar-btn" id="downloadSongsBtn">
-                            <i class="fas fa-download"></i> Download Songs
-                        </button>
-                        <button class="sidebar-btn btn-delete" id="deleteAllSongsBtn">
-                            <i class="fas fa-trash-alt"></i> Delete All Songs
-                        </button>
-                    </div>
+                    <!-- Song Tools and all options removed -->
                 </div>
             </div>
         </div>
@@ -1918,9 +2067,310 @@
 
     <script id="embeddedSongs" type="application/json">
         []
+        // Password reset logic
+        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+        if (forgotPasswordBtn) {
+            forgotPasswordBtn.onclick = () => {
+                document.getElementById('resetPasswordModal').style.display = 'flex';
+            };
+        }
+        const cancelResetPassword = document.getElementById('cancelResetPassword');
+        if (cancelResetPassword) {
+            cancelResetPassword.onclick = () => {
+                document.getElementById('resetPasswordModal').style.display = 'none';
+            };
+        }
+        const resetPasswordForm = document.getElementById('resetPasswordForm');
+        if (resetPasswordForm) {
+            resetPasswordForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('resetUsername').value;
+                const newPassword = document.getElementById('resetNewPassword').value;
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/reset-password`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, newPassword })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        showNotification('Password reset successful! Please log in.');
+                        document.getElementById('resetPasswordModal').style.display = 'none';
+                    } else {
+                        showNotification(data.error || 'Password reset failed');
+                    }
+                } catch (err) {
+                    showNotification('Password reset error');
+                }
+            };
+        }
     </script>
 
     <script>
+// Download All Data (Excel/JSON) logic
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadBtn = document.getElementById('downloadDbDataBtn');
+    const modal = document.getElementById('downloadFormatModal');
+    const closeModal = document.getElementById('closeDownloadFormatModal');
+    const downloadAsJson = document.getElementById('downloadAsJson');
+    const downloadAsExcel = document.getElementById('downloadAsExcel');
+    if (downloadBtn && modal && closeModal && downloadAsJson && downloadAsExcel) {
+        downloadBtn.onclick = () => { modal.style.display = 'flex'; };
+        closeModal.onclick = () => { modal.style.display = 'none'; };
+        downloadAsJson.onclick = async () => {
+            modal.style.display = 'none';
+            try {
+                const res = await authFetch(`${API_BASE_URL}/api/export/json`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to download JSON');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'all_data.json';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                showNotification('Download failed: ' + err.message);
+            }
+        };
+        downloadAsExcel.onclick = async () => {
+            modal.style.display = 'none';
+            try {
+                const res = await authFetch(`${API_BASE_URL}/api/export/excel`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Failed to download Excel');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'all_data.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                showNotification('Download failed: ' + err.message);
+            }
+        };
+    }
+});
+// Global element for song preview
+let songPreviewEl;
+    // Assign songPreviewEl after DOM is loaded
+    songPreviewEl = document.getElementById('songPreview');
+// Update the song counters in the sidebar
+function updateSongCount() {
+    const total = songs.length;
+    const newCount = songs.filter(song => song.category === 'New').length;
+    const oldCount = songs.filter(song => song.category === 'Old').length;
+    const totalEl = document.getElementById('totalSongs');
+    const newEl = document.getElementById('NewCount');
+    const oldEl = document.getElementById('OldCount');
+    if (totalEl) totalEl.textContent = total;
+    if (newEl) newEl.textContent = newCount;
+    if (oldEl) oldEl.textContent = oldCount;
+}
+
+// === Admin Panel Logic ===
+
+// Declare global setlist arrays so all functions can access them
+var NewSetlist = [];
+var OldSetlist = [];
+
+
+async function loadAllUsers() {
+    try {
+        const res = await authFetch(`${API_BASE_URL}/api/admin/users`);
+        const users = await res.json();
+        if (!Array.isArray(users)) throw new Error('Invalid users');
+        const container = document.getElementById('adminUsersContainer');
+        let html = `<table id="adminUsersTable"><tr><th>Username</th><th>Email</th><th>Role</th><th>Actions</th></tr>`;
+        users.forEach(user => {
+            html += `<tr><td>${user.username}</td><td>${user.email || ''}</td><td>${user.role}</td><td>`;
+            if (user.role !== 'admin') {
+                html += `<button class="admin-action-btn promote" data-username="${user.username}">Make Admin</button>`;
+            }
+            html += `<button class="admin-action-btn delete" data-username="${user.username}">Delete</button>`;
+            html += `</td></tr>`;
+        });
+        html += `</table>`;
+        container.innerHTML = html;
+        // Add event listeners
+        container.querySelectorAll('.promote').forEach(btn => {
+            btn.onclick = async () => {
+                if (confirm('Promote this user to admin?')) {
+                    await authFetch(`${API_BASE_URL}/api/admin/users/${btn.dataset.username}/promote`, { method: 'PUT' });
+                    loadAllUsers();
+                }
+            };
+        });
+        container.querySelectorAll('.delete').forEach(btn => {
+            btn.onclick = async () => {
+                if (confirm('Delete this user?')) {
+                    await authFetch(`${API_BASE_URL}/api/admin/users/${btn.dataset.username}`, { method: 'DELETE' });
+                    loadAllUsers();
+                }
+            };
+        });
+    } catch (e) {
+        document.getElementById('adminUsersContainer').innerHTML = '<p>Error loading users.</p>';
+    }
+}
+
+
+window.addEventListener('DOMContentLoaded', () => {
+    // Admin Panel button opens modal
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
+    const adminPanelModal = document.getElementById('adminPanelModal');
+    const closeAdminPanelModal = document.getElementById('closeAdminPanelModal');
+    if (adminPanelBtn && adminPanelModal) {
+        adminPanelBtn.onclick = () => {
+            adminPanelModal.style.display = 'flex';
+            loadAllUsers();
+        };
+    }
+    if (closeAdminPanelModal && adminPanelModal) {
+        closeAdminPanelModal.onclick = () => {
+            adminPanelModal.style.display = 'none';
+        };
+    }
+    document.getElementById('loadUsersBtn').onclick = loadAllUsers;
+
+    // Fetch recommendation weights from backend on app load
+    async function fetchRecommendationWeights() {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            const res = await fetch(`${API_BASE_URL}/api/config/weights`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error('Failed to fetch weights');
+            const w = await res.json();
+            window.RECOMMENDATION_WEIGHTS = {
+                language: w.language,
+                scale: w.scale,
+                timeSignature: w.timeSignature,
+                taal: w.taal,
+                tempo: w.tempo,
+                genre: w.genre
+            };
+        } catch (e) {
+            window.RECOMMENDATION_WEIGHTS = {
+                language: 20,
+                scale: 30,
+                timeSignature: 25,
+                taal: 15,
+                tempo: 5,
+                genre: 5
+            };
+        }
+    }
+    fetchRecommendationWeights();
+
+    // Admin Panel Tabs
+    const usersTabBtn = document.getElementById('adminUsersTabBtn');
+    const weightsTabBtn = document.getElementById('adminWeightsTabBtn');
+    const usersTab = document.getElementById('adminUsersTab');
+    const weightsTab = document.getElementById('adminWeightsTab');
+    if (usersTabBtn && weightsTabBtn && usersTab && weightsTab) {
+        function setAdminTab(active) {
+            if (active === 'users') {
+                usersTab.classList.add('active');
+                weightsTab.classList.remove('active');
+                usersTabBtn.classList.add('active');
+                weightsTabBtn.classList.remove('active');
+            } else {
+                usersTab.classList.remove('active');
+                weightsTab.classList.add('active');
+                usersTabBtn.classList.remove('active');
+                weightsTabBtn.classList.add('active');
+                fetchAndFillWeights();
+            }
+        }
+        usersTabBtn.onclick = () => setAdminTab('users');
+        weightsTabBtn.onclick = () => setAdminTab('weights');
+        // Show users tab by default
+        setAdminTab('users');
+    }
+
+    // Fetch and fill weights in form
+    async function fetchAndFillWeights() {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            const res = await fetch(`${API_BASE_URL}/api/config/weights`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to fetch weights');
+            const w = await res.json();
+            document.getElementById('weightLanguage').value = w.language;
+            document.getElementById('weightScale').value = w.scale;
+            document.getElementById('weightTimeSignature').value = w.timeSignature;
+            document.getElementById('weightTaal').value = w.taal;
+            document.getElementById('weightTempo').value = w.tempo;
+            document.getElementById('weightGenre').value = w.genre;
+        } catch (e) {
+            document.getElementById('weightsSaveStatus').textContent = 'Error loading weights';
+        }
+    }
+
+    // Save weights form
+    const weightsForm = document.getElementById('weightsForm');
+    if (weightsForm) {
+        weightsForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('jwtToken');
+            const data = {
+                language: document.getElementById('weightLanguage').value,
+                scale: document.getElementById('weightScale').value,
+                timeSignature: document.getElementById('weightTimeSignature').value,
+                taal: document.getElementById('weightTaal').value,
+                tempo: document.getElementById('weightTempo').value,
+                genre: document.getElementById('weightGenre').value
+            };
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/config/weights`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('Failed to save');
+                document.getElementById('weightsSaveStatus').textContent = 'Saved!';
+            } catch (err) {
+                document.getElementById('weightsSaveStatus').textContent = 'Error saving weights';
+            }
+        };
+    }
+
+    // Show/hide Admin Panel button based on admin status
+    function updateAdminPanelBtn() {
+        const adminPanelBtn = document.getElementById('adminPanelBtn');
+        if (!adminPanelBtn) return;
+        if (isAdmin()) {
+            adminPanelBtn.style.display = '';
+        } else {
+            adminPanelBtn.style.display = 'none';
+        }
+    }
+    updateAdminPanelBtn();
+
+    // Also update on login/logout
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (loginBtn) loginBtn.addEventListener('click', () => setTimeout(updateAdminPanelBtn, 500));
+    if (logoutBtn) logoutBtn.addEventListener('click', () => setTimeout(updateAdminPanelBtn, 500));
+});
+
+// Also re-render admin panel after login/logout
+
+
+        // === API BASE URL: Dynamic local/production switching ===
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3001'
+            : 'https://oldandnew.onrender.com';
+
         // Initialize songs and setlists
         let isDarkMode = localStorage.getItem('darkMode') === 'true';
         let socket = null;
@@ -1932,88 +2382,25 @@
         let touchStartX = 0;
         let touchStartY = 0;
         let isScrolling = false;
-        let auth0 = null;
+        let jwtToken = localStorage.getItem('jwtToken') || '';
         let currentUser = null;
-
-        const AUTH0_DOMAIN = 'dev-yr80e6pevtcdjxvg.us.auth0.com'; // e.g. dev-xxxxxx.us.auth0.com
-        const AUTH0_CLIENT_ID = 'Q1PyriLbgLVsC21MrBBC8RJgcnaTx6SV';
             
         async function loadSongsFromFile() {
             try {
-                const response = await authFetch('https://oldandnew.onrender.com/api/songs');
-                if (response.ok) {
-                    const data = await response.json();
-                    return Array.isArray(data) ? data : [];
-                } else {
-                    console.error('API error:', response.status, await response.text());
-                }
-                return [];
+                const response = await fetch(`${API_BASE_URL}/api/songs`);
+                if (!response.ok) throw new Error('Failed to load songs');
+                const data = await response.json();
+                return data;
             } catch (err) {
-                console.error('Error loading songs from API:', err);
+                showNotification('Failed to load songs');
                 return [];
             }
         }
-    
-        function connectWebSocket() {
-            if (!window.WebSocket) {
-                console.warn("WebSockets not supported in this browser");
-                return;
-            }
-            console.log("WebSocket connection removed for GitHub Pages compatibility");
-        }
-    
-        function updateSongCount() {
-            document.getElementById('totalSongs').textContent = songs.length;
-            document.getElementById('NewCount').textContent = songs.filter(s => s.category === 'New').length;
-            document.getElementById('OldCount').textContent = songs.filter(s => s.category === 'Old').length;
-        }
-    
-        let NewSetlist = [];
-        let OldSetlist = [];
-    
-        // DOM Elements
-        const NewTab = document.getElementById('NewTab');
-        const OldTab = document.getElementById('OldTab');
-        const NewContent = document.getElementById('NewContent');
-        const OldContent = document.getElementById('OldContent');
-        const keyFilter = document.getElementById('keyFilter');
-        const genreFilter = document.getElementById('genreFilter');
-        const songPreviewEl = document.getElementById('songPreview');
-        const showSetlistEl = document.getElementById('showSetlist');
-        const showAllEl = document.getElementById('showAll');
-        const showFavoritesEl = document.getElementById('showFavorites');
-        const setlistSection = document.getElementById('setlistSection');
-        const NewSetlistSongs = document.getElementById('NewSetlistSongs');
-        const OldSetlistSongs = document.getElementById('OldSetlistSongs');
-        const NewSetlistTab = document.getElementById('NewSetlistTab');
-        const OldSetlistTab = document.getElementById('OldSetlistTab');
-        const deleteSection = document.getElementById('deleteSection');
-        const deleteContent = document.getElementById('deleteContent');
-        const favoritesSection = document.getElementById('favoritesSection');
-        const favoritesContent = document.getElementById('favoritesContent');
-        const addSongModal = document.getElementById('addSongModal');
-        const openAddSongModal = document.getElementById('openAddSongModal');
-        const newSongForm = document.getElementById('newSongForm');
-        const editSongModal = document.getElementById('editSongModal');
-        const editSongForm = document.getElementById('editSongForm');
-        const deleteSongModal = document.getElementById('deleteSongModal');
-        const deleteSongForm = document.getElementById('deleteSongForm');
-        const cancelDeleteSong = document.getElementById('cancelDeleteSong');
-        const downloadBtn = document.getElementById('downloadSongsBtn');
-        const deleteAllSongsBtn = document.getElementById('deleteAllSongsBtn');
-        const confirmDeleteAllModal = document.getElementById('confirmDeleteAllModal');
-        const cancelDeleteAll = document.getElementById('cancelDeleteAll');
-        const confirmDeleteAll = document.getElementById('confirmDeleteAll');
-        const searchInput = document.getElementById('searchInput');
-        const clearSearchBtn = document.getElementById('clearSearch');
-        const toggleSidebarBtn = document.getElementById('toggle-sidebar');
-        const toggleSongsBtn = document.getElementById('toggle-songs');
-        const toggleAllPanelsBtn = document.getElementById('toggle-all-panels');
         const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
         const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
         const notificationEl = document.getElementById('notification');
         document.getElementById('loginBtn').onclick = () => login();
-        document.getElementById('logoutBtn').onclick = () => auth0.logout({ returnTo: window.location.origin });
+        document.getElementById('logoutBtn').onclick = logout;
         const NAMESPACE = 'https://oldandnew.example.com/';
 
     
@@ -2060,7 +2447,7 @@
                 document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
             }
     
-            connectWebSocket();
+            // connectWebSocket() removed
             updateSongCount();
             initScreenWakeLock();
             setupModalClosing();
@@ -2200,19 +2587,15 @@
         }
 
 
-        async function updateAuthButtons() {
-            const isLoggedIn = await auth0.isAuthenticated();
+        function updateAuthButtons() {
+            const isLoggedIn = !!jwtToken;
             document.getElementById('loginBtn').style.display = isLoggedIn ? 'none' : 'block';
             document.getElementById('logoutBtn').style.display = isLoggedIn ? 'block' : 'none';
-
-            // Show/hide Delete Songs menu item
-            if (await isAdmin()) {
-                document.getElementById('deleteAllSongsBtn').style.display = 'block';
-            } else {
-                document.getElementById('deleteAllSongsBtn').style.display = 'none';
-            }
-
-            // Optionally, hide the delete section if user logs out
+            // Show/hide Register button
+            const registerBtn = document.getElementById('registerBtn');
+            if (registerBtn) registerBtn.style.display = isLoggedIn ? 'none' : 'block';
+            // Show/hide Delete Songs menu item (admin check can be improved if needed)
+            // Song Tools: deleteAllSongsBtn removed
             if (!isLoggedIn) {
                 document.getElementById('deleteSection').style.display = 'none';
             }
@@ -2220,12 +2603,9 @@
         // window.addEventListener('DOMContentLoaded', updateAuthButtons);
 
         async function authFetch(url, options = {}) {
-            if (await auth0.isAuthenticated()) {
-                const token = await auth0.getTokenSilently({
-                    audience: 'https://oldandnew.onrender.com/api'
-                });
-                options.headers = options.headers || {};
-                options.headers['Authorization'] = `Bearer ${token}`;
+            options.headers = options.headers || {};
+            if (jwtToken) {
+                options.headers['Authorization'] = `Bearer ${jwtToken}`;
             }
             return fetch(url, options);
         }
@@ -2328,6 +2708,9 @@
             const sidebar = document.querySelector('.sidebar');
             const songsSection = document.querySelector('.songs-section');
             const previewSection = document.querySelector('.preview-section');
+            const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+            const toggleSongsBtn = document.getElementById('toggle-songs');
+            const toggleAllPanelsBtn = document.getElementById('toggle-all-panels');
     
             if (!sidebar || !songsSection || !previewSection || !toggleSidebarBtn || !toggleSongsBtn || !toggleAllPanelsBtn) {
                 console.error('One or more elements not found for panel toggles');
@@ -2474,7 +2857,7 @@
     
 
         async function loadSetlists() {
-            const response = await authFetch('https://oldandnew.onrender.com/api/userdata');
+            const response = await authFetch(`${API_BASE_URL}/api/userdata`);
             if (response.ok) {
                 const data = await response.json();
                 favorites = data.favorites || [];
@@ -2486,7 +2869,7 @@
 
         async function loadUserData() {
             try {
-                const response = await authFetch('https://oldandnew.onrender.com/api/userdata');
+                const response = await authFetch(`${API_BASE_URL}/api/userdata`);
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data.favorites)) favorites = data.favorites;
@@ -2500,26 +2883,21 @@
 
         async function saveUserData() {
             try {
-                const user = await auth0.getUser();
-                const response = await authFetch('https://oldandnew.onrender.com/api/userdata', {
+                const response = await authFetch(`${API_BASE_URL}/api/userdata`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         favorites,
                         NewSetlist,
-                        OldSetlist,
-                        name: user?.name || '',
-                        email: user?.email || ''
+                        OldSetlist
                     })
                 });
                 if (!response.ok) {
                     showNotification('Failed to save user data');
                     return false;
                 }
-                // Optionally check response for success
                 const data = await response.json();
                 if (data && data.message === 'User data updated') {
-                    // Success!
                     return true;
                 } else {
                     showNotification('Failed to save user data');
@@ -2589,6 +2967,30 @@
                 showNotification('Error reading file');
             };
             reader.readAsText(file);
+        }
+
+                // Handle register
+        async function register(event) {
+            event && event.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const email = document.getElementById('registerEmail').value;
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, email })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification('Registration successful! Please log in.');
+                    document.getElementById('registerModal').style.display = 'none';
+                } else {
+                    showNotification(data.error || 'Registration failed');
+                }
+            } catch (err) {
+                showNotification('Registration error');
+            }
         }
     
         function handleMergeUpload(event) {
@@ -2784,15 +3186,13 @@
 
                 // Show delete button only for admins
                 const deleteBtn = div.querySelector('.delete-song');
-                isAdmin().then(isAdminUser => {
-                    if (isAdminUser) {
-                        deleteBtn.style.display = '';
-                        deleteBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            openDeleteSongModal(song.id);
-                        });
-                    }
-                });
+                if (isAdmin()) {
+                    deleteBtn.style.display = '';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openDeleteSongModal(song.id);
+                    });
+                }
                 
                 div.addEventListener('click', () => {
                     showPreview(song);
@@ -2885,14 +3285,14 @@
             // Define known language tags
             const LANGUAGE_TAGS = ['English', 'Marathi', 'Spanish', 'Hindi', 'French', 'Tamil', 'Telugu', 'Punjabi', 'Bengali'];
 
-            // Define scoring weights (total = 100)
-            const WEIGHTS = {
-                language: 20,        // Language match from genres
-                scale: 30,           // Scale match (major/minor and harmonic relationships)
-                timeSignature: 25,   // Time Signature match
-                taal: 15,            // Taal match
-                tempo: 5,            // Tempo similarity
-                genre: 5             // Non-language genre matches
+            // Use global weights loaded from backend
+            const WEIGHTS = window.RECOMMENDATION_WEIGHTS || {
+                language: 20,
+                scale: 30,
+                timeSignature: 25,
+                taal: 15,
+                tempo: 5,
+                genre: 5
             };
 
             // Time signature compatible pairs
@@ -3191,10 +3591,15 @@
                 });
         }
 
-        async function isAdmin() {
-            const token = await auth0.getIdTokenClaims();
-            const roles = token && token[`${NAMESPACE}roles`];
-            return roles && (roles.includes('Admin') || roles.includes('admin'));
+        function isAdmin() {
+            try {
+                const token = localStorage.getItem('jwtToken');
+                if (!token) return false;
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role === 'admin';
+            } catch (e) {
+                return false;
+            }
         }
     
         function renderSetlist(category) {
@@ -3346,6 +3751,7 @@
         }
     
         function showPreview(song, fromHistory = false) {
+            const songPreviewEl = document.getElementById('songPreview');
             // Update history if this is a new navigation (not from back/forward)
             if (!fromHistory && !isNavigatingHistory && !currentModal) {
                 if (currentHistoryPosition < navigationHistory.length - 1) {
@@ -3593,6 +3999,16 @@
 
             return newBaseNote + quality;
         }
+
+                // Show login modal
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+
+        // Show register modal
+        function showRegisterModal() {
+            document.getElementById('registerModal').style.display = 'flex';
+        }
     
         function updatePreviewWithTransposition(level) {
             if (!songPreviewEl.dataset.songId) return;
@@ -3609,6 +4025,7 @@
         }
     
         function setupAutoScroll() {
+            const songPreviewEl = document.getElementById('songPreview');
             isUserScrolling = false;
             songPreviewEl.scrollTop = 0;
             if (autoScrollInterval) {
@@ -3696,22 +4113,19 @@
         }
     
         function addToSetlist(id) {
+            const songPreviewEl = document.getElementById('songPreview');
             const song = songs.find(s => s.id === id);
             if (!song) return;
-            
             const setlist = song.category === 'New' ? NewSetlist : OldSetlist;
             if (!setlist.some(s => s.id === id)) {
                 setlist.push(song);
                 queueSaveUserData();
-                
                 showNotification(`"${song.title}" added to ${song.category} setlist`);
-                
                 updateSetlistButton(id, true);
-                
-                if (songPreviewEl.dataset.songId == id) {
-                    updatePreviewSetlistButton(true);
+                // Always update preview button for current song
+                if (songPreviewEl.dataset.songId) {
+                    updatePreviewSetlistButton(NewSetlist.some(s => s.id == songPreviewEl.dataset.songId) || OldSetlist.some(s => s.id == songPreviewEl.dataset.songId));
                 }
-                
                 if (setlistSection.style.display === 'block') {
                     renderSetlist(song.category);
                 }
@@ -3719,24 +4133,21 @@
         }
     
         function removeFromSetlist(id, category) {
+            const songPreviewEl = document.getElementById('songPreview');
             const song = songs.find(s => s.id === id);
             if (!song) return;
-            
             if (category === 'New') {
                 NewSetlist = NewSetlist.filter(s => s.id !== id);
             } else {
                 OldSetlist = OldSetlist.filter(s => s.id !== id);
             }
             queueSaveUserData();
-            
             showNotification(`"${song.title}" removed from ${category} setlist`);
-            
             updateSetlistButton(id, false);
-            
-            if (songPreviewEl.dataset.songId == id) {
-                updatePreviewSetlistButton(false);
+            // Always update preview button for current song
+            if (songPreviewEl.dataset.songId) {
+                updatePreviewSetlistButton(NewSetlist.some(s => s.id == songPreviewEl.dataset.songId) || OldSetlist.some(s => s.id == songPreviewEl.dataset.songId));
             }
-            
             if (setlistSection.style.display === 'block') {
                 renderSetlist(category);
             }
@@ -3752,29 +4163,30 @@
         }
     
         function toggleFavorite(id) {
+            const songPreviewEl = document.getElementById('songPreview');
             const index = favorites.indexOf(id);
             const song = songs.find(s => s.id === id);
-
+            let isNowFavorite;
             if (index === -1) {
                 favorites.push(id);
                 showNotification(`"${song.title}" added to favorites`);
+                isNowFavorite = true;
             } else {
                 favorites.splice(index, 1);
                 showNotification(`"${song.title}" removed from favorites`);
+                isNowFavorite = false;
             }
-
             queueSaveUserData();
-            
-
             const favButtons = document.querySelectorAll(`.favorite-btn[data-song-id="${id}"]`);
             favButtons.forEach(btn => {
-                btn.classList.toggle('favorited', index === -1);
+                btn.classList.toggle('favorited', isNowFavorite);
             });
-
-            if (songPreviewEl.dataset.songId == id) {
+            // Always update preview favorite button for current song
+            if (songPreviewEl.dataset.songId) {
                 const previewBtn = document.getElementById('previewFavoriteBtn');
                 if (previewBtn) {
-                    previewBtn.classList.toggle('favorited', index === -1);
+                    const isFav = favorites.includes(parseInt(songPreviewEl.dataset.songId));
+                    previewBtn.classList.toggle('favorited', isFav);
                 }
             }
         }
@@ -3969,6 +4381,45 @@
         }
     
         function addEventListeners() {
+            // Setlist arrays (global, but needed for event logic)
+            let NewSetlist = window.NewSetlist || [];
+            let OldSetlist = window.OldSetlist || [];
+
+            // Cache sidebar menu elements
+            const showSetlistEl = document.getElementById('showSetlist');
+            const showAllEl = document.getElementById('showAll');
+            const showFavoritesEl = document.getElementById('showFavorites');
+            // Cache all DOM elements used in this function
+            const songPreviewEl = document.getElementById('songPreview');
+            const searchInput = document.getElementById('searchInput');
+            const clearSearchBtn = document.getElementById('clearSearch');
+            // Song Tools: downloadSongsBtn removed
+            const NewTab = document.getElementById('NewTab');
+            const OldTab = document.getElementById('OldTab');
+            const NewContent = document.getElementById('NewContent');
+            const OldContent = document.getElementById('OldContent');
+            const setlistSection = document.getElementById('setlistSection');
+            const deleteSection = document.getElementById('deleteSection');
+            const favoritesSection = document.getElementById('favoritesSection');
+            const NewSetlistTab = document.getElementById('NewSetlistTab');
+            const OldSetlistTab = document.getElementById('OldSetlistTab');
+            const NewSetlistSongs = document.getElementById('NewSetlistSongs');
+            const OldSetlistSongs = document.getElementById('OldSetlistSongs');
+            const deleteContent = document.getElementById('deleteContent');
+            const favoritesContent = document.getElementById('favoritesContent');
+            const keyFilter = document.getElementById('keyFilter');
+            const genreFilter = document.getElementById('genreFilter');
+            const addSongModal = document.getElementById('addSongModal');
+            const newSongForm = document.getElementById('newSongForm');
+            const editSongModal = document.getElementById('editSongModal');
+            const editSongForm = document.getElementById('editSongForm');
+            const deleteSongModal = document.getElementById('deleteSongModal');
+            const deleteSongForm = document.getElementById('deleteSongForm');
+            const cancelDeleteSong = document.getElementById('cancelDeleteSong');
+            const confirmDeleteAllModal = document.getElementById('confirmDeleteAllModal');
+            const cancelDeleteAll = document.getElementById('cancelDeleteAll');
+            const confirmDeleteAll = document.getElementById('confirmDeleteAll');
+
             // Tab switching
             NewTab.addEventListener('click', () => {
                 setlistSection.style.display = 'none';
@@ -4118,19 +4569,18 @@
             }, { passive: true });
 
             songPreviewEl.addEventListener('touchstart', () => {
-            document.querySelector('.song-slide').classList.remove('swipe-active', 'swipe-left');
-            });
+                document.querySelector('.song-slide').classList.remove('swipe-active', 'swipe-left');
+            }, { passive: true });
 
             songPreviewEl.addEventListener('touchmove', (e) => {
-            const slide = document.querySelector('.song-slide');
-            const diffX = e.touches[0].clientX - touchStartX;
-            
-            if (Math.abs(diffX) > 20) {
-                slide.classList.add(diffX > 0 ? 'swiping-right' : 'swiping-left');
-                slide.classList.add('swipe-active');
-                if (diffX < 0) slide.classList.add('swipe-left');
-            }
-            });
+                const slide = document.querySelector('.song-slide');
+                const diffX = e.touches[0].clientX - touchStartX;
+                if (Math.abs(diffX) > 20) {
+                    slide.classList.add(diffX > 0 ? 'swiping-right' : 'swiping-left');
+                    slide.classList.add('swipe-active');
+                    if (diffX < 0) slide.classList.add('swipe-left');
+                }
+            }, { passive: true });
 
             songPreviewEl.addEventListener('touchmove', (e) => {
                 if (!songPreviewEl.dataset.songId) return;
@@ -4197,13 +4647,7 @@
         });
     
             // Song modals
-            openAddSongModal.addEventListener('click', () => {
-                addSongModal.style.display = 'flex';
-                document.getElementById('selectedGenres').innerHTML = '';
-                document.querySelectorAll('#genreDropdown .multiselect-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-            });
+            // Song Tools: openAddSongModal removed
     
             document.querySelectorAll('.close-modal').forEach(button => {
                 button.addEventListener('click', () => {
@@ -4260,6 +4704,16 @@
                     updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
                 });
             });
+
+            const addSongBtn = document.getElementById('addSongBtn');
+if (addSongBtn && addSongModal) {
+    addSongBtn.addEventListener('click', function() {
+        addSongModal.style.display = 'flex';
+        document.getElementById('selectedGenres').innerHTML = '';
+        document.querySelectorAll('#genreDropdown .multiselect-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+    });}
             
             function updateSelectedGenres(containerId, dropdownId) {
                 const container = document.getElementById(containerId);
@@ -4304,7 +4758,7 @@
                 };
 
                 try {
-                    const response = await authFetch('https://oldandnew.onrender.com/api/songs', {
+                    const response = await authFetch(`${API_BASE_URL}/api/songs`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(newSong)
@@ -4347,7 +4801,7 @@
                 };
 
                 try {
-                    const response = await authFetch(`https://oldandnew.onrender.com/api/songs/${id}`, {
+                    const response = await authFetch(`${API_BASE_URL}/api/songs/${id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updatedSong)
@@ -4375,7 +4829,7 @@
                 e.preventDefault();
                 const id = document.getElementById('deleteSongId').value;
                 try {
-                    const response = await authFetch(`https://oldandnew.onrender.com/api/songs/${id}`, {
+                    const response = await authFetch(`${API_BASE_URL}/api/songs/${id}`, {
                         method: 'DELETE'
                     });
                     if (response.ok) {
@@ -4393,8 +4847,8 @@
             });
     
             // Preview scrolling
-            songPreviewEl.addEventListener('wheel', handleUserScroll);
-            songPreviewEl.addEventListener('touchmove', handleUserScroll);
+            songPreviewEl.addEventListener('wheel', handleUserScroll, { passive: true });
+            songPreviewEl.addEventListener('touchmove', handleUserScroll, { passive: true });
             
             // Auto-scroll controls
             toggleAutoScrollBtn.addEventListener('click', toggleAutoScroll);
@@ -4403,9 +4857,7 @@
             keepScreenOnBtn.addEventListener('click', toggleScreenWakeLock);
     
             // Bulk operations
-            deleteAllSongsBtn.addEventListener('click', () => {
-                confirmDeleteAllModal.style.display = 'flex';
-            });
+            // Song Tools: deleteAllSongsBtn removed
     
     
             cancelDeleteAll.addEventListener('click', () => {
@@ -4538,9 +4990,7 @@
                     document.getElementById('searchHistoryDropdown').style.display = 'none';
                 }
             });
-    
-            // Download/upload
-            downloadBtn.addEventListener('click', downloadSongs);
+
     
             // HTML download
             document.getElementById('downloadHtmlWithSongsBtn').addEventListener('click', () => {
@@ -4592,12 +5042,7 @@
             });
     
             // Folder toggle
-            document.getElementById('toggleSongTools').addEventListener('click', () => {
-                const folder = document.getElementById('songToolsContent');
-                const toggle = document.getElementById('toggleSongTools');
-                folder.classList.toggle('show');
-                toggle.classList.toggle('active');
-            });
+            // Song Tools: toggleSongTools removed
     
             // Suggested songs
             document.getElementById('toggleSuggestedSongs').addEventListener('click', toggleSuggestedSongsDrawer);
@@ -4742,63 +5187,44 @@
         //     });
         // });
 
-        async function configureAuth0() {
-            auth0 = await createAuth0Client({
-                domain: AUTH0_DOMAIN,
-                client_id: AUTH0_CLIENT_ID,
-                cacheLocation: 'localstorage'
-            });
-
-            // Handle redirect callback
-            if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-                await auth0.handleRedirectCallback();
-                window.history.replaceState({}, document.title, '/');
-            }
-
-            // Check login state
-            if (await auth0.isAuthenticated()) {
-                currentUser = await auth0.getUser();
-                document.body.classList.add('logged-in');
-                showNotification(`Welcome, ${currentUser.name || currentUser.email}`);
-            } else {
-                document.body.classList.remove('logged-in');
-            }
+        function login(event) {
+            event && event.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            fetch(`${API_BASE_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.token) {
+                    jwtToken = data.token;
+                    localStorage.setItem('jwtToken', jwtToken);
+                    showNotification('Login successful!');
+                    document.getElementById('loginModal').style.display = 'none';
+                    updateAuthButtons();
+                    loadUserData();
+                    // afterAuthChange() removed: no longer needed
+                } else {
+                    showNotification(data.error || 'Login failed');
+                }
+            })
+            .catch(() => showNotification('Login error'));
         }
 
-        async function login() {
-            window.removeEventListener('beforeunload', beforeUnloadHandler);
-        await auth0.loginWithRedirect({
-            redirect_uri: 'https://swareshpawar.github.io/OldandNew/',
-            audience: 'https://oldandnew.onrender.com/api', // <-- use your API identifier
-            scope: 'openid profile email',
-            prompt: 'consent'
-        });
-        }
-
-        function beforeUnloadHandler(e) {
-            const hasUnsavedSetlists = NewSetlist.length > 0 || OldSetlist.length > 0;
-            const isEditing = isAnyModalOpen;
-            if (hasUnsavedSetlists || isEditing) {
-                e.preventDefault();
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-                return e.returnValue;
-            }
-        }
-        window.addEventListener('beforeunload', beforeUnloadHandler);
-
-        async function logout() {
-            await auth0.logout({
-                returnTo: window.location.origin
-            });
+        function logout() {
+            jwtToken = '';
+            localStorage.removeItem('jwtToken');
             favorites = [];
             NewSetlist = [];
             OldSetlist = [];
-            localStorage.removeItem('favorites');
-            localStorage.removeItem('NewSetlist');
-            localStorage.removeItem('OldSetlist');
             renderFavorites();
             renderSetlist('New');
             renderSetlist('Old');
+            updateAuthButtons();
+            // afterAuthChange() removed: no longer needed
+            showNotification('Logged out');
         }
 
 
@@ -4819,43 +5245,97 @@
         // authBtnContainer.appendChild(logoutBtn);
 
         window.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // 1. Initialize Auth0 (once)
-                await configureAuth0();
-                await updateAuthButtons();
+            // Add login/logout/register buttons to UI if not present
+            if (!document.getElementById('registerBtn')) {
+                const loginBtn = document.getElementById('loginBtn');
+                const logoutBtn = document.getElementById('logoutBtn');
+                const registerBtn = document.createElement('button');
+                registerBtn.id = 'registerBtn';
+                registerBtn.className = 'sidebar-btn btn-login';
+                registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register';
+                loginBtn.parentNode.insertBefore(registerBtn, logoutBtn);
+            }
+            // Add modals for login/register
+            if (!document.getElementById('loginModal')) {
+                const loginModal = document.createElement('div');
+                loginModal.className = 'modal';
+                loginModal.id = 'loginModal';
+                loginModal.innerHTML = `
+                    <div class="modal-content">
+                        <h2>Login</h2>
+                        <form id="loginForm">
+                            <input id="loginUsername" type="text" placeholder="Username" required autocomplete="username"><br>
+                            <input id="loginPassword" type="password" placeholder="Password" required autocomplete="current-password"><br>
+                            <button type="submit" class="btn btn-login">Login</button>
+                            <button type="button" class="btn btn-cancel" id="cancelLogin">Cancel</button>
+                            <button type="button" class="btn btn-edit" id="forgotPasswordBtn" style="margin-top:8px;">Forgot Password?</button>
+                        </form>
+    <!-- Password Reset Modal -->
+    <div class="modal" id="resetPasswordModal">
+        <div class="modal-content">
+            <h2>Reset Password</h2>
+            <form id="resetPasswordForm">
+                <input id="resetUsername" type="text" placeholder="Username" required autocomplete="username"><br>
+                <input id="resetEmail" type="email" placeholder="Email" required autocomplete="email"><br>
+                <input id="resetNewPassword" type="password" placeholder="New Password" required autocomplete="new-password"><br>
+                <button type="submit" class="btn btn-login">Reset Password</button>
+                <button type="button" class="btn btn-cancel" id="cancelResetPassword">Cancel</button>
+            </form>
+        </div>
+    </div>
 
-                // 2. Attach login/logout button handlers
-                document.getElementById('loginBtn').onclick = () => login();
-                document.getElementById('logoutBtn').onclick = () => logout();
+                    </div>
+                `;
+                document.body.appendChild(loginModal);
+            }
+            if (!document.getElementById('registerModal')) {
+                const registerModal = document.createElement('div');
+                registerModal.className = 'modal';
+                registerModal.id = 'registerModal';
+                registerModal.innerHTML = `
+                    <div class="modal-content">
+                        <h2>Register</h2>
+                        <form id="registerForm">
+                            <input id="registerUsername" type="text" placeholder="Username" required autocomplete="username"><br>
+                            <input id="registerEmail" type="email" placeholder="Email" required autocomplete="email"><br>
+                            <input id="registerPassword" type="password" placeholder="Password" required autocomplete="new-password"><br>
+                            <button type="submit" class="btn btn-login">Register</button>
+                            <button type="button" class="btn btn-cancel" id="cancelRegister">Cancel</button>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(registerModal);
+            }
+            // Button event listeners
+            document.getElementById('loginBtn').onclick = showLoginModal;
+            document.getElementById('registerBtn').onclick = showRegisterModal;
+            document.getElementById('logoutBtn').onclick = logout;
+            document.getElementById('loginForm').onsubmit = login;
+            document.getElementById('registerForm').onsubmit = register;
+            document.getElementById('cancelLogin').onclick = () => document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('cancelRegister').onclick = () => document.getElementById('registerModal').style.display = 'none';
+            updateAuthButtons();
 
-                // 3. Render UI and attach all event listeners
-                addEventListeners();
-                addPanelToggles();
-                loadSettings();
+            // Render UI and attach all event listeners
+            addEventListeners();
+            addPanelToggles();
+            loadSettings();
 
-                // 4. Load public data (songs) without requiring login
-                songs = await loadSongsFromFile();
-                renderSongs('New', '', '');
-                applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
-                updateSongCount();
-                connectWebSocket();
-                initScreenWakeLock();
-                setupModalClosing();
-                setupSuggestedSongsClosing();
-                setupModals();
-                setupWindowCloseConfirmation();
+            // Load public data (songs) without requiring login
+            songs = await loadSongsFromFile();
+            renderSongs('New', '', '');
+            applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
+            updateSongCount();
+            // connectWebSocket() removed
+            initScreenWakeLock();
+            setupModalClosing();
+            setupSuggestedSongsClosing();
+            setupModals();
+            setupWindowCloseConfirmation();
 
-                // 5. If user is authenticated, load their user data
-                if (await auth0.isAuthenticated()) {
-                    await loadUserData();
-                }
-
-            } catch (err) {
-                console.error('Initialization failed:', err);
-                showNotification('Failed to initialize app');
-                // Fallback: try to load songs from localStorage
-                songs = JSON.parse(localStorage.getItem('songs')) || [];
-                renderSongs('New', '', '');
+            // If user is authenticated, load their user data
+            if (jwtToken) {
+                await loadUserData();
             }
         });
     </script>
