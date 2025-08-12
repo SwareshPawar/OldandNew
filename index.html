@@ -2173,46 +2173,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // Download All Data (Excel/JSON) logic
 document.addEventListener('DOMContentLoaded', function() {
-    // Update all setlist and favorite buttons on page load
-    setTimeout(() => {
-        document.querySelectorAll('.song-item').forEach(div => {
-            const songId = parseInt(div.dataset.songId);
-            const song = songs.find(s => s.id === songId);
-            if (!song) return;
-            const isInSetlist = song.category === 'New'
-                ? NewSetlist.some(s => s.id === songId)
-                : OldSetlist.some(s => s.id === songId);
-            const setlistBtn = div.querySelector('.toggle-setlist');
-            if (setlistBtn) {
-                setlistBtn.textContent = isInSetlist ? 'Remove' : 'Add';
-                setlistBtn.classList.toggle('btn-primary', !isInSetlist);
-                setlistBtn.classList.toggle('btn-delete', isInSetlist);
-            }
-            const favBtn = div.querySelector('.favorite-btn');
-            if (favBtn) {
-                favBtn.classList.toggle('favorited', favorites.includes(songId));
-            }
-        });
-        // Also update preview buttons if present
-        const previewSetlistBtn = document.getElementById('previewSetlistBtn');
-        if (previewSetlistBtn && songPreviewEl.dataset.songId) {
-            const songId = parseInt(songPreviewEl.dataset.songId);
-            const song = songs.find(s => s.id === songId);
-            if (song) {
-                const isInSetlist = song.category === 'New'
-                    ? NewSetlist.some(s => s.id === songId)
-                    : OldSetlist.some(s => s.id === songId);
-                previewSetlistBtn.textContent = isInSetlist ? 'Remove from Setlist' : 'Add to Setlist';
-                previewSetlistBtn.classList.toggle('btn-primary', !isInSetlist);
-                previewSetlistBtn.classList.toggle('btn-delete', isInSetlist);
-            }
-        }
-        const previewFavoriteBtn = document.getElementById('previewFavoriteBtn');
-        if (previewFavoriteBtn && songPreviewEl.dataset.songId) {
-            const songId = parseInt(songPreviewEl.dataset.songId);
-            previewFavoriteBtn.classList.toggle('favorited', favorites.includes(songId));
-        }
-    }, 200);
     const downloadBtn = document.getElementById('downloadDbDataBtn');
     const modal = document.getElementById('downloadFormatModal');
     const closeModal = document.getElementById('closeDownloadFormatModal');
@@ -3845,16 +3805,6 @@ window.addEventListener('DOMContentLoaded', () => {
                     setlistBtn.textContent = newIsInSetlist ? 'Remove from Setlist' : 'Add to Setlist';
                     setlistBtn.classList.toggle('btn-primary', !newIsInSetlist);
                     setlistBtn.classList.toggle('btn-delete', newIsInSetlist);
-                    // Also update the corresponding button in the song list
-                    const songItem = document.querySelector(`.song-item[data-song-id="${song.id}"]`);
-                    if (songItem) {
-                        const btn = songItem.querySelector('.toggle-setlist');
-                        if (btn) {
-                            btn.textContent = newIsInSetlist ? 'Remove' : 'Add';
-                            btn.classList.toggle('btn-primary', !newIsInSetlist);
-                            btn.classList.toggle('btn-delete', newIsInSetlist);
-                        }
-                    }
                 }, 100);
             });
             
@@ -5327,65 +5277,15 @@ if (addSongBtn && addSongModal) {
                 body: JSON.stringify({ username, password })
             })
             .then(res => res.json())
-            .then(async data => {
+            .then(data => {
                 if (data.token) {
                     jwtToken = data.token;
                     localStorage.setItem('jwtToken', jwtToken);
                     showNotification('Login successful!');
                     document.getElementById('loginModal').style.display = 'none';
                     updateAuthButtons();
-                    await loadUserData();
-                    renderFavorites();
-                    renderSetlist('New');
-                    renderSetlist('Old');
-                    // Update all setlist toggle buttons
-                    document.querySelectorAll('.song-item').forEach(div => {
-                        const songId = parseInt(div.dataset.songId);
-                        const song = songs.find(s => s.id === songId);
-                        if (!song) return;
-                        const isInSetlist = song.category === 'New'
-                            ? NewSetlist.some(s => s.id === songId)
-                            : OldSetlist.some(s => s.id === songId);
-                        const setlistBtn = div.querySelector('.toggle-setlist');
-                        if (setlistBtn) {
-                            setlistBtn.textContent = isInSetlist ? 'Remove' : 'Add';
-                            setlistBtn.classList.toggle('btn-primary', !isInSetlist);
-                            setlistBtn.classList.toggle('btn-delete', isInSetlist);
-                        }
-                        const favBtn = div.querySelector('.favorite-btn');
-                        if (favBtn) {
-                            favBtn.classList.toggle('favorited', favorites.includes(songId));
-                        }
-                    });
-                    // Also update preview buttons if present
-                    const previewSetlistBtn = document.getElementById('previewSetlistBtn');
-                    if (previewSetlistBtn && songPreviewEl.dataset.songId) {
-                        const songId = parseInt(songPreviewEl.dataset.songId);
-                        const song = songs.find(s => s.id === songId);
-                        if (song) {
-                            const isInSetlist = song.category === 'New'
-                                ? NewSetlist.some(s => s.id === songId)
-                                : OldSetlist.some(s => s.id === songId);
-                            previewSetlistBtn.textContent = isInSetlist ? 'Remove from Setlist' : 'Add to Setlist';
-                            previewSetlistBtn.classList.toggle('btn-primary', !isInSetlist);
-                            previewSetlistBtn.classList.toggle('btn-delete', isInSetlist);
-                        }
-                    }
-                    const previewFavoriteBtn = document.getElementById('previewFavoriteBtn');
-                    if (previewFavoriteBtn && songPreviewEl.dataset.songId) {
-                        const songId = parseInt(songPreviewEl.dataset.songId);
-                        previewFavoriteBtn.classList.toggle('favorited', favorites.includes(songId));
-                    }
-                    // Re-render the active song list tab to update all song-item buttons
-                    const NewTab = document.getElementById('NewTab');
-                    const OldTab = document.getElementById('OldTab');
-                    const keyFilter = document.getElementById('keyFilter');
-                    const genreFilter = document.getElementById('genreFilter');
-                    if (NewTab && NewTab.classList.contains('active')) {
-                        renderSongs('New', keyFilter ? keyFilter.value : '', genreFilter ? genreFilter.value : '');
-                    } else if (OldTab && OldTab.classList.contains('active')) {
-                        renderSongs('Old', keyFilter ? keyFilter.value : '', genreFilter ? genreFilter.value : '');
-                    }
+                    loadUserData();
+                    // afterAuthChange() removed: no longer needed
                 } else {
                     showNotification(data.error || 'Login failed');
                 }
