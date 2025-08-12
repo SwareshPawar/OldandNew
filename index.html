@@ -3849,8 +3849,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => { isNavigatingHistory = false; }, 100);
             }
 
-            document.getElementById('prevSongBtn')?.addEventListener('click', showPrevSong);
-            document.getElementById('nextSongBtn')?.addEventListener('click', showNextSong);
+            // document.getElementById('prevSongBtn')?.addEventListener('click', showPrevSong); // Removed undefined function
+            // document.getElementById('nextSongBtn')?.addEventListener('click', showNextSong); // Removed undefined function
 
 
             
@@ -4375,10 +4375,10 @@ window.addEventListener('DOMContentLoaded', () => {
             
             if (touchStartX - touchEndX > swipeThreshold) {
                 // Swipe left - next song
-                showNextSong();
+                // showNextSong(); // Removed undefined function
             } else if (touchEndX - touchStartX > swipeThreshold) {
                 // Swipe right - previous song
-                showPrevSong();
+                // showPrevSong(); // Removed undefined function
             }
         }
     
@@ -4612,9 +4612,9 @@ window.addEventListener('DOMContentLoaded', () => {
                 const swipeThreshold = 50;
                 
                 if (diffX < -swipeThreshold) {
-                    showNextSong(); // Swipe left
+                    // showNextSong(); // Removed undefined function
                 } else if (diffX > swipeThreshold) {
-                    showPrevSong(); // Swipe right
+                    // showPrevSong(); // Removed undefined function
                 }
             }, { passive: true });
 
@@ -4624,9 +4624,9 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
                 
                 if (e.key === 'ArrowRight') {
-                    showNextSong();
+                    // showNextSong(); // Removed undefined function
                 } else if (e.key === 'ArrowLeft') {
-                    showPrevSong();
+                    // showPrevSong(); // Removed undefined function
                 }
 
                 document.addEventListener('keydown', (e) => {
@@ -4639,10 +4639,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (!songPreviewEl.dataset.songId) return;
                 
                 if (e.key === 'ArrowRight') {
-                    showNextSong();
+                    // showNextSong(); // Removed undefined function
                     e.preventDefault();
                 } else if (e.key === 'ArrowLeft') {
-                    showPrevSong();
+                    // showPrevSong(); // Removed undefined function
                     e.preventDefault();
                 }
             });
