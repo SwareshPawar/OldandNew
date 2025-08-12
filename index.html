@@ -3999,8 +3999,12 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="song-audit">
-            ${song.createdBy && song.createdAt ? `<p><strong>Added by:</strong> ${song.createdBy} <span style="color:#888;font-size:0.9em">on ${new Date(song.createdAt).toLocaleString()}</span></p>` : ''}
-            ${song.updatedBy && song.updatedAt ? `<p><strong>Last updated by:</strong> ${song.updatedBy} <span style="color:#888;font-size:0.9em">on ${new Date(song.updatedAt).toLocaleString()}</span></p>` : ''}
+            ${song.updatedAt
+                ? `<p><strong>Updated by:</strong> ${song.updatedBy ? song.updatedBy : 'Unknown'} <span style="color:#888;font-size:0.9em">on ${new Date(song.updatedAt).toLocaleString()}</span></p>`
+                : (song.createdBy && song.createdAt
+                    ? `<p><strong>Added by:</strong> ${song.createdBy} <span style="color:#888;font-size:0.9em">on ${new Date(song.createdAt).toLocaleString()}</span></p>`
+                    : '')
+            }
         </div>
 
         <div class="transpose-controls">
@@ -5035,7 +5039,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     time: document.getElementById('editSongTime').value,
                     taal: document.getElementById('editSongTaal').value,
                     genres: selectedGenres,
-                    lyrics: lyrics
+                    lyrics: lyrics,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: (currentUser && currentUser.username) ? currentUser.username : undefined
                 };
 
                 try {
