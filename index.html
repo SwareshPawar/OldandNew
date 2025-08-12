@@ -2639,24 +2639,26 @@ window.addEventListener('DOMContentLoaded', () => {
             }, duration);
         }
     
+
         function loadSettings() {
+            const showSetlistEl = document.getElementById('showSetlist');
             const savedHeader = localStorage.getItem("sidebarHeader");
             if (savedHeader) document.querySelector(".sidebar-header h2").textContent = savedHeader;
-    
+
             const savedSetlistLabel = localStorage.getItem("setlistText");
-            if (savedSetlistLabel) showSetlistEl.textContent = savedSetlistLabel;
+            if (savedSetlistLabel && showSetlistEl) showSetlistEl.textContent = savedSetlistLabel;
 
             const sessionResetOption = localStorage.getItem("sessionResetOption") || "manual";
-    
+
             const sidebarWidth = localStorage.getItem("sidebarWidth") || "15";
             const songsPanelWidth = localStorage.getItem("songsPanelWidth") || "20";
             const previewMargin = localStorage.getItem("previewMargin") || "40";
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
-    
+
             document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
             document.documentElement.style.setProperty('--preview-margin-left', `${previewMargin}px`);
-    
+
             document.getElementById('sidebarWidthInput').value = sidebarWidth;
             document.getElementById('songsPanelWidthInput').value = songsPanelWidth;
             document.getElementById('previewMarginInput').value = previewMargin;
@@ -4342,32 +4344,32 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        function showNextSong() {
-            const currentSongId = parseInt(songPreviewEl.dataset.songId);
-            if (!currentSongId) return;
-            
-            const songList = getCurrentSongList();
-            if (songList.length === 0) return;
-            
-            const currentIndex = songList.findIndex(song => song.id === currentSongId);
-            const nextIndex = (currentIndex + 1) % songList.length;
-            
-            showPreview(songList[nextIndex]);
-        }
+        function saveSettings() {
+            const showSetlistEl = document.getElementById('showSetlist');
+            const newHeader = document.getElementById("sidebarHeaderInput").value;
+            const newSetlist = document.getElementById("setlistTextInput").value;
+            const sidebarWidth = document.getElementById("sidebarWidthInput").value;
+            const songsPanelWidth = document.getElementById("songsPanelWidthInput").value;
+            const previewMargin = document.getElementById("previewMarginInput").value;
+            const newAutoScrollSpeed = document.getElementById("autoScrollSpeedInput").value;
+            const sessionResetOption = document.getElementById("sessionResetOption").value;
 
-        function showPrevSong() {
-            const currentSongId = parseInt(songPreviewEl.dataset.songId);
-            if (!currentSongId) return;
-            
-            const songList = getCurrentSongList();
-            if (songList.length === 0) return;
-            
-            const currentIndex = songList.findIndex(song => song.id === currentSongId);
-            const prevIndex = (currentIndex - 1 + songList.length) % songList.length;
-            
-            showPreview(songList[prevIndex]);
-        }
+            document.querySelector(".sidebar-header h2").textContent = newHeader;
+            if (showSetlistEl) showSetlistEl.textContent = newSetlist;
 
+            document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
+            document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
+            document.documentElement.style.setProperty('--preview-margin-left', `${previewMargin}px`);
+
+            localStorage.setItem("sidebarHeader", newHeader);
+            localStorage.setItem("setlistText", newSetlist);
+            localStorage.setItem("sidebarWidth", sidebarWidth);
+            localStorage.setItem("songsPanelWidth", songsPanelWidth);
+            localStorage.setItem("previewMargin", previewMargin);
+            localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
+            localStorage.setItem("sessionResetOption", sessionResetOption);
+            autoScrollSpeed = parseInt(newAutoScrollSpeed);
+        }
         function handleSwipe() {
             const swipeThreshold = 50; // Minimum swipe distance in pixels
             
