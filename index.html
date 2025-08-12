@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.19/auth0-spa-js.production.js"></script>
+    <!-- Auth0 script removed: now using local JWT auth -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New & Old Songs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -1498,12 +1498,161 @@
                 <h2>New & Old</h2>
             </div>
             <ul class="sidebar-menu">
+                <div id="userGreeting" style="display:none;font-weight:bold;margin-bottom:8px;"></div>
                 <button id="loginBtn" class="sidebar-btn btn-login"><i class="fas fa-sign-in-alt"></i> Login</button>
                 <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <button id="adminPanelBtn" class="sidebar-btn" style="display:none;"><i class="fas fa-cogs"></i> Admin Panel</button>
+        <!-- Admin Panel Modal -->
+            <style>
+                #adminPanelModal.modal {
+                    display: none;
+                    position: fixed;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.45);
+                    z-index: 9999;
+                    align-items: center;
+                    justify-content: center;
+                }
+                #adminPanelModal .modal-content {
+                    background: #fff;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+                    max-width: 420px;
+                    width: 95vw;
+                    padding: 32px 24px 24px 24px;
+                    position: relative;
+                    animation: fadeIn 0.2s;
+                }
+                #adminPanelModal h2 {
+                    margin-top: 0;
+                    margin-bottom: 18px;
+                    font-size: 1.5em;
+                    color: #2c3e50;
+                    text-align: center;
+                }
+                #adminPanelModal .close-modal {
+                    position: absolute;
+                    top: 12px;
+                    right: 18px;
+                    font-size: 2em;
+                    color: #888;
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+                #adminPanelModal .close-modal:hover {
+                    color: #e74c3c;
+                }
+                #adminPanelModal .admin-tabs {
+                    display: flex;
+                    gap: 10px;
+                    margin-bottom: 18px;
+                    justify-content: center;
+                }
+                #adminPanelModal .admin-tab {
+                    background: #f0f0f0;
+                    border: none;
+                    border-radius: 6px 6px 0 0;
+                    padding: 8px 18px;
+                    font-size: 1em;
+                    cursor: pointer;
+                    color: #333;
+                    transition: background 0.2s, color 0.2s;
+                }
+                #adminPanelModal .admin-tab.active {
+                    background: #3498db;
+                    color: #fff;
+                    font-weight: bold;
+                }
+                #adminPanelModal .admin-tab-content {
+                    background: #fafbfc;
+                    border-radius: 0 0 8px 8px;
+                    padding: 18px 0 0 0;
+                }
+                #adminPanelModal #usersTable {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 0;
+                    background: #fff;
+                }
+                #adminPanelModal #usersTable th, #adminPanelModal #usersTable td {
+                    padding: 10px 8px;
+                    text-align: left;
+                    border-bottom: 1px solid #eaeaea;
+                    font-size: 1em;
+                    color: #222;
+                    word-break: break-all;
+                }
+                #adminPanelModal #usersTable th {
+                    background: #f6f8fa;
+                    color: #3498db;
+                    font-weight: 600;
+                    border-top: 1px solid #eaeaea;
+                }
+                #adminPanelModal #usersTable tr:last-child td {
+                    border-bottom: none;
+                }
+                #adminPanelModal .admin-badge {
+                    background: #27ae60;
+                    color: #fff;
+                    border-radius: 4px;
+                    padding: 2px 8px;
+                    font-size: 0.95em;
+                    font-weight: 500;
+                }
+                #adminPanelModal .btn {
+                    background: #3498db;
+                    color: #fff;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 5px 14px;
+                    font-size: 1em;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                #adminPanelModal .btn[disabled] {
+                    background: #aaa;
+                    cursor: not-allowed;
+                }
+                #adminPanelModal .notification {
+                    margin-bottom: 10px;
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    background: #e0ffe0;
+                    color: #155724;
+                    display: none;
+                    font-size: 1em;
+                    text-align: center;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: scale(0.98); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+            </style>
+            <div id="adminPanelModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="document.getElementById('adminPanelModal').style.display='none'">&times;</span>
+                    <h2>Admin Panel</h2>
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" id="userMgmtTab">User Management</button>
+                    </div>
+                    <div class="admin-tab-content" id="userMgmtTabContent">
+                        <div class="notification" id="adminNotification"></div>
+                        <table id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Admin</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
                 <li><a href="#" class="active" id="showAll">All Songs</a></li>
                 <li><a href="#" id="showSetlist">Setlist</a></li>   
                 <li><a href="#" id="showFavorites">Favorites</a></li>
-                <li><a href="SONGSADMINCHURCHCHORDS.html"><i class="fas fa-cogs"></i> Admin Portal</a></li>
 
             </ul>
             </ul>
@@ -1921,8 +2070,11 @@
     </script>
 
     <script>
-        // Initialize songs and setlists
-        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+    // Always define notificationEl first so it's available to all functions
+    const notificationEl = document.getElementById('notification');
+
+    // Initialize songs and setlists
+    let isDarkMode = localStorage.getItem('darkMode') === 'true';
         let socket = null;
         let songs = [];
         let favorites = [];
@@ -1932,24 +2084,54 @@
         let touchStartX = 0;
         let touchStartY = 0;
         let isScrolling = false;
-        let auth0 = null;
+        let jwtToken = localStorage.getItem('jwtToken') || '';
         let currentUser = null;
+        // Restore currentUser from localStorage if available
+        try {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) currentUser = JSON.parse(storedUser);
+        } catch {}
 
-        const AUTH0_DOMAIN = 'dev-yr80e6pevtcdjxvg.us.auth0.com'; // e.g. dev-xxxxxx.us.auth0.com
-        const AUTH0_CLIENT_ID = 'Q1PyriLbgLVsC21MrBBC8RJgcnaTx6SV';
+
+        // Dynamic API base URL for local/dev/prod
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3001'
+            : 'https://oldandnew.onrender.com';
+
+        // Restore JWT token and user state on every refresh
+        if (!jwtToken && localStorage.getItem('jwtToken')) {
+            jwtToken = localStorage.getItem('jwtToken');
+        }
+
+
+        // On script load, update UI and user data if logged in
+        if (jwtToken) {
+            // Always load user data, then update UI
+            loadUserData().then(() => {
+                updateAuthButtons();
+            });
+        } else {
+            updateAuthButtons(); // Ensure greeting is cleared if not logged in
+        }
+
+        // Also ensure greeting is updated after DOM is ready (in case of async issues)
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAuthButtons();
+        });
             
         async function loadSongsFromFile() {
             try {
-                const response = await authFetch('https://oldandnew.onrender.com/api/songs');
+                const response = await authFetch(`${API_BASE_URL}/api/songs`);
                 if (response.ok) {
                     const data = await response.json();
                     return Array.isArray(data) ? data : [];
                 } else {
-                    console.error('API error:', response.status, await response.text());
+                    const errorText = await response.text();
+                    console.error('API error in loadSongsFromFile:', response.status, errorText);
                 }
                 return [];
             } catch (err) {
-                console.error('Error loading songs from API:', err);
+                console.error('Error loading songs from API (loadSongsFromFile):', err);
                 return [];
             }
         }
@@ -2006,15 +2188,206 @@
         const confirmDeleteAll = document.getElementById('confirmDeleteAll');
         const searchInput = document.getElementById('searchInput');
         const clearSearchBtn = document.getElementById('clearSearch');
-        const toggleSidebarBtn = document.getElementById('toggle-sidebar');
-        const toggleSongsBtn = document.getElementById('toggle-songs');
-        const toggleAllPanelsBtn = document.getElementById('toggle-all-panels');
-        const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
-        const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
-        const notificationEl = document.getElementById('notification');
-        document.getElementById('loginBtn').onclick = () => login();
-        document.getElementById('logoutBtn').onclick = () => auth0.logout({ returnTo: window.location.origin });
-        const NAMESPACE = 'https://oldandnew.example.com/';
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+    const toggleSongsBtn = document.getElementById('toggle-songs');
+    const toggleAllPanelsBtn = document.getElementById('toggle-all-panels');
+    const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
+    const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
+
+    document.getElementById('loginBtn').onclick = () => showLoginModal();
+    document.getElementById('logoutBtn').onclick = () => logout();
+    // --- Admin Panel Logic ---
+    async function fetchUsers() {
+        try {
+            const jwtToken = localStorage.getItem('jwtToken');
+            const res = await fetch(`${API_BASE_URL}/api/users`, {
+                headers: { 'Authorization': `Bearer ${jwtToken}` }
+            });
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('API error in fetchUsers:', res.status, errorText);
+                return [];
+            }
+            return res.json();
+        } catch (err) {
+            console.error('Network error in fetchUsers:', err);
+            return [];
+        }
+    }
+    async function markAdmin(userId) {
+        try {
+            const jwtToken = localStorage.getItem('jwtToken');
+            const res = await fetch(`${API_BASE_URL}/api/users/${userId}/admin`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ isAdmin: true })
+            });
+            if (res.ok) {
+                showAdminNotification('User marked as admin');
+                loadUsers();
+            } else {
+                const errorText = await res.text();
+                console.error('API error in markAdmin:', res.status, errorText);
+                showAdminNotification('Failed to update user');
+            }
+        } catch (err) {
+            console.error('Network error in markAdmin:', err);
+            showAdminNotification('Failed to update user');
+        }
+    }
+    function showAdminNotification(msg) {
+        const n = document.getElementById('adminNotification');
+        n.textContent = msg;
+        n.style.display = 'block';
+        setTimeout(() => n.style.display = 'none', 2000);
+    }
+    function renderUsers(users) {
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = '';
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="max-width:180px;overflow-wrap:break-word;">${user.username}</td>
+                <td>${user.isAdmin ? '<span class=\"admin-badge\">Admin</span>' : ''}</td>
+                <td>
+                    <button class="btn" ${user.isAdmin ? 'disabled' : ''} onclick="markAdmin('${user._id}')">Mark Admin</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    async function loadUsers() {
+        const users = await fetchUsers();
+        renderUsers(users);
+    }
+    function showAdminPanelModal() {
+        document.getElementById('adminPanelModal').style.display = 'flex';
+        // Tab logic (future-proof)
+        document.getElementById('userMgmtTab').classList.add('active');
+        document.getElementById('userMgmtTabContent').style.display = '';
+        loadUsers();
+        window.markAdmin = markAdmin;
+    }
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
+    adminPanelBtn.onclick = () => showAdminPanelModal();
+        // Show login modal (local/JWT)
+        function showLoginModal() {
+            let modal = document.getElementById('loginModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'loginModal';
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <span class="close-modal" onclick="this.closest('.modal').style.display='none'">×</span>
+                        <h3>Login</h3>
+                        <input id="loginUsername" type="text" placeholder="Username" style="width:100%;margin-bottom:10px;">
+                        <input id="loginPassword" type="password" placeholder="Password" style="width:100%;margin-bottom:10px;">
+                        <button id="loginSubmitBtn" class="btn btn-primary" style="width:100%;">Login</button>
+                        <div style="margin-top:10px;text-align:center;">
+                            <a href="#" id="showRegisterLink">Register</a>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                document.getElementById('loginSubmitBtn').onclick = login;
+                document.getElementById('showRegisterLink').onclick = (e) => {
+                    e.preventDefault();
+                    modal.style.display = 'none';
+                    showRegisterModal();
+                };
+            }
+            modal.style.display = 'flex';
+        }
+
+        function showRegisterModal() {
+            let modal = document.getElementById('registerModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'registerModal';
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <span class="close-modal" onclick="this.closest('.modal').style.display='none'">×</span>
+                        <h3>Register</h3>
+                        <input id="registerUsername" type="text" placeholder="Username" style="width:100%;margin-bottom:10px;">
+                        <input id="registerPassword" type="password" placeholder="Password" style="width:100%;margin-bottom:10px;">
+                        <button id="registerSubmitBtn" class="btn btn-primary" style="width:100%;">Register</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                document.getElementById('registerSubmitBtn').onclick = register;
+            }
+            modal.style.display = 'flex';
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok && data.token) {
+                    jwtToken = data.token;
+                    localStorage.setItem('jwtToken', jwtToken);
+                    currentUser = data.user;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    document.getElementById('loginModal').style.display = 'none';
+                    showNotification('Login successful!');
+                    // If user is admin, reload page to ensure all admin UI loads
+                    if (currentUser && (currentUser.isAdmin === true || currentUser.isAdmin === 'true')) {
+                        setTimeout(() => { window.location.reload(); }, 500);
+                    } else {
+                        updateAuthButtons();
+                        await loadUserData();
+                    }
+                } else {
+                    showNotification(data.error || 'Login failed');
+                }
+            } catch (err) {
+                showNotification('Login error');
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('registerModal').style.display = 'none';
+                    showNotification('Registration successful! Please login.');
+                } else {
+                    showNotification(data.error || 'Registration failed');
+                }
+            } catch (err) {
+                showNotification('Registration error');
+            }
+        }
+
+        function logout() {
+            jwtToken = '';
+            localStorage.removeItem('jwtToken');
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            showNotification('Logged out');
+            updateAuthButtons();
+            // Reload page after logout to ensure all admin UI is removed
+            setTimeout(() => { window.location.reload(); }, 500);
+        }
+    // Auth0 NAMESPACE removed
 
     
         // Auto-scroll and chord variables
@@ -2039,6 +2412,12 @@
         async function init() {
             // Ensure admin panel button is updated after all data is loaded
             if (typeof updateAdminPanelBtn === 'function') updateAdminPanelBtn();
+            // Always restore JWT and user state on init
+            jwtToken = localStorage.getItem('jwtToken') || '';
+            if (jwtToken) {
+                updateAuthButtons();
+                await loadUserData();
+            }
             songs = await loadSongsFromFile();
             const localSongs = JSON.parse(localStorage.getItem('songs')) || [];
             if (localSongs.length > 0) {
@@ -2049,19 +2428,17 @@
                     }
                 });
             }
-            
             loadSettings();
-            await loadUserData();
             addEventListeners();
             addPanelToggles();
             renderSongs('New', '', '');
             applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
-    
+
             if (isDarkMode) {
                 document.body.classList.add('dark-mode');
                 document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
             }
-    
+
             connectWebSocket();
             updateSongCount();
             initScreenWakeLock();
@@ -2069,22 +2446,9 @@
             setupSuggestedSongsClosing();
             setupModals();
             setupWindowCloseConfirmation();
-            
-
 
             // Back/forward navigation
 
-            // Page exit confirmation
-            window.addEventListener('beforeunload', (e) => {
-            // Only show confirmation if there are songs in setlists or editing
-            if (NewSetlist.length > 0 || OldSetlist.length > 0 || 
-                document.querySelector('.modal[style*="flex"]')) {
-                e.preventDefault();
-                // Modern browsers require returnValue to be set
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-                return e.returnValue;
-            }
-        });
 
             // Handle initial page load with hash
             if (window.location.hash) {
@@ -2093,48 +2457,28 @@
                 if (song) {
                     navigationHistory = [song.id];
                     currentHistoryPosition = 0;
-                    history.replaceState({ 
-                        songId: song.id, 
-                        position: 0 
-                    }, '', `#song-${song.id}`);
+                    history.replaceState({ songId: song.id, position: 0 }, '', `#song-${song.id}`);
                     showPreview(song, true);
                 }
             }
 
             window.addEventListener('popstate', (event) => {
-
                 if (event.state?.modalOpen) {
-                    if (currentModal) {
-                        closeModal(currentModal);
-                    }
+                    if (currentModal) closeModal(currentModal);
                     return;
                 }
-
-            // Handle song navigation
-            if (event.state?.position !== undefined) {
-                isNavigatingHistory = true;
-                currentHistoryPosition = event.state.position;
-                
-                const songId = navigationHistory[currentHistoryPosition];
-                const song = songs.find(s => s.id === songId);
-                
-                if (song) {
-                    showPreview(song, true);
-                } else {
-                    songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
+                if (event.state?.position !== undefined) {
+                    isNavigatingHistory = true;
+                    currentHistoryPosition = event.state.position;
+                    const songId = navigationHistory[currentHistoryPosition];
+                    const song = songs.find(s => s.id === songId);
+                    if (song) {
+                        showPreview(song, true);
+                    } else {
+                        songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
+                    }
                 }
-            }
-        });
-                    if (window.location.hash) {
-                const songId = parseInt(window.location.hash.replace('#song-', ''));
-                const song = songs.find(s => s.id === songId);
-                if (song) {
-                    navigationHistory.push(song.id);
-                    currentHistoryPosition = 0;
-                    history.replaceState({ songId: song.id, position: 0 }, '', `#song-${song.id}`);
-                    showPreview(song);
-                }
-            }
+            });
         }
 
         function queueSaveUserData() {
@@ -2202,32 +2546,100 @@
         }
 
 
-        async function updateAuthButtons() {
-            const isLoggedIn = await auth0.isAuthenticated();
+        function updateAuthButtons() {
+            const isLoggedIn = !!jwtToken;
+            const userGreeting = document.getElementById('userGreeting');
+            if (isLoggedIn && currentUser && currentUser.username) {
+                userGreeting.textContent = `Hi, ${currentUser.username}`;
+                userGreeting.style.display = 'block';
+            } else {
+                userGreeting.textContent = '';
+                userGreeting.style.display = 'none';
+            }
             document.getElementById('loginBtn').style.display = isLoggedIn ? 'none' : 'block';
             document.getElementById('logoutBtn').style.display = isLoggedIn ? 'block' : 'none';
-
-            // Show/hide Delete Songs menu item
-            if (await isAdmin()) {
+            const isAdminUser = isAdmin();
+            document.getElementById('adminPanelBtn').style.display = isAdminUser ? 'block' : 'none';
+            if (isAdminUser) {
                 document.getElementById('deleteAllSongsBtn').style.display = 'block';
             } else {
                 document.getElementById('deleteAllSongsBtn').style.display = 'none';
             }
-
-            // Optionally, hide the delete section if user logs out
             if (!isLoggedIn) {
                 document.getElementById('deleteSection').style.display = 'none';
             }
+    // --- Admin Panel Logic ---
+    const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://oldandnew.onrender.com';
+    async function fetchUsers() {
+        const jwtToken = localStorage.getItem('jwtToken');
+        const res = await fetch(`${API_BASE_URL}/api/users`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+        if (!res.ok) return [];
+        return res.json();
+    }
+    async function markAdmin(userId) {
+        const jwtToken = localStorage.getItem('jwtToken');
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}/admin`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${jwtToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ isAdmin: true })
+        });
+        if (res.ok) {
+            showAdminNotification('User marked as admin');
+            loadUsers();
+        } else {
+            showAdminNotification('Failed to update user');
+        }
+    }
+    function showAdminNotification(msg) {
+        const n = document.getElementById('adminNotification');
+        n.textContent = msg;
+        n.style.display = 'block';
+        setTimeout(() => n.style.display = 'none', 2000);
+    }
+    function renderUsers(users) {
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = '';
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${user.username}</td>
+                <td>${user.isAdmin ? '<span style=\"color:green;font-weight:bold;\">Admin</span>' : ''}</td>
+                <td>
+                    <button class="btn" ${user.isAdmin ? 'disabled' : ''} onclick="markAdmin('${user._id}')">Mark Admin</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    async function loadUsers() {
+        const users = await fetchUsers();
+        renderUsers(users);
+    }
+    function showAdminPanelModal() {
+        document.getElementById('adminPanelModal').style.display = 'flex';
+        // Tab logic (future-proof)
+        document.getElementById('userMgmtTab').classList.add('active');
+        document.getElementById('userMgmtTabContent').style.display = '';
+        loadUsers();
+        window.markAdmin = markAdmin;
+    }
+    // Tab switching (future-proof, only one tab for now)
+    document.getElementById('userMgmtTab').onclick = function() {
+        document.getElementById('userMgmtTab').classList.add('active');
+        document.getElementById('userMgmtTabContent').style.display = '';
+    };
         }
         // window.addEventListener('DOMContentLoaded', updateAuthButtons);
 
         async function authFetch(url, options = {}) {
-            if (await auth0.isAuthenticated()) {
-                const token = await auth0.getTokenSilently({
-                    audience: 'https://oldandnew.onrender.com/api'
-                });
-                options.headers = options.headers || {};
-                options.headers['Authorization'] = `Bearer ${token}`;
+            options.headers = options.headers || {};
+            if (jwtToken) {
+                options.headers['Authorization'] = `Bearer ${jwtToken}`;
             }
             return fetch(url, options);
         }
@@ -2474,7 +2886,7 @@
     
 
         async function loadSetlists() {
-            const response = await authFetch('https://oldandnew.onrender.com/api/userdata');
+            const response = await authFetch(`${API_BASE_URL}/api/userdata`);
             if (response.ok) {
                 const data = await response.json();
                 favorites = data.favorites || [];
@@ -2486,33 +2898,49 @@
 
         async function loadUserData() {
             try {
-                const response = await authFetch('https://oldandnew.onrender.com/api/userdata');
+                const response = await authFetch(`${API_BASE_URL}/api/userdata`);
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data.favorites)) favorites = data.favorites;
                     if (Array.isArray(data.NewSetlist)) NewSetlist = data.NewSetlist;
                     if (Array.isArray(data.OldSetlist)) OldSetlist = data.OldSetlist;
+                    if (data.user && data.user.username) {
+                        currentUser = data.user;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    }
+                    updateAuthButtons();
+                } else if (response.status === 401 || response.status === 403) {
+                    logout();
+                    showNotification('Session expired. Please log in again.');
+                } else {
+                    let msg = 'Failed to load user data';
+                    try {
+                        const errData = await response.json();
+                        if (errData && errData.error) msg = errData.error;
+                    } catch {}
+                    console.error('API error in loadUserData:', response.status, msg);
+                    showNotification(msg);
                 }
             } catch (err) {
-                showNotification('Failed to load user data');
+                console.error('Network error in loadUserData:', err);
+                showNotification('Network error: Failed to load user data');
             }
         }
 
         async function saveUserData() {
             try {
-                const user = await auth0.getUser();
-                const response = await authFetch('https://oldandnew.onrender.com/api/userdata', {
+                const response = await authFetch(`${API_BASE_URL}/api/userdata`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         favorites,
                         NewSetlist,
-                        OldSetlist,
-                        name: user?.name || '',
-                        email: user?.email || ''
+                        OldSetlist
                     })
                 });
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error in saveUserData:', response.status, errorText);
                     showNotification('Failed to save user data');
                     return false;
                 }
@@ -2522,10 +2950,12 @@
                     // Success!
                     return true;
                 } else {
+                    console.error('Unexpected response in saveUserData:', data);
                     showNotification('Failed to save user data');
                     return false;
                 }
             } catch (err) {
+                console.error('Network error in saveUserData:', err);
                 showNotification('Error saving user data');
                 return false;
             }
@@ -2784,15 +3214,13 @@
 
                 // Show delete button only for admins
                 const deleteBtn = div.querySelector('.delete-song');
-                isAdmin().then(isAdminUser => {
-                    if (isAdminUser) {
-                        deleteBtn.style.display = '';
-                        deleteBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            openDeleteSongModal(song.id);
-                        });
-                    }
-                });
+                if (isAdmin()) {
+                    deleteBtn.style.display = '';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openDeleteSongModal(song.id);
+                    });
+                }
                 
                 div.addEventListener('click', () => {
                     showPreview(song);
@@ -3191,10 +3619,15 @@
                 });
         }
 
-        async function isAdmin() {
-            const token = await auth0.getIdTokenClaims();
-            const roles = token && token[`${NAMESPACE}roles`];
-            return roles && (roles.includes('Admin') || roles.includes('admin'));
+        function isAdmin() {
+            if (!jwtToken) return false;
+            try {
+                const payload = JSON.parse(atob(jwtToken.split('.')[1]));
+                // Accept both boolean true and string 'true' for isAdmin
+                return payload && (payload.isAdmin === true || payload.isAdmin === 'true');
+            } catch {
+                return false;
+            }
         }
     
         function renderSetlist(category) {
@@ -3396,6 +3829,7 @@
                 <button class="btn btn-edit" id="previewEditBtn">
                     <i class="fas fa-edit"></i> Edit
                 </button>
+                ${isAdmin() ? `<button class="btn btn-delete" id="previewDeleteBtn"><i class="fas fa-trash-alt"></i> Delete</button>` : ''}
             </div>
         </div>
 
@@ -3456,6 +3890,18 @@
             document.getElementById('previewEditBtn').addEventListener('click', (e) => {
                 editSong(song.id);
             });
+            // Add delete button event for admins
+            if (isAdmin()) {
+                const delBtn = document.getElementById('previewDeleteBtn');
+                if (delBtn) {
+                    delBtn.addEventListener('click', () => {
+                        // Open the delete modal for this song
+                        document.getElementById('deleteSongId').value = song.id;
+                        document.getElementById('deleteSongTitle').textContent = song.title;
+                        document.getElementById('deleteSongModal').style.display = 'flex';
+                    });
+                }
+            }
             
             document.getElementById('transpose-up').addEventListener('click', () => {
                 const currentLevel = parseInt(document.getElementById('transpose-level').textContent);
@@ -4227,23 +4673,9 @@
                 }
             });
                         // Handle session reset based on settings
-                        window.addEventListener('beforeunload', (e) => {
-                const resetOption = localStorage.getItem("sessionResetOption") || "manual";
-                
-                if (resetOption === "onClose") {
-                    resetApplicationState();
-                }
-                
-                // Existing beforeunload logic...
-            });
 
-            window.addEventListener('load', () => {
-                const resetOption = localStorage.getItem("sessionResetOption") || "manual";
-                
-                if (resetOption === "onRefresh") {
-                    resetApplicationState();
-                }
-            });
+            // Disabled automatic reset on refresh/close to prevent loss of JWT and user data
+            // If you want to allow a full reset, call resetApplicationState() explicitly from a button or menu
             
             document.querySelectorAll('#genreDropdown .multiselect-option').forEach(option => {
                 option.addEventListener('click', () => {
@@ -4302,7 +4734,7 @@
                 };
 
                 try {
-                    const response = await authFetch('https://oldandnew.onrender.com/api/songs', {
+                    const response = await authFetch(`${API_BASE_URL}/api/songs`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(newSong)
@@ -4345,7 +4777,7 @@
                 };
 
                 try {
-                    const response = await authFetch(`https://oldandnew.onrender.com/api/songs/${id}`, {
+                    const response = await authFetch(`${API_BASE_URL}/api/songs/${id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updatedSong)
@@ -4373,7 +4805,7 @@
                 e.preventDefault();
                 const id = document.getElementById('deleteSongId').value;
                 try {
-                    const response = await authFetch(`https://oldandnew.onrender.com/api/songs/${id}`, {
+                    const response = await authFetch(`${API_BASE_URL}/api/songs/${id}`, {
                         method: 'DELETE'
                     });
                     if (response.ok) {
@@ -4731,131 +5163,19 @@
         window.removeFromSetlist = removeFromSetlist;
         window.renderSetlist = renderSetlist;
     
+
         // Start the application
-        // window.addEventListener('DOMContentLoaded', () => {
-        //     init().catch(err => {
-        //         console.error('Initialization failed:', err);
-        //         songs = JSON.parse(localStorage.getItem('songs')) || [];
-        //         renderSongs('New', '', '');
-        //     });
-        // });
-
-        async function configureAuth0() {
-            auth0 = await createAuth0Client({
-                domain: AUTH0_DOMAIN,
-                client_id: AUTH0_CLIENT_ID,
-                cacheLocation: 'localstorage'
-            });
-
-            // Handle redirect callback
-            if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-                await auth0.handleRedirectCallback();
-                window.history.replaceState({}, document.title, '/');
-            }
-
-            // Check login state
-            if (await auth0.isAuthenticated()) {
-                currentUser = await auth0.getUser();
-                document.body.classList.add('logged-in');
-                showNotification(`Welcome, ${currentUser.name || currentUser.email}`);
+        window.addEventListener('DOMContentLoaded', () => {
+            // Restore login state and update UI
+            if (jwtToken) {
+                loadUserData(); // This will call updateAuthButtons after user is loaded
             } else {
-                document.body.classList.remove('logged-in');
+                updateAuthButtons();
             }
-        }
-
-        async function login() {
-            window.removeEventListener('beforeunload', beforeUnloadHandler);
-        await auth0.loginWithRedirect({
-            redirect_uri: 'https://swareshpawar.github.io/OldandNew/',
-            audience: 'https://oldandnew.onrender.com/api', // <-- use your API identifier
-            scope: 'openid profile email',
-            prompt: 'consent'
+            // ...existing code for any other initialization...
         });
-        }
 
-        function beforeUnloadHandler(e) {
-            const hasUnsavedSetlists = NewSetlist.length > 0 || OldSetlist.length > 0;
-            const isEditing = isAnyModalOpen;
-            if (hasUnsavedSetlists || isEditing) {
-                e.preventDefault();
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-                return e.returnValue;
-            }
-        }
-        window.addEventListener('beforeunload', beforeUnloadHandler);
-
-        async function logout() {
-            await auth0.logout({
-                returnTo: window.location.origin
-            });
-            favorites = [];
-            NewSetlist = [];
-            OldSetlist = [];
-            localStorage.removeItem('favorites');
-            localStorage.removeItem('NewSetlist');
-            localStorage.removeItem('OldSetlist');
-            renderFavorites();
-            renderSetlist('New');
-            renderSetlist('Old');
-        }
-
-
-
-        // Add login/logout buttons
-        // const authBtnContainer = document.createElement('div');
-        // authBtnContainer.className = 'auth-buttons';
-        // document.body.appendChild(authBtnContainer);
-
-        // const loginBtn = document.createElement('button');
-        // loginBtn.textContent = 'Login';
-        // loginBtn.addEventListener('click', login);
-        // authBtnContainer.appendChild(loginBtn);
-
-        // const logoutBtn = document.createElement('button');
-        // logoutBtn.textContent = 'Logout';
-        // logoutBtn.addEventListener('click', logout);
-        // authBtnContainer.appendChild(logoutBtn);
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // 1. Initialize Auth0 (once)
-                await configureAuth0();
-                await updateAuthButtons();
-
-                // 2. Attach login/logout button handlers
-                document.getElementById('loginBtn').onclick = () => login();
-                document.getElementById('logoutBtn').onclick = () => logout();
-
-                // 3. Render UI and attach all event listeners
-                addEventListeners();
-                addPanelToggles();
-                loadSettings();
-
-                // 4. Load public data (songs) without requiring login
-                songs = await loadSongsFromFile();
-                renderSongs('New', '', '');
-                applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
-                updateSongCount();
-                connectWebSocket();
-                initScreenWakeLock();
-                setupModalClosing();
-                setupSuggestedSongsClosing();
-                setupModals();
-                setupWindowCloseConfirmation();
-
-                // 5. If user is authenticated, load their user data
-                if (await auth0.isAuthenticated()) {
-                    await loadUserData();
-                }
-
-            } catch (err) {
-                console.error('Initialization failed:', err);
-                showNotification('Failed to initialize app');
-                // Fallback: try to load songs from localStorage
-                songs = JSON.parse(localStorage.getItem('songs')) || [];
-                renderSongs('New', '', '');
-            }
-        });
+    // Auth0 functions and initialization removed. All authentication is now JWT/local.
     </script>
     <!-- Suggested Songs Drawer -->
 <div class="suggested-songs-drawer" id="suggestedSongsDrawer">
