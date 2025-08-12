@@ -1,5 +1,4 @@
-
-    <style>
+<style>
     /* Admin Panel Styles */
     #adminPanelModal .modal-content {
         background: #fffbe7;
@@ -124,6 +123,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <style>
+    /* Loading Spinner Overlay */
+    #loadingSpinnerOverlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.85);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s;
+        pointer-events: all;
+    }
+    #loadingSpinnerOverlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+    .spinner {
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #b38a00;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    </style>
     <!-- Auth0 script removed -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New & Old Songs</title>
@@ -1599,6 +1628,10 @@
     </style>
 </head>
 <body>
+    <!-- Loading Spinner Overlay (visible by default) -->
+    <div id="loadingSpinnerOverlay">
+        <div class="spinner"></div>
+    </div>
     <!-- Admin Panel Modal -->
     <div class="modal" id="adminPanelModal" style="display:none;">
         <div class="modal-content">
@@ -2108,6 +2141,36 @@
     </script>
 
     <script>
+// Genre multiselect for Add Song
+document.addEventListener('DOMContentLoaded', function() {
+    function setupGenreMultiselect(inputId, dropdownId) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        if (!input || !dropdown) return;
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+        // Hide dropdown on outside click
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.classList.remove('show');
+            }
+        });
+        // Select/deselect genres
+        dropdown.querySelectorAll('.multiselect-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                option.classList.toggle('selected');
+                // Update input value
+                const selected = Array.from(dropdown.querySelectorAll('.multiselect-option.selected')).map(opt => opt.dataset.value);
+                input.value = selected.join(', ');
+            });
+        });
+    }
+    setupGenreMultiselect('songGenre', 'genreDropdown');
+    setupGenreMultiselect('editSongGenre', 'editGenreDropdown');
+});
 // Download All Data (Excel/JSON) logic
 document.addEventListener('DOMContentLoaded', function() {
     // Update all setlist and favorite buttons on page load
@@ -2405,8 +2468,14 @@ window.addEventListener('DOMContentLoaded', () => {
         const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
         const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
         const notificationEl = document.getElementById('notification');
-        document.getElementById('loginBtn').onclick = () => login();
-        document.getElementById('logoutBtn').onclick = logout;
+        document.getElementById('loginBtn').onclick = () => {
+            login();
+            setTimeout(() => window.location.reload(), 500);
+        };
+        document.getElementById('logoutBtn').onclick = () => {
+            logout();
+            setTimeout(() => window.location.reload(), 500);
+        };
         const NAMESPACE = 'https://oldandnew.example.com/';
 
     
@@ -2430,6 +2499,8 @@ window.addEventListener('DOMContentLoaded', () => {
     
         // Initialize the application
         async function init() {
+            // Ensure admin panel button is updated after all data is loaded
+            if (typeof updateAdminPanelBtn === 'function') updateAdminPanelBtn();
             songs = await loadSongsFromFile();
             const localSongs = JSON.parse(localStorage.getItem('songs')) || [];
             if (localSongs.length > 0) {
@@ -2647,7 +2718,7 @@ function updateAllFavoriteButtons() {
 
 
         function updateAuthButtons() {
-            const isLoggedIn = !!jwtToken;
+            const isLoggedIn = !!localStorage.getItem('jwtToken');
             document.getElementById('loginBtn').style.display = isLoggedIn ? 'none' : 'block';
             document.getElementById('logoutBtn').style.display = isLoggedIn ? 'block' : 'none';
             // Show/hide Register button
@@ -2655,8 +2726,20 @@ function updateAllFavoriteButtons() {
             if (registerBtn) registerBtn.style.display = isLoggedIn ? 'none' : 'block';
             // Show/hide Delete Songs menu item (admin check can be improved if needed)
             // Song Tools: deleteAllSongsBtn removed
-            if (!isLoggedIn) {
-                document.getElementById('deleteSection').style.display = 'none';
+            // Hide delete section and all delete buttons if not admin
+            if (!isAdmin()) {
+                const deleteSection = document.getElementById('deleteSection');
+                if (deleteSection) deleteSection.style.display = 'none';
+                document.querySelectorAll('.btn-delete, .delete-song').forEach(btn => {
+                    btn.style.display = 'none';
+                });
+            } else {
+                // Show delete section and delete buttons for admin
+                const deleteSection = document.getElementById('deleteSection');
+                if (deleteSection) deleteSection.style.display = '';
+                document.querySelectorAll('.btn-delete, .delete-song').forEach(btn => {
+                    btn.style.display = '';
+                });
             }
         }
         // window.addEventListener('DOMContentLoaded', updateAuthButtons);
@@ -2738,12 +2821,12 @@ function updateAllFavoriteButtons() {
 
     
             document.querySelector(".sidebar-header h2").textContent = newHeader;
-            showSetlistEl.textContent = newSetlist;
-    
+            if (showSetlistEl) showSetlistEl.textContent = newSetlist;
+
             document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
             document.documentElement.style.setProperty('--preview-margin-left', `${previewMargin}px`);
-    
+
             localStorage.setItem("sidebarHeader", newHeader);
             localStorage.setItem("setlistText", newSetlist);
             localStorage.setItem("sidebarWidth", sidebarWidth);
@@ -2751,11 +2834,7 @@ function updateAllFavoriteButtons() {
             localStorage.setItem("previewMargin", previewMargin);
             localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
             localStorage.setItem("sessionResetOption", sessionResetOption);
-
-            
             autoScrollSpeed = parseInt(newAutoScrollSpeed);
-    
-            updatePositions();
         }
     
         function applyLyricsBackground(isNew) {
@@ -3796,8 +3875,7 @@ function updateAllFavoriteButtons() {
                     }
                 }, 100);
             });
-
-            // Edit button
+            
             document.getElementById('previewEditBtn')?.addEventListener('click', () => {
                 editSong(song.id);
             });
@@ -3853,62 +3931,56 @@ function updateAllFavoriteButtons() {
             // Build the preview HTML
             songPreviewEl.innerHTML = `
 <div class="song-preview-container">
-                <div class="song-slide">
-                <div class="preview-header">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                    <button class="btn btn-primary" id="prevSongBtn" title="Previous Song">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h2>${song.title}</h2>
-                    <button class="btn btn-primary" id="nextSongBtn" title="Next Song">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    </div>
-                    <div class="preview-actions">
-                    <!-- Keep your existing action buttons here -->
-                    ${isFavorite ? `
-                        <button class="favorite-btn favorited" id="previewFavoriteBtn" data-song-id="${song.id}">
-                        <i class="fas fa-heart"></i>
-                        </button>
-                    ` : `
-                        <button class="favorite-btn" id="previewFavoriteBtn" data-song-id="${song.id}">
-                        <i class="fas fa-heart"></i>
-                        </button>
-                    `}
-                    <button class="btn ${isInSetlist ? 'btn-delete' : 'btn-primary'}" id="previewSetlistBtn">
-                        ${isInSetlist ? 'Remove from Setlist' : 'Add to Setlist'}
-                    </button>
-                    <button class="btn btn-edit" id="previewEditBtn">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    </div>
-                </div>
-
-                <div class="song-meta">
-
-                    <p><strong>Key:</strong> <span id="current-key">${song.key}</span></p>
-                    ${song.tempo ? `<p><strong>Tempo:</strong> ${song.tempo}</p>` : ''}
-                    ${song.time ? `<p><strong>Time Signature:</strong> ${song.time}</p>` : ''}
-                    ${song.taal ? `<p><strong>Taal:</strong> ${song.taal}</p>` : ''}
-                    ${song.genres ? `<p><strong>Genres:</strong> ${song.genres.join(', ')}</p>` : 
-                    song.genre ? `<p><strong>Genre:</strong> ${song.genre}</p>` : ''}
-                </div>
-
-                <div class="transpose-controls">
-
-                    <button class="btn btn-primary" id="transpose-down">-</button>
-                    <span>Transpose: <span id="transpose-level">0</span></span>
-                    <button class="btn btn-primary" id="transpose-up">+</button>
-                                        <button id="transposeReset" class="btn btn-primary">Reset</button>
-                </div>
-                <div class="song-lyrics">${formatLyricsWithChords(song.lyrics, 0)}</div>
-                
-                <!-- Add these new swipe indicators -->
-                <div class="swipe-indicator prev">←</div>
-                <div class="swipe-indicator next">→</div>
-                </div>
+    <div class="song-slide">
+        <div class="preview-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="btn btn-primary" id="prevSongBtn" title="Previous Song">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h2>${song.title}</h2>
+                <button class="btn btn-primary" id="nextSongBtn" title="Next Song">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
-            `;
+            <div class="preview-actions">
+                <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <button class="btn ${isInSetlist ? 'btn-delete' : 'btn-primary'}" id="previewSetlistBtn">
+                    ${isInSetlist ? 'Remove from Setlist' : 'Add to Setlist'}
+                </button>
+                <button class="btn btn-edit" id="previewEditBtn">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="song-meta">
+            <p><strong>Key:</strong> <span id="current-key">${song.key}</span></p>
+            ${song.tempo ? `<p><strong>Tempo:</strong> ${song.tempo}</p>` : ''}
+            ${song.time ? `<p><strong>Time Signature:</strong> ${song.time}</p>` : ''}
+            ${song.taal ? `<p><strong>Taal:</strong> ${song.taal}</p>` : ''}
+            ${song.genres ? `<p><strong>Genres:</strong> ${song.genres.join(', ')}</p>` : song.genre ? `<p><strong>Genre:</strong> ${song.genre}</p>` : ''}
+        </div>
+
+        <div class="song-audit">
+            ${song.createdBy && song.createdAt ? `<p><strong>Added by:</strong> ${song.createdBy} <span style="color:#888;font-size:0.9em">on ${new Date(song.createdAt).toLocaleString()}</span></p>` : ''}
+            ${song.updatedBy && song.updatedAt ? `<p><strong>Last updated by:</strong> ${song.updatedBy} <span style="color:#888;font-size:0.9em">on ${new Date(song.updatedAt).toLocaleString()}</span></p>` : ''}
+        </div>
+
+        <div class="transpose-controls">
+            <button class="btn btn-primary" id="transpose-down">-</button>
+            <span>Transpose: <span id="transpose-level">0</span></span>
+            <button class="btn btn-primary" id="transpose-up">+</button>
+            <button id="transposeReset" class="btn btn-primary">Reset</button>
+        </div>
+        <div class="song-lyrics">${formatLyricsWithChords(song.lyrics, 0)}</div>
+        <!-- Add these new swipe indicators -->
+        <div class="swipe-indicator prev">←</div>
+        <div class="swipe-indicator next">→</div>
+    </div>
+</div>
+`;
 
             // Attach all event listeners
             attachPreviewEventListeners(song);
@@ -3949,6 +4021,11 @@ function updateAllFavoriteButtons() {
                 const currentLevel = parseInt(document.getElementById('transpose-level').textContent);
                 updatePreviewWithTransposition(currentLevel);
             });
+            document.getElementById('transposeReset').addEventListener('click', () => {
+                updatePreviewWithTransposition(0);
+            });
+
+            // Setup auto-scroll if needed
             setupAutoScroll();
             applyLyricsBackground(song.category === 'New');
             
@@ -5469,4 +5546,17 @@ if (addSongBtn && addSongModal) {
     <i class="fa fa-random"></i>
 </button>
 </body>
+<script>
+// Ensure app init and spinner always handled
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await init();
+    } catch (e) {
+        console.error('App failed to initialize:', e);
+    }
+    // Always hide spinner after init or error
+    const spinner = document.getElementById('loadingSpinnerOverlay');
+    if (spinner) spinner.classList.add('hidden');
+});
+</script>
 </html>
