@@ -1,11 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+// Recommendation weights: loaded from backend or localStorage fallback
+let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
+    language: 20,
+    scale: 30,
+    timeSignature: 25,
+    taal: 15,
+    tempo: 5,
+    genre: 5
+};
+
+async function fetchRecommendationWeights() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`);
+        if (res.ok) {
+            const data = await res.json();
+            WEIGHTS = data;
+            localStorage.setItem('recommendationWeights', JSON.stringify(data));
+        }
+    } catch (e) { /* fallback to local */ }
+}
+
+async function saveRecommendationWeightsToBackend(weights) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
+            },
+            body: JSON.stringify(weights)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('recommendationWeights', JSON.stringify(weights));
+            WEIGHTS = weights;
+            return { success: true, message: data.message || 'Weights updated' };
+        } else {
+            const err = await res.json();
+            return { success: false, message: err.error || 'Failed to update weights' };
+        }
+    } catch (e) {
+        return { success: false, message: 'Network error' };
+    }
+}
+</script>
     <!-- Auth0 script removed: now using local JWT auth -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New & Old Songs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
+        /* Improve visibility of weights input fields in admin panel */
+        #weightsTable input[type="number"] {
+            background: #f6f8fa;
+            color: #222;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 1em;
+        }
+        #weightsTable input[type="number"]:focus {
+            outline: 2px solid #3498db;
+            background: #fff;
+        }
 
          /* ===== SWIPE ANIMATIONS & FEEDBACK ===== */
          .song-preview-container {
@@ -1514,7 +1573,8 @@
                     justify-content: center;
                 }
                 #adminPanelModal .modal-content {
-                    background: #fff;
+                    background: var(--panel-bg, #fff);
+                    color: var(--panel-text, #222);
                     border-radius: 12px;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.18);
                     max-width: 420px;
@@ -1522,6 +1582,15 @@
                     padding: 32px 24px 24px 24px;
                     position: relative;
                     animation: fadeIn 0.2s;
+        /* Theme variables for admin panel popup */
+        body.dark-mode {
+            --panel-bg: #23272e;
+            --panel-text: #f6f8fa;
+        }
+        body:not(.dark-mode) {
+            --panel-bg: #fff;
+            --panel-text: #222;
+        }
                 }
                 #adminPanelModal h2 {
                     margin-top: 0;
@@ -1634,6 +1703,7 @@
                     <h2>Admin Panel</h2>
                     <div class="admin-tabs">
                         <button class="admin-tab active" id="userMgmtTab">User Management</button>
+                        <button class="admin-tab" id="weightsTab">Recommendation Weights</button>
                     </div>
                     <div class="admin-tab-content" id="userMgmtTabContent">
                         <div class="notification" id="adminNotification"></div>
@@ -1647,6 +1717,48 @@
                             </thead>
                             <tbody></tbody>
                         </table>
+                    </div>
+                    <div class="admin-tab-content" id="weightsTabContent" style="display:none;">
+                        <div class="notification" id="weightsNotification"></div>
+                        <form id="weightsForm" style="max-width: 420px; margin: 0 auto;">
+                            <table id="weightsTable" style="width:100%; border-collapse:collapse; background:#fff; margin-bottom:16px;">
+                            <div id="weightsTotalBar" style="margin: 10px 0 8px 0; text-align:center; font-weight:600; font-size:1.08em;"></div>
+                                <thead>
+                                    <tr style="background:#f6f8fa; color:#3498db; font-weight:600;">
+                                        <th style="padding:10px 8px; text-align:left;">Parameter</th>
+                                        <th style="padding:10px 8px; text-align:left;">Weight</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding:10px 8px;">Language</td>
+                                           <td style="padding:10px 8px;"><input type="number" id="weightLanguage" min="0" max="100" step="5" required style="width:60px;"></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:10px 8px;">Scale</td>
+                                           <td style="padding:10px 8px;"><input type="number" id="weightScale" min="0" max="100" step="5" required style="width:60px;"></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:10px 8px;">Time Signature</td>
+                                           <td style="padding:10px 8px;"><input type="number" id="weightTimeSignature" min="0" max="100" step="5" required style="width:60px;"></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:10px 8px;">Taal</td>
+                                           <td style="padding:10px 8px;"><input type="number" id="weightTaal" min="0" max="100" step="5" required style="width:60px;"></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:10px 8px;">Tempo</td>
+                                           <td style="padding:10px 8px;"><input type="number" id="weightTempo" min="0" max="100" step="5" required style="width:60px;"></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:10px 8px;">Genre</td>
+                                           <td style="padding:10px 8px;"><input type="number" id="weightGenre" min="0" max="100" step="5" required style="width:60px;"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <button type="submit" class="btn" style="width:100%;margin-top:8px;">Save Weights</button>
+                        </form>
+                        <div style="text-align:center; color:#888; font-size:0.98em; margin-top:4px;">Total should be 100 for best results.</div>
                     </div>
                 </div>
             </div>
@@ -2056,7 +2168,7 @@
                     </div>
                     <div class="settings-group">
                         <label for="previewMarginInput">Preview Margin Left (px):</label>
-                        <input type="number" id="previewMarginInput" min="0" max="100" value="40">
+                        <input type="number" id="previewMarginInput" min="0" max="100" value="20">
                     </div>
                     <div class="settings-group">
                         <label for="autoScrollSpeedInput">Auto Scroll Speed:</label>
@@ -3366,15 +3478,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Define known language tags
             const LANGUAGE_TAGS = ['English', 'Marathi', 'Spanish', 'Hindi', 'French', 'Tamil', 'Telugu', 'Punjabi', 'Bengali'];
 
-            // Define scoring weights (total = 100)
-            const WEIGHTS = {
-                language: 20,        // Language match from genres
-                scale: 30,           // Scale match (major/minor and harmonic relationships)
-                timeSignature: 25,   // Time Signature match
-                taal: 15,            // Taal match
-                tempo: 5,            // Tempo similarity
-                genre: 5             // Non-language genre matches
-            };
+            // Use global/configurable WEIGHTS
 
             // Time signature compatible pairs
             const TIME_SIGNATURE_COMPATIBILITY = {
@@ -4466,6 +4570,109 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     
         function addEventListeners() {
+            // Live update for weights total bar
+            function updateWeightsTotalBar() {
+                const vals = [
+                    parseInt(document.getElementById('weightLanguage').value) || 0,
+                    parseInt(document.getElementById('weightScale').value) || 0,
+                    parseInt(document.getElementById('weightTimeSignature').value) || 0,
+                    parseInt(document.getElementById('weightTaal').value) || 0,
+                    parseInt(document.getElementById('weightTempo').value) || 0,
+                    parseInt(document.getElementById('weightGenre').value) || 0
+                ];
+                const total = vals.reduce((a, b) => a + b, 0);
+                const bar = document.getElementById('weightsTotalBar');
+                bar.textContent = `Total: ${total} / 100`;
+                bar.style.color = (total === 100) ? '#27ae60' : '#e74c3c';
+            }
+            [
+                'weightLanguage',
+                'weightScale',
+                'weightTimeSignature',
+                'weightTaal',
+                'weightTempo',
+                'weightGenre'
+            ].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', updateWeightsTotalBar);
+            });
+            // Call once on tab open
+            if (document.getElementById('weightsTabContent')) {
+                document.getElementById('weightsTab').addEventListener('click', updateWeightsTotalBar);
+            }
+            // Admin panel tab switching
+            const userMgmtTab = document.getElementById('userMgmtTab');
+            const weightsTab = document.getElementById('weightsTab');
+            const userMgmtTabContent = document.getElementById('userMgmtTabContent');
+            const weightsTabContent = document.getElementById('weightsTabContent');
+            if (userMgmtTab && weightsTab && userMgmtTabContent && weightsTabContent) {
+                userMgmtTab.addEventListener('click', () => {
+                    userMgmtTab.classList.add('active');
+                    weightsTab.classList.remove('active');
+                    userMgmtTabContent.style.display = '';
+                    weightsTabContent.style.display = 'none';
+                });
+                weightsTab.addEventListener('click', () => {
+                    userMgmtTab.classList.remove('active');
+                    weightsTab.classList.add('active');
+                    userMgmtTabContent.style.display = 'none';
+                    weightsTabContent.style.display = '';
+                    loadWeightsToForm();
+                });
+            }
+
+            // Save weights form
+            const weightsForm = document.getElementById('weightsForm');
+            if (weightsForm) {
+                weightsForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const newWeights = {
+                        language: parseInt(document.getElementById('weightLanguage').value),
+                        scale: parseInt(document.getElementById('weightScale').value),
+                        timeSignature: parseInt(document.getElementById('weightTimeSignature').value),
+                        taal: parseInt(document.getElementById('weightTaal').value),
+                        tempo: parseInt(document.getElementById('weightTempo').value),
+                        genre: parseInt(document.getElementById('weightGenre').value)
+                    };
+                    const total = Object.values(newWeights).reduce((a, b) => a + b, 0);
+                    const notif = document.getElementById('weightsNotification');
+                    if (total !== 100) {
+                        notif.textContent = 'Total must be 100.';
+                        notif.style.display = 'block';
+                        notif.style.background = '#ffe0e0';
+                        notif.style.color = '#b30000';
+                        return;
+                    }
+                    notif.textContent = 'Saving...';
+                    notif.style.display = 'block';
+                    notif.style.background = '';
+                    notif.style.color = '';
+                    const result = await saveRecommendationWeightsToBackend(newWeights);
+                    notif.textContent = result.message;
+                    notif.style.display = 'block';
+                    if (result.success) {
+                        notif.style.background = '#e0ffe0';
+                        notif.style.color = '#155724';
+                    } else {
+                        notif.style.background = '#ffe0e0';
+                        notif.style.color = '#b30000';
+                    }
+                    setTimeout(() => {
+                        notif.style.display = 'none';
+                    }, 2500);
+                });
+            }
+
+            // Load weights into form
+            async function loadWeightsToForm() {
+                await fetchRecommendationWeights();
+                document.getElementById('weightLanguage').value = WEIGHTS.language;
+                document.getElementById('weightScale').value = WEIGHTS.scale;
+                document.getElementById('weightTimeSignature').value = WEIGHTS.timeSignature;
+                document.getElementById('weightTaal').value = WEIGHTS.taal;
+                document.getElementById('weightTempo').value = WEIGHTS.tempo;
+                document.getElementById('weightGenre').value = WEIGHTS.genre;
+            }
             // Tab switching
             NewTab.addEventListener('click', () => {
                 setlistSection.style.display = 'none';

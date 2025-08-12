@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -43,6 +44,51 @@ function authMiddleware(req, res, next) {
   req.user = payload;
   next();
 }
+
+// Get recommendation weights config
+app.get('/api/recommendation-weights', async (req, res) => {
+  try {
+    const config = await db.collection('config').findOne({ _id: 'weights' });
+    if (!config) {
+      // Default if not set
+      return res.json({
+        language: 20,
+        scale: 30,
+        timeSignature: 25,
+        taal: 15,
+        tempo: 5,
+        genre: 5
+      });
+    }
+    // Remove _id for frontend
+    const { _id, ...weights } = config;
+    res.json(weights);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update recommendation weights config (admin only)
+app.put('/api/recommendation-weights', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { language, scale, timeSignature, taal, tempo, genre } = req.body;
+    if ([language, scale, timeSignature, taal, tempo, genre].some(v => typeof v !== 'number')) {
+      return res.status(400).json({ error: 'All weights must be numbers' });
+    }
+    const total = language + scale + timeSignature + taal + tempo + genre;
+    if (total !== 100) {
+      return res.status(400).json({ error: 'Total must be 100' });
+    }
+    await db.collection('config').updateOne(
+      { _id: 'weights' },
+      { $set: { language, scale, timeSignature, taal, tempo, genre } },
+      { upsert: true }
+    );
+    res.json({ message: 'Recommendation weights updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Do NOT use global auth middleware
 // Only use authMiddleware on protected routes below
