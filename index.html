@@ -1653,6 +1653,7 @@
                 <li><a href="#" class="active" id="showAll">All Songs</a></li>
                 <li><a href="#" id="showSetlist">Setlist</a></li>   
                 <li><a href="#" id="showFavorites">Favorites</a></li>
+                <li><button id="addSongBelowFavoritesBtn" class="sidebar-btn" style="width:100%;margin-top:10px;"><i class="fa fa-plus"></i> Add New Song</button></li>
 
             </ul>
             </ul>
@@ -1754,6 +1755,12 @@
                         <option value="Hindi">Hindi</option>
                         <option value="Marathi">Marathi</option>
                         <option value="English">English</option>
+                    </select>
+                    <select id="sortFilter" class="compact-select" style="margin-top:6px;">
+                        <option value="recent">Recently Added</option>
+                        <option value="az">A-Z</option>
+                        <option value="za">Z-A</option>
+                        <option value="oldest">Oldest First</option>
                     </select>
                 </div>
 
@@ -2117,6 +2124,26 @@
         // Also ensure greeting is updated after DOM is ready (in case of async issues)
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthButtons();
+            // Add event listener for the new Add Song button below Favorites
+            const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
+            if (addSongBelowFavoritesBtn) {
+                addSongBelowFavoritesBtn.onclick = function() {
+                    if (typeof openAddSongModal === 'function') {
+                        openAddSongModal.click();
+                    } else {
+                        // fallback: open modal directly
+                        document.getElementById('addSongModal').style.display = 'flex';
+                    }
+                };
+            }
+            // Add event listener for sort filter
+            const sortFilter = document.getElementById('sortFilter');
+            if (sortFilter) {
+                sortFilter.addEventListener('change', function() {
+                    const activeTab = document.getElementById('NewTab').classList.contains('active') ? 'New' : 'Old';
+                    renderSongs(activeTab, keyFilter.value, genreFilter.value);
+                });
+            }
         });
             
         async function loadSongsFromFile() {
@@ -3142,14 +3169,40 @@
                         if (!genreFilterValue) return true;
                         if (!song.genres) return song.genre === genreFilterValue;
                         return song.genres.includes(genreFilterValue);
-                    })
-                    .sort((a, b) => a.title.localeCompare(b.title));
+                    });
+                // Sorting logic
+                const sortValue = document.getElementById('sortFilter')?.value || 'recent';
+                if (sortValue === 'az') {
+                    songsToRender.sort((a, b) => a.title.localeCompare(b.title));
+                } else if (sortValue === 'za') {
+                    songsToRender.sort((a, b) => b.title.localeCompare(a.title));
+                } else if (sortValue === 'oldest') {
+                    songsToRender.sort((a, b) => {
+                        if (a.createdAt && b.createdAt) return new Date(a.createdAt) - new Date(b.createdAt);
+                        return (a.id || 0) - (b.id || 0);
+                    });
+                } else {
+                    // Default: recently added (by createdAt desc, fallback to id desc)
+                    songsToRender.sort((a, b) => {
+                        if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+                        return (b.id || 0) - (a.id || 0);
+                    });
+                }
                 container = category === 'New' ? NewContent : OldContent;
-                
             } else {
                 songsToRender = categoryOrSongs;
                 container = filterOrContainer;
             }
+// Add event listener for sort filter after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const sortFilter = document.getElementById('sortFilter');
+    if (sortFilter) {
+        sortFilter.addEventListener('change', function() {
+            const activeTab = document.getElementById('NewTab').classList.contains('active') ? 'New' : 'Old';
+            renderSongs(activeTab, keyFilter.value, genreFilter.value);
+        });
+    }
+});
             container.innerHTML = '';
             if (songsToRender.length === 0) {
                 container.innerHTML = '<p>No songs found.</p>';
