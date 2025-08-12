@@ -170,9 +170,19 @@ app.get('/api/songs', async (req, res) => {
 // Protected: only logged-in users can add, update, or delete songs
 app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   try {
+    console.log('DEBUG /api/songs POST req.user:', req.user);
+    console.log('DEBUG /api/songs POST req.body:', req.body);
     if (typeof req.body.id !== 'number') {
       const last = await songsCollection.find().sort({ id: -1 }).limit(1).toArray();
       req.body.id = last.length ? last[0].id + 1 : 1;
+    }
+    // Add createdBy and createdAt if not present
+    // Always use createdBy and createdAt from request if present, else fallback to user/date
+    if (!req.body.createdBy && req.user && req.user.username) {
+      req.body.createdBy = req.user.username;
+    }
+    if (!req.body.createdAt) {
+      req.body.createdAt = new Date().toISOString();
     }
     const result = await songsCollection.insertOne(req.body);
     const insertedSong = await songsCollection.findOne({ _id: result.insertedId });

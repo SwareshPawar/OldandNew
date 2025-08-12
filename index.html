@@ -4990,7 +4990,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     time: document.getElementById('songTime').value,
                     taal: document.getElementById('songTaal').value,
                     genres: selectedGenres,
-                    lyrics: lyrics
+                    lyrics: lyrics,
+                    createdBy: (currentUser && currentUser.username) ? currentUser.username : undefined,
+                    createdAt: new Date().toISOString()
                 };
 
                 try {
