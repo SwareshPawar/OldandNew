@@ -195,7 +195,12 @@ app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
 app.put('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const update = { $set: req.body };
+  // Always set updatedAt to now on edit
+    req.body.updatedAt = new Date().toISOString();
+    if (req.user && req.user.username) {
+      req.body.updatedBy = req.user.username;
+    }
+  const update = { $set: req.body };
     const result = await songsCollection.updateOne({ id: parseInt(id) }, update);
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Song not found' });
