@@ -2173,6 +2173,46 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // Download All Data (Excel/JSON) logic
 document.addEventListener('DOMContentLoaded', function() {
+    // Update all setlist and favorite buttons on page load
+    setTimeout(() => {
+        document.querySelectorAll('.song-item').forEach(div => {
+            const songId = parseInt(div.dataset.songId);
+            const song = songs.find(s => s.id === songId);
+            if (!song) return;
+            const isInSetlist = song.category === 'New'
+                ? NewSetlist.some(s => s.id === songId)
+                : OldSetlist.some(s => s.id === songId);
+            const setlistBtn = div.querySelector('.toggle-setlist');
+            if (setlistBtn) {
+                setlistBtn.textContent = isInSetlist ? 'Remove' : 'Add';
+                setlistBtn.classList.toggle('btn-primary', !isInSetlist);
+                setlistBtn.classList.toggle('btn-delete', isInSetlist);
+            }
+            const favBtn = div.querySelector('.favorite-btn');
+            if (favBtn) {
+                favBtn.classList.toggle('favorited', favorites.includes(songId));
+            }
+        });
+        // Also update preview buttons if present
+        const previewSetlistBtn = document.getElementById('previewSetlistBtn');
+        if (previewSetlistBtn && songPreviewEl.dataset.songId) {
+            const songId = parseInt(songPreviewEl.dataset.songId);
+            const song = songs.find(s => s.id === songId);
+            if (song) {
+                const isInSetlist = song.category === 'New'
+                    ? NewSetlist.some(s => s.id === songId)
+                    : OldSetlist.some(s => s.id === songId);
+                previewSetlistBtn.textContent = isInSetlist ? 'Remove from Setlist' : 'Add to Setlist';
+                previewSetlistBtn.classList.toggle('btn-primary', !isInSetlist);
+                previewSetlistBtn.classList.toggle('btn-delete', isInSetlist);
+            }
+        }
+        const previewFavoriteBtn = document.getElementById('previewFavoriteBtn');
+        if (previewFavoriteBtn && songPreviewEl.dataset.songId) {
+            const songId = parseInt(songPreviewEl.dataset.songId);
+            previewFavoriteBtn.classList.toggle('favorited', favorites.includes(songId));
+        }
+    }, 200);
     const downloadBtn = document.getElementById('downloadDbDataBtn');
     const modal = document.getElementById('downloadFormatModal');
     const closeModal = document.getElementById('closeDownloadFormatModal');
