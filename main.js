@@ -509,6 +509,10 @@ function isJwtValid(token) {
         function queueSaveUserData() {
             // Add the save to the end of the queue
             userDataSaveQueue = userDataSaveQueue.then(() => saveUserData());
+            // Save to localStorage immediately for fast reloads
+            if (jwtToken && isJwtValid(jwtToken)) {
+                localStorage.setItem('userData', JSON.stringify({ favorites, NewSetlist, OldSetlist }));
+            }
             return userDataSaveQueue;
         }
 
@@ -925,33 +929,37 @@ function isJwtValid(token) {
 
         async function loadUserData() {
             console.time('loadUserData');
+            // Only use cache if JWT is valid
+            if (jwtToken && isJwtValid(jwtToken)) {
+                const cachedUserData = localStorage.getItem('userData');
+                if (cachedUserData) {
+                    try {
+                        const data = JSON.parse(cachedUserData);
+                        favorites = data.favorites || [];
+                        NewSetlist = data.NewSetlist || [];
+                        OldSetlist = data.OldSetlist || [];
+                        // Optionally set other user fields
+                        console.log('Loaded user data from cache');
+                        console.timeEnd('loadUserData');
+                        return;
+                    } catch (e) {
+                        // If cache is corrupted, ignore and fetch from backend
+                    }
+                }
+            }
+            // If not cached or token expired, fetch from backend
             try {
                 const response = await authFetch(`${API_BASE_URL}/api/userdata`);
                 if (response.ok) {
                     const data = await response.json();
-                    if (Array.isArray(data.favorites)) favorites = data.favorites;
-                    if (Array.isArray(data.NewSetlist)) NewSetlist = data.NewSetlist;
-                    if (Array.isArray(data.OldSetlist)) OldSetlist = data.OldSetlist;
-                    if (data.user && data.user.username) {
-                        currentUser = data.user;
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    }
-                    updateAuthButtons();
-                } else if (response.status === 401 || response.status === 403) {
-                    logout();
-                    showNotification('Session expired. Please log in again.');
-                } else {
-                    let msg = 'Failed to load user data';
-                    try {
-                        const errData = await response.json();
-                        if (errData && errData.error) msg = errData.error;
-                    } catch {}
-                    console.error('API error in loadUserData:', response.status, msg);
-                    showNotification(msg);
+                    favorites = data.favorites || [];
+                    NewSetlist = data.NewSetlist || [];
+                    OldSetlist = data.OldSetlist || [];
+                    // Optionally set other user fields
+                    localStorage.setItem('userData', JSON.stringify(data));
                 }
             } catch (err) {
                 console.error('Network error in loadUserData:', err);
-                showNotification('Network error: Failed to load user data');
             }
             console.timeEnd('loadUserData');
         }
@@ -1828,6 +1836,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update history if this is a new navigation (not from back/forward)
             if (!fromHistory && !isNavigatingHistory && !currentModal) {
                 if (currentHistoryPosition < navigationHistory.length - 1) {
+                   
                     navigationHistory = navigationHistory.slice(0, currentHistoryPosition + 1);
                 }
                 
