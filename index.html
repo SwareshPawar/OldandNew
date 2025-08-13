@@ -2566,7 +2566,7 @@ async function saveRecommendationWeightsToBackend(weights) {
         const CHORD_REGEX = /([A-G](?:#|b)?)(maj|min|m|dim|aug|sus2|sus4|7sus4|7sus2|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13|5|sus|7b5|7#5|7b9|7#9|b5|#5|b9|#9)?(?:\/[A-G](?:#|b)?)?/gi;
         const CHORD_LINE_REGEX = /^(\s*[A-G](?:#|b)?(?:maj|min|m|dim|aug|sus2|sus4|7sus4|7sus2|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13|5|sus|7b5|7#5|7b9|7#9|b5|#5|b9|#9)?(?:\/[A-G](?:#|b)?)?\s*)+$/i;
         const INLINE_CHORD_REGEX = /\[([A-G](?:#|b)?(?:maj|min|m|dim|aug|sus2|sus4|7sus4|7sus2|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13|5|sus|7b5|7#5|7b9|7#9|b5|#5|b9|#9)?(?:\/[A-G](?:#|b)?)?)\]/gi;
-
+        
         let navigationHistory = [];
         let currentHistoryPosition = -1;
         let isNavigatingHistory = false;
@@ -4148,18 +4148,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     output.push(`<div class="chord-line">${processedLine}</div>`);
                 }
                 else if (hasInlineChords(line)) {
-                    let processedLine = line.replace(
-                        /([A-G][#b]?(?:maj|min|m|dim|aug|sus2|sus4|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13)?(?:\/[A-G][#b]?)?)/gi,
-                        (match, chord) => {
-                            if (chord.includes('/')) {
-                                const [baseChord, bassNote] = chord.split('/');
-                                const transposedBase = transposeChord(baseChord, transposeLevel);
-                                const transposedBass = bassNote ? transposeChord(bassNote, transposeLevel) : '';
-                                return `[<span class="chord" data-original="${chord}">${transposedBase}${transposedBass ? '/' + transposedBass : ''}</span>]`;
-                            }
-                            return `[<span class="chord" data-original="${chord}">${transposeChord(chord, transposeLevel)}</span>]`;
+                    // Use INLINE_CHORD_REGEX to find and render inline chords
+                    let processedLine = line.replace(INLINE_CHORD_REGEX, (match, chord) => {
+                        if (chord.includes('/')) {
+                            const [baseChord, bassNote] = chord.split('/');
+                            const transposedBase = transposeChord(baseChord, transposeLevel);
+                            const transposedBass = bassNote ? transposeChord(bassNote, transposeLevel) : '';
+                            return `[<span class="chord" data-original="${chord}">${transposedBase}${transposedBass ? '/' + transposedBass : ''}</span>]`;
                         }
-                    );
+                        return `[<span class="chord" data-original="${chord}">${transposeChord(chord, transposeLevel)}</span>]`;
+                    });
                     output.push(`<div class="lyric-line">${processedLine}</div>`);
                 }
                 else {
@@ -4841,87 +4839,24 @@ document.addEventListener('DOMContentLoaded', () => {
             let touchStartX = 0;
             let isScrolling = false;
 
-            
-            songPreviewEl.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY; // Track Y position too
-                isScrolling = false;
-            }, { passive: true });
-
-            songPreviewEl.addEventListener('touchstart', () => {
-            document.querySelector('.song-slide').classList.remove('swipe-active', 'swipe-left');
-            });
-
-            songPreviewEl.addEventListener('touchmove', (e) => {
-            const slide = document.querySelector('.song-slide');
-            const diffX = e.touches[0].clientX - touchStartX;
-            
-            if (Math.abs(diffX) > 20) {
-                slide.classList.add(diffX > 0 ? 'swiping-right' : 'swiping-left');
-                slide.classList.add('swipe-active');
-                if (diffX < 0) slide.classList.add('swipe-left');
-            }
-            });
-
-            songPreviewEl.addEventListener('touchmove', (e) => {
-                if (!songPreviewEl.dataset.songId) return;
-                
-                const touchX = e.touches[0].clientX;
-                const touchY = e.touches[0].clientY; // Get current Y position
-                const diffX = touchX - touchStartX;
-                const diffY = touchY - touchStartY; // Calculate vertical movement
-                
-                // Check if the user is scrolling vertically (not swiping)
-                if (Math.abs(diffY) > 10) {
-                    isScrolling = true;
-                    return; // Exit if vertical scroll detected
-                }
-                
-                // Only prevent default for horizontal swipes
-                if (Math.abs(diffX) > 5) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
-
-            songPreviewEl.addEventListener('touchend', (e) => {
-                if (!songPreviewEl.dataset.songId || isScrolling) return;
-                
-                const touchEndX = e.changedTouches[0].clientX;
-                const diffX = touchEndX - touchStartX;
-                const swipeThreshold = 50;
-                
-                if (diffX < -swipeThreshold) {
-                    // showNextSong(); // Removed undefined function
-                } else if (diffX > swipeThreshold) {
-                    // showPrevSong(); // Removed undefined function
-                }
-            }, { passive: true });
-
-
             // Keyboard navigation
             document.addEventListener('keydown', (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
                 
                 if (e.key === 'ArrowRight') {
-                    // showNextSong(); // Removed undefined function
                 } else if (e.key === 'ArrowLeft') {
-                    // showPrevSong(); // Removed undefined function
                 }
 
                 document.addEventListener('keydown', (e) => {
-                // Don't navigate if we're typing in an input field
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
                     return;
                 }
                 
-                // Only handle left/right arrows when a song is being previewed
                 if (!songPreviewEl.dataset.songId) return;
                 
                 if (e.key === 'ArrowRight') {
-                    // showNextSong(); // Removed undefined function
                     e.preventDefault();
                 } else if (e.key === 'ArrowLeft') {
-                    // showPrevSong(); // Removed undefined function
                     e.preventDefault();
                 }
             });
@@ -5114,8 +5049,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     
             // Preview scrolling
-            songPreviewEl.addEventListener('wheel', handleUserScroll);
-            songPreviewEl.addEventListener('touchmove', handleUserScroll);
+            songPreviewEl.addEventListener('wheel', handleUserScroll, { passive: true });
+            songPreviewEl.addEventListener('touchmove', handleUserScroll, { passive: true });
             
             // Auto-scroll controls
             toggleAutoScrollBtn.addEventListener('click', toggleAutoScroll);
@@ -5421,14 +5356,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const touch = e.touches[0];
                 offsetX = touch.clientX - el.offsetLeft;
                 offsetY = touch.clientY - el.offsetTop;
-            }, { passive: false });
+            }, { passive: true });
     
             el.addEventListener('touchmove', function (e) {
                 if (isDragging) {
                     const touch = e.touches[0];
                     onMove(touch.clientX, touch.clientY);
                 }
-            }, { passive: false });
+            }, { passive: true });
     
             el.addEventListener('touchend', onEnd);
             restorePosition();
