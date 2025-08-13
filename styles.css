@@ -1,3 +1,41 @@
+/* Loading overlay styles */
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255,255,255,0.85);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #333;
+    transition: opacity 0.3s;
+}
+#loadingOverlay.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+@media (max-width: 768px) {
+    #loadingOverlay {
+        font-size: 1.2rem;
+    }
+}
+.spinner {
+    border: 8px solid #eee;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-right: 1rem;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 
         /* Improve visibility of weights input fields in admin panel */
         #weightsTable input[type="number"] {
