@@ -160,7 +160,19 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/songs', async (req, res) => {
   try {
-    const songs = await songsCollection.find({}).toArray();
+    // Support delta fetching: if ?since=TIMESTAMP is provided, only return songs updated after that
+    const { since } = req.query;
+    let query = {};
+    if (since) {
+      // updatedAt or createdAt newer than 'since'
+      query = {
+        $or: [
+          { updatedAt: { $gt: since } },
+          { createdAt: { $gt: since } }
+        ]
+      };
+    }
+    const songs = await songsCollection.find(query).toArray();
     res.json(songs);
   } catch (err) {
     res.status(500).json({ error: err.message });
