@@ -3259,6 +3259,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Start the application
         window.addEventListener('DOMContentLoaded', () => {
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
             // 1. Load songs from localStorage and render immediately
             const localSongs = JSON.parse(localStorage.getItem('songs') || '[]');
             songs = localSongs;
@@ -3274,7 +3278,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateAuthButtons();
             }
 
-            // 3. Start background fetch for new/updated songs
+            // 3. Initialize all UI features
+            addEventListeners();
+            addPanelToggles();
+            applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
+            connectWebSocket();
+            initScreenWakeLock();
+            setupModalClosing();
+            setupSuggestedSongsClosing();
+            setupModals();
+            setupWindowCloseConfirmation();
+
+            // 4. Finally, start background fetch for new/updated songs
             loadSongsFromFile().then(fetchedSongs => {
                 // Only update UI if there are changes
                 if (fetchedSongs.length !== songs.length || fetchedSongs.some((s, i) => s.id !== songs[i]?.id)) {
@@ -3282,6 +3297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderSongs('New', '', '');
                     updateSongCount();
                 }
+                // Hide overlay after everything is loaded
+                if (loadingOverlay) loadingOverlay.classList.add('hide');
             });
-            // ...existing code for any other initialization...
         });
