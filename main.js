@@ -89,40 +89,51 @@ function isJwtValid(token) {
             
         async function loadSongsFromFile() {
             console.time('loadSongsFromFile:total');
+            // 1. Load songs from localStorage first
+            let localSongs = JSON.parse(localStorage.getItem('songs') || '[]');
+            songs = localSongs;
+            // 2. Find latest updatedAt timestamp
+            let latestUpdatedAt = localSongs.length > 0 ? Math.max(...localSongs.map(s => new Date(s.updatedAt || s.createdAt || 0).getTime())) : 0;
+            // 3. Render songs immediately
+            renderSongs('New', '', '');
+            updateSongCount();
+            // 4. Fetch new/updated songs from server in background
             try {
-                // If first load, fetch all songs
                 let url = `${API_BASE_URL}/api/songs`;
-                if (lastSongsFetch) {
-                    url += `?since=${encodeURIComponent(lastSongsFetch)}`;
+                if (latestUpdatedAt) {
+                    // Pass latest updatedAt as query param (API must support this)
+                    url += `?updatedAfter=${latestUpdatedAt}`;
                 }
                 console.time('authFetch');
                 const response = await authFetch(url);
                 console.timeEnd('authFetch');
                 if (response.ok) {
                     console.time('response.json');
-                    const data = await response.json();
+                    const newSongs = await response.json();
                     console.timeEnd('response.json');
-                    if (Array.isArray(data)) {
-                        // Merge new/updated songs into cache
-                        const existingIds = new Set(songs.map(s => s.id));
-                        const updatedSongs = data.filter(s => existingIds.has(s.id));
-                        const newSongs = data.filter(s => !existingIds.has(s.id));
-                        // Update existing songs
-                        updatedSongs.forEach(updated => {
-                            const idx = songs.findIndex(s => s.id === updated.id);
-                            if (idx !== -1) songs[idx] = updated;
+                    if (Array.isArray(newSongs)) {
+                        // Merge new/updated songs into local cache
+                        let mergedSongs = [...localSongs];
+                        newSongs.forEach(newSong => {
+                            const idx = mergedSongs.findIndex(s => s.id === newSong.id);
+                            if (idx !== -1) {
+                                mergedSongs[idx] = newSong; // update existing
+                            } else {
+                                mergedSongs.push(newSong); // add new
+                            }
                         });
-                        // Add new songs
-                        songs = [...songs, ...newSongs];
+                        songs = mergedSongs;
+                        localStorage.setItem('songs', JSON.stringify(songs));
                         // Update last fetch timestamp
-                        if (data.length > 0) {
-                            // Use the latest updatedAt/createdAt from fetched songs
-                            const latest = data.reduce((max, s) => {
+                        if (newSongs.length > 0) {
+                            const latest = newSongs.reduce((max, s) => {
                                 const t = s.updatedAt || s.createdAt;
                                 return (!max || t > max) ? t : max;
-                            }, lastSongsFetch);
+                            }, latestUpdatedAt);
                             lastSongsFetch = latest;
                         }
+                        renderSongs('New', '', '');
+                        updateSongCount();
                         return songs;
                     }
                     return songs;
@@ -2879,7 +2890,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
             deleteSongForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const id = document.getElementById('deleteSongId').value;
+                const id = Number(document.getElementById('deleteSongId').value);
                 try {
                     const response = await authFetch(`${API_BASE_URL}/api/songs/${id}`, {
                         method: 'DELETE'
@@ -2887,9 +2898,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (response.ok) {
                         showNotification('Song deleted successfully!');
                         deleteSongModal.style.display = 'none';
-                        // Reload songs from backend
-                        songs = await loadSongsFromFile();
+                        // Remove song from local cache and memory
+                        songs = songs.filter(song => song.id !== id);
+                        localStorage.setItem('songs', JSON.stringify(songs));
                         renderSongs('New', keyFilter.value, genreFilter.value);
+                        updateSongCount();
                     } else {
                         showNotification('Failed to delete song');
                     }
