@@ -3259,45 +3259,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Start the application
         window.addEventListener('DOMContentLoaded', () => {
-            // Show loading overlay
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            if (loadingOverlay) loadingOverlay.style.display = 'flex';
-
-            // 1. Load songs from localStorage and render immediately
-            const localSongs = JSON.parse(localStorage.getItem('songs') || '[]');
-            songs = localSongs;
-            renderSongs('New', '', '');
-            updateSongCount();
-
-            // 2. Start authentication and user data loading in parallel
+            // Restore login state and update UI
             if (jwtToken) {
-                loadUserData().then(() => {
-                    updateAuthButtons();
-                });
+                loadUserData(); // This will call updateAuthButtons after user is loaded
             } else {
                 updateAuthButtons();
             }
-
-            // 3. Initialize all UI features
-            addEventListeners();
-            addPanelToggles();
-            applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
-            connectWebSocket();
-            initScreenWakeLock();
-            setupModalClosing();
-            setupSuggestedSongsClosing();
-            setupModals();
-            setupWindowCloseConfirmation();
-
-            // 4. Finally, start background fetch for new/updated songs
-            loadSongsFromFile().then(fetchedSongs => {
-                // Only update UI if there are changes
-                if (fetchedSongs.length !== songs.length || fetchedSongs.some((s, i) => s.id !== songs[i]?.id)) {
-                    songs = fetchedSongs;
-                    renderSongs('New', '', '');
-                    updateSongCount();
-                }
-                // Hide overlay after everything is loaded
-                if (loadingOverlay) loadingOverlay.classList.add('hide');
-            });
+            // ...existing code for any other initialization...
         });
