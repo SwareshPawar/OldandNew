@@ -1,3 +1,19 @@
+// --- JWT expiry helpers: must be at the very top ---
+function getJwtExpiry(token) {
+    if (!token) return 0;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp ? payload.exp * 1000 : 0;
+    } catch {
+        return 0;
+    }
+}
+
+function isJwtValid(token) {
+    const expiry = getJwtExpiry(token);
+    return token && expiry && Date.now() < expiry;
+}
+
 // Always define notificationEl first so it's available to all functions
     const notificationEl = document.getElementById('notification');
 
@@ -34,13 +50,16 @@
 
 
         // On script load, update UI and user data if logged in
-        if (jwtToken) {
-            // Always load user data, then update UI
+        if (jwtToken && isJwtValid(jwtToken)) {
+            // Only load user data if token is valid
             loadUserData().then(() => {
                 updateAuthButtons();
             });
         } else {
-            updateAuthButtons(); // Ensure greeting is cleared if not logged in
+            // Remove expired token
+            localStorage.removeItem('jwtToken');
+            jwtToken = '';
+            updateAuthButtons();
         }
 
         // Also ensure greeting is updated after DOM is ready (in case of async issues)
@@ -2415,7 +2434,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem("sessionResetOption", sessionResetOption);
             autoScrollSpeed = parseInt(newAutoScrollSpeed);
         }
-
     
         function addEventListeners() {
             // Live update for weights total bar
@@ -3227,5 +3245,3 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // ...existing code for any other initialization...
         });
-
-    // Auth0 functions and initialization removed. All authentication is now JWT/local.
