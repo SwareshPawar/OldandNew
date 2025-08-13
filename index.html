@@ -151,16 +151,6 @@ async function saveRecommendationWeightsToBackend(weights) {
         }
 
         /* Add these styles to your existing CSS */
-        #prevSongBtn, #nextSongBtn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
 
         .preview-header h2 {
             margin: 0;
@@ -293,6 +283,33 @@ async function saveRecommendationWeightsToBackend(weights) {
                 display: flex;
                 gap: 5px;
             }
+        }
+
+        @media (max-width: 768px) {
+        #toggle-sidebar,
+        #toggle-songs,
+        #toggle-all-panels {
+            right: 10px;
+            bottom: unset !important;
+        }
+        }
+
+        .panel-toggle.draggable {
+        right: 10px;
+        /* Remove bottom/top if set elsewhere */
+        }
+
+        #toggle-sidebar {
+        top: 40%;
+        right: 10px;
+        }
+        #toggle-songs {
+        top: calc(40% + 50px);
+        right: 10px;
+        }
+        #toggle-all-panels {
+        top: calc(40% + 100px);
+        right: 10px;
         }
 
         /* Suggested Songs Drawer */
@@ -3998,13 +4015,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="song-slide">
         <div class="preview-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <button class="btn btn-primary" id="prevSongBtn" title="Previous Song">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
                 <h2>${song.title}</h2>
-                <button class="btn btn-primary" id="nextSongBtn" title="Next Song">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
             </div>
             <div class="preview-actions">
                 <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}">
@@ -4059,8 +4070,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => { isNavigatingHistory = false; }, 100);
             }
 
-            // document.getElementById('prevSongBtn')?.addEventListener('click', showPrevSong); // Removed undefined function
-            // document.getElementById('nextSongBtn')?.addEventListener('click', showNextSong); // Removed undefined function
 
 
             
@@ -4582,17 +4591,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem("sessionResetOption", sessionResetOption);
             autoScrollSpeed = parseInt(newAutoScrollSpeed);
         }
-        function handleSwipe() {
-            const swipeThreshold = 50; // Minimum swipe distance in pixels
-            
-            if (touchStartX - touchEndX > swipeThreshold) {
-                // Swipe left - next song
-                // showNextSong(); // Removed undefined function
-            } else if (touchEndX - touchStartX > swipeThreshold) {
-                // Swipe right - previous song
-                // showPrevSong(); // Removed undefined function
-            }
-        }
+
     
         function addEventListeners() {
             // Live update for weights total bar
@@ -5307,22 +5306,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     el.style.top = pos.top;
                     el.style.left = pos.left;
                 } else {
+                    // Initial positions: right side, one below the other
+                    el.style.right = '10px';
+                    el.style.left = '';
                     if (id === 'toggle-sidebar') {
-                        el.style.bottom = '280px';
-                        el.style.right = '10px';
+                        el.style.top = '200px';
                     } else if (id === 'toggle-songs') {
-                        el.style.bottom = '180px';
-                        el.style.right = '10px';
+                        el.style.top = '260px';
                     } else if (id === 'toggle-all-panels') {
-                        el.style.bottom = '230px';
-                        el.style.right   = '10px';
+                        el.style.top = '320px';
                     }
                 }
             };
     
+            // Use translateY for vertical movement only, works better on mobile
+            let startTop = 0;
             const onMove = (clientX, clientY) => {
-                el.style.left = clientX - offsetX + 'px';
-                el.style.top = clientY - offsetY + 'px';
+                let newTop = clientY - offsetY;
+                el.style.left = '';
+                el.style.right = '10px';
+                el.style.top = newTop + 'px';
             };
     
             const onEnd = () => {
@@ -5354,16 +5357,16 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('touchstart', function (e) {
                 isDragging = true;
                 const touch = e.touches[0];
-                offsetX = touch.clientX - el.offsetLeft;
                 offsetY = touch.clientY - el.offsetTop;
-            }, { passive: true });
-    
+            }, { passive: false });
+
             el.addEventListener('touchmove', function (e) {
                 if (isDragging) {
                     const touch = e.touches[0];
                     onMove(touch.clientX, touch.clientY);
+                    e.preventDefault();
                 }
-            }, { passive: true });
+            }, { passive: false });
     
             el.addEventListener('touchend', onEnd);
             restorePosition();
