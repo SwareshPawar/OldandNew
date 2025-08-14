@@ -1,7 +1,8 @@
 
 // --- GLOBAL CONSTANTS: must be at the very top ---
 const GENRES = [
-    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Hindi", "Marathi", "English"
+    "New", "Old","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Powerfull","Tensed", "Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
+    "Blues", "Disco", "Reggae", "R&B",
 ];
 const KEYS = [
     "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
@@ -24,7 +25,7 @@ const TIME_GENRE_MAP = {
     "March Rhythm", "Polka", "Samba", "Merengue"
   ],
   "6/8": [
-    "Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba", "Blues Shuffle", "Tango"
+    "Rock","Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba", "Blues Shuffle", "Tango"
   ],
   "5/4": [
      "JhapTaal", "Sultaal", "Jazz 5-beat"
@@ -63,14 +64,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginModal = document.getElementById('loginModal');
     const closeLoginModal = document.getElementById('closeLoginModal');
     if (loginBtn && loginModal) {
-        loginBtn.addEventListener('click', () => {
+        if (loginBtn._loginListener) loginBtn.removeEventListener('click', loginBtn._loginListener);
+        loginBtn._loginListener = () => {
             loginModal.style.display = 'flex';
-        });
+        };
+        loginBtn.addEventListener('click', loginBtn._loginListener);
     }
     if (closeLoginModal && loginModal) {
-        closeLoginModal.addEventListener('click', () => {
+        if (closeLoginModal._closeLoginListener) closeLoginModal.removeEventListener('click', closeLoginModal._closeLoginListener);
+        closeLoginModal._closeLoginListener = () => {
             loginModal.style.display = 'none';
-        });
+        };
+        closeLoginModal.addEventListener('click', closeLoginModal._closeLoginListener);
     }
 
     // Register modal logic
@@ -78,14 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerModal = document.getElementById('registerModal');
     const closeRegisterModal = document.getElementById('closeRegisterModal');
     if (registerBtn && registerModal) {
-        registerBtn.addEventListener('click', () => {
+        if (registerBtn._registerListener) registerBtn.removeEventListener('click', registerBtn._registerListener);
+        registerBtn._registerListener = () => {
             registerModal.style.display = 'flex';
-        });
+        };
+        registerBtn.addEventListener('click', registerBtn._registerListener);
     }
     if (closeRegisterModal && registerModal) {
-        closeRegisterModal.addEventListener('click', () => {
+        if (closeRegisterModal._closeRegisterListener) closeRegisterModal.removeEventListener('click', closeRegisterModal._closeRegisterListener);
+        closeRegisterModal._closeRegisterListener = () => {
             registerModal.style.display = 'none';
-        });
+        };
+        closeRegisterModal.addEventListener('click', closeRegisterModal._closeRegisterListener);
     }
 
     // Register form submit
@@ -93,8 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (registerForm) {
         registerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const firstName = document.getElementById('registerFirstName').value.trim();
-            const lastName = document.getElementById('registerLastName').value.trim();
+            function capitalizeFirst(str) {
+                return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+            }
+            const firstNameRaw = document.getElementById('registerFirstName').value.trim();
+            const lastNameRaw = document.getElementById('registerLastName').value.trim();
+            const firstName = capitalizeFirst(firstNameRaw);
+            const lastName = capitalizeFirst(lastNameRaw);
             const username = document.getElementById('registerUsername').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
             const phone = document.getElementById('registerPhone').value.trim();
@@ -354,13 +368,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateThemeToggleBtn();
     if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
+        if (themeToggleBtn._themeListener) themeToggleBtn.removeEventListener('click', themeToggleBtn._themeListener);
+        themeToggleBtn._themeListener = () => {
             isDarkMode = !isDarkMode;
             localStorage.setItem('darkMode', isDarkMode);
             applyTheme(isDarkMode);
             updateThemeToggleBtn();
             console.log('Theme toggled. Dark mode:', isDarkMode);
-        });
+        };
+        themeToggleBtn.addEventListener('click', themeToggleBtn._themeListener);
         themeToggleBtn.setAttribute('tabindex', '0');
         themeToggleBtn.setAttribute('role', 'button');
     }
@@ -402,25 +418,34 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
     // Render options
     renderGenreOptions(dropdownId);
 
+    // Remove previous listeners if any
+    if (input._genreListener) input.removeEventListener('click', input._genreListener);
+    if (dropdown._genreListener) dropdown.removeEventListener('click', dropdown._genreListener);
+    if (document._genreListener) document.removeEventListener('click', document._genreListener);
+
     // Show/hide dropdown
-    input.onclick = (e) => {
+    input._genreListener = (e) => {
         e.preventDefault();
         dropdown.classList.toggle('show');
     };
+    input.addEventListener('click', input._genreListener);
 
-    document.addEventListener('click', (e) => {
+    // Hide dropdown when clicking outside
+    document._genreListener = (e) => {
         if (!e.target.closest('.multiselect-container')) {
             dropdown.classList.remove('show');
         }
-    });
+    };
+    document.addEventListener('click', document._genreListener);
 
     // Select/deselect genres
-    dropdown.addEventListener('click', (e) => {
+    dropdown._genreListener = (e) => {
         const option = e.target.closest('.multiselect-option');
         if (!option) return;
         option.classList.toggle('selected');
         updateSelectedGenres(selectedId, dropdownId);
-    });
+    };
+    dropdown.addEventListener('click', dropdown._genreListener);
 }
 
 function updateSelectedGenres(selectedId, dropdownId) {
@@ -455,21 +480,27 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
     const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
     if (addSongBelowFavoritesBtn) {
-        addSongBelowFavoritesBtn.addEventListener('click', () => {
+        if (addSongBelowFavoritesBtn._addListener) addSongBelowFavoritesBtn.removeEventListener('click', addSongBelowFavoritesBtn._addListener);
+        addSongBelowFavoritesBtn._addListener = () => {
             document.getElementById('addSongModal').style.display = 'flex';
-        });
+        };
+        addSongBelowFavoritesBtn.addEventListener('click', addSongBelowFavoritesBtn._addListener);
     }
     const openAddSongModal = document.getElementById('openAddSongModal');
     if (openAddSongModal) {
-        openAddSongModal.addEventListener('click', () => {
+        if (openAddSongModal._openListener) openAddSongModal.removeEventListener('click', openAddSongModal._openListener);
+        openAddSongModal._openListener = () => {
             document.getElementById('addSongModal').style.display = 'flex';
-        });
+        };
+        openAddSongModal.addEventListener('click', openAddSongModal._openListener);
     }
     const adminPanelBtn = document.getElementById('adminPanelBtn');
     if (adminPanelBtn) {
-        adminPanelBtn.addEventListener('click', () => {
+        if (adminPanelBtn._adminListener) adminPanelBtn.removeEventListener('click', adminPanelBtn._adminListener);
+        adminPanelBtn._adminListener = () => {
             document.getElementById('adminPanelModal').style.display = 'flex';
-        });
+        };
+        adminPanelBtn.addEventListener('click', adminPanelBtn._adminListener);
     }
 });
 function getJwtExpiry(token) {
@@ -1358,7 +1389,9 @@ function isJwtValid(token) {
                     body: JSON.stringify({
                         favorites,
                         NewSetlist,
-                        OldSetlist
+                        OldSetlist,
+                        email: currentUser && currentUser.email ? currentUser.email : '',
+                        username: currentUser && currentUser.username ? currentUser.username : ''
                     })
                 });
                 if (!response.ok) {
@@ -2750,10 +2783,16 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('editSongTime').value = song.time;
             // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
             updateTaalDropdown('editSongTime', 'editSongTaal', song.taal);
-            
+            // Render correct genre options for multiselect
+            renderGenreOptions('editGenreDropdown');
+            setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+            // Set selected genres
             const genres = song.genres || (song.genre ? [song.genre] : []);
             const editSelectedGenres = document.getElementById('editSelectedGenres');
             editSelectedGenres.innerHTML = '';
+            document.querySelectorAll('#editGenreDropdown .multiselect-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
             genres.forEach(genre => {
                 const tag = document.createElement('div');
                 tag.className = 'multiselect-tag';
@@ -2762,7 +2801,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="remove-tag">×</span>
                 `;
                 editSelectedGenres.appendChild(tag);
-                
                 const options = document.querySelectorAll('#editGenreDropdown .multiselect-option');
                 options.forEach(opt => {
                     if (opt.dataset.value === genre) {
@@ -2770,7 +2808,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
-            
             document.getElementById('editSongLyrics').value = song.lyrics;
             editSongModal.style.display = 'flex';
         }
@@ -3251,9 +3288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     lyrics: lyrics,
                     editSongLyrics: editSongLyrics,
                     createdBy: original.createdBy || (currentUser && currentUser.username) || undefined,
-                    createdAt: original.createdAt || new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: (currentUser && currentUser.username) ? currentUser.username : undefined
+                    createdAt: original.createdAt || new Date().toISOString()
                 };
 
                 try {

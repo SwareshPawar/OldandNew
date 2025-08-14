@@ -46,7 +46,15 @@ async function authenticateUser(db, { loginInput, password }) {
   if (!user) throw new Error('Invalid credentials');
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new Error('Invalid credentials');
-  const token = jwt.sign({ id: user._id, username: user.username, email: user.email, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({
+    id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    username: user.username,
+    email: user.email,
+    phone: user.phone,
+    isAdmin: user.isAdmin
+  }, JWT_SECRET, { expiresIn: '7d' });
   return {
   token,
   user: {

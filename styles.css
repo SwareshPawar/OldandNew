@@ -1,3 +1,42 @@
+/* Admin Panel: Recommendation Weights Form Theme Fix */
+#weightsForm {
+    background: #23231A;
+    border-radius: 8px;
+    padding: 18px 18px 12px 18px;
+    box-shadow: 0 2px 12px rgba(62,63,41,0.18);
+}
+#weightsTable {
+    background: #23231A;
+    color: #ECE6D6;
+    border-radius: 8px;
+    border: 1px solid #4A4F3A;
+    margin-bottom: 16px;
+}
+#weightsTable th, #weightsTable td {
+    background: #23231A;
+    color: #ECE6D6;
+    border-bottom: 1px solid #4A4F3A;
+    padding: 10px 8px;
+    font-size: 1em;
+}
+#weightsTable th {
+    background: #2d2c28;
+    color: #BCA88D;
+}
+#weightsTable input[type="number"] {
+    background: #181810;
+    color: #ECE6D6;
+    border: 1px solid #BCA88D;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 1.08em;
+    font-weight: 500;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+#weightsTable input[type="number"]:focus {
+    outline: 2px solid #BCA88D;
+    background: #23231A;
+}
 /* Highlight active song in songs-section */
 .song-item.active-song {
     background: linear-gradient(90deg, #4f4d27 100%, var(--accent-color) 0%);
@@ -404,6 +443,8 @@
         :root {
     --light-accent: #BCA88D;
     --light-bg-highlight: #3E3F29;
+    --admin-panel-width: 60%; /* Change this value to adjust admin panel width */
+    --admin-panel-height: 80%; /* Change this value to adjust admin panel height */
             --primary-color: #3E3F29;
             --secondary-color: #7D8D86;
             --accent-color: #BCA88D;
@@ -1602,7 +1643,7 @@ body.dark-mode .modal-content {
                     display: none;
                     position: fixed;
                     top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0,0,0,0.45);
+                        background: rgba(0,0,0,0.5);
                     z-index: 9999;
                     align-items: center;
                     justify-content: center;
@@ -1612,8 +1653,8 @@ body.dark-mode .modal-content {
                     color: var(--panel-text, #222);
                     border-radius: 12px;
                     box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-                    max-width: 420px;
-                    width: 95vw;
+                        width: var(--admin-panel-width);
+                        height: var(--admin-panel-height);
                     padding: 32px 24px 24px 24px;
                     position: relative;
                     animation: fadeIn 0.2s;
@@ -1681,13 +1722,14 @@ body.dark-mode .modal-content {
                 #adminPanelModal #usersTable th, #adminPanelModal #usersTable td {
                     padding: 10px 8px;
                     text-align: left;
-                    border-bottom: 1px solid #eaeaea;
+                    border-bottom: 1px solid #4A4F3A;
                     font-size: 1em;
-                    color: #222;
+                    color: #ECE6D6;
+                    background: #23231A;
                     word-break: break-all;
                 }
                 #adminPanelModal #usersTable th {
-                    background: var(--light-bg);
+                    background: #2d2c28;
                     color: #3498db;
                     font-weight: 600;
                     border-top: 1px solid #eaeaea;
