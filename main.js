@@ -39,9 +39,25 @@ function isJwtValid(token) {
 
 
         // Dynamic API base URL for local/dev/prod
-        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? 'http://localhost:3001'
-            : 'https://oldandnew.onrender.com';
+        // const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
+        //     ? 'http://localhost:3001'
+        //     : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
+        
+        
+         const API_BASE_URL = 'https://oldand-new.vercel.app';
+
+        // Log backend connection details
+        if (API_BASE_URL.includes('localhost')) {
+            console.log('[Backend] Connected to LOCAL backend:', API_BASE_URL);
+        } else if (API_BASE_URL.includes('vercel.app')) {
+            console.log('[Backend] Connected to Vercel backend:', API_BASE_URL);
+        } else if (API_BASE_URL.includes('onrender.com')) {
+            console.log('[Backend] Connected to Render backend:', API_BASE_URL);
+        } else {
+            console.log('[Backend] Connected to backend:', API_BASE_URL);
+        }
+
 
         // Restore JWT token and user state on every refresh
         if (!jwtToken && localStorage.getItem('jwtToken')) {
@@ -88,7 +104,7 @@ function isJwtValid(token) {
         });
             
         async function loadSongsFromFile() {
-            console.time('loadSongsFromFile:total');
+            // ...removed console.time...
             // 1. Load songs from localStorage first
             let localSongs = JSON.parse(localStorage.getItem('songs') || '[]');
             songs = localSongs;
@@ -104,13 +120,13 @@ function isJwtValid(token) {
                     // Pass latest updatedAt as query param (API must support this)
                     url += `?updatedAfter=${latestUpdatedAt}`;
                 }
-                console.time('authFetch');
+                // ...removed console.time...
                 const response = await authFetch(url);
-                console.timeEnd('authFetch');
+                // ...removed console.timeEnd...
                 if (response.ok) {
-                    console.time('response.json');
+                    // ...removed console.time...
                     const newSongs = await response.json();
-                    console.timeEnd('response.json');
+                    // ...removed console.timeEnd...
                     if (Array.isArray(newSongs)) {
                         // Merge new/updated songs into local cache
                         let mergedSongs = [...localSongs];
@@ -144,10 +160,10 @@ function isJwtValid(token) {
                 return songs;
             } catch (err) {
                 console.error('Error loading songs from API (loadSongsFromFile):', err);
-                console.timeEnd('loadSongsFromFile:total');
+                // ...removed console.timeEnd...
                 return songs;
             }
-            console.timeEnd('loadSongsFromFile:total');
+            // ...removed console.timeEnd...
         }
     
         function connectWebSocket() {
@@ -425,7 +441,7 @@ function isJwtValid(token) {
     
         // Initialize the application
         async function init() {
-            console.time('init');
+            // ...removed console.time...
             // Ensure admin panel button is updated after all data is loaded
             if (typeof updateAdminPanelBtn === 'function') updateAdminPanelBtn();
             // Always restore JWT and user state on init
@@ -434,9 +450,9 @@ function isJwtValid(token) {
                 updateAuthButtons();
                 await loadUserData();
             }
-            console.time('loadSongsFromFile');
+            // ...removed console.time...
             songs = await loadSongsFromFile();
-            console.timeEnd('loadSongsFromFile');
+            // ...removed console.timeEnd...
             const localSongs = JSON.parse(localStorage.getItem('songs')) || [];
             if (localSongs.length > 0) {
                 const existingIds = new Set(songs.map(s => s.id));
@@ -446,42 +462,42 @@ function isJwtValid(token) {
                     }
                 });
             }
-            console.time('loadSettings');
+            // ...removed console.time...
             loadSettings();
-            console.timeEnd('loadSettings');
-            console.time('addEventListeners');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             addEventListeners();
-            console.timeEnd('addEventListeners');
-            console.time('addPanelToggles');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             addPanelToggles();
-            console.timeEnd('addPanelToggles');
-            console.time('renderSongs');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             renderSongs('New', '', '');
-            console.timeEnd('renderSongs');
-            console.time('applyLyricsBackground');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
-            console.timeEnd('applyLyricsBackground');
-            console.time('connectWebSocket');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             connectWebSocket();
-            console.timeEnd('connectWebSocket');
-            console.time('updateSongCount');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             updateSongCount();
-            console.timeEnd('updateSongCount');
-            console.time('initScreenWakeLock');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             initScreenWakeLock();
-            console.timeEnd('initScreenWakeLock');
-            console.time('setupModalClosing');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             setupModalClosing();
-            console.timeEnd('setupModalClosing');
-            console.time('setupSuggestedSongsClosing');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             setupSuggestedSongsClosing();
-            console.timeEnd('setupSuggestedSongsClosing');
-            console.time('setupModals');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             setupModals();
-            console.timeEnd('setupModals');
-            console.time('setupWindowCloseConfirmation');
+            // ...removed console.timeEnd...
+            // ...removed console.time...
             setupWindowCloseConfirmation();
-            console.timeEnd('setupWindowCloseConfirmation');
+            // ...removed console.timeEnd...
             // Back/forward navigation
 
 
@@ -514,7 +530,7 @@ function isJwtValid(token) {
                     }
                 }
             });
-            console.timeEnd('init');
+            // ...removed console.timeEnd...
         }
 
         function queueSaveUserData() {
@@ -922,7 +938,7 @@ function isJwtValid(token) {
     
 
         async function loadSetlists() {
-            console.time('loadSetlists');
+            // ...removed console.time...
             const response = await authFetch(`${API_BASE_URL}/api/userdata`);
             if (response.ok) {
                 const data = await response.json();
@@ -930,12 +946,12 @@ function isJwtValid(token) {
                 NewSetlist = data.NewSetlist || [];
                 OldSetlist = data.OldSetlist || [];
             }
-            console.timeEnd('loadSetlists');
+            // ...removed console.timeEnd...
         }
     
 
         async function loadUserData() {
-            console.time('loadUserData');
+            // ...removed console.time...
             try {
                 const response = await authFetch(`${API_BASE_URL}/api/userdata`);
                 if (response.ok) {
@@ -964,7 +980,7 @@ function isJwtValid(token) {
                 console.error('Network error in loadUserData:', err);
                 showNotification('Network error: Failed to load user data');
             }
-            console.timeEnd('loadUserData');
+            // ...removed console.timeEnd...
         }
 
         async function saveUserData() {
@@ -3251,10 +3267,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Start the application
         window.addEventListener('DOMContentLoaded', () => {
             // Restore login state and update UI
-            if (jwtToken) {
-                loadUserData(); // This will call updateAuthButtons after user is loaded
+            if (jwtToken && isJwtValid(jwtToken)) {
+                loadUserData().then(() => {
+                    updateAuthButtons();
+                });
             } else {
+                // Remove expired token if present
+                localStorage.removeItem('jwtToken');
+                jwtToken = '';
                 updateAuthButtons();
             }
+
+            // Initialize app event listeners and UI
+            addEventListeners();
+            // Optionally, load initial songs or other data
+            loadSongsFromFile();
             // ...existing code for any other initialization...
         });
