@@ -60,7 +60,14 @@ async function saveRecommendationWeightsToBackend(weights) {
             console.log('Theme toggled. dark-mode:', document.body.classList.contains('dark-mode'));
         }
         window.addEventListener('DOMContentLoaded', function() {
-            // Removed duplicate theme toggle button. Only #themeToggle will be used.
+            var themeToggle = document.createElement('button');
+            themeToggle.textContent = 'Toggle Theme';
+            themeToggle.style.position = 'fixed';
+            themeToggle.style.top = '10px';
+            themeToggle.style.right = '10px';
+            themeToggle.style.zIndex = '9999';
+            themeToggle.onclick = toggleTheme;
+            document.body.appendChild(themeToggle);
         });
         </script>
 </head>
@@ -216,60 +223,64 @@ async function saveRecommendationWeightsToBackend(weights) {
                         <span id="clearSearch" class="clear-search-btn" style="display: none;">×</span>
                         <div id="searchHistoryDropdown" class="search-history-dropdown"></div>
                     </div>
-                    <select id="keyFilter" class="compact-select">
-                        <option value="">All Keys</option>
-                        <option value="C">C Major</option>
-                        <option value="C#">C# Major</option>
-                        <option value="D">D Major</option>
-                        <option value="D#">D# Major</option>
-                        <option value="E">E Major</option>
-                        <option value="F">F Major</option>
-                        <option value="F#">F# Major</option>
-                        <option value="G">G Major</option>
-                        <option value="G#">G# Major</option>
-                        <option value="A">A Major</option>
-                        <option value="A#">A# Major</option>
-                        <option value="B">B Major</option>
-                        <option value="Cm">Cm</option>
-                        <option value="C#m">C#m</option>
-                        <option value="Dm">Dm</option>
-                        <option value="D#m">D#m</option>
-                        <option value="Em">Em</option>
-                        <option value="Fm">Fm</option>
-                        <option value="F#m">F#m</option>
-                        <option value="Gm">Gm</option>
-                        <option value="G#m">G#m</option>
-                        <option value="Am">Am</option>
-                        <option value="A#m">A#m</option>
-                        <option value="Bm">Bm</option>
-                    </select>
-                    <select id="genreFilter" class="compact-select">
-                        <option value="">All Genres</option>
-                        <option value="New">New</option>
-                        <option value="Old">Old</option>
-                        <option value="Romantic">Romantic</option>
-                        <option value="Acoustic">Acoustic</option>
-                        <option value="Blues">Blues</option>
-                        <option value="Dance">Dance</option>
-                        <option value="Love">Love</option>
-                        <option value="Sad">Sad</option>
-                        <option value="Patriotic">Patriotic</option>
-                        <option value="Happy">Happy</option>
-                        <option value="Qawalli">Qawalli</option>
-                        <option value="Evergreen">Evergreen</option>
-                        <option value="Classical">Classical</option>
-                        <option value="Ghazal">Ghazal</option>
-                        <option value="Sufi">Sufi</option>
-                        <option value="Hindi">Hindi</option>
-                        <option value="Marathi">Marathi</option>
-                        <option value="English">English</option>
-                    </select>
-                    <select id="sortFilter" class="compact-select" style="margin-top:6px;">
-                        <option value="recent">Recently Added</option>
-                        <option value="az">A-Z</option>
-                        <option value="za">Z-A</option>
-                        <option value="oldest">Oldest First</option>
-                    </select>
+                    <div class="filter-row-1" style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                        <select id="keyFilter" class="compact-select">
+                            <option value="">All Keys</option>
+                            <option value="C">C Major</option>
+                            <option value="C#">C# Major</option>
+                            <option value="D">D Major</option>
+                            <option value="D#">D# Major</option>
+                            <option value="E">E Major</option>
+                            <option value="F">F Major</option>
+                            <option value="F#">F# Major</option>
+                            <option value="G">G Major</option>
+                            <option value="G#">G# Major</option>
+                            <option value="A">A Major</option>
+                            <option value="A#">A# Major</option>
+                            <option value="B">B Major</option>
+                            <option value="Cm">Cm</option>
+                            <option value="C#m">C#m</option>
+                            <option value="Dm">Dm</option>
+                            <option value="D#m">D#m</option>
+                            <option value="Em">Em</option>
+                            <option value="Fm">Fm</option>
+                            <option value="F#m">F#m</option>
+                            <option value="Gm">Gm</option>
+                            <option value="G#m">G#m</option>
+                            <option value="Am">Am</option>
+                            <option value="A#m">A#m</option>
+                            <option value="Bm">Bm</option>
+                        </select>
+                        <select id="genreFilter" class="compact-select">
+                            <option value="">All Genres</option>
+                            <option value="New">New</option>
+                            <option value="Old">Old</option>
+                            <option value="Romantic">Romantic</option>
+                            <option value="Acoustic">Acoustic</option>
+                            <option value="Blues">Blues</option>
+                            <option value="Dance">Dance</option>
+                            <option value="Love">Love</option>
+                            <option value="Sad">Sad</option>
+                            <option value="Patriotic">Patriotic</option>
+                            <option value="Happy">Happy</option>
+                            <option value="Qawalli">Qawalli</option>
+                            <option value="Evergreen">Evergreen</option>
+                            <option value="Classical">Classical</option>
+                            <option value="Ghazal">Ghazal</option>
+                            <option value="Sufi">Sufi</option>
+                            <option value="Hindi">Hindi</option>
+                            <option value="Marathi">Marathi</option>
+                            <option value="English">English</option>
+                        </select>
+                    </div>
+                    <div class="filter-row-2" style="margin-top:6px;">
+                        <select id="sortFilter" class="compact-select">
+                            <option value="recent">Recently Added</option>
+                            <option value="az">A-Z</option>
+                            <option value="za">Z-A</option>
+                            <option value="oldest">Oldest First</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="search-results" id="searchResults">
