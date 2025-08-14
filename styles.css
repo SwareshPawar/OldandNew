@@ -1607,8 +1607,8 @@ body.dark-mode .modal-content {
                     transition: background 0.2s, color 0.2s;
                 }
                 #adminPanelModal .admin-tab.active {
-                    background: #3498db;
-                    color: #fff;
+                    background: var(--accent-color);
+                    color: var(--primary-color);
                     font-weight: bold;
                 }
                 #adminPanelModal .admin-tab-content {
