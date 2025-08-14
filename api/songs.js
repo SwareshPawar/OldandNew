@@ -4,14 +4,37 @@ import { MongoClient, ObjectId } from 'mongodb';
 const uri = process.env.MONGODB_URI;
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5501');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   const client = new MongoClient(uri);
   try {
     await client.connect();
     const db = client.db();
     const songs = db.collection('Songs');
-    if (req.method === 'GET') {
-      const allSongs = await songs.find({}).toArray();
-      res.status(200).json(allSongs);
+
+    
+      if (req.method === 'GET') {
+        const { updatedAfter } = req.query;
+        let query = {};
+        if (updatedAfter) {
+          // Filter songs updated after the given timestamp
+          const ts = Number(updatedAfter);
+          query = {
+            $or: [
+              { updatedAt: { $gt: ts } },
+              { createdAt: { $gt: ts } }
+            ]
+          };
+        }
+        const allSongs = await songs.find(query).toArray();
+        res.status(200).json(allSongs);
     } else if (req.method === 'POST') {
       // Auth required
       const authHeader = req.headers.authorization;

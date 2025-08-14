@@ -1,4 +1,73 @@
 // --- JWT expiry helpers: must be at the very top ---
+// ===== GENRE MULTISELECT LOGIC =====
+const GENRES = [
+    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Hindi", "Marathi", "English"
+];
+
+function renderGenreOptions(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = GENRES.map(genre => `<div class=\"multiselect-option\" data-value=\"${genre}\">${genre}</div>`).join("");
+}
+
+function setupGenreMultiselect(inputId, dropdownId, selectedId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedContainer = document.getElementById(selectedId);
+    if (!input || !dropdown || !selectedContainer) return;
+
+    // Render options
+    renderGenreOptions(dropdownId);
+
+    // Show/hide dropdown
+    input.onclick = (e) => {
+        e.preventDefault();
+        dropdown.classList.toggle('show');
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.multiselect-container')) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    // Select/deselect genres
+    dropdown.addEventListener('click', (e) => {
+        const option = e.target.closest('.multiselect-option');
+        if (!option) return;
+        option.classList.toggle('selected');
+        updateSelectedGenres(selectedId, dropdownId);
+    });
+}
+
+function updateSelectedGenres(selectedId, dropdownId) {
+    const selectedContainer = document.getElementById(selectedId);
+    const dropdown = document.getElementById(dropdownId);
+    selectedContainer.innerHTML = '';
+    const selectedOptions = dropdown.querySelectorAll('.multiselect-option.selected');
+    selectedOptions.forEach(opt => {
+        // Prevent duplicate tags
+        if ([...selectedContainer.children].some(tag => tag.textContent.trim().startsWith(opt.dataset.value))) return;
+        const tag = document.createElement('div');
+        tag.className = 'multiselect-tag';
+        tag.innerHTML = `
+            ${opt.dataset.value}
+            <span class=\"remove-tag\">×</span>
+        `;
+        selectedContainer.appendChild(tag);
+        tag.querySelector('.remove-tag').onclick = (e) => {
+            e.stopPropagation();
+            opt.classList.remove('selected');
+            tag.remove();
+        };
+    });
+}
+
+// Initialize genre multiselects on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
+    setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+});
 function getJwtExpiry(token) {
     if (!token) return 0;
     try {
@@ -39,13 +108,13 @@ function isJwtValid(token) {
 
 
         // Dynamic API base URL for local/dev/prod
-        // const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
-        //     ? 'http://localhost:3001'
-        //     : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
+            ? 'http://localhost:3001'
+            : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
         
         
-         const API_BASE_URL = 'https://oldand-new.vercel.app';
+        // const API_BASE_URL = 'https://oldand-new.vercel.app';
 
         // Log backend connection details
         if (API_BASE_URL.includes('localhost')) {
