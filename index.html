@@ -60,14 +60,7 @@ async function saveRecommendationWeightsToBackend(weights) {
             console.log('Theme toggled. dark-mode:', document.body.classList.contains('dark-mode'));
         }
         window.addEventListener('DOMContentLoaded', function() {
-            var themeToggle = document.createElement('button');
-            themeToggle.textContent = 'Toggle Theme';
-            themeToggle.style.position = 'fixed';
-            themeToggle.style.top = '10px';
-            themeToggle.style.right = '10px';
-            themeToggle.style.zIndex = '9999';
-            themeToggle.onclick = toggleTheme;
-            document.body.appendChild(themeToggle);
+            // Removed duplicate theme toggle button. Only #themeToggle will be used.
         });
         </script>
 </head>
