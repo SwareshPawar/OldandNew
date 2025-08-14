@@ -77,7 +77,7 @@ function applyTheme(isDark) {
 // --- JWT expiry helpers: must be at the very top ---
 // ===== GENRE MULTISELECT LOGIC =====
 const GENRES = [
-    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Hindi", "Marathi", "English", "K-Pop"
+    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Hindi", "Marathi", "English" 
 ];
 const KEYS = [
     "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
