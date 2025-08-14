@@ -16,18 +16,8 @@ async function init() {
         setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
         setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
     }
-    // Load songs
+    // Load songs (always from backend)
     songs = await loadSongsFromFile();
-    // Merge local songs if needed
-    const localSongs = JSON.parse(localStorage.getItem('songs')) || [];
-    if (localSongs.length > 0) {
-        const existingIds = new Set(songs.map(s => s.id));
-        localSongs.forEach(song => {
-            if (!existingIds.has(song.id)) {
-                songs.push(song);
-            }
-        });
-    }
     // Settings and UI
     loadSettings();
     addEventListeners();
@@ -291,63 +281,43 @@ function isJwtValid(token) {
             
         async function loadSongsFromFile() {
             // ...removed console.time...
-            // 1. Load songs from localStorage first
-            let localSongs = JSON.parse(localStorage.getItem('songs') || '[]');
-            songs = localSongs;
-            // 2. Find latest updatedAt timestamp
-            let latestUpdatedAt = localSongs.length > 0 ? Math.max(...localSongs.map(s => new Date(s.updatedAt || s.createdAt || 0).getTime())) : 0;
-            // 3. Render songs immediately
-            renderSongs('New', '', '');
-            updateSongCount();
-            // 4. Fetch new/updated songs from server in background
+            // Always fetch all songs from backend and update localStorage
             try {
-                let url = `${API_BASE_URL}/api/songs`;
-                if (latestUpdatedAt) {
-                    // Pass latest updatedAt as query param (API must support this)
-                    url += `?updatedAfter=${latestUpdatedAt}`;
-                }
-                // ...removed console.time...
+                const url = `${API_BASE_URL}/api/songs`;
                 const response = await authFetch(url);
-                // ...removed console.timeEnd...
                 if (response.ok) {
-                    // ...removed console.time...
-                    const newSongs = await response.json();
-                    // ...removed console.timeEnd...
-                    if (Array.isArray(newSongs)) {
-                        // Merge new/updated songs into local cache
-                        let mergedSongs = [...localSongs];
-                        newSongs.forEach(newSong => {
-                            const idx = mergedSongs.findIndex(s => s.id === newSong.id);
-                            if (idx !== -1) {
-                                mergedSongs[idx] = newSong; // update existing
-                            } else {
-                                mergedSongs.push(newSong); // add new
+                    const allSongs = await response.json();
+                    if (Array.isArray(allSongs)) {
+                        // Deduplicate by ID
+                        const uniqueSongs = [];
+                        const seenIds = new Set();
+                        for (const song of allSongs) {
+                            if (!seenIds.has(song.id)) {
+                                uniqueSongs.push(song);
+                                seenIds.add(song.id);
                             }
-                        });
-                        songs = mergedSongs;
+                        }
+                        songs = uniqueSongs;
                         localStorage.setItem('songs', JSON.stringify(songs));
-                        // Log the number of songs loaded from backend
-                        // Update last fetch timestamp
-                        if (newSongs.length > 0) {
-                            const latest = newSongs.reduce((max, s) => {
+                        if (uniqueSongs.length > 0) {
+                            const latest = uniqueSongs.reduce((max, s) => {
                                 const t = s.updatedAt || s.createdAt;
                                 return (!max || t > max) ? t : max;
-                            }, latestUpdatedAt);
+                            }, null);
                             lastSongsFetch = latest;
                         }
-                        renderSongs('New', '', '');
-                        updateSongCount();
-                        return songs;
+                    } else {
+                        songs = [];
                     }
-                    return songs;
                 } else {
+                    songs = [];
                     const errorText = await response.text();
                     console.error('API error in loadSongsFromFile:', response.status, errorText);
                 }
                 return songs;
             } catch (err) {
+                songs = [];
                 console.error('Error loading songs from API (loadSongsFromFile):', err);
-                // ...removed console.timeEnd...
                 return songs;
             }
             // ...removed console.timeEnd...
@@ -2928,9 +2898,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 try {
-                    const response = await authFetch(`${API_BASE_URL}/api/songs`, {
+                    const jwtToken = localStorage.getItem('jwtToken') || '';
+                    const response = await fetch(`${API_BASE_URL}/api/songs`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${jwtToken}`
+                        },
                         body: JSON.stringify(newSong)
                     });
                     if (response.ok) {
@@ -2959,7 +2933,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const selectedGenres = Array.from(document.querySelectorAll('#editGenreDropdown .multiselect-option.selected'))
                     .map(opt => opt.dataset.value);
 
+                // Find the original song for missing fields
+                const original = songs.find(s => s.id == id) || {};
+                const editSongLyrics = document.getElementById('editSongLyrics').value;
                 const updatedSong = {
+                    id: Number(id),
                     title: title,
                     category: document.getElementById('editSongCategory').value,
                     key: document.getElementById('editSongKey').value,
@@ -2968,6 +2946,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     taal: document.getElementById('editSongTaal').value,
                     genres: selectedGenres,
                     lyrics: lyrics,
+                    editSongLyrics: editSongLyrics,
+                    createdBy: original.createdBy || (currentUser && currentUser.username) || undefined,
+                    createdAt: original.createdAt || new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     updatedBy: (currentUser && currentUser.username) ? currentUser.username : undefined
                 };
@@ -2979,12 +2960,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify(updatedSong)
                     });
                     if (response.ok) {
+                        // Fetch only the updated song from backend
+                        const updatedSongRes = await authFetch(`${API_BASE_URL}/api/songs?id=${id}`);
+                        let updated = null;
+                        if (updatedSongRes.ok) {
+                            const arr = await updatedSongRes.json();
+                            updated = Array.isArray(arr) ? arr.find(s => s.id == id) : arr;
+                        }
+                        // Merge updated song into local cache and songs array
+                        if (updated) {
+                            let localSongs = JSON.parse(localStorage.getItem('songs') || '[]');
+                            const idx = localSongs.findIndex(s => s.id == id);
+                            if (idx !== -1) {
+                                localSongs[idx] = updated;
+                            } else {
+                                localSongs.push(updated);
+                            }
+                            songs = localSongs;
+                            localStorage.setItem('songs', JSON.stringify(songs));
+                        }
                         showNotification('Song updated successfully!');
                         editSongModal.style.display = 'none';
                         editSongForm.reset();
-                        // Reload songs from backend
-                        songs = await loadSongsFromFile();
-                        renderSongs('New', keyFilter.value, genreFilter.value);
+                        // Render correct tab
+                        if (updated) {
+                            renderSongs(updated.category, keyFilter.value, genreFilter.value);
+                            // If previewing this song, update preview
+                            if (songPreviewEl.dataset.songId == id) {
+                                showPreview(updated);
+                            }
+                        }
                     } else {
                         showNotification('Failed to update song');
                     }

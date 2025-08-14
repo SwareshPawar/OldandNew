@@ -47,6 +47,24 @@ export default async function handler(req, res) {
       const newSong = req.body;
       await songs.insertOne(newSong);
       res.status(201).json({ message: 'Song added' });
+    } else if (req.method === 'PUT') {
+      // Auth required
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+      }
+      const token = authHeader.split(' ')[1];
+      const payload = verifyToken(token);
+      if (!payload) return res.status(401).json({ error: 'Invalid or expired token' });
+      const id = req.query.id || req.body.id;
+      if (!id) return res.status(400).json({ error: 'Missing song id' });
+      const updateFields = {};
+      ['title','category','key','tempo','time','taal','genres','lyrics','updatedAt','updatedBy'].forEach(f => {
+        if (req.body[f] !== undefined) updateFields[f] = req.body[f];
+      });
+      const result = await songs.updateOne({ _id: new ObjectId(id) }, { $set: updateFields });
+      if (result.matchedCount === 0) return res.status(404).json({ error: 'Song not found' });
+      res.status(200).json({ message: 'Song updated' });
     } else {
       res.status(405).json({ error: 'Method not allowed' });
     }
