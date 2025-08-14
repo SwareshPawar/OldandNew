@@ -1,3 +1,12 @@
+/* Highlight active song in songs-section */
+.song-item.active-song {
+    background: linear-gradient(90deg, #4f4d27 100%, var(--accent-color) 0%);
+    color: #F1F0E4;
+    border-left: 4px solid var(--accent-color);
+    box-shadow: 0 2px 8px rgba(62,63,41,0.18);
+    font-weight: bold;
+    transition: background 0.2s, border 0.2s;
+}
 /* Loading overlay styles */
 #loadingOverlay {
     position: fixed;
@@ -11,7 +20,7 @@
     align-items: center;
     justify-content: center;
     font-size: 2rem;
-    color: #333;
+    color: var(--text-color);
     transition: opacity 0.3s;
 }
 #loadingOverlay.hide {
@@ -27,16 +36,16 @@
 
         /* Improve visibility of weights input fields in admin panel */
         #weightsTable input[type="number"] {
-            background: #f6f8fa;
-            color: #222;
-            border: 1px solid #ccc;
+            background: var(--light-bg);
+            color: var(--text-color);
+            border: 1px solid var(--song-item-border);
             border-radius: 4px;
             padding: 4px 8px;
             font-size: 1em;
         }
         #weightsTable input[type="number"]:focus {
-            outline: 2px solid #3498db;
-            background: #fff;
+            outline: 2px solid var(--accent-color);
+            background: var(--light-bg);
         }
 
          /* ===== SWIPE ANIMATIONS & FEEDBACK ===== */
@@ -48,7 +57,7 @@
 
         .song-slide {
         transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
-        will-change: transform;
+        /* THEME PALETTE ONLY */
         }
 
         /* Swipe direction indicators */
@@ -129,6 +138,7 @@
             margin: 0;
             flex-grow: 1;
             text-align: center;
+            color: var(--song-meta-color)
         }
 
 
@@ -169,7 +179,7 @@
         .song-item .favorite-btn {
             background: none;
             border: none;
-            color: #ccc;
+            color: var(--song-meta-color);
             cursor: pointer;
             font-size: 1rem;
             padding: 0 5px;
@@ -205,7 +215,7 @@
         .song-item .favorite-btn {
             background: none;
             border: none;
-            color: #ccc;
+            color: var(--song-meta-color);
             cursor: pointer;
             font-size: 1rem;
             padding: 0;
@@ -358,7 +368,7 @@
             margin-top: 5px;
             padding: 2px 8px;
             background: var(--accent-color);
-            color: white;
+            color: var(--primary-color);
             border-radius: 12px;
             font-size: 0.75rem;
         }
@@ -371,7 +381,7 @@
         height: 36px;
         border-radius: 50%;
         background: var(--accent-color);
-        color: white;
+    color: var(--primary-color);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -389,36 +399,28 @@
 
 
         :root {
-            --primary-color: #6b4f4f;
-            --secondary-color: #a67c52;
-            --accent-color: #d9b38c;
-            --text-color: #3d3d3d;
-            --light-bg: #f5e9e2;
-            --delete-color: #c45c5c;
-            --favorite-color: #e88a8a;
-            --notification-bg: rgba(94, 69, 69, 0.9);
-            
-            /* Dark Mode */
-            --dark-primary: #4a3636;
-            --dark-secondary: #7d5a3a;
-            --dark-accent: #b38a5e;
-            --dark-text: #e0d8d0;
-            --dark-bg: #1a1515;
-            --dark-light-bg: #2a2222;
-            --dark-favorite: #ff8787;
-            /* Theme variables */
-            --sidebar-text-color: white;
-            --sidebar-item-bg: transparent;
-            --sidebar-item-hover-bg: var(--secondary-color);
-            --sidebar-text-hover: white;
-            --song-item-bg: white;
-            --song-item-text: #333;
-            --song-item-border: #e2e8f0;
-            --song-meta-color: #666;
-            --lyrics-bg-color: white;
-            --lyrics-text-color: #333;
-            --title-color: var(--primary-color);
-            --chord-color: var(--primary-color);
+    --light-accent: #BCA88D;
+    --light-bg-highlight: #3E3F29;
+            --primary-color: #3E3F29;
+            --secondary-color: #7D8D86;
+            --accent-color: #BCA88D;
+            --light-bg: #2d2c28;
+            --text-color: #3E3F29;
+            --delete-color: #BCA88D;
+            --favorite-color: #ff0000;
+            --notification-bg: rgba(62, 63, 41, 0.9);
+            --sidebar-text-color: #3E3F29;
+            --sidebar-item-bg: #F1F0E4;
+            --sidebar-item-hover-bg: #BCA88D;
+            --sidebar-text-hover: #3E3F29;
+            --song-item-bg: #F1F0E4;
+            --song-item-text: #3E3F29;
+            --song-item-border: #BCA88D;
+            --song-meta-color: #7D8D86;
+            --lyrics-bg-color: #F1F0E4;
+            --lyrics-text-color: #3E3F29;
+            --title-color: #3E3F29;
+            --chord-color: #7D8D86;
         }
 
         * {
@@ -437,23 +439,25 @@
         }
 
             body.dark-mode {
-                --primary-color: var(--dark-primary);
-                --secondary-color: var(--dark-secondary);
-                --accent-color: var(--dark-accent);
-                --text-color: var(--dark-text);
-                --light-bg: var(--dark-bg);
-                --sidebar-text-color: #e2e8f0;
-                --sidebar-item-bg: rgba(255, 255, 255, 0.05);
-                --sidebar-item-hover-bg: var(--dark-secondary);
-                --song-item-bg: #2d3748;
-                --song-item-text: #e2e8f0;
-                --song-item-border: #4a5568;
-                --song-meta-color: #a0aec0;
-                --lyrics-bg-color: #473525;
-                --lyrics-text-color: #e2e8f0;
-                --title-color: var(--accent-color);
-                --chord-color: var(--accent-color);
-                --favorite-color: var(--dark-favorite);
+                --dark-accent: #646e6a;
+                --dark-light-bg: #4f4e4d;
+                --primary-color: #23231A;
+                --secondary-color: #4A4F3A;
+                --accent-color: #BCA88D;
+                --text-color: #ECE6D6;
+                --light-bg: #181810;
+                --sidebar-text-color: #ECE6D6;
+                --sidebar-item-bg: #23231A;
+                --sidebar-item-hover-bg: #4A4F3A;
+                --song-item-bg: #23231A;
+                --song-item-text: #ECE6D6;
+                --song-item-border: #BCA88D;
+                --song-meta-color: #7D8D86;
+                --lyrics-bg-color: #181810;
+                --lyrics-text-color: #ECE6D6;
+                --title-color: #BCA88D;
+                --chord-color: #7D8D86;
+                --favorite-color: #ff0000;
             }
 
         /* Add these styles to your existing CSS */
@@ -462,7 +466,7 @@
             border-radius: 6px;
             border-style: inset;
             background-color: var(--lyrics-bg-color);
-            color: var(--lyrics-text-color);
+            color: var(--primary-color);
             transition: background-color 0.3s, color 0.3s;
         }
 
@@ -506,7 +510,7 @@
             z-index: 1100;
             padding: 8px;
             background: var(--accent-color);
-            color: white;
+            color: var(--primary-color);
             border-radius: 50%;
             width: 36px;
             height: 36px;
@@ -567,7 +571,7 @@
         /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
-            background: var(--primary-color);
+            background: var(--sidebar-item-bg);
             color: var(--sidebar-text-color);
             padding: 15px;
             position: fixed;
@@ -633,7 +637,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: white;
+            color: var(--primary-color);
             cursor: pointer;
             font-weight: bold;
             padding: 10px;
@@ -643,7 +647,7 @@
         }
 
             .folder-toggle:hover {
-                background: #0e4b6e;
+                background: var(--secondary-color);
             }
 
         .folder-caret {
@@ -703,7 +707,7 @@
         .compact-select {
             padding: 6px;
             border-radius: 4px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--song-item-border);
             font-size: 0.9rem;
             width: 100%;
         }
@@ -715,7 +719,7 @@
             margin: 4px 0;
             padding: 6px 8px;
             border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(144, 135, 135, 0.1);
             cursor: pointer;
             border: 1px solid var(--song-item-border);
             transition: all 0.3s ease;
@@ -823,40 +827,41 @@
                 transform: translateY(-1px);
             }
 
-        .btn-primary {
+            .btn-primary {
             background: var(--accent-color);
-            color: white;
-        }
+            color: var(--primary-color);
+            }
 
             .btn-primary:hover {
-                background: var(--secondary-color);
+            background: var(--secondary-color);
+            color: var(--light-bg);
             }
 
         .btn-edit {
-            background: #2a9d8f;
-            color: white;
+            background: var(--secondary-color);
+            color: var(--primary-color);
         }
 
             .btn-edit:hover {
-                background: #28796e;
+                background: var(--primary-color);
             }
 
         .btn-delete {
-            background: var(--delete-color);
-            color: white;
+            background: #c31010;
+            color: #fff;
         }
 
             .btn-delete:hover {
-                background: #b32d37;
+                background: var(--primary-color);
             }
 
         .btn-cancel {
-            background: #6c757d;
-            color: white;
+            background: var(--secondary-color);
+            color: var(--primary-color);
         }
 
             .btn-cancel:hover {
-                background: #5a6268;
+                background: var(--primary-color);
             }
 
         .btn-favorite {
@@ -865,7 +870,7 @@
         }
 
             .btn-favorite:hover {
-                background: #ff5252;
+                background: var(--accent-color);
             }
 
         /* Tab Styles */
@@ -877,7 +882,7 @@
         .tab {
             padding: 8px 15px;
             background: var(--primary-color);
-            color: white;
+            color: var(--primary-color);
             border-radius: 4px 4px 0 0;
             cursor: pointer;
             transition: background 0.2s;
@@ -903,6 +908,7 @@
         .setlist-tabs {
             display: flex;
             border-bottom: 2px solid var(--primary-color);
+            color: var(--accent-color);
             margin-bottom: 15px;
         }
 
@@ -924,11 +930,12 @@
 
             .setlist-tab:hover {
                 background: var(--secondary-color);
-                color: white;
+                color: var(--primary-color);
             }
 
         .setlist-content {
-            background: white;
+            background: var(--light-bg);
+            color: var(--text-color);
             padding: 15px;
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -940,7 +947,7 @@
         }
 
             .setlist-sortable li:hover {
-                background-color: #e0f0ff;
+                background-color: var(--accent-color);
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             }
 
@@ -960,19 +967,19 @@
             max-height: 60vh;       /* Limits height */
             overflow-y: auto;       /* Enables scroll */
             margin-top: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--song-item-border);
             border-radius: 4px;
         }
 
         #searchResultsContent .search-result-item {
             padding: 10px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--song-item-border);
             cursor: pointer;
             transition: background 0.2s;
         }
 
         #searchResultsContent .search-result-item:hover {
-            background-color: #f5f5f5;
+            background-color: var(--sidebar-item-hover-bg);
         }
         
         .search-container {
@@ -986,13 +993,13 @@
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
-            color: #999;
+            color: var(--song-meta-color);
             font-size: 1.2rem;
             transition: color 0.2s;
         }
         
         .clear-search-btn:hover {
-            color: #666;
+            color: var(--text-color);
         }
 
         .search-history-dropdown {
@@ -1003,8 +1010,8 @@
             width: 100%;
             max-height: 100px;
             overflow-y: auto;
-            background: white;
-            border: 1px solid #ddd;
+            background: var(--light-bg);
+            border: 1px solid var(--song-item-border);
             border-radius: 0 0 4px 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 1000;
@@ -1013,19 +1020,19 @@
         .search-history-item {
             padding: 8px 10px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--song-item-border);
             transition: background-color 0.2s;
         }
 
             .search-history-item:hover {
-                background-color: #f5f5f5;
+                background-color: var(--sidebar-item-hover-bg);
             }
 
         .search-history-header {
             padding: 8px 10px;
             font-weight: bold;
             border-bottom: 1px solid #eee;
-            background-color: #f9f9f9;
+            background-color: var(--light-bg);
             position: sticky;
             top: 0;
         }
@@ -1033,7 +1040,7 @@
         .search-results {
             display: none;
             margin-top: 15px;
-            background: white;
+            background: var(--light-bg);
             border-radius: 6px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 10px;
@@ -1047,17 +1054,17 @@
             font-weight: bold;
             margin-bottom: 10px;
             padding-bottom: 5px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--song-item-border);
         }
 
         .search-result-item {
             padding: 8px;
-            border-bottom: 1px solid #f5f5f5;
+            border-bottom: 1px solid var(--song-item-border);
             cursor: pointer;
         }
 
             .search-result-item:hover {
-                background-color: #f9f9f9;
+                background-color: var(--sidebar-item-hover-bg);
             }
 
         .search-result-title {
@@ -1066,12 +1073,12 @@
 
         .search-result-meta {
             font-size: 0.8rem;
-            color: #666;
+            color: var(--song-meta-color);
         }
 
         .search-result-snippet {
             font-size: 0.85rem;
-            color: #555;
+            color: var(--song-meta-color);
             margin-top: 4px;
             font-style: italic;
         }
@@ -1102,8 +1109,12 @@
         }
 
         .modal-content {
-            background: white;
-            color: grey;
+            background: var(--light-bg);
+            color: var(--text-color);
+body.dark-mode .modal-content {
+    background: var(--light-bg);
+    color: var(--text-color);
+}
             padding: 20px;
             border-radius: 8px;
             width: 70%;
@@ -1282,7 +1293,7 @@
             width: 40%;
             max-height: 150px;
             overflow-y: auto;
-            background: white;
+            background: var(--light-bg);
             border: 1px solid #ddd;
             border-radius: 0 0 4px 4px;
             z-index: 1000;
@@ -1316,7 +1327,7 @@
 
         .multiselect-tag {
             background: var(--accent-color);
-            color: white;
+            color: var(--primary-color);
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 0.8rem;
@@ -1409,7 +1420,7 @@
                 width: 100%;
                 padding: 8px;
                 border-radius: 4px;
-                border: 1px solid #ccc;
+                border: 1px solid var(--song-item-border);
             }
 
         /* Responsive Design */
@@ -1556,8 +1567,8 @@
             --panel-text: #f6f8fa;
         }
         body:not(.dark-mode) {
-            --panel-bg: #fff;
-            --panel-text: #222;
+            --panel-bg: var(--sidebar-item-bg);
+            --panel-text: var(--sidebar-text-color);
         }
                 }
                 #adminPanelModal h2 {
@@ -1586,7 +1597,7 @@
                     justify-content: center;
                 }
                 #adminPanelModal .admin-tab {
-                    background: #f0f0f0;
+                    background: var(--light-bg);
                     border: none;
                     border-radius: 6px 6px 0 0;
                     padding: 8px 18px;
@@ -1601,7 +1612,7 @@
                     font-weight: bold;
                 }
                 #adminPanelModal .admin-tab-content {
-                    background: #fafbfc;
+                    background: var(--light-bg);
                     border-radius: 0 0 8px 8px;
                     padding: 18px 0 0 0;
                 }
@@ -1609,7 +1620,7 @@
                     width: 100%;
                     border-collapse: collapse;
                     margin-top: 0;
-                    background: #fff;
+                    background: var(--light-bg);
                 }
                 #adminPanelModal #usersTable th, #adminPanelModal #usersTable td {
                     padding: 10px 8px;
@@ -1620,7 +1631,7 @@
                     word-break: break-all;
                 }
                 #adminPanelModal #usersTable th {
-                    background: #f6f8fa;
+                    background: var(--light-bg);
                     color: #3498db;
                     font-weight: 600;
                     border-top: 1px solid #eaeaea;
@@ -1629,16 +1640,16 @@
                     border-bottom: none;
                 }
                 #adminPanelModal .admin-badge {
-                    background: #27ae60;
-                    color: #fff;
+                    background: var(--accent-color);
+                    color: var(--primary-color);
                     border-radius: 4px;
                     padding: 2px 8px;
                     font-size: 0.95em;
                     font-weight: 500;
                 }
                 #adminPanelModal .btn {
-                    background: #3498db;
-                    color: #fff;
+                    background: var(--accent-color);
+                    color: var(--primary-color);
                     border: none;
                     border-radius: 4px;
                     padding: 5px 14px;
@@ -1654,8 +1665,8 @@
                     margin-bottom: 10px;
                     padding: 8px 12px;
                     border-radius: 4px;
-                    background: #e0ffe0;
-                    color: #155724;
+                    background: var(--accent-color);
+                    color: var(--primary-color);
                     display: none;
                     font-size: 1em;
                     text-align: center;

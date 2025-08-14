@@ -1,4 +1,77 @@
 // Robust theme switching function
+// Global async init function for app initialization
+async function init() {
+    // Restore JWT and user state
+    jwtToken = localStorage.getItem('jwtToken') || '';
+    if (jwtToken) {
+        updateAuthButtons();
+        await loadUserData();
+    } else {
+        updateAuthButtons();
+    }
+    // Theme and UI setup
+    if (typeof applyTheme === 'function') applyTheme(isDarkMode);
+    // Genre multiselects
+    if (typeof setupGenreMultiselect === 'function') {
+        setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
+        setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+    }
+    // Load songs
+    songs = await loadSongsFromFile();
+    // Merge local songs if needed
+    const localSongs = JSON.parse(localStorage.getItem('songs')) || [];
+    if (localSongs.length > 0) {
+        const existingIds = new Set(songs.map(s => s.id));
+        localSongs.forEach(song => {
+            if (!existingIds.has(song.id)) {
+                songs.push(song);
+            }
+        });
+    }
+    // Settings and UI
+    loadSettings();
+    addEventListeners();
+    addPanelToggles();
+    renderSongs('New', '', '');
+    applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
+    connectWebSocket();
+    updateSongCount();
+    initScreenWakeLock();
+    setupModalClosing();
+    setupSuggestedSongsClosing();
+    setupModals();
+    setupWindowCloseConfirmation();
+    // Handle initial page load with hash
+    if (window.location.hash) {
+        const songId = parseInt(window.location.hash.replace('#song-', ''));
+        const song = songs.find(s => s.id === songId);
+        if (song) {
+            navigationHistory = [song.id];
+            currentHistoryPosition = 0;
+            history.replaceState({ songId: song.id, position: 0 }, '', `#song-${song.id}`);
+            showPreview(song, true);
+        }
+    }
+    window.addEventListener('popstate', (event) => {
+        if (event.state?.modalOpen) {
+            if (currentModal) closeModal(currentModal);
+            return;
+        }
+        if (event.state?.position !== undefined) {
+            isNavigatingHistory = true;
+            currentHistoryPosition = event.state.position;
+            const songId = navigationHistory[currentHistoryPosition];
+            const song = songs.find(s => s.id === songId);
+            if (song) {
+                showPreview(song, true);
+            } else {
+                songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
+            }
+        }
+    });
+    // Admin panel button
+    if (typeof updateAdminPanelBtn === 'function') updateAdminPanelBtn();
+}
 function applyTheme(isDark) {
     if (isDark) {
         document.body.classList.add('dark-mode');
@@ -253,6 +326,7 @@ function isJwtValid(token) {
                         });
                         songs = mergedSongs;
                         localStorage.setItem('songs', JSON.stringify(songs));
+                        // Log the number of songs loaded from backend
                         // Update last fetch timestamp
                         if (newSongs.length > 0) {
                             const latest = newSongs.reduce((max, s) => {
@@ -553,98 +627,6 @@ function isJwtValid(token) {
         let searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
     
         // Initialize the application
-        async function init() {
-            // ...removed console.time...
-            // Ensure admin panel button is updated after all data is loaded
-            if (typeof updateAdminPanelBtn === 'function') updateAdminPanelBtn();
-            // Always restore JWT and user state on init
-            jwtToken = localStorage.getItem('jwtToken') || '';
-            if (jwtToken) {
-                updateAuthButtons();
-                await loadUserData();
-            }
-            // ...removed console.time...
-            songs = await loadSongsFromFile();
-            // ...removed console.timeEnd...
-            const localSongs = JSON.parse(localStorage.getItem('songs')) || [];
-            if (localSongs.length > 0) {
-                const existingIds = new Set(songs.map(s => s.id));
-                localSongs.forEach(song => {
-                    if (!existingIds.has(song.id)) {
-                        songs.push(song);
-                    }
-                });
-            }
-            // ...removed console.time...
-            loadSettings();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            addEventListeners();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            addPanelToggles();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            renderSongs('New', '', '');
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            connectWebSocket();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            updateSongCount();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            initScreenWakeLock();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            setupModalClosing();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            setupSuggestedSongsClosing();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            setupModals();
-            // ...removed console.timeEnd...
-            // ...removed console.time...
-            setupWindowCloseConfirmation();
-            // ...removed console.timeEnd...
-            // Back/forward navigation
-
-
-            // Handle initial page load with hash
-            if (window.location.hash) {
-                const songId = parseInt(window.location.hash.replace('#song-', ''));
-                const song = songs.find(s => s.id === songId);
-                if (song) {
-                    navigationHistory = [song.id];
-                    currentHistoryPosition = 0;
-                    history.replaceState({ songId: song.id, position: 0 }, '', `#song-${song.id}`);
-                    showPreview(song, true);
-                }
-            }
-
-            window.addEventListener('popstate', (event) => {
-                if (event.state?.modalOpen) {
-                    if (currentModal) closeModal(currentModal);
-                    return;
-                }
-                if (event.state?.position !== undefined) {
-                    isNavigatingHistory = true;
-                    currentHistoryPosition = event.state.position;
-                    const songId = navigationHistory[currentHistoryPosition];
-                    const song = songs.find(s => s.id === songId);
-                    if (song) {
-                        showPreview(song, true);
-                    } else {
-                        songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
-                    }
-                }
-            });
-            // ...removed console.timeEnd...
-        }
 
         function queueSaveUserData() {
             // Add the save to the end of the queue
@@ -1335,6 +1317,12 @@ function isJwtValid(token) {
                 songsToRender = categoryOrSongs;
                 container = filterOrContainer;
             }
+
+            // Update visible song count below songs-section
+            const visibleSongCountEl = document.getElementById('visibleSongCount');
+            if (visibleSongCountEl) {
+                visibleSongCountEl.textContent = `Songs displayed: ${songsToRender.length}`;
+            }
 // Add event listener for sort filter after DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     const sortFilter = document.getElementById('sortFilter');
@@ -1350,19 +1338,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = '<p>No songs found.</p>';
                 return;
             }
+            const activeSongId = songPreviewEl && songPreviewEl.dataset.songId ? parseInt(songPreviewEl.dataset.songId) : null;
             songsToRender.forEach(song => {
                 const div = document.createElement('div');
                 div.className = 'song-item';
                 div.dataset.songId = song.id;
-                
+                if (activeSongId === song.id) {
+                    div.classList.add('active-song');
+                }
                 const isInSetlist = song.category === 'New' 
                     ? NewSetlist.some(s => s.id === song.id)
                     : OldSetlist.some(s => s.id === song.id);
-                    
                 const isFavorite = favorites.includes(song.id);
-                
                 const displayGenres = song.genres ? song.genres.join(', ') : song.genre || '';
-                
                 div.innerHTML = `
                 <div class="song-header">
                     <span class="song-title">${song.title}</span>
@@ -1379,12 +1367,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-delete delete-song" style="display:none;">Delete</button>
                 </div>
             `;
-               
                 div.querySelector('.favorite-btn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     toggleFavorite(song.id);
                 });
-                
                 div.querySelector('.toggle-setlist').addEventListener('click', (e) => {
                     e.stopPropagation();
                     const songId = parseInt(div.dataset.songId);
@@ -1419,6 +1405,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 div.addEventListener('click', () => {
                     showPreview(song);
+                    // Re-render songs to update active highlight
+                    const activeTab = document.getElementById('NewTab').classList.contains('active') ? 'New' : 'Old';
+                    renderSongs(activeTab, keyFilter.value, genreFilter.value);
                     if (window.innerWidth <= 768) {
                         document.querySelector('.songs-section').classList.add('hidden');
                         document.querySelector('.sidebar').classList.add('hidden');

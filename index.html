@@ -52,7 +52,24 @@ async function saveRecommendationWeightsToBackend(weights) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New & Old Songs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="styles.css">
+        <script>
+        // Diagnostic theme toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            console.log('Theme toggled. dark-mode:', document.body.classList.contains('dark-mode'));
+        }
+        window.addEventListener('DOMContentLoaded', function() {
+            var themeToggle = document.createElement('button');
+            themeToggle.textContent = 'Toggle Theme';
+            themeToggle.style.position = 'fixed';
+            themeToggle.style.top = '10px';
+            themeToggle.style.right = '10px';
+            themeToggle.style.zIndex = '9999';
+            themeToggle.onclick = toggleTheme;
+            document.body.appendChild(themeToggle);
+        });
+        </script>
 </head>
 <body>
     <!-- Loading spinner removed -->
