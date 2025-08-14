@@ -233,14 +233,31 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
 
     // Theme setup
+    // Ensure isDarkMode is boolean
+    isDarkMode = localStorage.getItem('darkMode') === 'true';
     applyTheme(isDarkMode);
     const themeToggleBtn = document.getElementById('themeToggle');
+    function updateThemeToggleBtn() {
+        if (themeToggleBtn) {
+            themeToggleBtn.setAttribute('aria-pressed', isDarkMode);
+            if (isDarkMode) {
+                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+            } else {
+                themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+            }
+        }
+    }
+    updateThemeToggleBtn();
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
             isDarkMode = !isDarkMode;
             localStorage.setItem('darkMode', isDarkMode);
             applyTheme(isDarkMode);
+            updateThemeToggleBtn();
+            console.log('Theme toggled. Dark mode:', isDarkMode);
         });
+        themeToggleBtn.setAttribute('tabindex', '0');
+        themeToggleBtn.setAttribute('role', 'button');
     }
 
     // Main button events
@@ -319,17 +336,7 @@ function updateSelectedGenres(selectedId, dropdownId) {
 
 // Initialize genre multiselects on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Always apply theme on load
-    applyTheme(isDarkMode);
-    // Attach theme toggle event
-    const themeToggleBtn = document.getElementById('themeToggle');
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            isDarkMode = !isDarkMode;
-            localStorage.setItem('darkMode', isDarkMode);
-            applyTheme(isDarkMode);
-        });
-    }
+    // ...existing code...
 
     // Attach other main button events after DOM is ready
     setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
@@ -372,7 +379,7 @@ function isJwtValid(token) {
     const notificationEl = document.getElementById('notification');
 
     // Initialize songs and setlists
-    let isDarkMode = localStorage.getItem('darkMode') === 'true';
+    // Remove duplicate isDarkMode initialization; handled in DOMContentLoaded
         let socket = null;
         let songs = [];
         let lastSongsFetch = null; // ISO string of last fetch
@@ -2462,22 +2469,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     
         function addToSetlist(id) {
+            if (!jwtToken) {
+                showNotification('Please login to add songs to your setlist.');
+                return;
+            }
             const song = songs.find(s => s.id === id);
             if (!song) return;
-            
             const setlist = song.category === 'New' ? NewSetlist : OldSetlist;
             if (!setlist.some(s => s.id === id)) {
                 setlist.push(song);
                 queueSaveUserData();
-                
                 showNotification(`"${song.title}" added to ${song.category} setlist`);
-                
                 updateSetlistButton(id, true);
-                
                 if (songPreviewEl.dataset.songId == id) {
                     updatePreviewSetlistButton(true);
                 }
-                
                 if (setlistSection.style.display === 'block') {
                     renderSetlist(song.category);
                 }
@@ -2518,9 +2524,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     
         function toggleFavorite(id) {
+            if (!jwtToken) {
+                showNotification('Please login to add songs to your favorites.');
+                return;
+            }
             const index = favorites.indexOf(id);
             const song = songs.find(s => s.id === id);
-
             if (index === -1) {
                 favorites.push(id);
                 showNotification(`"${song.title}" added to favorites`);
@@ -2528,15 +2537,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 favorites.splice(index, 1);
                 showNotification(`"${song.title}" removed from favorites`);
             }
-
             queueSaveUserData();
-            
-
             const favButtons = document.querySelectorAll(`.favorite-btn[data-song-id="${id}"]`);
             favButtons.forEach(btn => {
                 btn.classList.toggle('favorited', index === -1);
             });
-
             if (songPreviewEl.dataset.songId == id) {
                 const previewBtn = document.getElementById('previewFavoriteBtn');
                 if (previewBtn) {
