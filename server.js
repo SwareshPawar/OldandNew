@@ -139,8 +139,14 @@ function requireAdmin(req, res, next) {
 // User registration
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, password, isAdmin } = req.body;
-    const user = await registerUser(db, { username, password, isAdmin });
+    let { firstName, lastName, username, email, phone, password, isAdmin } = req.body;
+    if (!firstName || !lastName || !username || !email || !phone || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+    username = username.trim().toLowerCase(); // store username as lowercase
+    email = email.trim().toLowerCase();
+    // Pass all fields to registerUser
+    const user = await registerUser(db, { firstName, lastName, username, email, phone, password, isAdmin });
     res.status(201).json({ message: 'User registered', user });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -150,8 +156,12 @@ app.post('/api/register', async (req, res) => {
 // User login
 app.post('/api/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const { token, user } = await authenticateUser(db, { username, password });
+    let { usernameOrEmail, username, password } = req.body;
+    if ((!usernameOrEmail && !username) || !password) {
+      return res.status(400).json({ error: 'Username/email and password required' });
+    }
+    let loginInput = (usernameOrEmail || username).trim().toLowerCase();
+    const { token, user } = await authenticateUser(db, { loginInput, password });
     res.json({ token, user });
   } catch (err) {
     res.status(401).json({ error: err.message });

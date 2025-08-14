@@ -61,6 +61,45 @@ async function saveRecommendationWeightsToBackend(weights) {
         </script>
 </head>
 <body>
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal" style="display:none;">
+        <div class="modal-content auth-modal-content">
+            <span class="close-modal" id="closeLoginModal" aria-label="Close">×</span>
+            <h2 style="text-align:center;margin-bottom:18px;">Login</h2>
+            <form id="loginForm" class="auth-form">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" required autocomplete="username">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required autocomplete="current-password">
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Login</button>
+                <div id="loginError" style="color:#c31010;margin-top:10px;display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal" style="display:none;">
+        <div class="modal-content auth-modal-content">
+            <span class="close-modal" id="closeRegisterModal" aria-label="Close">×</span>
+            <h2 style="text-align:center;margin-bottom:18px;">Register</h2>
+            <form id="registerForm" class="auth-form">
+                <label for="registerFirstName">First Name</label>
+                <input type="text" id="registerFirstName" required autocomplete="given-name">
+                <label for="registerLastName">Last Name</label>
+                <input type="text" id="registerLastName" required autocomplete="family-name">
+                <label for="registerUsername">Username</label>
+                <input type="text" id="registerUsername" required autocomplete="username">
+                <label for="registerEmail">Email</label>
+                <input type="email" id="registerEmail" required autocomplete="email">
+                <label for="registerPhone">Phone Number</label>
+                <input type="tel" id="registerPhone" required autocomplete="tel">
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" required autocomplete="new-password">
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Register</button>
+                <div id="registerError" style="color:#c31010;margin-top:10px;display:none;"></div>
+            </form>
+        </div>
+    </div>
     <!-- Loading spinner removed -->
     <div class="app-container">
         <button class="panel-toggle draggable" id="toggle-sidebar"><i class="fas fa-home"></i></button>
@@ -84,8 +123,9 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <h2>New & Old</h2>
             </div>
             <ul class="sidebar-menu">
-                <div id="userGreeting" style="display:none;font-weight:bold;margin-bottom:8px;"></div>
                 <button id="loginBtn" class="sidebar-btn btn-login"><i class="fas fa-sign-in-alt"></i> Login</button>
+                <button id="registerBtn" class="sidebar-btn btn-login"><i class="fas fa-user-plus"></i> Register</button>
+                <div id="userGreeting" style="display:none;font-weight:bold;margin-bottom:8px;"></div>
                 <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 <button id="adminPanelBtn" class="sidebar-btn" style="display:none;"><i class="fas fa-cogs"></i> Admin Panel</button>
 
