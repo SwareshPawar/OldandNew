@@ -36,16 +36,19 @@
 
         /* Improve visibility of weights input fields in admin panel */
         #weightsTable input[type="number"] {
-            background: var(--light-bg);
-            color: var(--text-color);
-            border: 1px solid var(--song-item-border);
+            background: #f7edbd;
+            color: #222;
+            border: 1px solid var(--accent-color);
             border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 1em;
+            padding: 6px 10px;
+            font-size: 1.08em;
+            font-weight: 500;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
         }
         #weightsTable input[type="number"]:focus {
             outline: 2px solid var(--accent-color);
-            background: var(--light-bg);
+            background: #fffbe6;
+            color: #222;
         }
 
          /* ===== SWIPE ANIMATIONS & FEEDBACK ===== */
