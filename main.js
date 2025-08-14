@@ -107,7 +107,9 @@ function populateDropdown(id, options, withLabel = false) {
     });
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Populate all dropdowns
     populateDropdown('keyFilter', ['All Keys', ...KEYS]);
     populateDropdown('genreFilter', ['All Genres', ...GENRES]);
     populateDropdown('songKey', KEYS);
@@ -118,6 +120,35 @@ document.addEventListener('DOMContentLoaded', () => {
     populateDropdown('editSongTime', TIMES);
     populateDropdown('songTaal', TAALS);
     populateDropdown('editSongTaal', TAALS);
+
+    // Setup genre multiselects
+    setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
+    setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+
+    // Theme setup
+    applyTheme(isDarkMode);
+    const themeToggleBtn = document.getElementById('themeToggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('darkMode', isDarkMode);
+            applyTheme(isDarkMode);
+        });
+    }
+
+    // Main button events
+    const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
+    if (addSongBelowFavoritesBtn) {
+        addSongBelowFavoritesBtn.addEventListener('click', () => {
+            document.getElementById('addSongModal').style.display = 'flex';
+        });
+    }
+    const openAddSongModal = document.getElementById('openAddSongModal');
+    if (openAddSongModal) {
+        openAddSongModal.addEventListener('click', () => {
+            document.getElementById('addSongModal').style.display = 'flex';
+        });
+    }
 });
 
 function renderGenreOptions(dropdownId) {
