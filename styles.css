@@ -477,7 +477,7 @@
 
         /* Dark mode variables */
         body.dark-mode .chord {
-            color: #4fc3f7;
+            color: var(--chord-color);
         }
 
         body.dark-mode {
