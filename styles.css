@@ -461,8 +461,8 @@
             padding: 15px;
             border-radius: 6px;
             border-style: inset;
-            background-color: white;
-            color: #000000;
+            background-color: var(--lyrics-bg-color);
+            color: var(--lyrics-text-color);
             transition: background-color 0.3s, color 0.3s;
         }
 
@@ -496,6 +496,8 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            background: var(--light-bg);
+            color: var(--text-color);
         }
 
         /* Panel Toggles */
@@ -566,7 +568,7 @@
         .sidebar {
             width: var(--sidebar-width);
             background: var(--primary-color);
-            color: white;
+            color: var(--sidebar-text-color);
             padding: 15px;
             position: fixed;
             left: 0;
@@ -675,6 +677,8 @@
             z-index: 900;
             transition: transform 0.3s ease;
             overflow-y: auto;
+            background: var(--light-bg);
+            color: var(--text-color);
         }
 
             .songs-section.hidden {
@@ -769,6 +773,8 @@
             margin-left: calc(var(--sidebar-width) + var(--songs-panel-width) + var(--preview-margin-left));
             transition: margin-left 0.3s ease;
             z-index: 800;
+            background: var(--light-bg);
+            color: var(--text-color);
         }
 
             .preview-section.full-width {
@@ -1096,7 +1102,8 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--panel-bg);
+            color: var(--panel-text);
             padding: 20px;
             border-radius: 8px;
             width: 70%;

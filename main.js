@@ -1,3 +1,16 @@
+// Robust theme switching function
+function applyTheme(isDark) {
+    if (isDark) {
+        document.body.classList.add('dark-mode');
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) toggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+    } else {
+        document.body.classList.remove('dark-mode');
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) toggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+    }
+    redrawPreviewOnThemeChange();
+}
 // --- JWT expiry helpers: must be at the very top ---
 // ===== GENRE MULTISELECT LOGIC =====
 const GENRES = [
@@ -65,8 +78,39 @@ function updateSelectedGenres(selectedId, dropdownId) {
 
 // Initialize genre multiselects on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Always apply theme on load
+    applyTheme(isDarkMode);
+    // Attach theme toggle event
+    const themeToggleBtn = document.getElementById('themeToggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('darkMode', isDarkMode);
+            applyTheme(isDarkMode);
+        });
+    }
+
+    // Attach other main button events after DOM is ready
     setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
     setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+    const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
+    if (addSongBelowFavoritesBtn) {
+        addSongBelowFavoritesBtn.addEventListener('click', () => {
+            document.getElementById('addSongModal').style.display = 'flex';
+        });
+    }
+    const openAddSongModal = document.getElementById('openAddSongModal');
+    if (openAddSongModal) {
+        openAddSongModal.addEventListener('click', () => {
+            document.getElementById('addSongModal').style.display = 'flex';
+        });
+    }
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
+    if (adminPanelBtn) {
+        adminPanelBtn.addEventListener('click', () => {
+            document.getElementById('adminPanelModal').style.display = 'flex';
+        });
+    }
 });
 function getJwtExpiry(token) {
     if (!token) return 0;
@@ -3210,18 +3254,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
             // Theme toggle
             document.getElementById('themeToggle').addEventListener('click', () => {
-                isDarkMode = !isDarkMode;
-                localStorage.setItem('darkMode', isDarkMode);
-                document.body.classList.toggle('dark-mode');
-    
-                const toggle = document.getElementById('themeToggle');
-                if (isDarkMode) {
-                    toggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
-                } else {
-                    toggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
-                }
-                
-                redrawPreviewOnThemeChange();
+    isDarkMode = !isDarkMode;
+    localStorage.setItem('darkMode', isDarkMode);
+    applyTheme(isDarkMode);
             });
     
             // Make toggle buttons draggable
