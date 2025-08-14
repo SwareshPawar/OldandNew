@@ -1100,10 +1100,63 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            z-index: 1000;
+            z-index: 2000;
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
+        }
+
+        /* Auth Modal Styles */
+        .auth-modal-content {
+            max-width: 400px;
+            width: 95vw;
+            padding: 32px 24px 24px 24px;
+            border-radius: 14px;
+            background: var(--light-bg);
+            color: var(--text-color);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            position: relative;
+        }
+        body.dark-mode .auth-modal-content {
+            background: var(--light-bg);
+            color: var(--text-color);
+        }
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .auth-form input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--song-item-border);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .auth-form input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.3);
+            outline: none;
+        }
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            background: var(--light-bg);
+            border: 1px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .close-modal:hover {
+            background: var(--primary-color);
+            color: white;
         }
 
         @keyframes fadeIn {

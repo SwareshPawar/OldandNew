@@ -58,6 +58,105 @@ function populateGenreDropdown(id, timeSignature) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Login modal logic
+    const loginBtn = document.getElementById('loginBtn');
+    const loginModal = document.getElementById('loginModal');
+    const closeLoginModal = document.getElementById('closeLoginModal');
+    if (loginBtn && loginModal) {
+        loginBtn.addEventListener('click', () => {
+            loginModal.style.display = 'flex';
+        });
+    }
+    if (closeLoginModal && loginModal) {
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.style.display = 'none';
+        });
+    }
+
+    // Register modal logic
+    const registerBtn = document.getElementById('registerBtn');
+    const registerModal = document.getElementById('registerModal');
+    const closeRegisterModal = document.getElementById('closeRegisterModal');
+    if (registerBtn && registerModal) {
+        registerBtn.addEventListener('click', () => {
+            registerModal.style.display = 'flex';
+        });
+    }
+    if (closeRegisterModal && registerModal) {
+        closeRegisterModal.addEventListener('click', () => {
+            registerModal.style.display = 'none';
+        });
+    }
+
+    // Register form submit
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('registerFirstName').value.trim();
+            const lastName = document.getElementById('registerLastName').value.trim();
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const phone = document.getElementById('registerPhone').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const errorDiv = document.getElementById('registerError');
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, username, email, phone, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    registerModal.style.display = 'none';
+                    showNotification('Registration successful! Please login.');
+                } else {
+                    errorDiv.textContent = data.error || 'Registration failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Network error';
+                errorDiv.style.display = 'block';
+            }
+        });
+    }
+    // Login form submit
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const loginInput = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            try {
+                // Send loginInput as usernameOrEmail, backend should handle case-insensitive username and email
+                const res = await fetch(`${API_BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernameOrEmail: loginInput, password })
+                });
+                const data = await res.json();
+                if (res.ok && data.token) {
+                    localStorage.setItem('jwtToken', data.token);
+                    if (data.user) {
+                        localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    }
+                    loginModal.style.display = 'none';
+                    location.reload();
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Network error';
+                errorDiv.style.display = 'block';
+            }
+        });
+    }
     // ...existing code...
     // Replace genre dropdown population for add/edit song forms
     populateGenreDropdown('songGenreDropdown', '');
@@ -216,6 +315,12 @@ function populateDropdown(id, options, withLabel = false) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Restore JWT and user state FIRST
+    jwtToken = localStorage.getItem('jwtToken') || '';
+    try {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) currentUser = JSON.parse(storedUser);
+    } catch {}
     // Populate all dropdowns
     populateDropdown('keyFilter', ['All Keys', ...KEYS]);
     populateDropdown('genreFilter', ['All Genres', ...GENRES]);
@@ -266,12 +371,19 @@ document.addEventListener('DOMContentLoaded', () => {
         addSongBelowFavoritesBtn.addEventListener('click', () => {
             document.getElementById('addSongModal').style.display = 'flex';
         });
+    // After restoring state, update UI
+    updateAuthButtons();
     }
     const openAddSongModal = document.getElementById('openAddSongModal');
     if (openAddSongModal) {
         openAddSongModal.addEventListener('click', () => {
             document.getElementById('addSongModal').style.display = 'flex';
         });
+    }
+    // Remove login modal/menu opening
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.onclick = null;
     }
 });
 
@@ -851,7 +963,10 @@ function isJwtValid(token) {
         function updateAuthButtons() {
             const isLoggedIn = !!jwtToken;
             const userGreeting = document.getElementById('userGreeting');
-            if (isLoggedIn && currentUser && currentUser.username) {
+            if (isLoggedIn && currentUser && currentUser.firstName && currentUser.lastName) {
+                userGreeting.textContent = `Hi, ${currentUser.firstName} ${currentUser.lastName}`;
+                userGreeting.style.display = 'block';
+            } else if (isLoggedIn && currentUser && currentUser.username) {
                 userGreeting.textContent = `Hi, ${currentUser.username}`;
                 userGreeting.style.display = 'block';
             } else {
@@ -860,6 +975,8 @@ function isJwtValid(token) {
             }
             document.getElementById('loginBtn').style.display = isLoggedIn ? 'none' : 'block';
             document.getElementById('logoutBtn').style.display = isLoggedIn ? 'block' : 'none';
+            const registerBtn = document.getElementById('registerBtn');
+            if (registerBtn) registerBtn.style.display = isLoggedIn ? 'none' : 'block';
             const isAdminUser = isAdmin();
             document.getElementById('adminPanelBtn').style.display = isAdminUser ? 'block' : 'none';
             if (isAdminUser) {
