@@ -77,8 +77,48 @@ function applyTheme(isDark) {
 // --- JWT expiry helpers: must be at the very top ---
 // ===== GENRE MULTISELECT LOGIC =====
 const GENRES = [
-    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Hindi", "Marathi", "English"
+    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Hindi", "Marathi", "English", "K-Pop"
 ];
+const KEYS = [
+    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+    "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm"
+];
+const CATEGORIES = ["New", "Old"];
+const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8"];
+const TAALS = [
+    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba", "Western", "Waltz"
+];
+
+function populateDropdown(id, options, withLabel = false) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = '';
+    if (withLabel) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = withLabel;
+        select.appendChild(opt);
+    }
+    options.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        select.appendChild(opt);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    populateDropdown('keyFilter', ['All Keys', ...KEYS]);
+    populateDropdown('genreFilter', ['All Genres', ...GENRES]);
+    populateDropdown('songKey', KEYS);
+    populateDropdown('editSongKey', KEYS);
+    populateDropdown('songCategory', CATEGORIES);
+    populateDropdown('editSongCategory', CATEGORIES);
+    populateDropdown('songTime', TIMES);
+    populateDropdown('editSongTime', TIMES);
+    populateDropdown('songTaal', TAALS);
+    populateDropdown('editSongTaal', TAALS);
+});
 
 function renderGenreOptions(dropdownId) {
     const dropdown = document.getElementById(dropdownId);
@@ -1258,11 +1298,13 @@ function isJwtValid(token) {
                 const keyFilterValue = filterOrContainer;
                 songsToRender = songs
                     .filter(song => song.category === category)
-                    .filter(song => keyFilterValue === "" || song.key === keyFilterValue)
                     .filter(song => {
-                        if (!genreFilterValue) return true;
-                        if (!song.genres) return song.genre === genreFilterValue;
-                        return song.genres.includes(genreFilterValue);
+                        // If 'All Keys' or empty, show all
+                        return !keyFilterValue || keyFilterValue === 'All Keys' || song.key === keyFilterValue;
+                    })
+                    .filter(song => {
+                        // If 'All Genres' or empty, show all
+                        return !genreFilterValue || genreFilterValue === 'All Genres' || (song.genres ? song.genres.includes(genreFilterValue) : song.genre === genreFilterValue);
                     });
                 // Sorting logic
                 const sortValue = document.getElementById('sortFilter')?.value || 'recent';

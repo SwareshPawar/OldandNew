@@ -214,52 +214,10 @@ async function saveRecommendationWeightsToBackend(weights) {
                     </div>
                     <div class="filter-row-1" style="display:flex; gap:8px; align-items:center; margin-top:6px;">
                         <select id="keyFilter" class="compact-select">
-                            <option value="">All Keys</option>
-                            <option value="C">C Major</option>
-                            <option value="C#">C# Major</option>
-                            <option value="D">D Major</option>
-                            <option value="D#">D# Major</option>
-                            <option value="E">E Major</option>
-                            <option value="F">F Major</option>
-                            <option value="F#">F# Major</option>
-                            <option value="G">G Major</option>
-                            <option value="G#">G# Major</option>
-                            <option value="A">A Major</option>
-                            <option value="A#">A# Major</option>
-                            <option value="B">B Major</option>
-                            <option value="Cm">Cm</option>
-                            <option value="C#m">C#m</option>
-                            <option value="Dm">Dm</option>
-                            <option value="D#m">D#m</option>
-                            <option value="Em">Em</option>
-                            <option value="Fm">Fm</option>
-                            <option value="F#m">F#m</option>
-                            <option value="Gm">Gm</option>
-                            <option value="G#m">G#m</option>
-                            <option value="Am">Am</option>
-                            <option value="A#m">A#m</option>
-                            <option value="Bm">Bm</option>
+  <!-- Options will be populated by JS -->
                         </select>
                         <select id="genreFilter" class="compact-select">
-                            <option value="">All Genres</option>
-                            <option value="New">New</option>
-                            <option value="Old">Old</option>
-                            <option value="Romantic">Romantic</option>
-                            <option value="Acoustic">Acoustic</option>
-                            <option value="Blues">Blues</option>
-                            <option value="Dance">Dance</option>
-                            <option value="Love">Love</option>
-                            <option value="Sad">Sad</option>
-                            <option value="Patriotic">Patriotic</option>
-                            <option value="Happy">Happy</option>
-                            <option value="Qawalli">Qawalli</option>
-                            <option value="Evergreen">Evergreen</option>
-                            <option value="Classical">Classical</option>
-                            <option value="Ghazal">Ghazal</option>
-                            <option value="Sufi">Sufi</option>
-                            <option value="Hindi">Hindi</option>
-                            <option value="Marathi">Marathi</option>
-                            <option value="English">English</option>
+  <!-- Options will be populated by JS -->
                         </select>
                     </div>
                     <div class="filter-row-2" style="margin-top:6px;">
@@ -317,61 +275,21 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <input type="text" id="songTitle" required>
                 <label for="songCategory">Category:</label>
                 <select id="songCategory" required>
-                    <option value="New">New</option>
-                    <option value="Old">Old</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="songKey">Key:</label>
                 <select id="songKey" required>
-                    <option value="C">C</option>
-                    <option value="C#">C#</option>
-                    <option value="D">D</option>
-                    <option value="D#">D#</option>
-                    <option value="E">E</option>
-                    <option value="F">F</option>
-                    <option value="F#">F#</option>
-                    <option value="G">G</option>
-                    <option value="G#">G#</option>
-                    <option value="A">A</option>
-                    <option value="A#">A#</option>
-                    <option value="B">B</option>
-                    <option value="Cm">Cm</option>
-                    <option value="C#m">C#m</option>
-                    <option value="Dm">Dm</option>
-                    <option value="D#m">D#m</option>
-                    <option value="Em">Em</option>
-                    <option value="Fm">Fm</option>
-                    <option value="F#m">F#m</option>
-                    <option value="Gm">Gm</option>
-                    <option value="G#m">G#m</option>
-                    <option value="Am">Am</option>
-                    <option value="A#m">A#m</option>
-                    <option value="Bm">Bm</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="songTempo">Tempo (BPM):</label>
                 <input type="text" id="songTempo" placeholder="e.g., 80 BPM" >
                 <label for="songTime">Time Signature:</label>
                 <select id="songTime" >
-                    <option value="4/4">4/4</option>
-                    <option value="3/4">3/4</option>
-                    <option value="2/4">2/4</option>
-                    <option value="6/8">6/8</option>
-                    <option value="5/4">5/4</option>
-                    <option value="7/8">7/8</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="songTaal">Taal:</label>
                 <select id="songTaal" required>
-                    <option value="Keherwa">Keherwa</option>
-                    <option value="Keherwa Slow">Keherwa Slow</option>
-                    <option value="Dadra">Dadra</option>
-                    <option value="Dadra Slow">Dadra Slow</option>
-                    <option value="Rupak">Rupak</option>
-                    <option value="EkTaal">EkTaal</option>
-                    <option value="JhapTaal">JhapTaal</option>
-                    <option value="TeenTaal">TeenTaal</option>
-                    <option value="Deepchandi">Deepchandi</option>
-                    <option value="Garba">Garba</option>
-                    <option value="Western">Western</option>
-                    <option value="Waltz">Waltz</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="songGenre">Genre:</label>
                 <div class="multiselect-container">
@@ -398,61 +316,21 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <input type="text" id="editSongTitle" required>
                 <label for="editSongCategory">Category:</label>
                 <select id="editSongCategory" required>
-                    <option value="New">New</option>
-                    <option value="Old">Old</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="editSongKey">Key:</label>
                 <select id="editSongKey" required>
-                    <option value="C">C Major</option>
-                    <option value="C#">C# Major</option>
-                    <option value="D">D Major</option>
-                    <option value="D#">D# Major</option>
-                    <option value="E">E Major</option>
-                    <option value="F">F Major</option>
-                    <option value="F#">F# Major</option>
-                    <option value="G">G Major</option>
-                    <option value="G#">G# Major</option>
-                    <option value="A">A Major</option>
-                    <option value="A#">A# Major</option>
-                    <option value="B">B Major</option>
-                    <option value="Cm">Cm</option>
-                    <option value="C#m">C#m</option>
-                    <option value="Dm">Dm</option>
-                    <option value="D#m">D#m</option>
-                    <option value="Em">Em</option>
-                    <option value="Fm">Fm</option>
-                    <option value="F#m">F#m</option>
-                    <option value="Gm">Gm</option>
-                    <option value="G#m">G#m</option>
-                    <option value="Am">Am</option>
-                    <option value="A#m">A#m</option>
-                    <option value="Bm">Bm</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="editSongTempo">Tempo (BPM):</label>
                 <input type="text" id="editSongTempo" placeholder="e.g., 80 BPM">
                 <label for="editSongTime">Time Signature:</label>
                 <select id="editSongTime" required>
-                    <option value="4/4">4/4</option>
-                    <option value="3/4">3/4</option>
-                    <option value="2/4">2/4</option>
-                    <option value="6/8">6/8</option>
-                    <option value="5/4">5/4</option>
-                    <option value="7/8">7/8</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="editSongTaal">Taal:</label>
                 <select id="editSongTaal" required>
-                    <option value="Keherwa">Keherwa</option>
-                    <option value="Keherwa Slow">Keherwa Slow</option>
-                    <option value="Dadra">Dadra</option>
-                    <option value="Dadra Slow">Dadra Slow</option>
-                    <option value="Rupak">Rupak</option>
-                    <option value="EkTaal">EkTaal</option>
-                    <option value="JhapTaal">JhapTaal</option>
-                    <option value="TeenTaal">TeenTaal</option>
-                    <option value="Deepchandi">Deepchandi</option>
-                    <option value="Garba">Garba</option>
-                    <option value="Western">Western</option>
-                    <option value="Waltz">Waltz</option>
+  <!-- Options will be populated by JS -->
                 </select>
                 <label for="editSongGenre">Genre:</label>
                 <div class="multiselect-container">
