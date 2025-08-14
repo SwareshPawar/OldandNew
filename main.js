@@ -1,3 +1,82 @@
+
+// --- GLOBAL CONSTANTS: must be at the very top ---
+const GENRES = [
+    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Hindi", "Marathi", "English"
+];
+const KEYS = [
+    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+    "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm"
+];
+const CATEGORIES = ["New", "Old"];
+const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
+const TAALS = [
+    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba", "Western", "Waltz", "K-Pop", "Hip-Hop", "Pop", "Rock", "Jazz", "Funk", "March Rhythm"
+];
+const TIME_GENRE_MAP = {
+"4/4": [
+    "Keherwa", "Keherwa Slow","Keherwa Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
+    "Blues", "Disco", "Reggae", "R&B", "Hip-Hop","K-Pop"
+  ],
+  "3/4": [
+    "Waltz", "Mazurka", "Viennese Waltz"
+  ],
+  "2/4": [
+    "March Rhythm", "Polka", "Samba", "Merengue"
+  ],
+  "6/8": [
+    "Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba", "Blues Shuffle", "Tango"
+  ],
+  "5/4": [
+     "JhapTaal", "Sultaal", "Jazz 5-beat"
+  ],
+  "7/8": [
+    "Rupak", "Rupak Ghazal", "Deepchandi"
+  ],
+  "12/8": [
+    "EkTaal","Chautaal", "Afro-Cuban 12/8", "Doha Taal", "Ballad 12/8"
+  ],
+  "14/8": [
+    "Deepchandi","Dhamaar"
+  ],
+  "14/8":["TeenTaal"]
+};
+
+function populateGenreDropdown(id, timeSignature) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = '';
+    let options = GENRES;
+    if (timeSignature && TIME_GENRE_MAP[timeSignature]) {
+        options = TIME_GENRE_MAP[timeSignature];
+    }
+    options.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        select.appendChild(opt);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+    // Replace genre dropdown population for add/edit song forms
+    populateGenreDropdown('songGenreDropdown', '');
+    populateGenreDropdown('editSongGenreDropdown', '');
+
+    // Add event listeners to time signature dropdowns
+    const songTimeSelect = document.getElementById('songTime');
+    const editSongTimeSelect = document.getElementById('editSongTime');
+    if (songTimeSelect) {
+        songTimeSelect.addEventListener('change', function() {
+            populateGenreDropdown('songGenreDropdown', this.value);
+        });
+    }
+    if (editSongTimeSelect) {
+        editSongTimeSelect.addEventListener('change', function() {
+            populateGenreDropdown('editSongGenreDropdown', this.value);
+        });
+    }
+});
 // Robust theme switching function
 // Global async init function for app initialization
 async function init() {
@@ -76,18 +155,46 @@ function applyTheme(isDark) {
 }
 // --- JWT expiry helpers: must be at the very top ---
 // ===== GENRE MULTISELECT LOGIC =====
-const GENRES = [
-    "New", "Old", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Hindi", "Marathi", "English" 
-];
-const KEYS = [
-    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
-    "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm"
-];
-const CATEGORIES = ["New", "Old"];
-const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8"];
-const TAALS = [
-    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba", "Western", "Waltz"
-];
+// Helper to update Taal dropdowns based on selected time signature
+function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
+    const timeSelect = document.getElementById(timeSelectId);
+    const taalSelect = document.getElementById(taalSelectId);
+    if (!timeSelect || !taalSelect) return;
+    const selectedTime = timeSelect.value;
+    const taals = TIME_GENRE_MAP[selectedTime] || [];
+    taalSelect.innerHTML = '';
+    // Add default option
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = 'Select Genre or Taal';
+    defaultOpt.disabled = true;
+    defaultOpt.selected = !selectedTaal;
+    taalSelect.appendChild(defaultOpt);
+    taals.forEach(taal => {
+        const opt = document.createElement('option');
+        opt.value = taal;
+        opt.textContent = taal;
+        if (selectedTaal && selectedTaal === taal) opt.selected = true;
+        taalSelect.appendChild(opt);
+    });
+}
+    // Dynamic Taal dropdown for Add Song
+    const songTimeSelect = document.getElementById('songTime');
+    const songTaalSelect = document.getElementById('songTaal');
+    if (songTimeSelect && songTaalSelect) {
+        songTimeSelect.addEventListener('change', () => updateTaalDropdown('songTime', 'songTaal'));
+        updateTaalDropdown('songTime', 'songTaal'); // Initial population
+    }
+    // Dynamic Taal dropdown for Edit Song
+    const editSongTimeSelect = document.getElementById('editSongTime');
+    const editSongTaalSelect = document.getElementById('editSongTaal');
+    if (editSongTimeSelect && editSongTaalSelect) {
+        editSongTimeSelect.addEventListener('change', () => updateTaalDropdown('editSongTime', 'editSongTaal'));
+        updateTaalDropdown('editSongTime', 'editSongTaal'); // Initial population
+    }
+// ...existing code...
+
+// ...existing code...
 
 function populateDropdown(id, options, withLabel = false) {
     const select = document.getElementById(id);
@@ -2519,7 +2626,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('editSongKey').value = song.key;
             document.getElementById('editSongTempo').value = song.tempo;
             document.getElementById('editSongTime').value = song.time;
-            document.getElementById('editSongTaal').value = song.taal;
+            // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
+            updateTaalDropdown('editSongTime', 'editSongTaal', song.taal);
             
             const genres = song.genres || (song.genre ? [song.genre] : []);
             const editSelectedGenres = document.getElementById('editSelectedGenres');
