@@ -1102,8 +1102,8 @@
         }
 
         .modal-content {
-            background: var(--panel-bg);
-            color: var(--panel-text);
+            background: white;
+            color: grey;
             padding: 20px;
             border-radius: 8px;
             width: 70%;
