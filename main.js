@@ -38,7 +38,7 @@ const TIME_GENRE_MAP = {
   "14/8": [
     "Deepchandi","Dhamaar"
   ],
-  "14/8":["TeenTaal"]
+  "16/8":["TeenTaal"]
 };
 
 function populateGenreDropdown(id, timeSignature) {
