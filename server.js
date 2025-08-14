@@ -215,12 +215,19 @@ app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
 });
 
 app.put('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
+  console.log('DEBUG /api/songs/:id req.user:', req.user);
   try {
     const { id } = req.params;
   // Always set updatedAt to now on edit
     req.body.updatedAt = new Date().toISOString();
-    if (req.user && req.user.username) {
-      req.body.updatedBy = req.user.username;
+    if (req.user && req.user.firstName && req.user.lastName) {
+      // Capitalize first letter of firstName and lastName
+      const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+      req.body.updatedBy = `${cap(req.user.firstName)} ${cap(req.user.lastName)}`.trim();
+    } else if (req.user && req.user.username) {
+      // Fallback to capitalized username
+      const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+      req.body.updatedBy = cap(req.user.username);
     }
   const update = { $set: req.body };
     const result = await songsCollection.updateOne({ id: parseInt(id) }, update);
@@ -264,9 +271,14 @@ app.get('/api/userdata', authMiddleware, async (req, res) => {
 app.put('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const { favorites, NewSetlist, OldSetlist, name, email } = req.body;
+  // Always use firstName and lastName from authenticated user
+  const firstName = req.user.firstName;
+  const lastName = req.user.lastName;
+  // Update Activitydate for each activity
+  const Activitydate = new Date().toISOString();
   await db.collection('UserData').updateOne(
     { _id: userId },
-    { $set: { favorites, NewSetlist, OldSetlist, name, email } },
+    { $set: { favorites, NewSetlist, OldSetlist, name, email, firstName, lastName, Activitydate } },
     { upsert: true }
   );
   res.json({ message: 'User data updated' });
