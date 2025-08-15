@@ -57,7 +57,45 @@ function populateGenreDropdown(id, timeSignature) {
     });
 }
 
+// Merge all DOMContentLoaded logic into one handler
 document.addEventListener('DOMContentLoaded', () => {
+    // Restore JWT and user state FIRST
+    jwtToken = localStorage.getItem('jwtToken') || '';
+    try {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) currentUser = JSON.parse(storedUser);
+    } catch {}
+    // Populate all dropdowns
+    populateDropdown('keyFilter', ['All Keys', ...KEYS]);
+    populateDropdown('genreFilter', ['All Genres', ...GENRES]);
+    populateDropdown('songKey', KEYS);
+    populateDropdown('editSongKey', KEYS);
+    populateDropdown('songCategory', CATEGORIES);
+    populateDropdown('editSongCategory', CATEGORIES);
+    populateDropdown('songTime', TIMES);
+    populateDropdown('editSongTime', TIMES);
+    populateDropdown('songTaal', TAALS);
+    populateDropdown('editSongTaal', TAALS);
+
+    // Setup genre multiselect for Edit Song only once
+    setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+
+    // Main button events
+    const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
+    if (addSongBelowFavoritesBtn) {
+        addSongBelowFavoritesBtn.addEventListener('click', () => {
+            setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
+            document.getElementById('addSongModal').style.display = 'flex';
+        });
+    }
+    const openAddSongModal = document.getElementById('openAddSongModal');
+    if (openAddSongModal) {
+        openAddSongModal.addEventListener('click', () => {
+            setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
+            document.getElementById('addSongModal').style.display = 'flex';
+        });
+    }
+
     // Login modal logic
     const loginBtn = document.getElementById('loginBtn');
     const loginModal = document.getElementById('loginModal');
@@ -168,23 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorDiv.textContent = 'Network error';
                 errorDiv.style.display = 'block';
             }
-        });
-    }
-    // Replace genre dropdown population for add/edit song forms
-    populateGenreDropdown('songGenreDropdown', '');
-    populateGenreDropdown('editSongGenreDropdown', '');
-
-    // Add event listeners to time signature dropdowns
-    const songTimeSelect = document.getElementById('songTime');
-    const editSongTimeSelect = document.getElementById('editSongTime');
-    if (songTimeSelect) {
-        songTimeSelect.addEventListener('change', function() {
-            populateGenreDropdown('songGenreDropdown', this.value);
-        });
-    }
-    if (editSongTimeSelect) {
-        editSongTimeSelect.addEventListener('change', function() {
-            populateGenreDropdown('editSongGenreDropdown', this.value);
         });
     }
 });
@@ -421,7 +442,9 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
     if (dropdown._genreListener) dropdown.removeEventListener('click', dropdown._genreListener);
     if (document._genreListener) document.removeEventListener('click', document._genreListener);
 
-    // Show/hide dropdown
+    // Make input always focusable and clickable
+    input.setAttribute('tabindex', '0');
+    input.style.cursor = 'pointer';
     input._genreListener = (e) => {
         e.preventDefault();
         dropdown.classList.toggle('show');
@@ -464,7 +487,7 @@ function updateSelectedGenres(selectedId, dropdownId) {
         tag.querySelector('.remove-tag').onclick = (e) => {
             e.stopPropagation();
             opt.classList.remove('selected');
-            tag.remove();
+            updateSelectedGenres(selectedId, dropdownId);
         };
     });
 }
@@ -2792,13 +2815,6 @@ function isJwtValid(token) {
                 opt.classList.remove('selected');
             });
             genres.forEach(genre => {
-                const tag = document.createElement('div');
-                tag.className = 'multiselect-tag';
-                tag.innerHTML = `
-                    ${genre}
-                    <span class="remove-tag">×</span>
-                `;
-                editSelectedGenres.appendChild(tag);
                 const options = document.querySelectorAll('#editGenreDropdown .multiselect-option');
                 options.forEach(opt => {
                     if (opt.dataset.value === genre) {
@@ -2806,6 +2822,7 @@ function isJwtValid(token) {
                     }
                 });
             });
+            updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
             document.getElementById('editSongLyrics').value = song.lyrics;
             editSongModal.style.display = 'flex';
         }
