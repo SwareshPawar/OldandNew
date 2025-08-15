@@ -25,7 +25,7 @@ app.use(cors({
     'https://oldandnew.onrender.com',
     'https://swareshpawar.github.io' // <-- Add this line
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'], // <-- Add 'Authorization' if not present
 }));
 app.use(express.json());
@@ -117,6 +117,26 @@ app.patch('/api/users/:id/admin', authMiddleware, requireAdmin, async (req, res)
     res.json({ message: 'User marked as admin' });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Add after your "Mark user as admin" endpoint
+app.patch('/api/users/:id/reset-password', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    // Set password to default (plain text for demo; hash in production)
+        const bcrypt = require('bcryptjs');
+        const hashed = await bcrypt.hash('qwerty123', 10);
+        const result = await db.collection('Users').updateOne(
+          { _id: new (require('mongodb').ObjectId)(userId) },
+          { $set: { password: hashed } }
+        );
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        res.json({ message: 'Password reset to default.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 
