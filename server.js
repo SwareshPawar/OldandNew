@@ -220,10 +220,10 @@ app.put('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
     const { id } = req.params;
   // Always set updatedAt to now on edit
     req.body.updatedAt = new Date().toISOString();
-    if (req.user && req.user.firstName && req.user.lastName) {
-      // Capitalize first letter of firstName and lastName
+    if (req.user && req.user.firstName) {
+      // Capitalize first letter of firstName only
       const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
-      req.body.updatedBy = `${cap(req.user.firstName)} ${cap(req.user.lastName)}`.trim();
+      req.body.updatedBy = cap(req.user.firstName);
     } else if (req.user && req.user.username) {
       // Fallback to capitalized username
       const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
