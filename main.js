@@ -1,4 +1,3 @@
-
 // --- GLOBAL CONSTANTS: must be at the very top ---
 const GENRES = [
     "New", "Old","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Powerfull","Tensed", "Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
@@ -171,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // ...existing code...
     // Replace genre dropdown population for add/edit song forms
     populateGenreDropdown('songGenreDropdown', '');
     populateGenreDropdown('editSongGenreDropdown', '');
@@ -756,8 +754,12 @@ function isJwtValid(token) {
     function showAdminNotification(msg) {
         const n = document.getElementById('adminNotification');
         n.textContent = msg;
+        n.classList.add('show');
         n.style.display = 'block';
-        setTimeout(() => n.style.display = 'none', 2000);
+        setTimeout(() => {
+            n.classList.remove('show');
+            n.style.display = 'none';
+        }, 2000);
     }
     function renderUsers(users) {
         const tbody = document.querySelector('#usersTable tbody');
@@ -766,9 +768,12 @@ function isJwtValid(token) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="max-width:180px;overflow-wrap:break-word;">${user.username}</td>
-                <td>${user.isAdmin ? '<span class=\"admin-badge\">Admin</span>' : ''}</td>
+                <td>${user.isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</td>
                 <td>
                     <button class="btn" ${user.isAdmin ? 'disabled' : ''} onclick="markAdmin('${user._id}')">Mark Admin</button>
+                </td>
+                <td>
+                    <button class="btn btn-reset" onclick="resetUserPassword('${user._id}')">Reset Password</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1060,7 +1065,10 @@ function isJwtValid(token) {
                 <td>${user.username}</td>
                 <td>${user.isAdmin ? '<span style=\"color:green;font-weight:bold;\">Admin</span>' : ''}</td>
                 <td>
-                    <button class="btn" ${user.isAdmin ? 'disabled' : ''} onclick="markAdmin('${user._id}')">Mark Admin</button>
+                    <button class=\"btn\" ${user.isAdmin ? 'disabled' : ''} onclick=\"markAdmin('${user._id}')\">Mark Admin</button>
+                </td>
+                <td>
+                    <button class=\"btn btn-reset\" onclick=\"resetUserPassword('${user._id}')\">Reset Password</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1630,16 +1638,6 @@ function isJwtValid(token) {
             if (visibleSongCountEl) {
                 visibleSongCountEl.textContent = `Songs displayed: ${songsToRender.length}`;
             }
-// Add event listener for sort filter after DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    const sortFilter = document.getElementById('sortFilter');
-    if (sortFilter) {
-        sortFilter.addEventListener('change', function() {
-            const activeTab = document.getElementById('NewTab').classList.contains('active') ? 'New' : 'Old';
-            renderSongs(activeTab, keyFilter.value, genreFilter.value);
-        });
-    }
-});
             container.innerHTML = '';
             if (songsToRender.length === 0) {
                 container.innerHTML = '<p>No songs found.</p>';
@@ -3606,6 +3604,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem(id + '-pos', JSON.stringify(pos));
             };
     
+    
             const restorePosition = () => {
                 const saved = localStorage.getItem(id + '-pos');
                 if (saved) {
@@ -3720,3 +3719,27 @@ document.addEventListener('DOMContentLoaded', () => {
             loadSongsFromFile();
             // ...existing code for any other initialization...
         });
+        async function resetUserPassword(userId) {
+    console.log('Reset Password button clicked for user:', userId);
+    const jwtToken = localStorage.getItem('jwtToken');
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}/reset-password`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${jwtToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        let msg;
+        if (res.ok) {
+            msg = 'Password reset to default (qwerty123)';
+        } else {
+            const data = await res.json().catch(() => ({}));
+            msg = data.error ? `Failed: ${data.error}` : 'Failed to reset password';
+        }
+        showAdminNotification(msg);
+    } catch (err) {
+        showAdminNotification('Network error during password reset');
+    }
+}
+window.resetUserPassword = resetUserPassword;
