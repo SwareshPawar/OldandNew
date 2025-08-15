@@ -210,7 +210,7 @@ app.get('/api/songs', async (req, res) => {
 });
 
 // Protected: only logged-in users can add, update, or delete songs
-app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
+app.post('/api/songs', authMiddleware, async (req, res) => {
   try {
     console.log('DEBUG /api/songs POST req.user:', req.user);
     console.log('DEBUG /api/songs POST req.body:', req.body);
@@ -234,7 +234,7 @@ app.post('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
+app.put('/api/songs/:id', authMiddleware, async (req, res) => {
   console.log('DEBUG /api/songs/:id req.user:', req.user);
   try {
     const { id } = req.params;
