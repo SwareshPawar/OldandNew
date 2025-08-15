@@ -518,7 +518,7 @@
                 --song-item-bg: #23231A;
                 --song-item-text: #ECE6D6;
                 --song-item-border: #BCA88D;
-                --song-meta-color: #7D8D86;
+                --song-meta-color: #ECE6D6;
                 --lyrics-bg-color: #181810;
                 --lyrics-text-color: #ECE6D6;
                 --title-color: #BCA88D;
@@ -548,7 +548,7 @@
 
         body.dark-mode {
             color: #cbd5e0;
-            --song-meta-color: #a0aec0; /* Light gray-blue for dark mode */
+            --song-meta-color: #ECE6D6; /* Light gray-blue for dark mode */
         }
 
         /* Ensure chord colors work in both modes */
