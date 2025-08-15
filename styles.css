@@ -1400,6 +1400,10 @@ body.dark-mode .modal-content {
         .multiselect-container {
             position: relative;
         }
+        .multiselect-container input[readonly] {
+            cursor: pointer;
+            background-color: #fff;
+        }
 
         .requires-login {
             display: none;
