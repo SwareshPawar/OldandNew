@@ -324,6 +324,42 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         updateTaalDropdown('editSongTime', 'editSongTaal'); // Initial population
     }
 // ...existing code...
+// --- Tap Tempo Logic ---
+function setupTapTempo(buttonId, inputId) {
+    let tapTimes = [];
+    const btn = document.getElementById(buttonId);
+    const input = document.getElementById(inputId);
+    if (!btn || !input) return;
+    btn.addEventListener('click', () => {
+        const now = Date.now();
+        tapTimes.push(now);
+        // Only keep last 6 taps
+        if (tapTimes.length > 6) tapTimes.shift();
+        if (tapTimes.length >= 2) {
+            const intervals = [];
+            for (let i = 1; i < tapTimes.length; i++) {
+                intervals.push(tapTimes[i] - tapTimes[i - 1]);
+            }
+            const avgMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            const bpm = Math.round(60000 / avgMs);
+            input.value = bpm;
+        }
+        // Reset if last tap was >2s ago
+        if (tapTimes.length > 1 && now - tapTimes[tapTimes.length - 2] > 2000) {
+            tapTimes = [now];
+        }
+    });
+    // Optional: double-click to reset
+    btn.addEventListener('dblclick', () => {
+        tapTimes = [];
+        input.value = '';
+    });
+}
+// Call setupTapTempo for both popups after DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setupTapTempo('tapTempoBtn', 'songTempo');
+    setupTapTempo('editTapTempoBtn', 'editSongTempo');
+});
 
 // ...existing code...
 
