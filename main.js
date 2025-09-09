@@ -1,4 +1,5 @@
 // --- GLOBAL CONSTANTS: must be at the very top ---
+
 const GENRES = [
     "New", "Old","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Powerfull","Tensed", "Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
     "Blues", "Disco", "Reggae", "R&B",
@@ -13,33 +14,31 @@ const TAALS = [
     "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba", "Western", "Waltz", "K-Pop", "Hip-Hop", "Pop", "Rock", "Jazz", "Funk", "March Rhythm"
 ];
 const TIME_GENRE_MAP = {
-"4/4": [
-    "Keherwa", "Keherwa Slow","Keherwa Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
-    "Blues", "Disco", "Reggae", "R&B", "Hip-Hop","K-Pop"
-  ],
-  "3/4": [
-    "Waltz", "Mazurka", "Viennese Waltz"
-  ],
-  "2/4": [
-    "March Rhythm", "Polka", "Samba", "Merengue"
-  ],
-  "6/8": [
-    "Rock","Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba", "Blues Shuffle", "Tango"
-  ],
-  "5/4": [
-     "JhapTaal", "Sultaal", "Jazz 5-beat"
-  ],
-  "7/8": [
-    "Rupak", "Rupak Ghazal", "Deepchandi"
-  ],
-  "12/8": [
-    "EkTaal","Chautaal", "Afro-Cuban 12/8", "Doha Taal", "Ballad 12/8"
-  ],
-  "14/8": [
-    "Deepchandi","Dhamaar"
-  ],
-  "16/8":["TeenTaal"]
+    "4/4": [
+        "Keherwa", "Keherwa Slow","Keherwa Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
+        "Blues", "Disco", "Reggae", "R&B", "Hip-Hop","K-Pop"
+    ],
+    "3/4": ["Waltz", "Mazurka", "Viennese Waltz"],
+    "2/4": ["March Rhythm", "Polka", "Samba", "Merengue"],
+    "6/8": ["Rock","Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba", "Blues Shuffle", "Tango"],
+    "5/4": ["JhapTaal", "Sultaal", "Jazz 5-beat"],
+    "7/8": ["Rupak", "Rupak Ghazal", "Deepchandi"],
+    "12/8": ["EkTaal","Chautaal", "Afro-Cuban 12/8", "Doha Taal", "Ballad 12/8"],
+    "14/8": ["Deepchandi","Dhamaar"],
+    "16/8": ["TeenTaal"]
 };
+
+// --- CHORD TYPES: single source of truth ---
+const CHORD_TYPES = [
+    "maj", "min", "m", "dim", "aug", "sus2", "sus4", "7sus4", "7sus2", "m7", "maj7", "7", "m9", "maj9", "9", "m11", "maj11", "11", "add9", "add11", "6", "13", "5", "sus", "7b5", "7#5", "7b9", "7#9", "b5", "#5", "b9", "#9"
+];
+
+// --- CHORD REGEXES: always use CHORD_TYPES ---
+const CHORDS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const CHORD_TYPE_REGEX = CHORD_TYPES.join("|");
+const CHORD_REGEX = new RegExp(`([A-G](?:#|b)?)(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?`, "gi");
+const CHORD_LINE_REGEX = new RegExp(`^(\\s*[A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?\\s*)+$`, "i");
+const INLINE_CHORD_REGEX = new RegExp(`[\\[(]([A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?)[\\])]`, "gi");
 
 function populateGenreDropdown(id, timeSignature) {
     const select = document.getElementById(id);
@@ -589,17 +588,17 @@ function isJwtValid(token) {
             jwtToken = localStorage.getItem('jwtToken');
         }
 
-
-        // On script load, update UI and user data if logged in
+        // On script load, update UI and user data if logged in and token is valid
         if (jwtToken && isJwtValid(jwtToken)) {
-            // Only load user data if token is valid
             loadUserData().then(() => {
                 updateAuthButtons();
             });
-        } else {
-            // Remove expired token
+        } else if (jwtToken && !isJwtValid(jwtToken)) {
+            // Remove expired token only if it is actually expired
             localStorage.removeItem('jwtToken');
             jwtToken = '';
+            updateAuthButtons();
+        } else {
             updateAuthButtons();
         }
 
@@ -934,13 +933,9 @@ function isJwtValid(token) {
 
     
         // Auto-scroll and chord variables
-        let autoScrollInterval = null;
-        let isUserScrolling = false;
-        const CHORDS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
-        const CHORD_REGEX = /([A-G](?:#|b)?)(maj|min|m|dim|aug|sus2|sus4|7sus4|7sus2|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13|5|sus|7b5|7#5|7b9|7#9|b5|#5|b9|#9)?(?:\/[A-G](?:#|b)?)?/gi;
-        const CHORD_LINE_REGEX = /^(\s*[A-G](?:#|b)?(?:maj|min|m|dim|aug|sus2|sus4|7sus4|7sus2|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13|5|sus|7b5|7#5|7b9|7#9|b5|#5|b9|#9)?(?:\/[A-G](?:#|b)?)?\s*)+$/i;
-        const INLINE_CHORD_REGEX = /\[([A-G](?:#|b)?(?:maj|min|m|dim|aug|sus2|sus4|7sus4|7sus2|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13|5|sus|7b5|7#5|7b9|7#9|b5|#5|b9|#9)?(?:\/[A-G](?:#|b)?)?)\]/gi;
+    let autoScrollInterval = null;
+    let isUserScrolling = false;
+    // Use global CHORDS, CHORD_REGEX, CHORD_LINE_REGEX, INLINE_CHORD_REGEX
         
         let navigationHistory = [];
         let currentHistoryPosition = -1;
@@ -3231,53 +3226,59 @@ function isJwtValid(token) {
             }
     
             // Form submissions
-            newSongForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const title = document.getElementById('songTitle').value;
-                const lyrics = document.getElementById('songLyrics').value;
-
-                const selectedGenres = Array.from(document.querySelectorAll('#genreDropdown .multiselect-option.selected'))
-                    .map(opt => opt.dataset.value);
-
-                const newSong = {
-                    title: title,
-                    category: document.getElementById('songCategory').value,
-                    key: document.getElementById('songKey').value,
-                    tempo: document.getElementById('songTempo').value,
-                    time: document.getElementById('songTime').value,
-                    taal: document.getElementById('songTaal').value,
-                    genres: selectedGenres,
-                    lyrics: lyrics,
-                    createdBy: (currentUser && currentUser.username) ? currentUser.username : undefined,
-                    createdAt: new Date().toISOString()
-                };
-
-                try {
-                    const jwtToken = localStorage.getItem('jwtToken') || '';
-                    const response = await fetch(`${API_BASE_URL}/api/songs`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${jwtToken}`
-                        },
-                        body: JSON.stringify(newSong)
-                    });
-                    if (response.ok) {
-                        showNotification('Song added successfully!');
-                        addSongModal.style.display = 'none';
-                        newSongForm.reset();
-                        document.getElementById('selectedGenres').innerHTML = '';
-                        // Reload songs from backend
-                        songs = await loadSongsFromFile();
-                        renderSongs('New', keyFilter.value, genreFilter.value);
-                        updateSongCount();
-                    } else {
-                        showNotification('Failed to add song');
+            if (newSongForm) {
+                if (newSongForm._addListener) newSongForm.removeEventListener('submit', newSongForm._addListener);
+                let addSongSubmitting = false;
+                newSongForm._addListener = async function(e) {
+                    e.preventDefault();
+                    if (addSongSubmitting) return;
+                    addSongSubmitting = true;
+                    const title = document.getElementById('songTitle').value;
+                    const lyrics = document.getElementById('songLyrics').value;
+                    const selectedGenres = Array.from(document.querySelectorAll('#genreDropdown .multiselect-option.selected'))
+                        .map(opt => opt.dataset.value);
+                    const newSong = {
+                        title: title,
+                        category: document.getElementById('songCategory').value,
+                        key: document.getElementById('songKey').value,
+                        tempo: document.getElementById('songTempo').value,
+                        time: document.getElementById('songTime').value,
+                        taal: document.getElementById('songTaal').value,
+                        genres: selectedGenres,
+                        lyrics: lyrics,
+                        createdBy: (currentUser && currentUser.username) ? currentUser.username : undefined,
+                        createdAt: new Date().toISOString()
+                    };
+                    try {
+                        const jwtToken = localStorage.getItem('jwtToken') || '';
+                        const response = await fetch(`${API_BASE_URL}/api/songs`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${jwtToken}`
+                            },
+                            body: JSON.stringify(newSong)
+                        });
+                        if (response.ok) {
+                            showNotification('Song added successfully!');
+                            addSongModal.style.display = 'none';
+                            newSongForm.reset();
+                            document.getElementById('selectedGenres').innerHTML = '';
+                            // Reload songs from backend
+                            songs = await loadSongsFromFile();
+                            renderSongs('New', keyFilter.value, genreFilter.value);
+                            updateSongCount();
+                        } else {
+                            showNotification('Failed to add song');
+                        }
+                    } catch (err) {
+                        showNotification('Error adding song');
+                    } finally {
+                        addSongSubmitting = false;
                     }
-                } catch (err) {
-                    showNotification('Error adding song');
-                }
-            });
+                };
+                newSongForm.addEventListener('submit', newSongForm._addListener);
+            }
     
             editSongForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
