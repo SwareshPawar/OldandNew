@@ -323,7 +323,10 @@ async function saveRecommendationWeightsToBackend(weights) {
   <!-- Options will be populated by JS -->
                 </select>
                 <label for="songTempo">Tempo (BPM):</label>
-                <input type="text" id="songTempo" placeholder="e.g., 80 BPM" >
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="text" id="songTempo" placeholder="e.g., 80 BPM" >
+                    <button type="button" id="tapTempoBtn" class="tap-tempo-btn">Tap Tempo</button>
+                </div>
                 <label for="songTime">Time Signature:</label>
                 <select id="songTime" >
   <!-- Options will be populated by JS -->
@@ -364,7 +367,10 @@ async function saveRecommendationWeightsToBackend(weights) {
   <!-- Options will be populated by JS -->
                 </select>
                 <label for="editSongTempo">Tempo (BPM):</label>
-                <input type="text" id="editSongTempo" placeholder="e.g., 80 BPM">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="text" id="editSongTempo" placeholder="e.g., 80 BPM">
+                    <button type="button" id="editTapTempoBtn" class="tap-tempo-btn">Tap Tempo</button>
+                </div>
                 <label for="editSongTime">Time Signature:</label>
                 <select id="editSongTime" required>
   <!-- Options will be populated by JS -->
