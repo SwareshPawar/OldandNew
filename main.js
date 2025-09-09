@@ -2220,14 +2220,7 @@ function isJwtValid(token) {
         }
 
         function attachPreviewEventListeners(song) {
-            // Favorite button
-            document.getElementById('previewFavoriteBtn')?.addEventListener('click', () => {
-                toggleFavorite(song.id);
-                // Update the button state
-                const isFavorite = favorites.includes(song.id);
-                const favBtn = document.getElementById('previewFavoriteBtn');
-                favBtn.classList.toggle('favorited', isFavorite);
-            });
+            // Favorite button event listener is attached after rendering preview HTML, not here.
 
             // Setlist button
             document.getElementById('previewSetlistBtn')?.addEventListener('click', () => {
@@ -2370,9 +2363,15 @@ function isJwtValid(token) {
             
 
         
-            document.getElementById('previewFavoriteBtn').addEventListener('click', (e) => {
-                toggleFavorite(song.id);
-            });
+            const previewFavBtn = document.getElementById('previewFavoriteBtn');
+            if (previewFavBtn) {
+                // Remove previous listener if any
+                if (previewFavBtn._favListener) previewFavBtn.removeEventListener('click', previewFavBtn._favListener);
+                previewFavBtn._favListener = () => {
+                    toggleFavorite(song.id);
+                };
+                previewFavBtn.addEventListener('click', previewFavBtn._favListener);
+            }
             
             document.getElementById('previewSetlistBtn').addEventListener('click', (e) => {
                 if (isInSetlist) {
@@ -2696,22 +2695,24 @@ function isJwtValid(token) {
             }
             const index = favorites.indexOf(id);
             const song = songs.find(s => s.id === id);
+            let nowFavorite;
             if (index === -1) {
                 favorites.push(id);
-                showNotification(`"${song.title}" added to favorites`);
+                nowFavorite = true;
             } else {
                 favorites.splice(index, 1);
-                showNotification(`"${song.title}" removed from favorites`);
+                nowFavorite = false;
             }
+            showNotification(`"${song.title}" ${nowFavorite ? 'added to' : 'removed from'} favorites`);
             queueSaveUserData();
             const favButtons = document.querySelectorAll(`.favorite-btn[data-song-id="${id}"]`);
             favButtons.forEach(btn => {
-                btn.classList.toggle('favorited', index === -1);
+                btn.classList.toggle('favorited', nowFavorite);
             });
             if (songPreviewEl.dataset.songId == id) {
                 const previewBtn = document.getElementById('previewFavoriteBtn');
                 if (previewBtn) {
-                    previewBtn.classList.toggle('favorited', index === -1);
+                    previewBtn.classList.toggle('favorited', nowFavorite);
                 }
             }
         }
