@@ -58,6 +58,37 @@ function populateGenreDropdown(id, timeSignature) {
 
 // Merge all DOMContentLoaded logic into one handler
 document.addEventListener('DOMContentLoaded', () => {
+    // Inject spinner overlay if not present
+    if (!document.getElementById('loadingOverlay')) {
+        fetch('spinner.html').then(r => r.text()).then(html => {
+            document.body.insertAdjacentHTML('beforeend', html);
+        });
+    }
+    // Show loading overlay
+    function showLoading(percent) {
+        const overlay = document.getElementById('loadingOverlay');
+        const percentEl = document.getElementById('loadingPercent');
+        if (overlay) overlay.style.display = 'flex';
+        if (percentEl && typeof percent === 'number') percentEl.textContent = percent + '%';
+    }
+    function hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+    // Example: wrap song loading with progress
+    async function loadSongsWithProgress() {
+        showLoading(0);
+        // Simulate loading with progress (replace with real loading logic)
+        let total = 100;
+        for (let i = 0; i <= total; i += 10) {
+            showLoading(i);
+            await new Promise(res => setTimeout(res, 60));
+        }
+        // TODO: Replace above with actual song loading and update percent as you go
+        hideLoading();
+    }
+    // Call this at the start of your song loading logic
+    loadSongsWithProgress();
     // Restore JWT and user state FIRST
     jwtToken = localStorage.getItem('jwtToken') || '';
     try {
