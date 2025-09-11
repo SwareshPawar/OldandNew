@@ -2374,24 +2374,65 @@ function isJwtValid(token) {
 
             // Transpose controls
             document.getElementById('transpose-up')?.addEventListener('click', () => {
-                const currentLevel = parseInt(document.getElementById('transpose-level').textContent);
+                let currentLevel = parseInt(document.getElementById('transpose-level').textContent);
+                currentLevel = isNaN(currentLevel) ? 0 : currentLevel;
+                document.getElementById('transpose-level').textContent = currentLevel + 1;
                 updatePreviewWithTransposition(currentLevel + 1);
             });
 
             document.getElementById('transpose-down')?.addEventListener('click', () => {
-                const currentLevel = parseInt(document.getElementById('transpose-level').textContent);
+                let currentLevel = parseInt(document.getElementById('transpose-level').textContent);
+                currentLevel = isNaN(currentLevel) ? 0 : currentLevel;
+                document.getElementById('transpose-level').textContent = currentLevel - 1;
                 updatePreviewWithTransposition(currentLevel - 1);
             });
 
             document.getElementById('transposeReset').addEventListener('click', () => {
+                document.getElementById('transpose-level').textContent = 0;
                 updatePreviewWithTransposition(0);
             });
 
+            // Save transpose button event listener
+            const saveTransposeBtn = document.getElementById('saveTransposeBtn');
+            if (saveTransposeBtn) {
+                saveTransposeBtn.addEventListener('click', async () => {
+                    const level = parseInt(document.getElementById('transpose-level').textContent);
+                    if (!currentUser || !currentUser.id || !song.id) {
+                        showNotification('Login required to save transpose');
+                        return;
+                    }
+                    // Load userData first
+                    let userData = {};
+                    try {
+                        const response = await authFetch(`${API_BASE_URL}/api/userdata`);
+                        if (response.ok) {
+                            userData = await response.json();
+                        }
+                    } catch (e) {}
+                    if (!userData.transpose) userData.transpose = {};
+                    userData.transpose[song.id] = level;
+                    // Save to backend
+                    try {
+                        const putResponse = await authFetch(`${API_BASE_URL}/api/userdata`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(userData)
+                        });
+                        if (putResponse.ok) {
+                            showNotification('Transpose saved!');
+                        } else {
+                            showNotification('Failed to save transpose');
+                        }
+                    } catch (e) {
+                        showNotification('Network error saving transpose');
+                    }
+                });
+            }
             // Setup auto-scroll if needed
             setupAutoScroll();
         }
     
-        function showPreview(song, fromHistory = false) {
+        async function showPreview(song, fromHistory = false) {
             // Update history if this is a new navigation (not from back/forward)
             if (!fromHistory && !isNavigatingHistory && !currentModal) {
                 if (currentHistoryPosition < navigationHistory.length - 1) {
@@ -2419,6 +2460,21 @@ function isJwtValid(token) {
                 : OldSetlist.some(s => s.id === song.id);
             const isFavorite = favorites.includes(song.id);
 
+            // Always fetch userData fresh before preview
+            let transposeLevel = 0;
+            let userData = {};
+            if (currentUser && currentUser.id && song.id) {
+                try {
+                    const response = await authFetch(`${API_BASE_URL}/api/userdata`);
+                    if (response.ok) {
+                        userData = await response.json();
+                        window.userData = userData;
+                        if (userData.transpose && song.id in userData.transpose && typeof userData.transpose[song.id] === 'number') {
+                            transposeLevel = userData.transpose[song.id];
+                        }
+                    }
+                } catch (e) {}
+            }
             // Build the preview HTML
             songPreviewEl.innerHTML = `
 <div class="song-preview-container">
@@ -2460,11 +2516,12 @@ function isJwtValid(token) {
 
         <div class="transpose-controls">
             <button class="btn btn-primary" id="transpose-down">-</button>
-            <span>Transpose: <span id="transpose-level">0</span></span>
+            <span>Transpose: <span id="transpose-level">${transposeLevel}</span></span>
             <button class="btn btn-primary" id="transpose-up">+</button>
             <button id="transposeReset" class="btn btn-primary">Reset</button>
+            <button id="saveTransposeBtn" class="btn btn-primary">Save Transpose</button>
         </div>
-        <div class="song-lyrics">${formatLyricsWithChords(song.lyrics, 0)}</div>
+        <div class="song-lyrics">${formatLyricsWithChords(song.lyrics, transposeLevel)}</div>
         <!-- Add these new swipe indicators -->
         <div class="swipe-indicator prev">←</div>
         <div class="swipe-indicator next">→</div>
@@ -2472,8 +2529,12 @@ function isJwtValid(token) {
 </div>
 `;
 
+            // Set the transpose-level element to the loaded value before attaching listeners
+            document.getElementById('transpose-level').textContent = transposeLevel;
             // Attach all event listeners
             attachPreviewEventListeners(song);
+            // Ensure transpose UI and lyrics are updated to the correct value
+            updatePreviewWithTransposition(transposeLevel);
             
             // Reset navigation flag if this was a history navigation
             if (isNavigatingHistory) {
@@ -2656,15 +2717,17 @@ function isJwtValid(token) {
     
         function updatePreviewWithTransposition(level) {
             if (!songPreviewEl.dataset.songId) return;
-            level = Math.max(-12, Math.min(12, level));
+            // Always get level from #transpose-level element
+            let transposeLevel = parseInt(document.getElementById('transpose-level').textContent);
+            transposeLevel = Math.max(-12, Math.min(12, isNaN(transposeLevel) ? 0 : transposeLevel));
             const lyrics = songPreviewEl.dataset.originalLyrics;
-            document.getElementById('transpose-level').textContent = level;
+            document.getElementById('transpose-level').textContent = transposeLevel;
             const originalKey = songPreviewEl.dataset.originalKey;
-            document.getElementById('current-key').textContent = level === 0 ? originalKey : transposeChord(originalKey, level);
-    
+            document.getElementById('current-key').textContent = transposeLevel === 0 ? originalKey : transposeChord(originalKey, transposeLevel);
+
             const lyricsContainer = document.querySelector('.song-lyrics');
             if (lyricsContainer) {
-                lyricsContainer.innerHTML = formatLyricsWithChords(lyrics, level);
+                lyricsContainer.innerHTML = formatLyricsWithChords(lyrics, transposeLevel);
             }
         }
     

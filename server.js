@@ -285,12 +285,12 @@ app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
 app.get('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const doc = await db.collection('UserData').findOne({ _id: userId });
-  res.json(doc || { favorites: [], NewSetlist: [], OldSetlist: [] });
+  res.json(doc || { favorites: [], NewSetlist: [], OldSetlist: [], transpose: {} });
 });
 
 app.put('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;
-  const { favorites, NewSetlist, OldSetlist, name, email } = req.body;
+  const { favorites, NewSetlist, OldSetlist, name, email, transpose } = req.body;
   // Always use firstName and lastName from authenticated user
   const firstName = req.user.firstName;
   const lastName = req.user.lastName;
@@ -298,7 +298,7 @@ app.put('/api/userdata', authMiddleware, async (req, res) => {
   const Activitydate = new Date().toISOString();
   await db.collection('UserData').updateOne(
     { _id: userId },
-    { $set: { favorites, NewSetlist, OldSetlist, name, email, firstName, lastName, Activitydate } },
+    { $set: { favorites, NewSetlist, OldSetlist, name, email, transpose, firstName, lastName, Activitydate } },
     { upsert: true }
   );
   res.json({ message: 'User data updated' });
