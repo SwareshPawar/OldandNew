@@ -2117,47 +2117,7 @@ function isJwtValid(token) {
             });
 
             // Sort by priority
-            return scoredSongs.sort((a, b) => {
-                // 1. Same scale type (major/minor)
-                if (a.matchDetails.sameScaleType !== b.matchDetails.sameScaleType) {
-                    return b.matchDetails.sameScaleType - a.matchDetails.sameScaleType;
-                }
-                
-                // 2. Time signature (exact > compatible > none)
-                const timePriority = {
-                    'exact': 2,
-                    'compatible': 1,
-                    'none': 0
-                };
-                const aTimePrio = timePriority[a.matchDetails.timeMatchType];
-                const bTimePrio = timePriority[b.matchDetails.timeMatchType];
-                if (aTimePrio !== bTimePrio) {
-                    return bTimePrio - aTimePrio;
-                }
-                
-                // 3. Language match
-                if (a.matchDetails.languageScore !== b.matchDetails.languageScore) {
-                    return b.matchDetails.languageScore - a.matchDetails.languageScore;
-                }
-                
-                // 4. Taal match
-                if (a.matchDetails.taalMatch !== b.matchDetails.taalMatch) {
-                    return b.matchDetails.taalMatch - a.matchDetails.taalMatch;
-                }
-                
-                // 5. Scale relationship quality
-                if (a.matchDetails.scalePriority !== b.matchDetails.scalePriority) {
-                    return b.matchDetails.scalePriority - a.matchDetails.scalePriority;
-                }
-                
-                // 6. Tempo similarity
-                if (a.matchDetails.tempoSimilarity !== b.matchDetails.tempoSimilarity) {
-                    return b.matchDetails.tempoSimilarity - a.matchDetails.tempoSimilarity;
-                }
-                
-                // 7. Total score
-                return b.matchScore - a.matchScore;
-            }).slice(0, 20);
+            return scoredSongs.sort((a, b) => b.matchScore - a.matchScore).slice(0, 20);
         }      
     
         function showSuggestedSongs() {
@@ -2180,8 +2140,6 @@ function isJwtValid(token) {
                     <div class="suggested-song-title">${song.title}</div>
                     <div class="suggested-song-meta">
                         Key: ${song.key} | Tempo: ${song.tempo} | Time: ${song.time} | Taal: ${song.taal}
-                        ${song.genres ? `<br>Genres: ${song.genres.join(', ')}` : 
-                        song.genre ? `<br>Genre: ${song.genre}` : ''}
                     </div>
                     <div class="suggested-song-match">Match Score: ${song.matchScore}%</div>
                 `;
