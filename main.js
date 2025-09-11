@@ -2512,7 +2512,7 @@ function isJwtValid(token) {
             <span>Transpose: <span id="transpose-level">${transposeLevel}</span></span>
             <button class="btn btn-primary" id="transpose-up">+</button>
             <button id="transposeReset" class="btn btn-primary">Reset</button>
-            <button id="saveTransposeBtn" class="btn btn-primary">Save Transpose</button>
+            <button id="saveTransposeBtn" class="btn btn-primary"><i class="fas fa-save"></i></button>
         </div>
         <div class="song-lyrics">${formatLyricsWithChords(song.lyrics, transposeLevel)}</div>
         <!-- Add these new swipe indicators -->
