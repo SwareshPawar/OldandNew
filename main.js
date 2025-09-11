@@ -75,17 +75,72 @@ document.addEventListener('DOMContentLoaded', () => {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) overlay.style.display = 'none';
     }
-    // Example: wrap song loading with progress
+    // Loader for song loading (simulated progress)
     async function loadSongsWithProgress() {
         showLoading(0);
-        // Simulate loading with progress (replace with real loading logic)
-        let total = 100;
-        for (let i = 0; i <= total; i += 10) {
+        let percent = 0;
+        // Step 1: Fetch
+        for (let i = 0; i <= 20; i += 2) {
             showLoading(i);
-            await new Promise(res => setTimeout(res, 60));
+            await new Promise(res => setTimeout(res, 30));
         }
-        // TODO: Replace above with actual song loading and update percent as you go
-        hideLoading();
+        let response, allSongs;
+        try {
+            const url = `${API_BASE_URL}/api/songs`;
+            response = await authFetch(url);
+            percent = 20;
+            showLoading(percent);
+        } catch (err) {
+            songs = [];
+            showLoading(100);
+            setTimeout(hideLoading, 300);
+            console.error('Network error in loadSongsWithProgress:', err);
+            return;
+        }
+        // Step 2: Parse JSON
+        for (let i = 20; i <= 40; i += 4) {
+            showLoading(i);
+            await new Promise(res => setTimeout(res, 25));
+        }
+        if (!response.ok) {
+            songs = [];
+            const errorText = await response.text();
+            console.error('API error in loadSongsWithProgress:', response.status, errorText);
+            showLoading(100);
+            setTimeout(hideLoading, 300);
+            return songs;
+        }
+        allSongs = await response.json();
+        percent = 40;
+        showLoading(percent);
+        // Step 3: Deduplicate
+        for (let i = 40; i <= 60; i += 4) {
+            showLoading(i);
+            await new Promise(res => setTimeout(res, 20));
+        }
+        const uniqueSongs = [];
+        const seenIds = new Set();
+        for (const song of allSongs) {
+            if (!seenIds.has(song.id)) {
+                uniqueSongs.push(song);
+                seenIds.add(song.id);
+            }
+        }
+        songs = uniqueSongs;
+        localStorage.setItem('songs', JSON.stringify(songs));
+        percent = 60;
+        showLoading(percent);
+        // Step 4: Rendering
+        const totalSongs = uniqueSongs.length || 1;
+        for (let i = 0; i < totalSongs; i += Math.ceil(totalSongs / 20)) {
+            let renderPercent = 60 + Math.round((i / totalSongs) * 40);
+            showLoading(renderPercent);
+            await new Promise(res => setTimeout(res, 15));
+        }
+        renderSongs('New', keyFilter.value, genreFilter.value);
+        updateSongCount();
+        showLoading(100);
+        setTimeout(hideLoading, 300);
     }
     // Call this at the start of your song loading logic
     loadSongsWithProgress();
