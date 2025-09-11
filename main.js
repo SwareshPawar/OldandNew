@@ -2012,7 +2012,10 @@ function isJwtValid(token) {
                 if (!tempo1 || !tempo2) return 0;
                 const bpm1 = parseInt(tempo1) || 0;
                 const bpm2 = parseInt(tempo2) || 0;
-                return bpm1 && bpm2 ? Math.max(0, 1 - (Math.abs(bpm1 - bpm2) / 50)) : 0;
+                if (!bpm1 || !bpm2) return 0;
+                const diff = Math.abs(bpm1 - bpm2);
+                const score = 1 - Math.pow(diff / 50, 2);
+                return Math.max(0, score);
             };
 
             const getLanguagesFromGenres = genres => 
