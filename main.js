@@ -1297,8 +1297,18 @@ function isJwtValid(token) {
 
             const sessionResetOption = localStorage.getItem("sessionResetOption") || "manual";
 
-            const sidebarWidth = localStorage.getItem("sidebarWidth") || "15";
-            const songsPanelWidth = localStorage.getItem("songsPanelWidth") || "20";
+            // Set default values for mobile/desktop in percentage
+            let sidebarWidth = localStorage.getItem("sidebarWidth");
+            let songsPanelWidth = localStorage.getItem("songsPanelWidth");
+            if (!sidebarWidth || !songsPanelWidth) {
+                if (window.innerWidth <= 700) {
+                    sidebarWidth = "75";
+                    songsPanelWidth = "75";
+                } else {
+                    sidebarWidth = "20";
+                    songsPanelWidth = "20";
+                }
+            }
             const previewMargin = localStorage.getItem("previewMargin") || "40";
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
 

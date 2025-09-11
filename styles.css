@@ -1,6 +1,16 @@
 @media (max-width: 700px) {
+    .songs-section {
+        width: var(--songs-panel-width) !important;
+        min-width: 0 !important;
+        max-width: 100vw !important;
+    }
     #toggle-all-panels {
         display: none !important;
+    }
+    .sidebar {
+        width: var(--sidebar-width) !important;
+        min-width: 0 !important;
+        max-width: 100vw !important;
     }
 }
 /* Loading Spinner and Progress Bar */
@@ -18,7 +28,7 @@
     flex-direction: column;
 }
 .spinner {
-    width: 48px;
+    width: 48px;    
     height: 48px;
     border: 6px solid #eee;
     border-top: 6px solid var(--primary-color, #3E3F29);
