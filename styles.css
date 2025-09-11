@@ -1,3 +1,8 @@
+@media (max-width: 700px) {
+    #toggle-all-panels {
+        display: none !important;
+    }
+}
 /* Loading Spinner and Progress Bar */
 #loadingOverlay {
     display: none;
