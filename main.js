@@ -1302,8 +1302,8 @@ function isJwtValid(token) {
             let songsPanelWidth = localStorage.getItem("songsPanelWidth");
             if (!sidebarWidth || !songsPanelWidth) {
                 if (window.innerWidth <= 700) {
-                    sidebarWidth = "75";
-                    songsPanelWidth = "75";
+                    sidebarWidth = "60";
+                    songsPanelWidth = "60";
                 } else {
                     sidebarWidth = "20";
                     songsPanelWidth = "20";
