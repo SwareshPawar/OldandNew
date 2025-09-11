@@ -58,6 +58,21 @@ function populateGenreDropdown(id, timeSignature) {
 
 // Merge all DOMContentLoaded logic into one handler
 document.addEventListener('DOMContentLoaded', () => {
+    // On page refresh, update localStorage transposeCache from backend
+    async function updateLocalTransposeCache() {
+        if (currentUser && currentUser.id) {
+            try {
+                const response = await authFetch(`${API_BASE_URL}/api/userdata`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.transpose) {
+                        localStorage.setItem('transposeCache', JSON.stringify(userData.transpose));
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+    updateLocalTransposeCache();
     // Inject spinner overlay if not present
     if (!document.getElementById('loadingOverlay')) {
         fetch('spinner.html').then(r => r.text()).then(html => {
@@ -2412,6 +2427,7 @@ function isJwtValid(token) {
                     if (!userData.transpose) userData.transpose = {};
                     userData.transpose[song.id] = level;
                     // Save to backend
+                    let saveSuccess = false;
                     try {
                         const putResponse = await authFetch(`${API_BASE_URL}/api/userdata`, {
                             method: 'PUT',
@@ -2420,12 +2436,20 @@ function isJwtValid(token) {
                         });
                         if (putResponse.ok) {
                             showNotification('Transpose saved!');
+                            saveSuccess = true;
                         } else {
                             showNotification('Failed to save transpose');
                         }
                     } catch (e) {
                         showNotification('Network error saving transpose');
                     }
+                    // Update localStorage cache immediately regardless of backend result
+                    let localTranspose = {};
+                    try {
+                        localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                    } catch (e) { localTranspose = {}; }
+                    localTranspose[song.id] = level;
+                    localStorage.setItem('transposeCache', JSON.stringify(localTranspose));
                 });
             }
             // Setup auto-scroll if needed
@@ -2460,10 +2484,18 @@ function isJwtValid(token) {
                 : OldSetlist.some(s => s.id === song.id);
             const isFavorite = favorites.includes(song.id);
 
-            // Always fetch userData fresh before preview
+            // Use localStorage for transpose cache, update only on page refresh
             let transposeLevel = 0;
             let userData = {};
-            if (currentUser && currentUser.id && song.id) {
+            let localTranspose = {};
+            try {
+                localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+            } catch (e) { localTranspose = {}; }
+            if (song.id && typeof localTranspose[song.id] === 'number') {
+                transposeLevel = localTranspose[song.id];
+            }
+            // Fetch backend only if not found in localStorage
+            if (currentUser && currentUser.id && song.id && typeof transposeLevel !== 'number') {
                 try {
                     const response = await authFetch(`${API_BASE_URL}/api/userdata`);
                     if (response.ok) {
