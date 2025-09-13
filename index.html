@@ -136,6 +136,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                     <div class="admin-tabs">
                         <button class="admin-tab active" id="userMgmtTab">User Management</button>
                         <button class="admin-tab" id="weightsTab">Recommendation Weights</button>
+                        <button class="admin-tab" id="duplicateDetectionTab">Duplicate Detection</button>
                     </div>
                     <div class="admin-tab-content" id="userMgmtTabContent">
                         <div class="notification" id="adminNotification"></div>
@@ -192,6 +193,9 @@ async function saveRecommendationWeightsToBackend(weights) {
                             <button type="submit" class="btn" style="width:100%;margin-top:8px;">Save Weights</button>
                         </form>
                         <div style="text-align:center; color:#888; font-size:0.98em; margin-top:4px;">Total should be 100 for best results.</div>
+                    </div>
+                    <div class="admin-tab-content" id="duplicateDetectionTabContent" style="display:none;">
+                        <!-- Duplicate detection results will be rendered by JS -->
                     </div>
                 </div>
             </div>

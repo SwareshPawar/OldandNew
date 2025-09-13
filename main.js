@@ -455,6 +455,13 @@ function setupTapTempo(buttonId, inputId) {
         tapTimes = [];
         input.value = '';
     });
+    // Spacebar tap tempo support
+    input.addEventListener('keydown', function(e) {
+        if (e.code === 'Space' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+        }
+    });
 }
 // Call setupTapTempo for both popups after DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -949,9 +956,264 @@ function isJwtValid(token) {
         document.getElementById('userMgmtTabContent').style.display = '';
         loadUsers();
         window.markAdmin = markAdmin;
+        document.getElementById('weightsTab').classList.remove('active');
+        document.getElementById('weightsTabContent').style.display = 'none';
+        document.getElementById('duplicateDetectionTab').classList.remove('active');
+        document.getElementById('duplicateDetectionTabContent').style.display = 'none';
     }
     const adminPanelBtn = document.getElementById('adminPanelBtn');
     adminPanelBtn.onclick = () => showAdminPanelModal();
+
+    // Tab switching logic for admin panel
+    document.getElementById('userMgmtTab').onclick = function() {
+        document.getElementById('userMgmtTab').classList.add('active');
+        document.getElementById('userMgmtTabContent').style.display = '';
+        document.getElementById('weightsTab').classList.remove('active');
+        document.getElementById('weightsTabContent').style.display = 'none';
+        document.getElementById('duplicateDetectionTab').classList.remove('active');
+        document.getElementById('duplicateDetectionTabContent').style.display = 'none';
+    };
+    document.getElementById('weightsTab').onclick = function() {
+        document.getElementById('userMgmtTab').classList.remove('active');
+        document.getElementById('userMgmtTabContent').style.display = 'none';
+        document.getElementById('weightsTab').classList.add('active');
+        document.getElementById('weightsTabContent').style.display = '';
+        document.getElementById('duplicateDetectionTab').classList.remove('active');
+        document.getElementById('duplicateDetectionTabContent').style.display = 'none';
+    };
+    document.getElementById('duplicateDetectionTab').onclick = function() {
+        document.getElementById('userMgmtTab').classList.remove('active');
+        document.getElementById('userMgmtTabContent').style.display = 'none';
+        document.getElementById('weightsTab').classList.remove('active');
+        document.getElementById('weightsTabContent').style.display = 'none';
+        document.getElementById('duplicateDetectionTab').classList.add('active');
+        document.getElementById('duplicateDetectionTabContent').style.display = '';
+        renderDuplicateDetection();
+    };
+
+    // --- Duplicate Detection Logic ---
+    function stringSimilarity(str1, str2) {
+        if (!str1 || !str2) return 0;
+        str1 = str1.toLowerCase();
+        str2 = str2.toLowerCase();
+        const len1 = str1.length;
+        const len2 = str2.length;
+        const dp = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+        for (let i = 0; i <= len1; i++) dp[i][0] = i;
+        for (let j = 0; j <= len2; j++) dp[0][j] = j;
+        for (let i = 1; i <= len1; i++) {
+            for (let j = 1; j <= len2; j++) {
+                if (str1[i - 1] === str2[j - 1]) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+                }
+            }
+        }
+        const maxLen = Math.max(len1, len2);
+        return maxLen === 0 ? 1 : 1 - dp[len1][len2] / maxLen;
+    }
+
+    function findDuplicateSongs() {
+        const duplicates = [];
+        for (let i = 0; i < songs.length; i++) {
+            for (let j = i + 1; j < songs.length; j++) {
+                const s1 = songs[i];
+                const s2 = songs[j];
+                const titleSim = stringSimilarity(s1.title, s2.title);
+                const lyricsSim = stringSimilarity(s1.lyrics, s2.lyrics);
+                if (titleSim >= 0.8 || lyricsSim >= 0.8) {
+                    duplicates.push({
+                        song1: s1,
+                        song2: s2,
+                        titleSim,
+                        lyricsSim
+                    });
+                }
+            }
+        }
+        return duplicates;
+    }
+
+    function renderDuplicateDetection() {
+        const container = document.getElementById('duplicateDetectionTabContent');
+        container.innerHTML = '<h3>Duplicate Songs (≥80% match)</h3>';
+        // Show loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'duplicateLoading';
+        loadingDiv.innerHTML = '<span>Detecting duplicates, please wait...</span>';
+        loadingDiv.style.padding = '12px';
+        container.appendChild(loadingDiv);
+
+        // Limit to first 500 songs for performance
+        const limitedSongs = songs.slice(0, 500);
+        const duplicates = [];
+        // Track shown pairs to avoid duplicates
+        const shownPairs = new Set();
+        // 1. Exact match detection using hash maps
+        const titleMap = new Map();
+        const lyricsMap = new Map();
+        limitedSongs.forEach(song => {
+            const t = song.title.trim().toLowerCase();
+            const l = song.lyrics.trim().toLowerCase();
+            if (titleMap.has(t)) {
+                const other = titleMap.get(t);
+                const key = [Math.min(song.id, other.id), Math.max(song.id, other.id)].join('_');
+                if (!shownPairs.has(key)) {
+                    duplicates.push({ song1: song, song2: other, titleSim: 1, lyricsSim: stringSimilarity(song.lyrics, other.lyrics) });
+                    shownPairs.add(key);
+                }
+            } else {
+                titleMap.set(t, song);
+            }
+            if (lyricsMap.has(l)) {
+                const other = lyricsMap.get(l);
+                const key = [Math.min(song.id, other.id), Math.max(song.id, other.id)].join('_');
+                if (!shownPairs.has(key)) {
+                    duplicates.push({ song1: song, song2: other, titleSim: stringSimilarity(song.title, other.title), lyricsSim: 1 });
+                    shownPairs.add(key);
+                }
+            } else {
+                lyricsMap.set(l, song);
+            }
+        });
+
+        // 2. Fuzzy match detection for likely candidates
+        // Group songs by first letter and similar length
+        const groups = {};
+        limitedSongs.forEach(song => {
+            const key = song.title[0].toLowerCase() + '_' + song.title.length;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(song);
+        });
+
+        // Fast similarity check: normalized common chars
+        function fastSimilarity(a, b) {
+            if (!a || !b) return 0;
+            a = a.toLowerCase();
+            b = b.toLowerCase();
+            let matches = 0;
+            for (let ch of a) {
+                if (b.includes(ch)) matches++;
+            }
+            return matches / Math.max(a.length, b.length);
+        }
+
+        Object.values(groups).forEach(group => {
+            for (let i = 0; i < group.length; i++) {
+                for (let j = i + 1; j < group.length; j++) {
+                    const s1 = group[i];
+                    const s2 = group[j];
+                    const key = [Math.min(s1.id, s2.id), Math.max(s1.id, s2.id)].join('_');
+                    if (shownPairs.has(key)) continue;
+                    // Only do expensive check if fastSimilarity > 0.6
+                    if (fastSimilarity(s1.title, s2.title) > 0.6 || fastSimilarity(s1.lyrics, s2.lyrics) > 0.6) {
+                        const titleSim = stringSimilarity(s1.title, s2.title);
+                        const lyricsSim = stringSimilarity(s1.lyrics, s2.lyrics);
+                        if (titleSim >= 0.8 || lyricsSim >= 0.8) {
+                            duplicates.push({ song1: s1, song2: s2, titleSim, lyricsSim });
+                            shownPairs.add(key);
+                        }
+                    }
+                }
+            }
+        });
+
+        loadingDiv.remove();
+        if (duplicates.length === 0) {
+            container.innerHTML += '<p>No duplicates found.</p>';
+            return;
+        }
+        let batchSize = 20;
+        let currentBatch = 0;
+        function renderBatch() {
+            const start = currentBatch * batchSize;
+            const end = Math.min(start + batchSize, duplicates.length);
+            for (let idx = start; idx < end; idx++) {
+                const dup = duplicates[idx];
+                const div = document.createElement('div');
+                div.className = 'duplicate-pair';
+                div.innerHTML = `
+                    <div class="duplicate-row" style="display:flex;align-items:flex-start;gap:32px;padding:16px 12px;margin-bottom:16px;border:1px solid #e0e0e0;border-radius:8px;background:#fafbfc;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                        <div class="duplicate-song" style="flex:1;min-width:220px;">
+                            <div style="font-weight:600;font-size:1.08em;margin-bottom:4px;color:#2d6cdf;"><i class="fas fa-music"></i> Song 1</div>
+                            <div style="font-size:1.04em;margin-bottom:2px;"><b>${dup.song1.title}</b></div>
+                            <div style="color:#888;font-size:0.97em;margin-bottom:6px;">ID: ${dup.song1.id}</div>
+                            <button class="btn btn-delete" style="margin-right:8px;" onclick="deleteSingleDuplicateSong(${dup.song1.id})">Delete</button>
+                            <button class="btn btn-view" onclick="viewSingleLyrics(${dup.song1.id}, '${dup.song2.id}')">View Lyrics</button>
+                        </div>
+                        <div class="duplicate-song" style="flex:1;min-width:220px;">
+                            <div style="font-weight:600;font-size:1.08em;margin-bottom:4px;color:#d14b4b;"><i class="fas fa-music"></i> Song 2</div>
+                            <div style="font-size:1.04em;margin-bottom:2px;"><b>${dup.song2.title}</b></div>
+                            <div style="color:#888;font-size:0.97em;margin-bottom:6px;">ID: ${dup.song2.id}</div>
+                            <button class="btn btn-delete" style="margin-right:8px;" onclick="deleteSingleDuplicateSong(${dup.song2.id})">Delete</button>
+                            <button class="btn btn-view" onclick="viewSingleLyrics(${dup.song2.id}, '${dup.song1.id}')">View Lyrics</button>
+                        </div>
+                        <div class="duplicate-meta" style="flex-basis:180px;min-width:140px;text-align:center;align-self:center;">
+                            <div style="font-size:0.98em;margin-bottom:4px;"><span style="color:#2d6cdf;font-weight:600;">Title Similarity:</span> ${(dup.titleSim*100).toFixed(1)}%</div>
+                            <div style="font-size:0.98em;"><span style="color:#d14b4b;font-weight:600;">Lyrics Similarity:</span> ${(dup.lyricsSim*100).toFixed(1)}%</div>
+                        </div>
+                    </div>
+                    <div id="lyricsCompare${dup.song1.id}_${dup.song2.id}" style="display:none;"></div>
+                    <div id="lyricsSingle${dup.song1.id}_${dup.song2.id}" style="display:none;"></div>
+                    <div id="lyricsSingle${dup.song2.id}_${dup.song1.id}" style="display:none;"></div>
+                `;
+// Show lyrics for a single song in duplicate pair
+window.viewSingleLyrics = function(songId, otherId) {
+    const song = songs.find(s => s.id == songId);
+    const lyricsDiv = document.getElementById(`lyricsSingle${songId}_${otherId}`);
+    if (!lyricsDiv) return;
+    lyricsDiv.style.display = lyricsDiv.style.display === 'none' ? 'block' : 'none';
+    lyricsDiv.innerHTML = `<pre style='background:#f9f9f9;padding:8px;border:1px solid #ccc;'><b>${song.title}:</b>\n${song.lyrics}</pre>`;
+}
+                container.appendChild(div);
+            }
+            if (end < duplicates.length) {
+                const loadMoreBtn = document.createElement('button');
+                loadMoreBtn.textContent = `Load More (${duplicates.length - end} remaining)`;
+                loadMoreBtn.className = 'btn';
+                loadMoreBtn.style.margin = '12px 0';
+                loadMoreBtn.onclick = function() {
+                    loadMoreBtn.remove();
+                    currentBatch++;
+                    renderBatch();
+                };
+                container.appendChild(loadMoreBtn);
+            }
+        }
+        renderBatch();
+    }
+
+    window.viewLyrics = function(id1, id2) {
+        const song1 = songs.find(s => s.id === id1);
+        const song2 = songs.find(s => s.id === id2);
+        const lyricsDiv = document.getElementById(`lyricsCompare${id1}_${id2}`);
+        if (!lyricsDiv) return;
+        lyricsDiv.style.display = lyricsDiv.style.display === 'none' ? 'block' : 'none';
+        lyricsDiv.innerHTML = `<pre style='background:#f9f9f9;padding:8px;border:1px solid #ccc;'><b>${song1.title}:</b>\n${song1.lyrics}\n\n<b>${song2.title}:</b>\n${song2.lyrics}</pre>`;
+    }
+
+    window.deleteSingleDuplicateSong = async function(songId) {
+        // Remove from local
+        songs = songs.filter(s => s.id !== songId);
+        localStorage.setItem('songs', JSON.stringify(songs));
+        // Remove from backend
+        try {
+            const resp = await fetch(`${API_BASE_URL}/api/songs/${songId}`, {
+                method: 'DELETE',
+                headers: jwtToken ? { 'Authorization': `Bearer ${jwtToken}` } : {}
+            });
+            if (resp.ok) {
+                showNotification('Song deleted successfully');
+            } else {
+                showNotification('Failed to delete song from backend');
+            }
+        } catch (err) {
+            showNotification('Error deleting song from backend');
+        }
+        renderDuplicateDetection();
+        updateSongCount();
+    }
         // Show login modal (local/JWT)
         function showLoginModal() {
             let modal = document.getElementById('loginModal');
@@ -1686,11 +1948,43 @@ function isJwtValid(token) {
         }
     
         function isDuplicateSong(title, lyrics, currentId = null) {
-            return songs.some(song => {
-                if (currentId && song.id === currentId) return false;
-                return song.title.toLowerCase() === title.toLowerCase() && 
-                       song.lyrics.toLowerCase() === lyrics.toLowerCase();
-            });
+            // Normalize input
+            const t = title.trim().toLowerCase();
+            const l = lyrics.trim().toLowerCase();
+            // Check for exact title or lyrics match
+            for (const song of songs) {
+                if (currentId && song.id === currentId) continue;
+                if (song.title.trim().toLowerCase() === t || song.lyrics.trim().toLowerCase() === l) {
+                    return true;
+                }
+            }
+            // Fuzzy match: only compare with similar length and first letter
+            for (const song of songs) {
+                if (currentId && song.id === currentId) continue;
+                if (song.title[0].toLowerCase() === title[0].toLowerCase() && Math.abs(song.title.length - title.length) < 3) {
+                    // Fast similarity check
+                    let matches = 0;
+                    for (let ch of t) {
+                        if (song.title.toLowerCase().includes(ch)) matches++;
+                    }
+                    if (matches / Math.max(song.title.length, t.length) > 0.6) {
+                        // Expensive check
+                        const titleSim = stringSimilarity(song.title, title);
+                        if (titleSim >= 0.8) return true;
+                    }
+                }
+                if (song.lyrics[0].toLowerCase() === lyrics[0].toLowerCase() && Math.abs(song.lyrics.length - lyrics.length) < 10) {
+                    let matches = 0;
+                    for (let ch of l) {
+                        if (song.lyrics.toLowerCase().includes(ch)) matches++;
+                    }
+                    if (matches / Math.max(song.lyrics.length, l.length) > 0.6) {
+                        const lyricsSim = stringSimilarity(song.lyrics, lyrics);
+                        if (lyricsSim >= 0.8) return true;
+                    }
+                }
+            }
+            return false;
         }
     
         function saveSearchQuery(query) {
@@ -3424,6 +3718,11 @@ function isJwtValid(token) {
                     addSongSubmitting = true;
                     const title = document.getElementById('songTitle').value;
                     const lyrics = document.getElementById('songLyrics').value;
+                    if (isDuplicateSong(title, lyrics)) {
+                        showNotification('Duplicate song detected! Please check your title and lyrics.', 4000);
+                        addSongSubmitting = false;
+                        return;
+                    }
                     const selectedGenres = Array.from(document.querySelectorAll('#genreDropdown .multiselect-option.selected'))
                         .map(opt => opt.dataset.value);
                     const newSong = {
