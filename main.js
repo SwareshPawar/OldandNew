@@ -2681,6 +2681,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                         showNotification('Login required to save transpose');
                         return;
                     }
+                    // Calculate new key
+                    const originalKey = song.key || '';
+                    const newKey = transposeSingleChord(originalKey, level);
                     // Load userData first
                     let userData = {};
                     try {
@@ -2691,6 +2694,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                     } catch (e) {}
                     if (!userData.transpose) userData.transpose = {};
                     userData.transpose[song.id] = level;
+                    // Also update key in backend
+                    if (!userData.songKeys) userData.songKeys = {};
+                    userData.songKeys[song.id] = newKey;
                     // Save to backend
                     let saveSuccess = false;
                     try {
@@ -2702,6 +2708,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         if (putResponse.ok) {
                             showNotification('Transpose saved!');
                             saveSuccess = true;
+                            // Update local song key
+                            song.key = newKey;
                         } else {
                             showNotification('Failed to save transpose');
                         }
