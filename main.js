@@ -708,9 +708,8 @@ function isJwtValid(token) {
 
         // Dynamic API base URL for local/dev/prod
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-
             ? 'http://localhost:3001'
-            : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
+            : 'https://oldandnew.onrender.com';
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
@@ -1818,15 +1817,27 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         async function saveUserData() {
             try {
+                // Limit favorites and setlists to 100 items each to avoid payload too large
+                const limitedFavorites = Array.isArray(favorites) ? favorites.slice(0, 100) : [];
+                const limitedNewSetlist = Array.isArray(NewSetlist) ? NewSetlist.slice(0, 100) : [];
+                const limitedOldSetlist = Array.isArray(OldSetlist) ? OldSetlist.slice(0, 100) : [];
+                // Use name, email, transpose as expected by backend
+                const name = currentUser && currentUser.username ? currentUser.username : '';
+                const email = currentUser && currentUser.email ? currentUser.email : '';
+                let transpose = {};
+                try {
+                    transpose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                } catch (e) { transpose = {}; }
                 const response = await authFetch(`${API_BASE_URL}/api/userdata`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        favorites,
-                        NewSetlist,
-                        OldSetlist,
-                        email: currentUser && currentUser.email ? currentUser.email : '',
-                        username: currentUser && currentUser.username ? currentUser.username : ''
+                        favorites: limitedFavorites,
+                        NewSetlist: limitedNewSetlist,
+                        OldSetlist: limitedOldSetlist,
+                        name,
+                        email,
+                        transpose
                     })
                 });
                 if (!response.ok) {
