@@ -708,8 +708,9 @@ function isJwtValid(token) {
 
         // Dynamic API base URL for local/dev/prod
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
             ? 'http://localhost:3001'
-            : 'https://oldandnew.onrender.com';
+            : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
@@ -1817,7 +1818,7 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         async function saveUserData() {
             try {
-                // Send full song objects for setlists and favorites (limit to 100)
+                // Limit favorites and setlists to 100 items each to avoid payload too large
                 const limitedFavorites = Array.isArray(favorites) ? favorites.slice(0, 100) : [];
                 const limitedNewSetlist = Array.isArray(NewSetlist) ? NewSetlist.slice(0, 100) : [];
                 const limitedOldSetlist = Array.isArray(OldSetlist) ? OldSetlist.slice(0, 100) : [];
@@ -1836,8 +1837,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         NewSetlist: limitedNewSetlist,
                         OldSetlist: limitedOldSetlist,
                         name,
-                        email,
-                        transpose
+                        email: currentUser && currentUser.email ? currentUser.email : '',
+                        username: currentUser && currentUser.username ? currentUser.username : ''
                     })
                 });
                 if (!response.ok) {
@@ -2544,25 +2545,19 @@ window.viewSingleLyrics = function(songId, otherId) {
     
         function renderSetlist(category) {
             const container = category === 'New' ? NewSetlistSongs : OldSetlistSongs;
-            let setlist = category === 'New' ? NewSetlist : OldSetlist;
+            const setlist = category === 'New' ? NewSetlist : OldSetlist;
             container.innerHTML = '';
             if (setlist.length === 0) {
                 container.innerHTML = '<p>Your ' + category + ' setlist is empty.</p>';
                 return;
             }
-
-            // If setlist contains IDs, map them to song objects
-            if (typeof setlist[0] === 'number' || (setlist[0] && typeof setlist[0] === 'string')) {
-                setlist = setlist.map(id => songs.find(s => s.id === id)).filter(Boolean);
-            }
-
+    
             const ul = document.createElement('ul');
             ul.className = 'setlist-sortable';
             ul.style.listStyle = 'none';
             ul.style.padding = '0';
-
+    
             setlist.forEach((song, index) => {
-                if (!song) return;
                 const li = document.createElement('li');
                 li.style.display = 'flex';
                 li.style.justifyContent = 'space-between';
@@ -2573,23 +2568,23 @@ window.viewSingleLyrics = function(songId, otherId) {
                 li.style.borderRadius = '5px';
                 li.setAttribute('draggable', 'true');
                 li.dataset.songId = song.id;
-
+    
                 li.innerHTML = `
                     <span><span class="setlist-index">${index + 1}.</span> ${song.title} (${song.key} | ${song.genre})</span>
                     <div class="song-actions">
                         <button class="btn btn-delete" onclick="removeFromSetlist(${song.id}, '${song.category}')">Remove</button>
                     </div>
                 `;
-
+    
                 li.addEventListener('click', (e) => {
                     if (!e.target.classList.contains('btn')) {
                         showPreview(song);
                     }
                 });
-
+    
                 ul.appendChild(li);
             });
-
+    
             container.appendChild(ul);
             enableDrag(container, category);
         }
@@ -2711,7 +2706,6 @@ window.viewSingleLyrics = function(songId, otherId) {
                     } catch (e) {}
                     if (!userData.transpose) userData.transpose = {};
                     userData.transpose[song.id] = level;
-                    // Also update key in backend
                     if (!userData.songKeys) userData.songKeys = {};
                     userData.songKeys[song.id] = newKey;
                     // Save to backend
@@ -2724,9 +2718,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         });
                         if (putResponse.ok) {
                             showNotification('Transpose saved!');
-                            saveSuccess = true;
-                            // Update local song key
                             song.key = newKey;
+                            saveSuccess = true;
                         } else {
                             showNotification('Failed to save transpose');
                         }
@@ -2770,8 +2763,8 @@ window.viewSingleLyrics = function(songId, otherId) {
 
             // Check if song is in setlist/favorites
             const isInSetlist = song.category === 'New' 
-                ? NewSetlist.includes(song.id)
-                : OldSetlist.includes(song.id);
+                ? NewSetlist.some(s => s.id === song.id)
+                : OldSetlist.some(s => s.id === song.id);
             const isFavorite = favorites.includes(song.id);
 
             // Use localStorage for transpose cache, update only on page refresh
@@ -3147,36 +3140,40 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             const song = songs.find(s => s.id === id);
             if (!song) return;
-            const category = song.category;
-            let setlist = category === 'New' ? NewSetlist : OldSetlist;
-            if (setlist.includes(id)) {
-                showNotification('Song already in setlist');
-                return;
+            const setlist = song.category === 'New' ? NewSetlist : OldSetlist;
+            if (!setlist.some(s => s.id === id)) {
+                setlist.push(song);
+                queueSaveUserData();
+                showNotification(`"${song.title}" added to ${song.category} setlist`);
+                updateSetlistButton(id, true);
+                if (songPreviewEl.dataset.songId == id) {
+                    updatePreviewSetlistButton(true);
+                }
+                if (setlistSection.style.display === 'block') {
+                    renderSetlist(song.category);
+                }
             }
-            setlist.push(id);
-            if (category === 'New') NewSetlist = setlist;
-            else OldSetlist = setlist;
-            queueSaveUserData();
-            showNotification(`"${song.title}" added to ${category} setlist`);
-            updateSetlistButton(id, true);
-            if (songPreviewEl.dataset.songId == id) {
-                updatePreviewSetlistButton(true);
-            }
-            renderSetlist(category);
         }
     
         function removeFromSetlist(id, category) {
-            let setlist = category === 'New' ? NewSetlist : OldSetlist;
-            setlist = setlist.filter(sid => sid !== id);
-            if (category === 'New') NewSetlist = setlist;
-            else OldSetlist = setlist;
-            queueSaveUserData();
             const song = songs.find(s => s.id === id);
-            showNotification(song ? `"${song.title}" removed from ${category} setlist` : 'Removed from setlist');
+            if (!song) return;
+            
+            if (category === 'New') {
+                NewSetlist = NewSetlist.filter(s => s.id !== id);
+            } else {
+                OldSetlist = OldSetlist.filter(s => s.id !== id);
+            }
+            queueSaveUserData();
+            
+            showNotification(`"${song.title}" removed from ${category} setlist`);
+            
             updateSetlistButton(id, false);
+            
             if (songPreviewEl.dataset.songId == id) {
                 updatePreviewSetlistButton(false);
             }
+            
             if (setlistSection.style.display === 'block') {
                 renderSetlist(category);
             }
@@ -3292,47 +3289,73 @@ window.viewSingleLyrics = function(songId, otherId) {
             });
         }
     
-        function renderSetlist(category) {
-            const container = category === 'New' ? NewSetlistSongs : OldSetlistSongs;
-            let setlist = category === 'New' ? NewSetlist : OldSetlist;
-            container.innerHTML = '';
-            if (setlist.length === 0) {
-                container.innerHTML = '<p>Your ' + category + ' setlist is empty.</p>';
-                return;
-            }
-            // Map IDs to song objects for rendering
-            const setlistSongs = setlist.map(id => songs.find(s => s.id === id)).filter(Boolean);
-            const ul = document.createElement('ul');
-            ul.className = 'setlist-sortable';
-            ul.style.listStyle = 'none';
-            ul.style.padding = '0';
-            setlistSongs.forEach((song, index) => {
-                if (!song) return;
-                const li = document.createElement('li');
-                li.style.display = 'flex';
-                li.style.justifyContent = 'space-between';
-                li.style.alignItems = 'center';
-                li.style.padding = '10px';
-                li.style.marginBottom = '8px';
-                li.style.background = '#f5f7fa';
-                li.style.borderRadius = '5px';
-                li.setAttribute('draggable', 'true');
-                li.dataset.songId = song.id;
-                li.innerHTML = `
-                    <span><span class="setlist-index">${index + 1}.</span> ${song.title} (${song.key} | ${song.genre})</span>
-                    <div class="song-actions">
-                        <button class="btn btn-delete" onclick="removeFromSetlist(${song.id}, '${song.category}')">Remove</button>
-                    </div>
-                `;
-                li.addEventListener('click', (e) => {
-                    if (!e.target.classList.contains('btn')) {
-                        showPreview(song);
+        function editSong(id) {
+            const song = songs.find(s => s.id === id || s.id === id);
+            if (!song) return;
+            document.getElementById('editSongId').value = Number(song.id);
+            document.getElementById('editSongTitle').value = song.title;
+            document.getElementById('editSongCategory').value = song.category;
+            document.getElementById('editSongKey').value = song.key;
+            document.getElementById('editSongTempo').value = song.tempo;
+            document.getElementById('editSongTime').value = song.time;
+            // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
+            updateTaalDropdown('editSongTime', 'editSongTaal', song.taal);
+            // Render correct genre options for multiselect
+            renderGenreOptions('editGenreDropdown');
+            setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+            // Set selected genres
+            const genres = song.genres || (song.genre ? [song.genre] : []);
+            const editSelectedGenres = document.getElementById('editSelectedGenres');
+            editSelectedGenres.innerHTML = '';
+            document.querySelectorAll('#editGenreDropdown .multiselect-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            genres.forEach(genre => {
+                const options = document.querySelectorAll('#editGenreDropdown .multiselect-option');
+                options.forEach(opt => {
+                    if (opt.dataset.value === genre) {
+                        opt.classList.add('selected');
                     }
                 });
-                ul.appendChild(li);
             });
-            container.appendChild(ul);
-            enableDrag(container, category);
+            updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
+            document.getElementById('editSongLyrics').value = song.lyrics;
+            editSongModal.style.display = 'flex';
+        }
+    
+        function openDeleteSongModal(id) {
+            const song = songs.find(s => s.id === Number(id));
+            if (!song) return;
+            document.getElementById('deleteSongId').value = Number(song.id);
+            document.getElementById('deleteSongTitle').textContent = song.title;
+            deleteSongModal.style.display = 'flex';
+        }
+
+        function getCurrentSongList() {
+            if (deleteSection.style.display === 'block') {
+                return songs.slice().sort((a, b) => a.title.localeCompare(b.title));
+            } else if (favoritesSection.style.display === 'block') {
+                return songs.filter(song => favorites.includes(song.id));
+            } else if (setlistSection.style.display === 'block') {
+                const activeSetlist = NewSetlistTab.classList.contains('active') ? 
+                    NewSetlist : OldSetlist;
+                return activeSetlist;
+            } else {
+                // Regular song list view with filters applied
+                const category = NewTab.classList.contains('active') ? 'New' : 'Old';
+                const keyFilterValue = keyFilter.value;
+                const genreFilterValue = genreFilter.value;
+                
+                return songs
+                    .filter(song => song.category === category)
+                    .filter(song => keyFilterValue === "" || song.key === keyFilterValue)
+                    .filter(song => {
+                        if (!genreFilterValue) return true;
+                        if (!song.genres) return song.genre === genreFilterValue;
+                        return song.genres.includes(genreFilterValue);
+                    })
+                    .sort((a, b) => a.title.localeCompare(b.title));
+            }
         }
 
         function saveSettings() {
@@ -3362,46 +3385,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             autoScrollSpeed = parseInt(newAutoScrollSpeed);
         }
     
-        function editSong(id) {
-            // Find the song by ID
-            const song = songs.find(s => s.id == id);
-            if (!song) return;
-            // Populate the edit modal fields
-            document.getElementById('editSongId').value = song.id;
-            document.getElementById('editSongTitle').value = song.title;
-            document.getElementById('editSongLyrics').value = song.lyrics;
-            document.getElementById('editSongCategory').value = song.category;
-            document.getElementById('editSongKey').value = song.key;
-            document.getElementById('editSongTempo').value = song.tempo || '';
-            document.getElementById('editSongTime').value = song.time || '';
-            document.getElementById('editSongTaal').value = song.taal || '';
-            // Set genres
-            const genreDropdown = document.getElementById('editGenreDropdown');
-            if (genreDropdown) {
-                genreDropdown.querySelectorAll('.multiselect-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                    if (song.genres && song.genres.includes(opt.dataset.value)) {
-                        opt.classList.add('selected');
-                    }
-                });
-                updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
-            }
-            // Show the edit modal
-            document.getElementById('editSongModal').style.display = 'flex';
-        }
-
-        function openDeleteSongModal(songId) {
-            const song = songs.find(s => s.id === songId);
-            if (!song) return;
-            document.getElementById('deleteSongId').value = song.id;
-            document.getElementById('deleteSongTitle').textContent = song.title;
-            document.getElementById('deleteSongModal').style.display = 'flex';
-        }
-
-// Attach to window for global access
-window.openDeleteSongModal = openDeleteSongModal;
-
-
         function addEventListeners() {
             // Live update for weights total bar
             function updateWeightsTotalBar() {
