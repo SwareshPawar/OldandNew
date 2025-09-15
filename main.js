@@ -3362,6 +3362,46 @@ window.viewSingleLyrics = function(songId, otherId) {
             autoScrollSpeed = parseInt(newAutoScrollSpeed);
         }
     
+        function editSong(id) {
+            // Find the song by ID
+            const song = songs.find(s => s.id == id);
+            if (!song) return;
+            // Populate the edit modal fields
+            document.getElementById('editSongId').value = song.id;
+            document.getElementById('editSongTitle').value = song.title;
+            document.getElementById('editSongLyrics').value = song.lyrics;
+            document.getElementById('editSongCategory').value = song.category;
+            document.getElementById('editSongKey').value = song.key;
+            document.getElementById('editSongTempo').value = song.tempo || '';
+            document.getElementById('editSongTime').value = song.time || '';
+            document.getElementById('editSongTaal').value = song.taal || '';
+            // Set genres
+            const genreDropdown = document.getElementById('editGenreDropdown');
+            if (genreDropdown) {
+                genreDropdown.querySelectorAll('.multiselect-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (song.genres && song.genres.includes(opt.dataset.value)) {
+                        opt.classList.add('selected');
+                    }
+                });
+                updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
+            }
+            // Show the edit modal
+            document.getElementById('editSongModal').style.display = 'flex';
+        }
+
+        function openDeleteSongModal(songId) {
+            const song = songs.find(s => s.id === songId);
+            if (!song) return;
+            document.getElementById('deleteSongId').value = song.id;
+            document.getElementById('deleteSongTitle').textContent = song.title;
+            document.getElementById('deleteSongModal').style.display = 'flex';
+        }
+
+// Attach to window for global access
+window.openDeleteSongModal = openDeleteSongModal;
+
+
         function addEventListeners() {
             // Live update for weights total bar
             function updateWeightsTotalBar() {
