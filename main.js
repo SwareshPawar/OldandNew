@@ -1,8 +1,8 @@
 // --- GLOBAL CONSTANTS: must be at the very top ---
 
 const GENRES = [
-    "New", "Old","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Blues", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "K-Pop", "Powerfull","Tensed", "Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
-    "Blues", "Disco", "Reggae", "R&B",
+    "New", "Old","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Powerfull",  "Rock",
+    "Blues", "Female","Male","Duet"
 ];
 const KEYS = [
     "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
@@ -11,16 +11,16 @@ const KEYS = [
 const CATEGORIES = ["New", "Old"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
-    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba", "Western", "Waltz", "K-Pop", "Hip-Hop", "Pop", "Rock", "Jazz", "Funk", "March Rhythm"
+    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba","RD Patch", "Western", "Waltz", "K-Pop", "Hip-Hop", "Pop", "Rock", "Jazz", "Funk", "March Rhythm"
 ];
 const TIME_GENRE_MAP = {
     "4/4": [
         "Keherwa", "Keherwa Slow","Keherwa Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
         "Blues", "Disco", "Reggae", "R&B", "Hip-Hop","K-Pop"
     ],
-    "3/4": ["Waltz", "Mazurka", "Viennese Waltz"],
-    "2/4": ["March Rhythm", "Polka", "Samba", "Merengue"],
-    "6/8": ["Rock","Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba", "Blues Shuffle", "Tango"],
+    "3/4": ["Waltz","Western", "Mazurka", "Viennese Waltz"],
+    "2/4": ["Waltz","Western", "March", "Polka", "Samba"],
+    "6/8": ["Rock","Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba",],
     "5/4": ["JhapTaal", "Sultaal", "Jazz 5-beat"],
     "7/8": ["Rupak", "Rupak Ghazal", "Deepchandi"],
     "12/8": ["EkTaal","Chautaal", "Afro-Cuban 12/8", "Doha Taal", "Ballad 12/8"],
@@ -694,8 +694,6 @@ function isJwtValid(token) {
         let keepScreenOn = false;
         let autoScrollSpeed = localStorage.getItem('autoScrollSpeed') || 1500;
         let suggestedSongsDrawerOpen = false;
-        let touchStartX = 0;
-        let touchStartY = 0;
         let isScrolling = false;
         let jwtToken = localStorage.getItem('jwtToken') || '';
         let currentUser = null;
@@ -3437,6 +3435,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                 });
             }
 
+            
+
             // Save weights form
             const weightsForm = document.getElementById('weightsForm');
             if (weightsForm) {
@@ -4222,6 +4222,38 @@ window.viewSingleLyrics = function(songId, otherId) {
         window.removeFromSetlist = removeFromSetlist;
         window.renderSetlist = renderSetlist;
     
+        // --- Mobile edge swipe gesture logic ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            touchStartTime = Date.now();
+        }, { passive: true });
+
+        document.addEventListener('touchend', function(e) {
+            if (e.changedTouches.length !== 1) return;
+            const touch = e.changedTouches[0];
+            const dx = touch.clientX - touchStartX;
+            const dy = touch.clientY - touchStartY;
+            const dt = Date.now() - touchStartTime;
+
+            // Only trigger if swipe starts near left edge (within 30px)
+            if (touchStartX < 30 && Math.abs(dx) > 60 && dt < 500) {
+                // Swipe right from left edge
+                if (dy < -40) {
+                    // Swipe up: open home page from top
+                    document.getElementById('showAll').click();
+                } else if (dy > 40) {
+                    // Swipe down: open song list from bottom
+                    document.getElementById('showSetlist').click();
+                }
+            }
+        }, { passive: true });
 
         // Start the application
         window.addEventListener('DOMContentLoaded', () => {
