@@ -255,6 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    initScreenWakeLock();
+
     // Add Song button(s)
     function openAddSong() {
         const modal = document.getElementById('addSongModal');
@@ -1450,20 +1452,38 @@ window.viewSingleLyrics = function(songId, otherId) {
             const favoriteSongs = songs.filter(song => favorites.includes(song.id));
             renderSongs(favoriteSongs, favoritesContent);
         }
+
+        let wakeLock = null;
     
         async function initScreenWakeLock() {
             if ('wakeLock' in navigator) {
                 try {
-                    await navigator.wakeLock.request('screen');
+                    wakeLock = await navigator.wakeLock.request('screen');
                     keepScreenOn = true;
-                    // Optionally show a notification
                     showNotification('Screen will stay on');
+                    // Re-acquire wake lock if released
+                    wakeLock.addEventListener('release', () => {
+                        keepScreenOn = false;
+                        showNotification('Screen may sleep');
+                    });
                 } catch (err) {
                     console.error('Error enabling wake lock:', err);
                     showNotification('Failed to keep screen on');
                 }
             }
         }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && 'wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    keepScreenOn = true;
+                    showNotification('Screen will stay on');
+                } catch (err) {
+                    // Ignore errors if user denied or not supported
+                }
+            }
+        });
 
 
         function updateAuthButtons() {
