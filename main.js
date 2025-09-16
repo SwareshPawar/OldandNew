@@ -1,7 +1,7 @@
 // --- GLOBAL CONSTANTS: must be at the very top ---
 
 const GENRES = [
-    "New", "Old","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Powerfull",  "Rock",
+    "New", "Old","Mid","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Powerfull",  "Rock",
     "Blues", "Female","Male","Duet"
 ];
 const KEYS = [
