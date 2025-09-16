@@ -423,37 +423,40 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
     const selectedContainer = document.getElementById(selectedId);
     if (!input || !dropdown || !selectedContainer) return;
 
+    // Render genre options
     renderGenreOptions(dropdownId);
-    setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
 
-    // Remove old listeners if re-initializing
-    if (input._clickHandler) input.removeEventListener('click', input._clickHandler);
-    if (dropdown._clickHandler) dropdown.removeEventListener('click', dropdown._clickHandler);
-    if (document._outsideGenreHandler) document.removeEventListener('click', document._outsideGenreHandler);
+    // Remove previous listeners if any
+    if (input._genreListener) input.removeEventListener('click', input._genreListener);
+    if (dropdown._genreListener) dropdown.removeEventListener('click', dropdown._genreListener);
+    if (document._genreListener) document.removeEventListener('click', document._genreListener);
 
+    // Make input always focusable and clickable
     input.setAttribute('readonly', 'true');
     input.style.cursor = 'pointer';
 
-    input._clickHandler = e => {
+    input._genreListener = (e) => {
         e.stopPropagation();
-        dropdown.classList.toggle('open');
+        dropdown.classList.toggle('show');
     };
-    input.addEventListener('click', input._clickHandler);
+    input.addEventListener('click', input._genreListener);
 
-    dropdown._clickHandler = e => {
-        const opt = e.target.closest('.multiselect-option');
-        if (!opt) return;
-        opt.classList.toggle('selected');
-        updateSelectedGenres(selectedId, dropdownId);
-    };
-    dropdown.addEventListener('click', dropdown._clickHandler);
-
-    document._outsideGenreHandler = e => {
+    // Hide dropdown when clicking outside
+    document._genreListener = (e) => {
         if (!dropdown.contains(e.target) && e.target !== input) {
-            dropdown.classList.remove('open');
+            dropdown.classList.remove('show');
         }
     };
-    document.addEventListener('click', document._outsideGenreHandler);
+    document.addEventListener('click', document._genreListener);
+
+    // Select/deselect genres
+    dropdown._genreListener = (e) => {
+        const option = e.target.closest('.multiselect-option');
+        if (!option) return;
+        option.classList.toggle('selected');
+        updateSelectedGenres(selectedId, dropdownId);
+    };
+    dropdown.addEventListener('click', dropdown._genreListener);
 }
 
 function updateSelectedGenres(selectedId, dropdownId) {
@@ -482,15 +485,6 @@ function applyTheme(isDark) {
     }
 }
 
-function applyTheme(isDark) {
-    const body = document.body;
-    const toggle = document.getElementById('themeToggle');
-    body.classList.toggle('dark-mode', isDark);
-    if (toggle) toggle.setAttribute('aria-pressed', String(isDark));
-    if (typeof redrawPreviewOnThemeChange === 'function') {
-        redrawPreviewOnThemeChange();
-    }
-}
 
 // JWT helpers
 function getJwtExpiry(token) {
@@ -1646,33 +1640,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             autoScrollSpeed = parseInt(savedAutoScrollSpeed);
         }
     
-        function saveSettings() {
-            const newHeader = document.getElementById("sidebarHeaderInput").value;
-            const newSetlist = document.getElementById("setlistTextInput").value;
-            const sidebarWidth = document.getElementById("sidebarWidthInput").value;
-            const songsPanelWidth = document.getElementById("songsPanelWidthInput").value;
-            const previewMargin = document.getElementById("previewMarginInput").value;
-            const newAutoScrollSpeed = document.getElementById("autoScrollSpeedInput").value;
-            const sessionResetOption = document.getElementById("sessionResetOption").value;
-
-    
-            document.querySelector(".sidebar-header h2").textContent = newHeader;
-            if (showSetlistEl) showSetlistEl.textContent = newSetlist;
-
-            document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
-            document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
-            document.documentElement.style.setProperty('--preview-margin-left', `${previewMargin}px`);
-
-            localStorage.setItem("sidebarHeader", newHeader);
-            localStorage.setItem("setlistText", newSetlist);
-            localStorage.setItem("sidebarWidth", sidebarWidth);
-            localStorage.setItem("songsPanelWidth", songsPanelWidth);
-            localStorage.setItem("previewMargin", previewMargin);
-            localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
-            localStorage.setItem("sessionResetOption", sessionResetOption);
-            autoScrollSpeed = parseInt(newAutoScrollSpeed);
-        }
-    
+            
         function applyLyricsBackground(isNew) {
             const lyricsContainer = document.querySelector(".song-lyrics");
             if (!lyricsContainer) return;
@@ -1828,34 +1796,25 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Call periodically (every 5 minutes)
         setInterval(optimizeMemoryUsage, 300000);
     
-
-        async function loadSetlists() {
-            // ...removed console.time...
-            const response = await authFetch(`${API_BASE_URL}/api/userdata`);
-            if (response.ok) {
-                const data = await response.json();
-                favorites = data.favorites || [];
-                NewSetlist = data.NewSetlist || [];
-                OldSetlist = data.OldSetlist || [];
-            }
-            // ...removed console.timeEnd...
-        }
-    
+   
 
         async function loadUserData() {
-            // ...removed console.time...
             try {
                 const response = await authFetch(`${API_BASE_URL}/api/userdata`);
                 if (response.ok) {
                     const data = await response.json();
-                    if (Array.isArray(data.favorites)) favorites = data.favorites;
-                    if (Array.isArray(data.NewSetlist)) NewSetlist = data.NewSetlist;
-                    if (Array.isArray(data.OldSetlist)) OldSetlist = data.OldSetlist;
+                    // Always update favorites and setlists from backend
+                    favorites = Array.isArray(data.favorites) ? data.favorites : [];
+                    NewSetlist = Array.isArray(data.NewSetlist) ? data.NewSetlist : [];
+                    OldSetlist = Array.isArray(data.OldSetlist) ? data.OldSetlist : [];
                     if (data.user && data.user.username) {
                         currentUser = data.user;
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     }
                     updateAuthButtons();
+                    // Render setlists after loading
+                    renderSetlist('New');
+                    renderSetlist('Old');
                 } else if (response.status === 401 || response.status === 403) {
                     logout();
                     showNotification('Session expired. Please log in again.');
@@ -1872,7 +1831,6 @@ window.viewSingleLyrics = function(songId, otherId) {
                 console.error('Network error in loadUserData:', err);
                 showNotification('Network error: Failed to load user data');
             }
-            // ...removed console.timeEnd...
         }
 
         async function saveUserData() {
@@ -2999,9 +2957,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
         }
     
-        function cleanUpLyrics(lyrics) {
-            return lyrics.replace(/\n{3,}/g, '\n\n');
-        }
     
         function formatLyricsWithChords(lyrics, transposeLevel) {
             const lines = lyrics.split('\n');
@@ -3017,7 +2972,7 @@ window.viewSingleLyrics = function(songId, otherId) {
     
                 if (isChordLine(line)) {
                     let processedLine = line.replace(
-                        /([A-G][#b]?(?:maj|min|m|dim|aug|sus2|sus4|m7|maj7|7|m9|maj9|9|m11|maj11|11|add9|add11|6|13)?(?:\/[A-G][#b]?)?)/gi,
+                        CHORD_REGEX,
                         (chord) => {
                             if (!chord.trim()) return chord;
                             if (chord.includes('/')) {
@@ -3570,6 +3525,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 document.getElementById('weightTaal').value = WEIGHTS.taal;
                 document.getElementById('weightTempo').value = WEIGHTS.tempo;
                 document.getElementById('weightGenre').value = WEIGHTS.genre;
+                document.getElementById('weightVocal').value = WEIGHTS.vocal;
             }
             // Tab switching
             NewTab.addEventListener('click', () => {
