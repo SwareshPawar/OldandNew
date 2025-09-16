@@ -4,6 +4,10 @@ const GENRES = [
     "New", "Old","Mid","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Powerfull",  "Rock",
     "Blues", "Female","Male","Duet"
 ];
+
+const VOCAL_TAGS = ['Male', 'Female', 'Duet'];
+
+
 const KEYS = [
     "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
     "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm"
@@ -33,12 +37,35 @@ const CHORD_TYPES = [
     "maj", "min", "m", "dim", "aug", "sus2", "sus4", "7sus4", "7sus2", "m7", "maj7", "7", "m9", "maj9", "9", "m11", "maj11", "11", "add9", "add11", "6", "13", "5", "sus", "7b5", "7#5", "7b9", "7#9", "b5", "#5", "b9", "#9"
 ];
 
+        // Dynamic API base URL for local/dev/prod
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
+            ? 'http://localhost:3001'
+            : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
+        
+        
+        // const API_BASE_URL = 'https://oldand-new.vercel.app';
+
 // --- CHORD REGEXES: always use CHORD_TYPES ---
 const CHORDS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const CHORD_TYPE_REGEX = CHORD_TYPES.join("|");
 const CHORD_REGEX = new RegExp(`([A-G](?:#|b)?)(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?`, "gi");
 const CHORD_LINE_REGEX = new RegExp(`^(\\s*[A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?\\s*)+$`, "i");
 const INLINE_CHORD_REGEX = new RegExp(`[\\[(]([A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?)[\\])]`, "gi");
+
+let isDarkMode = localStorage.getItem('darkMode') === 'true';
+//let jwtToken = localStorage.getItem('jwtToken') || '';
+//let currentUser = null;
+ jwtToken = localStorage.getItem('jwtToken') || '';
+
+// currentUser already initialized globally
+isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+
+try {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) currentUser = JSON.parse(storedUser);
+} catch {}
 
 function populateGenreDropdown(id, timeSignature) {
     const select = document.getElementById(id);
@@ -58,7 +85,21 @@ function populateGenreDropdown(id, timeSignature) {
 
 // Merge all DOMContentLoaded logic into one handler
 document.addEventListener('DOMContentLoaded', () => {
-    // On page refresh, update localStorage transposeCache from backend
+    // Restore auth state
+    //let jwtToken = localStorage.getItem('jwtToken') || '';
+    //let currentUser = null;
+    try {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) currentUser = JSON.parse(storedUser);
+    } catch {}
+
+    // Helper: authFetch
+    async function authFetch(url, options = {}) {
+        const headers = options.headers || {};
+        if (jwtToken) headers.Authorization = `Bearer ${jwtToken}`;
+        return fetch(url, { ...options, headers });
+    }
+
     async function updateLocalTransposeCache() {
         if (currentUser && currentUser.id) {
             try {
@@ -69,17 +110,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('transposeCache', JSON.stringify(userData.transpose));
                     }
                 }
-            } catch (e) {}
+            } catch {}
         }
     }
     updateLocalTransposeCache();
-    // Inject spinner overlay if not present
+
+    // Inject spinner overlay if absent
     if (!document.getElementById('loadingOverlay')) {
-        fetch('spinner.html').then(r => r.text()).then(html => {
-            document.body.insertAdjacentHTML('beforeend', html);
-        });
+        fetch('spinner.html')
+            .then(r => r.text())
+            .then(html => document.body.insertAdjacentHTML('beforeend', html))
+            .catch(() => {});
     }
-    // Show loading overlay
+
     function showLoading(percent) {
         const overlay = document.getElementById('loadingOverlay');
         const percentEl = document.getElementById('loadingPercent');
@@ -90,82 +133,65 @@ document.addEventListener('DOMContentLoaded', () => {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) overlay.style.display = 'none';
     }
-    // Loader for song loading (simulated progress)
+
+    // Ensure these elements exist before use later
+    const keyFilter = document.getElementById('keyFilter');
+    const genreFilter = document.getElementById('genreFilter');
+
     async function loadSongsWithProgress() {
         showLoading(0);
-        let percent = 0;
-        // Step 1: Fetch
-        for (let i = 0; i <= 20; i += 2) {
-            showLoading(i);
-            await new Promise(res => setTimeout(res, 30));
-        }
-        let response, allSongs;
+        let response;
         try {
-            const url = `${API_BASE_URL}/api/songs`;
-            response = await authFetch(url);
-            percent = 20;
-            showLoading(percent);
+            for (let i = 0; i <= 20; i += 2) {
+                showLoading(i);
+                await new Promise(r => setTimeout(r, 25));
+            }
+            response = await authFetch(`${API_BASE_URL}/api/songs`);
+            showLoading(30);
         } catch (err) {
-            songs = [];
-            showLoading(100);
-            setTimeout(hideLoading, 300);
-            console.error('Network error in loadSongsWithProgress:', err);
+            console.error('Network error fetching songs:', err);
+            hideLoading();
             return;
         }
-        // Step 2: Parse JSON
-        for (let i = 20; i <= 40; i += 4) {
-            showLoading(i);
-            await new Promise(res => setTimeout(res, 25));
-        }
         if (!response.ok) {
-            songs = [];
-            const errorText = await response.text();
-            console.error('API error in loadSongsWithProgress:', response.status, errorText);
-            showLoading(100);
-            setTimeout(hideLoading, 300);
-            return songs;
+            console.error('API error fetching songs:', response.status);
+            hideLoading();
+            return;
         }
-        allSongs = await response.json();
-        percent = 40;
-        showLoading(percent);
-        // Step 3: Deduplicate
-        for (let i = 40; i <= 60; i += 4) {
-            showLoading(i);
-            await new Promise(res => setTimeout(res, 20));
+        let allSongs = [];
+        try {
+            allSongs = await response.json();
+        } catch (e) {
+            console.error('Error parsing songs JSON', e);
         }
-        const uniqueSongs = [];
-        const seenIds = new Set();
-        for (const song of allSongs) {
-            if (!seenIds.has(song.id)) {
-                uniqueSongs.push(song);
-                seenIds.add(song.id);
+        showLoading(50);
+        // Deduplicate
+        const seen = new Set();
+        const unique = [];
+        for (const s of allSongs) {
+            if (!seen.has(s.id)) {
+                seen.add(s.id);
+                unique.push(s);
             }
         }
-        songs = uniqueSongs;
-        localStorage.setItem('songs', JSON.stringify(songs));
-        percent = 60;
-        showLoading(percent);
-        // Step 4: Rendering
-        const totalSongs = uniqueSongs.length || 1;
-        for (let i = 0; i < totalSongs; i += Math.ceil(totalSongs / 20)) {
-            let renderPercent = 60 + Math.round((i / totalSongs) * 40);
-            showLoading(renderPercent);
-            await new Promise(res => setTimeout(res, 15));
+        window.songs = unique;
+        localStorage.setItem('songs', JSON.stringify(unique));
+        showLoading(70);
+        // Simulate render progress
+        for (let i = 70; i <= 95; i += 5) {
+            showLoading(i);
+            await new Promise(r => setTimeout(r, 15));
         }
-        renderSongs('New', keyFilter.value, genreFilter.value);
-        updateSongCount();
+        if (typeof renderSongs === 'function') {
+            renderSongs('New', keyFilter ? keyFilter.value : '', genreFilter ? genreFilter.value : '');
+        }
+        if (typeof updateSongCount === 'function') updateSongCount();
         showLoading(100);
         setTimeout(hideLoading, 300);
     }
-    // Call this at the start of your song loading logic
     loadSongsWithProgress();
-    // Restore JWT and user state FIRST
-    jwtToken = localStorage.getItem('jwtToken') || '';
-    try {
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) currentUser = JSON.parse(storedUser);
-    } catch {}
-    // Populate all dropdowns
+
+    // Populate dropdowns once
     populateDropdown('keyFilter', ['All Keys', ...KEYS]);
     populateDropdown('genreFilter', ['All Genres', ...GENRES]);
     populateDropdown('songKey', KEYS);
@@ -177,75 +203,99 @@ document.addEventListener('DOMContentLoaded', () => {
     populateDropdown('songTaal', TAALS);
     populateDropdown('editSongTaal', TAALS);
 
-    // Setup genre multiselect for Edit Song only once
+    // Genre multiselect (lazy setup; only once each)
+    setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
     setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
 
-    // Main button events
-    const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
-    if (addSongBelowFavoritesBtn) {
-        addSongBelowFavoritesBtn.addEventListener('click', () => {
-            setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
-            document.getElementById('addSongModal').style.display = 'flex';
-        });
+    // Theme
+     isDarkMode = localStorage.getItem('darkMode') === 'true';
+    applyTheme(isDarkMode);
+    const themeToggleBtn = document.getElementById('themeToggle');
+    function updateThemeToggleBtn() {
+        if (!themeToggleBtn) return;
+        themeToggleBtn.setAttribute('aria-pressed', String(isDarkMode));
+        themeToggleBtn.innerHTML = isDarkMode
+            ? '<i class="fas fa-sun"></i><span>Light Mode</span>'
+            : '<i class="fas fa-moon"></i><span>Dark Mode</span>';
     }
-    const openAddSongModal = document.getElementById('openAddSongModal');
-    if (openAddSongModal) {
-        openAddSongModal.addEventListener('click', () => {
-            setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
-            document.getElementById('addSongModal').style.display = 'flex';
+    updateThemeToggleBtn();
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('darkMode', isDarkMode);
+            applyTheme(isDarkMode);
+            updateThemeToggleBtn();
         });
     }
 
-    // Login modal logic
+    // Auth UI
+    if (typeof updateAuthButtons === 'function') updateAuthButtons();
+    if (jwtToken && isJwtValid(jwtToken) && typeof loadUserData === 'function') {
+        loadUserData().then(() => {
+            if (typeof updateAuthButtons === 'function') updateAuthButtons();
+        });
+    } else if (!isJwtValid(jwtToken)) {
+        localStorage.removeItem('jwtToken');
+        jwtToken = '';
+        if (typeof updateAuthButtons === 'function') updateAuthButtons();
+    }
+
+    // Tap tempo
+    setupTapTempo('tapTempoBtn', 'songTempo');
+    setupTapTempo('editTapTempoBtn', 'editSongTempo');
+
+    // Sort filter
+    const sortFilter = document.getElementById('sortFilter');
+    if (sortFilter) {
+        sortFilter.addEventListener('change', () => {
+            const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
+            if (typeof renderSongs === 'function') {
+                renderSongs(activeTab, keyFilter ? keyFilter.value : '', genreFilter ? genreFilter.value : '');
+            }
+        });
+    }
+
+    // Add Song button(s)
+    function openAddSong() {
+        const modal = document.getElementById('addSongModal');
+        if (modal) modal.style.display = 'flex';
+    }
+    ['addSongBelowFavoritesBtn', 'openAddSongModal'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.addEventListener('click', openAddSong);
+        
+    });
+
+    // Login modal
     const loginBtn = document.getElementById('loginBtn');
     const loginModal = document.getElementById('loginModal');
     const closeLoginModal = document.getElementById('closeLoginModal');
     if (loginBtn && loginModal) {
-        if (loginBtn._loginListener) loginBtn.removeEventListener('click', loginBtn._loginListener);
-        loginBtn._loginListener = () => {
-            loginModal.style.display = 'flex';
-        };
-        loginBtn.addEventListener('click', loginBtn._loginListener);
+        loginBtn.addEventListener('click', () => loginModal.style.display = 'flex');
     }
     if (closeLoginModal && loginModal) {
-        if (closeLoginModal._closeLoginListener) closeLoginModal.removeEventListener('click', closeLoginModal._closeLoginListener);
-        closeLoginModal._closeLoginListener = () => {
-            loginModal.style.display = 'none';
-        };
-        closeLoginModal.addEventListener('click', closeLoginModal._closeLoginListener);
+        closeLoginModal.addEventListener('click', () => loginModal.style.display = 'none');
     }
 
-    // Register modal logic
+    // Register modal
     const registerBtn = document.getElementById('registerBtn');
     const registerModal = document.getElementById('registerModal');
     const closeRegisterModal = document.getElementById('closeRegisterModal');
     if (registerBtn && registerModal) {
-        if (registerBtn._registerListener) registerBtn.removeEventListener('click', registerBtn._registerListener);
-        registerBtn._registerListener = () => {
-            registerModal.style.display = 'flex';
-        };
-        registerBtn.addEventListener('click', registerBtn._registerListener);
+        registerBtn.addEventListener('click', () => registerModal.style.display = 'flex');
     }
     if (closeRegisterModal && registerModal) {
-        if (closeRegisterModal._closeRegisterListener) closeRegisterModal.removeEventListener('click', closeRegisterModal._closeRegisterListener);
-        closeRegisterModal._closeRegisterListener = () => {
-            registerModal.style.display = 'none';
-        };
-        closeRegisterModal.addEventListener('click', closeRegisterModal._closeRegisterListener);
+        closeRegisterModal.addEventListener('click', () => registerModal.style.display = 'none');
     }
 
-    // Register form submit
+    // Forms
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
-        registerForm.addEventListener('submit', async function(e) {
+        registerForm.addEventListener('submit', async e => {
             e.preventDefault();
-            function capitalizeFirst(str) {
-                return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-            }
-            const firstNameRaw = document.getElementById('registerFirstName').value.trim();
-            const lastNameRaw = document.getElementById('registerLastName').value.trim();
-            const firstName = capitalizeFirst(firstNameRaw);
-            const lastName = capitalizeFirst(lastNameRaw);
+            const capitalizeFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '';
+            const firstName = capitalizeFirst(document.getElementById('registerFirstName').value.trim());
+            const lastName = capitalizeFirst(document.getElementById('registerLastName').value.trim());
             const username = document.getElementById('registerUsername').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
             const phone = document.getElementById('registerPhone').value.trim();
@@ -259,24 +309,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ firstName, lastName, username, email, phone, password })
                 });
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     registerModal.style.display = 'none';
-                    showNotification('Registration successful! Please login.');
+                    if (typeof showNotification === 'function') showNotification('Registration successful! Please login.');
                 } else {
                     errorDiv.textContent = data.error || 'Registration failed';
                     errorDiv.style.display = 'block';
                 }
-            } catch (err) {
+            } catch {
                 errorDiv.textContent = 'Network error';
                 errorDiv.style.display = 'block';
             }
         });
+
+        initScreenWakeLock();
     }
-    // Login form submit
+
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
+        loginForm.addEventListener('submit', async e => {
             e.preventDefault();
             const loginInput = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -284,31 +336,177 @@ document.addEventListener('DOMContentLoaded', () => {
             errorDiv.style.display = 'none';
             errorDiv.textContent = '';
             try {
-                // Send loginInput as usernameOrEmail, backend should handle case-insensitive username and email
                 const res = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usernameOrEmail: loginInput, password })
                 });
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
                 if (res.ok && data.token) {
                     localStorage.setItem('jwtToken', data.token);
-                    if (data.user) {
-                        localStorage.setItem('currentUser', JSON.stringify(data.user));
-                    }
-                    loginModal.style.display = 'none';
+                    if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
                     location.reload();
                 } else {
                     errorDiv.textContent = data.error || 'Login failed';
                     errorDiv.style.display = 'block';
                 }
-            } catch (err) {
+            } catch {
                 errorDiv.textContent = 'Network error';
                 errorDiv.style.display = 'block';
             }
         });
     }
+
+    // Final init hooks (if defined externally)
+    if (typeof addEventListeners === 'function') addEventListeners();
+    if (typeof loadSongsFromFile === 'function') loadSongsFromFile();
 });
+
+// --- FIXED helper implementations (fill in if previously incomplete) ---
+
+function setupTapTempo(buttonId, inputId) {
+    const btn = document.getElementById(buttonId);
+    const input = document.getElementById(inputId);
+    if (!btn || !input) return;
+    let taps = [];
+    btn.addEventListener('click', () => {
+        const now = performance.now();
+        taps.push(now);
+        if (taps.length > 8) taps.shift();
+        if (taps.length >= 2) {
+            const intervals = [];
+            for (let i = 1; i < taps.length; i++) intervals.push(taps[i] - taps[i - 1]);
+            const avgMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            const bpm = Math.round(60000 / avgMs);
+            input.value = bpm;
+        }
+    });
+    btn.addEventListener('dblclick', () => { taps = []; });
+    input.addEventListener('keydown', e => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            btn.click();
+        }
+    });
+}
+
+function populateDropdown(id, options, withLabel = false) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = '';
+    if (withLabel) {
+        const opt = document.createElement('option');
+        opt.disabled = true;
+        opt.selected = true;
+        opt.textContent = 'Select...';
+        select.appendChild(opt);
+    }
+    options.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        select.appendChild(opt);
+    });
+}
+
+function renderGenreOptions(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = GENRES
+        .map(g => `<div class="multiselect-option" data-value="${g}">${g}</div>`)
+        .join('');
+}
+
+function setupGenreMultiselect(inputId, dropdownId, selectedId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedContainer = document.getElementById(selectedId);
+    if (!input || !dropdown || !selectedContainer) return;
+
+    renderGenreOptions(dropdownId);
+    setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
+
+    // Remove old listeners if re-initializing
+    if (input._clickHandler) input.removeEventListener('click', input._clickHandler);
+    if (dropdown._clickHandler) dropdown.removeEventListener('click', dropdown._clickHandler);
+    if (document._outsideGenreHandler) document.removeEventListener('click', document._outsideGenreHandler);
+
+    input.setAttribute('readonly', 'true');
+    input.style.cursor = 'pointer';
+
+    input._clickHandler = e => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    };
+    input.addEventListener('click', input._clickHandler);
+
+    dropdown._clickHandler = e => {
+        const opt = e.target.closest('.multiselect-option');
+        if (!opt) return;
+        opt.classList.toggle('selected');
+        updateSelectedGenres(selectedId, dropdownId);
+    };
+    dropdown.addEventListener('click', dropdown._clickHandler);
+
+    document._outsideGenreHandler = e => {
+        if (!dropdown.contains(e.target) && e.target !== input) {
+            dropdown.classList.remove('open');
+        }
+    };
+    document.addEventListener('click', document._outsideGenreHandler);
+}
+
+function updateSelectedGenres(selectedId, dropdownId) {
+    const container = document.getElementById(selectedId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!container || !dropdown) return;
+    container.innerHTML = '';
+    const selected = dropdown.querySelectorAll('.multiselect-option.selected');
+    selected.forEach(opt => {
+        const span = document.createElement('span');
+        span.className = 'selected-genre-chip';
+        span.textContent = opt.dataset.value;
+        container.appendChild(span);
+    });
+}
+
+function applyTheme(isDark) {
+    const body = document.body;
+    const toggle = document.getElementById('themeToggle');
+    body.classList.toggle('dark-mode', isDark);
+    if (toggle) {
+        toggle.setAttribute('aria-pressed', String(isDark));
+    }
+    if (typeof redrawPreviewOnThemeChange === 'function') {
+        redrawPreviewOnThemeChange();
+    }
+}
+
+function applyTheme(isDark) {
+    const body = document.body;
+    const toggle = document.getElementById('themeToggle');
+    body.classList.toggle('dark-mode', isDark);
+    if (toggle) toggle.setAttribute('aria-pressed', String(isDark));
+    if (typeof redrawPreviewOnThemeChange === 'function') {
+        redrawPreviewOnThemeChange();
+    }
+}
+
+// JWT helpers
+function getJwtExpiry(token) {
+    if (!token) return null;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (!payload.exp) return null;
+        return payload.exp * 1000;
+    } catch {
+        return null;
+    }
+}
+function isJwtValid(token) {
+    const exp = getJwtExpiry(token);
+    return !!(token && exp && Date.now() < exp);
+}
 // Robust theme switching function
 // Global async init function for app initialization
 async function init() {
@@ -463,11 +661,7 @@ function setupTapTempo(buttonId, inputId) {
         }
     });
 }
-// Call setupTapTempo for both popups after DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    setupTapTempo('tapTempoBtn', 'songTempo');
-    setupTapTempo('editTapTempoBtn', 'editSongTempo');
-});
+
 
 // ...existing code...
 
@@ -490,80 +684,6 @@ function populateDropdown(id, options, withLabel = false) {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Restore JWT and user state FIRST
-    jwtToken = localStorage.getItem('jwtToken') || '';
-    try {
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) currentUser = JSON.parse(storedUser);
-    } catch {}
-    // Populate all dropdowns
-    populateDropdown('keyFilter', ['All Keys', ...KEYS]);
-    populateDropdown('genreFilter', ['All Genres', ...GENRES]);
-    populateDropdown('songKey', KEYS);
-    populateDropdown('editSongKey', KEYS);
-    populateDropdown('songCategory', CATEGORIES);
-    populateDropdown('editSongCategory', CATEGORIES);
-    populateDropdown('songTime', TIMES);
-    populateDropdown('editSongTime', TIMES);
-    populateDropdown('songTaal', TAALS);
-    populateDropdown('editSongTaal', TAALS);
-
-    // Setup genre multiselects
-    setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
-    setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
-
-    // Theme setup
-    // Ensure isDarkMode is boolean
-    isDarkMode = localStorage.getItem('darkMode') === 'true';
-    applyTheme(isDarkMode);
-    const themeToggleBtn = document.getElementById('themeToggle');
-    function updateThemeToggleBtn() {
-        if (themeToggleBtn) {
-            themeToggleBtn.setAttribute('aria-pressed', isDarkMode);
-            if (isDarkMode) {
-                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
-            } else {
-                themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
-            }
-        }
-    }
-    updateThemeToggleBtn();
-    if (themeToggleBtn) {
-        if (themeToggleBtn._themeListener) themeToggleBtn.removeEventListener('click', themeToggleBtn._themeListener);
-        themeToggleBtn._themeListener = () => {
-            isDarkMode = !isDarkMode;
-            localStorage.setItem('darkMode', isDarkMode);
-            applyTheme(isDarkMode);
-            updateThemeToggleBtn();
-            console.log('Theme toggled. Dark mode:', isDarkMode);
-        };
-        themeToggleBtn.addEventListener('click', themeToggleBtn._themeListener);
-        themeToggleBtn.setAttribute('tabindex', '0');
-        themeToggleBtn.setAttribute('role', 'button');
-    }
-
-    // Main button events
-    const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
-    if (addSongBelowFavoritesBtn) {
-        addSongBelowFavoritesBtn.addEventListener('click', () => {
-            document.getElementById('addSongModal').style.display = 'flex';
-        });
-    // After restoring state, update UI
-    updateAuthButtons();
-    }
-    const openAddSongModal = document.getElementById('openAddSongModal');
-    if (openAddSongModal) {
-        openAddSongModal.addEventListener('click', () => {
-            document.getElementById('addSongModal').style.display = 'flex';
-        });
-    }
-    // Remove login modal/menu opening
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-        loginBtn.onclick = null;
-    }
-});
 
 function renderGenreOptions(dropdownId) {
     const dropdown = document.getElementById(dropdownId);
@@ -636,37 +756,7 @@ function updateSelectedGenres(selectedId, dropdownId) {
 }
 
 // Initialize genre multiselects on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
 
-    // Attach other main button events after DOM is ready
-    setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
-    setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
-    const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
-    if (addSongBelowFavoritesBtn) {
-        if (addSongBelowFavoritesBtn._addListener) addSongBelowFavoritesBtn.removeEventListener('click', addSongBelowFavoritesBtn._addListener);
-        addSongBelowFavoritesBtn._addListener = () => {
-            document.getElementById('addSongModal').style.display = 'flex';
-        };
-        addSongBelowFavoritesBtn.addEventListener('click', addSongBelowFavoritesBtn._addListener);
-    }
-    const openAddSongModal = document.getElementById('openAddSongModal');
-    if (openAddSongModal) {
-        if (openAddSongModal._openListener) openAddSongModal.removeEventListener('click', openAddSongModal._openListener);
-        openAddSongModal._openListener = () => {
-            document.getElementById('addSongModal').style.display = 'flex';
-        };
-        openAddSongModal.addEventListener('click', openAddSongModal._openListener);
-    }
-    const adminPanelBtn = document.getElementById('adminPanelBtn');
-    if (adminPanelBtn) {
-        if (adminPanelBtn._adminListener) adminPanelBtn.removeEventListener('click', adminPanelBtn._adminListener);
-        adminPanelBtn._adminListener = () => {
-            document.getElementById('adminPanelModal').style.display = 'flex';
-        };
-        adminPanelBtn.addEventListener('click', adminPanelBtn._adminListener);
-    }
-});
 function getJwtExpiry(token) {
     if (!token) return 0;
     try {
@@ -695,33 +785,22 @@ function isJwtValid(token) {
         let autoScrollSpeed = localStorage.getItem('autoScrollSpeed') || 1500;
         let suggestedSongsDrawerOpen = false;
         let isScrolling = false;
-        let jwtToken = localStorage.getItem('jwtToken') || '';
-        let currentUser = null;
-        // Restore currentUser from localStorage if available
-        try {
-            const storedUser = localStorage.getItem('currentUser');
-            if (storedUser) currentUser = JSON.parse(storedUser);
-        } catch {}
+
+        let currentUser = (() => {
+            try {
+                const s = localStorage.getItem('currentUser');
+                return s ? JSON.parse(s) : null;
+            } catch { return null; }
+        })();
+         isDarkMode = localStorage.getItem('darkMode') === 'true';
 
 
-        // Dynamic API base URL for local/dev/prod
-        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
-            ? 'http://localhost:3001'
-            : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
-        
-        
-        // const API_BASE_URL = 'https://oldand-new.vercel.app';
 
-        // Log backend connection details
         if (API_BASE_URL.includes('localhost')) {
-            console.log('[Backend] Connected to LOCAL backend:', API_BASE_URL);
-        } else if (API_BASE_URL.includes('vercel.app')) {
-            console.log('[Backend] Connected to Vercel backend:', API_BASE_URL);
-        } else if (API_BASE_URL.includes('onrender.com')) {
-            console.log('[Backend] Connected to Render backend:', API_BASE_URL);
+            console.log('[Backend] Using LOCAL backend:', API_BASE_URL);
         } else {
-            console.log('[Backend] Connected to backend:', API_BASE_URL);
+            console.log('[Backend] Using PROD backend:', API_BASE_URL);
         }
 
 
@@ -744,30 +823,6 @@ function isJwtValid(token) {
             updateAuthButtons();
         }
 
-        // Also ensure greeting is updated after DOM is ready (in case of async issues)
-        document.addEventListener('DOMContentLoaded', () => {
-            updateAuthButtons();
-            // Add event listener for the new Add Song button below Favorites
-            const addSongBelowFavoritesBtn = document.getElementById('addSongBelowFavoritesBtn');
-            if (addSongBelowFavoritesBtn) {
-                addSongBelowFavoritesBtn.onclick = function() {
-                    if (typeof openAddSongModal === 'function') {
-                        openAddSongModal.click();
-                    } else {
-                        // fallback: open modal directly
-                        document.getElementById('addSongModal').style.display = 'flex';
-                    }
-                };
-            }
-            // Add event listener for sort filter
-            const sortFilter = document.getElementById('sortFilter');
-            if (sortFilter) {
-                sortFilter.addEventListener('change', function() {
-                    const activeTab = document.getElementById('NewTab').classList.contains('active') ? 'New' : 'Old';
-                    renderSongs(activeTab, keyFilter.value, genreFilter.value);
-                });
-            }
-        });
             
         async function loadSongsFromFile() {
             // ...removed console.time...
@@ -1402,11 +1457,17 @@ window.viewSingleLyrics = function(songId, otherId) {
             renderSongs(favoriteSongs, favoritesContent);
         }
     
-        function initScreenWakeLock() {
+        async function initScreenWakeLock() {
             if ('wakeLock' in navigator) {
-                keepScreenOnBtn.style.display = 'flex';
-            } else {
-                keepScreenOnBtn.style.display = 'none';
+                try {
+                    await navigator.wakeLock.request('screen');
+                    keepScreenOn = true;
+                    // Optionally show a notification
+                    showNotification('Screen will stay on');
+                } catch (err) {
+                    console.error('Error enabling wake lock:', err);
+                    showNotification('Failed to keep screen on');
+                }
             }
         }
 
@@ -1439,7 +1500,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 document.getElementById('deleteSection').style.display = 'none';
             }
     // --- Admin Panel Logic ---
-    const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://oldandnew.onrender.com';
+    //const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://oldandnew.onrender.com';
     async function fetchUsers() {
         const jwtToken = localStorage.getItem('jwtToken');
         const res = await fetch(`${API_BASE_URL}/api/users`, {
@@ -2009,6 +2070,20 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
         }
+
+        function getVocalTags(genres) {
+        return genres ? genres.filter(g => VOCAL_TAGS.includes(g)) : [];
+        }
+        function getNonVocalGenres(genres) {
+            return genres ? genres.filter(g => !VOCAL_TAGS.includes(g)) : [];
+        }
+
+        function getVocalMatchScore(genres1, genres2) {
+            const vocals1 = getVocalTags(genres1);
+            const vocals2 = getVocalTags(genres2);
+            return vocals1.length && vocals2.length ?
+                vocals1.filter(v => vocals2.includes(v)).length / Math.max(vocals1.length, vocals2.length) : 0;
+        }
     
         function showSearchHistory() {
             const dropdown = document.getElementById('searchHistoryDropdown');
@@ -2268,6 +2343,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 song.category === currentSong.category
             );
 
+            
             // Define known language tags
             const LANGUAGE_TAGS = ['English', 'Marathi', 'Spanish', 'Hindi', 'French', 'Tamil', 'Telugu', 'Punjabi', 'Bengali'];
 
@@ -2328,7 +2404,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 const bpm2 = parseInt(tempo2) || 0;
                 if (!bpm1 || !bpm2) return 0;
                 const diff = Math.abs(bpm1 - bpm2);
-                const score = 1 - Math.pow(diff / 50, 2);
+                const score = 1 - Math.pow(diff / 35, 2);
                 return Math.max(0, score);
             };
 
@@ -2362,7 +2438,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                     timeMatchType: 'none', // 'exact', 'compatible', or 'none'
                     taalMatch: false,
                     tempoSimilarity: 0,
-                    genreMatch: 0
+                    genreMatch: 0,
+                    vocalScore: 0
                 };
 
                 let score = 0;
@@ -2421,6 +2498,13 @@ window.viewSingleLyrics = function(songId, otherId) {
                 );
                 score += WEIGHTS.genre * details.genreMatch;
 
+                // 7. Vocal tags match (move here!)
+                details.vocalScore = getVocalMatchScore(
+                    currentSong.genres || (currentSong.genre ? [currentSong.genre] : []),
+                    song.genres || (song.genre ? [song.genre] : [])
+                );
+                score += WEIGHTS.vocal * details.vocalScore;
+
                 return {
                     ...song,
                     matchScore: Math.min(Math.round(score), 100),
@@ -2428,7 +2512,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         ...details,
                         languageScore: Math.round(details.languageScore * 100),
                         tempoSimilarity: Math.round(details.tempoSimilarity * 100),
-                        genreMatch: Math.round(details.genreMatch * 100)
+                        genreMatch: Math.round(details.genreMatch * 100),
+                        vocalScore: Math.round(details.vocalScore * 100)
                     }
                 };
             });
@@ -3119,13 +3204,7 @@ window.viewSingleLyrics = function(songId, otherId) {
     
         function handleUserScroll() {
             isUserScrolling = true;
-            if (autoScrollInterval) {
-                clearInterval(autoScrollInterval);
-                autoScrollInterval = null;
-                toggleAutoScrollBtn.innerHTML = '<i class="fas fa-play"></i>';
-                toggleAutoScrollBtn.classList.remove('active');
-            }
-            
+            // Do NOT stop auto-scroll here!
             setTimeout(() => {
                 isUserScrolling = false;
             }, 1000);
@@ -3392,7 +3471,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                     parseInt(document.getElementById('weightTimeSignature').value) || 0,
                     parseInt(document.getElementById('weightTaal').value) || 0,
                     parseInt(document.getElementById('weightTempo').value) || 0,
-                    parseInt(document.getElementById('weightGenre').value) || 0
+                    parseInt(document.getElementById('weightGenre').value) || 0,
+                    parseInt(document.getElementById('weightVocal').value) || 0
                 ];
                 const total = vals.reduce((a, b) => a + b, 0);
                 const bar = document.getElementById('weightsTotalBar');
@@ -3405,7 +3485,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                 'weightTimeSignature',
                 'weightTaal',
                 'weightTempo',
-                'weightGenre'
+                'weightGenre',
+                'weightVocal'
             ].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', updateWeightsTotalBar);
@@ -3448,7 +3529,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         timeSignature: parseInt(document.getElementById('weightTimeSignature').value),
                         taal: parseInt(document.getElementById('weightTaal').value),
                         tempo: parseInt(document.getElementById('weightTempo').value),
-                        genre: parseInt(document.getElementById('weightGenre').value)
+                        genre: parseInt(document.getElementById('weightGenre').value),
+                        vocal: parseInt(document.getElementById('weightVocal').value)
                     };
                     const total = Object.values(newWeights).reduce((a, b) => a + b, 0);
                     const notif = document.getElementById('weightsNotification');
@@ -3668,34 +3750,19 @@ window.viewSingleLyrics = function(songId, otherId) {
                 });
             });
     
-            // Multi-select genre functionality
-            document.getElementById('songGenre').addEventListener('click', (e) => {
-                e.preventDefault();
-                document.getElementById('genreDropdown').classList.toggle('show');
-            });
+
             
             document.getElementById('editSongGenre').addEventListener('click', (e) => {
                 e.preventDefault();
                 document.getElementById('editGenreDropdown').classList.toggle('show');
             });
             
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.multiselect-container')) {
-                    document.getElementById('genreDropdown').classList.remove('show');
-                    document.getElementById('editGenreDropdown').classList.remove('show');
-                }
-            });
+
                         // Handle session reset based on settings
 
             // Disabled automatic reset on refresh/close to prevent loss of JWT and user data
             // If you want to allow a full reset, call resetApplicationState() explicitly from a button or menu
             
-            document.querySelectorAll('#genreDropdown .multiselect-option').forEach(option => {
-                option.addEventListener('click', () => {
-                    option.classList.toggle('selected');
-                    updateSelectedGenres('selectedGenres', 'genreDropdown');
-                });
-            });
             
             document.querySelectorAll('#editGenreDropdown .multiselect-option').forEach(option => {
                 option.addEventListener('click', () => {
@@ -3893,7 +3960,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             toggleAutoScrollBtn.addEventListener('click', toggleAutoScroll);
             
             // Keep screen on button
-            keepScreenOnBtn.addEventListener('click', toggleScreenWakeLock);
+            //keepScreenOnBtn.addEventListener('click', toggleScreenWakeLock);
     
             // Bulk operations
             deleteAllSongsBtn.addEventListener('click', () => {
@@ -4069,7 +4136,13 @@ window.viewSingleLyrics = function(songId, otherId) {
             const settingsBtn = document.createElement("button");
             settingsBtn.id = "settingsBtn";
             settingsBtn.textContent = "🛠";
-            document.querySelector(".app-container").appendChild(settingsBtn);
+            settingsBtn.className = "sidebar-settings-btn"; // Optional: for styling
+
+            const sidebar = document.querySelector(".sidebar");
+            if (sidebar) {
+                // Place at the bottom of sidebar
+                sidebar.appendChild(settingsBtn);
+            }
     
             settingsBtn.addEventListener("click", () => {
                 document.getElementById("sidebarHeaderInput").value = document.querySelector(".sidebar-header h2").textContent;
@@ -4255,26 +4328,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
         }, { passive: true });
 
-        // Start the application
-        window.addEventListener('DOMContentLoaded', () => {
-            // Restore login state and update UI
-            if (jwtToken && isJwtValid(jwtToken)) {
-                loadUserData().then(() => {
-                    updateAuthButtons();
-                });
-            } else {
-                // Remove expired token if present
-                localStorage.removeItem('jwtToken');
-                jwtToken = '';
-                updateAuthButtons();
-            }
-
-            // Initialize app event listeners and UI
-            addEventListeners();
-            // Optionally, load initial songs or other data
-            loadSongsFromFile();
-            // ...existing code for any other initialization...
-        });
         async function resetUserPassword(userId) {
     console.log('Reset Password button clicked for user:', userId);
     const jwtToken = localStorage.getItem('jwtToken');
