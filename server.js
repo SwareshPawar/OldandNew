@@ -52,12 +52,13 @@ app.get('/api/recommendation-weights', async (req, res) => {
     if (!config) {
       // Default if not set
       return res.json({
-        language: 20,
-        scale: 30,
-        timeSignature: 25,
-        taal: 15,
+        language: 10,
+        scale: 20,
+        timeSignature: 20,
+        taal: 20,
         tempo: 5,
-        genre: 5
+        genre: 15,
+        vocal: 10
       });
     }
     // Remove _id for frontend
@@ -71,17 +72,17 @@ app.get('/api/recommendation-weights', async (req, res) => {
 // Update recommendation weights config (admin only)
 app.put('/api/recommendation-weights', authMiddleware, requireAdmin, async (req, res) => {
   try {
-    const { language, scale, timeSignature, taal, tempo, genre } = req.body;
-    if ([language, scale, timeSignature, taal, tempo, genre].some(v => typeof v !== 'number')) {
+    const { language, scale, timeSignature, taal, tempo, genre, vocal } = req.body;
+    if ([language, scale, timeSignature, taal, tempo, genre, vocal].some(v => typeof v !== 'number')) {
       return res.status(400).json({ error: 'All weights must be numbers' });
     }
-    const total = language + scale + timeSignature + taal + tempo + genre;
+    const total = language + scale + timeSignature + taal + tempo + genre + vocal;
     if (total !== 100) {
       return res.status(400).json({ error: 'Total must be 100' });
     }
     await db.collection('config').updateOne(
       { _id: 'weights' },
-      { $set: { language, scale, timeSignature, taal, tempo, genre } },
+      { $set: { language, scale, timeSignature, taal, tempo, genre, vocal } },
       { upsert: true }
     );
     res.json({ message: 'Recommendation weights updated' });
@@ -220,8 +221,14 @@ app.post('/api/songs', authMiddleware, async (req, res) => {
     }
     // Add createdBy and createdAt if not present
     // Always use createdBy and createdAt from request if present, else fallback to user/date
-    if (!req.body.createdBy && req.user && req.user.username) {
-      req.body.createdBy = req.user.username;
+    if (!req.body.createdBy && req.user) {
+      if (req.user.firstName) {
+        // Capitalize first letter of firstName
+        const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+        req.body.createdBy = cap(req.user.firstName);
+      } else if (req.user.username) {
+        req.body.createdBy = req.user.username;
+      }
     }
     if (!req.body.createdAt) {
       req.body.createdAt = new Date().toISOString();
