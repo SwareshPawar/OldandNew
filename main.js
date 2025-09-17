@@ -4157,9 +4157,9 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             // Theme toggle
             document.getElementById('themeToggle').addEventListener('click', () => {
-    isDarkMode = !isDarkMode;
-    localStorage.setItem('darkMode', isDarkMode);
-    applyTheme(isDarkMode);
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('darkMode', isDarkMode);
+            applyTheme(isDarkMode);
             });
     
             // Make toggle buttons draggable
@@ -4171,72 +4171,100 @@ window.viewSingleLyrics = function(songId, otherId) {
         function makeToggleDraggable(id) {
             const el = document.getElementById(id);
             let isDragging = false, offsetX = 0, offsetY = 0;
-    
+
             const savePosition = () => {
-                const pos = { top: el.style.top, left: el.style.left };
+                const pos = { top: el.style.top, left: el.style.left, right: el.style.right, bottom: el.style.bottom };
                 localStorage.setItem(id + '-pos', JSON.stringify(pos));
             };
-    
-    
+
             const restorePosition = () => {
                 const saved = localStorage.getItem(id + '-pos');
                 if (saved) {
                     const pos = JSON.parse(saved);
-                    el.style.top = pos.top;
-                    el.style.left = pos.left;
+                    el.style.top = pos.top || '';
+                    el.style.left = pos.left || '';
+                    el.style.right = pos.right || '';
+                    el.style.bottom = pos.bottom || '';
                 } else {
-                    // Initial positions: right side, one below the other
-                    el.style.right = '10px';
-                    el.style.left = '';
-                    if (id === 'toggle-sidebar') {
-                        el.style.top = '200px';
-                    } else if (id === 'toggle-songs') {
-                        el.style.top = '260px';
-                    } else if (id === 'toggle-all-panels') {
-                        el.style.top = '320px';
-                    }
+                    el.style.top = id === 'toggle-sidebar' ? '200px' :
+                        id === 'toggle-songs' ? '260px' :
+                        id === 'toggle-all-panels' ? '320px' : '200px';
+                    el.style.left = '10px';
+                    el.style.right = '';
+                    el.style.bottom = '';
                 }
             };
-    
-            // Use translateY for vertical movement only, works better on mobile
-            let startTop = 0;
+
+            // Snap to nearest edge
+            function snapToEdge() {
+            const rect = el.getBoundingClientRect();
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            const gap = 15; // 10px gap from edge
+            const distances = [
+                { edge: 'left', value: rect.left },
+                { edge: 'right', value: winW - rect.right },
+                { edge: 'top', value: rect.top },
+                { edge: 'bottom', value: winH - rect.bottom }
+            ];
+            distances.sort((a, b) => a.value - b.value);
+            const nearest = distances[0].edge;
+
+            // Reset all positions
+            el.style.left = '';
+            el.style.right = '';
+            el.style.top = '';
+            el.style.bottom = '';
+
+            if (nearest === 'left') {
+                el.style.left = gap + 'px';
+                el.style.top = rect.top + 'px';
+            } else if (nearest === 'right') {
+                el.style.right = gap + 'px';
+                el.style.top = rect.top + 'px';
+            } else if (nearest === 'top') {
+                el.style.top = gap + 'px';
+                el.style.left = rect.left + 'px';
+            } else if (nearest === 'bottom') {
+                el.style.bottom = gap + 'px';
+                el.style.left = rect.left + 'px';
+            }
+            savePosition();
+        }
+
             const onMove = (clientX, clientY) => {
+                let newLeft = clientX - offsetX;
                 let newTop = clientY - offsetY;
-                el.style.left = '';
-                el.style.right = '10px';
+                el.style.left = newLeft + 'px';
                 el.style.top = newTop + 'px';
+                el.style.right = '';
+                el.style.bottom = '';
             };
-    
+
             const onEnd = () => {
                 isDragging = false;
                 document.body.style.userSelect = '';
-                const windowWidth = window.innerWidth;
-                const elRect = el.getBoundingClientRect();
-                if (elRect.left < windowWidth / 2) {
-                    el.style.left = '10px';
-                } else {
-                    el.style.left = (windowWidth - el.offsetWidth - 10) + 'px';
-                }
-                savePosition();
+                snapToEdge();
             };
-    
+
             el.addEventListener('mousedown', function (e) {
                 isDragging = true;
                 offsetX = e.clientX - el.offsetLeft;
                 offsetY = e.clientY - el.offsetTop;
                 document.body.style.userSelect = 'none';
             });
-    
+
             document.addEventListener('mousemove', function (e) {
                 if (isDragging) onMove(e.clientX, e.clientY);
             });
-    
+
             document.addEventListener('mouseup', onEnd);
-    
+
             el.addEventListener('touchstart', function (e) {
                 isDragging = true;
                 const touch = e.touches[0];
                 offsetY = touch.clientY - el.offsetTop;
+                offsetX = touch.clientX - el.offsetLeft;
             }, { passive: false });
 
             el.addEventListener('touchmove', function (e) {
@@ -4246,10 +4274,14 @@ window.viewSingleLyrics = function(songId, otherId) {
                     e.preventDefault();
                 }
             }, { passive: false });
-    
+
             el.addEventListener('touchend', onEnd);
+
+            // Snap to edge on window resize
+            window.addEventListener('resize', snapToEdge);
+
             restorePosition();
-    
+
             let timeout;
             const showTemporarily = () => {
                 el.classList.add('showing');
@@ -4258,7 +4290,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     el.classList.remove('showing');
                 }, 3000);
             };
-    
+
             el.addEventListener('mouseenter', () => el.classList.add('showing'));
             el.addEventListener('mouseleave', () => el.classList.remove('showing'));
             el.addEventListener('touchstart', showTemporarily, { passive: true });
