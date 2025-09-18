@@ -1,5 +1,8 @@
 // --- GLOBAL CONSTANTS: must be at the very top ---
 
+
+
+
 const GENRES = [
     "New", "Old","Mid","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Powerfull",  "Rock",
     "Blues", "Female","Male","Duet"
@@ -85,6 +88,8 @@ function populateGenreDropdown(id, timeSignature) {
 
 // Merge all DOMContentLoaded logic into one handler
 document.addEventListener('DOMContentLoaded', () => {
+    // Always fetch latest weights on app load
+    fetchRecommendationWeights();
     // Restore auth state
     //let jwtToken = localStorage.getItem('jwtToken') || '';
     //let currentUser = null;
@@ -2538,6 +2543,46 @@ window.viewSingleLyrics = function(songId, otherId) {
                 suggestedSongsContent.appendChild(div);
             });
         }
+
+        async function saveRecommendationWeightsToBackend(weights) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
+                    },
+                    body: JSON.stringify(weights)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('recommendationWeights', JSON.stringify(weights));
+                    WEIGHTS = weights;
+                    return { success: true, message: data.message || 'Weights updated' };
+                } else {
+                    const err = await res.json();
+                    return { success: false, message: err.error || 'Failed to update weights' };
+                }
+            } catch (e) {
+                return { success: false, message: 'Network error' };
+            }
+        }
+
+
+        async function fetchRecommendationWeights() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const localLastModified = WEIGHTS.lastModified || localStorage.getItem('recommendationWeightsLastModified');
+                    if (!localLastModified || !data.lastModified || data.lastModified !== localLastModified) {
+                        WEIGHTS = data;
+                        localStorage.setItem('recommendationWeights', JSON.stringify(data));
+                        localStorage.setItem('recommendationWeightsLastModified', data.lastModified || '');
+                    }
+                }
+            } catch (e) { /* fallback to local */ }
+        }
     
         function toggleSuggestedSongsDrawer() {
             const drawer = document.getElementById('suggestedSongsDrawer');
@@ -3521,18 +3566,22 @@ window.viewSingleLyrics = function(songId, otherId) {
                     notif.style.background = '';
                     notif.style.color = '';
                     const result = await saveRecommendationWeightsToBackend(newWeights);
-                    notif.textContent = result.message;
-                    notif.style.display = 'block';
                     if (result.success) {
+                        notif.textContent = 'Weights saved successfully!';
                         notif.style.background = '#e0ffe0';
                         notif.style.color = '#155724';
                     } else {
+                        notif.textContent = result.message;
                         notif.style.background = '#ffe0e0';
                         notif.style.color = '#b30000';
                     }
+                    notif.style.display = 'block';
+                    // Scroll modal to top for visibility
+                    const modalContent = notif.closest('.modal-content');
+                    if (modalContent) modalContent.scrollTop = 0;
                     setTimeout(() => {
                         notif.style.display = 'none';
-                    }, 2500);
+                    }, 4000);
                 });
             }
 

@@ -58,10 +58,11 @@ app.get('/api/recommendation-weights', async (req, res) => {
         taal: 20,
         tempo: 5,
         genre: 15,
-        vocal: 10
+        vocal: 10,
+        lastModified: null
       });
     }
-    // Remove _id for frontend
+    // Remove _id for frontend, include lastModified
     const { _id, ...weights } = config;
     res.json(weights);
   } catch (err) {
@@ -80,12 +81,13 @@ app.put('/api/recommendation-weights', authMiddleware, requireAdmin, async (req,
     if (total !== 100) {
       return res.status(400).json({ error: 'Total must be 100' });
     }
+    const lastModified = new Date().toISOString();
     await db.collection('config').updateOne(
       { _id: 'weights' },
-      { $set: { language, scale, timeSignature, taal, tempo, genre, vocal } },
+      { $set: { language, scale, timeSignature, taal, tempo, genre, vocal, lastModified } },
       { upsert: true }
     );
-    res.json({ message: 'Recommendation weights updated' });
+    res.json({ message: 'Recommendation weights updated', lastModified });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
