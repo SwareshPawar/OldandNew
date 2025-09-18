@@ -1456,12 +1456,11 @@ window.viewSingleLyrics = function(songId, otherId) {
         let wakeLock = null;
     
         async function initScreenWakeLock() {
-            if ('wakeLock' in navigator) {
+            if ('wakeLock' in navigator && document.visibilityState === 'visible') {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
                     keepScreenOn = true;
                     showNotification('Screen will stay on');
-                    // Re-acquire wake lock if released
                     wakeLock.addEventListener('release', () => {
                         keepScreenOn = false;
                         showNotification('Screen may sleep');
@@ -1475,13 +1474,14 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         document.addEventListener('visibilitychange', async () => {
             if (document.visibilityState === 'visible' && 'wakeLock' in navigator) {
+                await initScreenWakeLock();
+            } else if (wakeLock) {
                 try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    keepScreenOn = true;
-                    showNotification('Screen will stay on');
-                } catch (err) {
-                    // Ignore errors if user denied or not supported
-                }
+                    await wakeLock.release();
+                } catch (e) {}
+                wakeLock = null;
+                keepScreenOn = false;
+                showNotification('Screen may sleep');
             }
         });
 
