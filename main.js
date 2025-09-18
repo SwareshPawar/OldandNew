@@ -1247,26 +1247,32 @@ window.viewSingleLyrics = function(songId, otherId) {
         lyricsDiv.innerHTML = `<pre style='background:#f9f9f9;padding:8px;border:1px solid #ccc;'><b>${song1.title}:</b>\n${song1.lyrics}\n\n<b>${song2.title}:</b>\n${song2.lyrics}</pre>`;
     }
 
-    window.deleteSingleDuplicateSong = async function(songId) {
-        // Remove from local
-        songs = songs.filter(s => s.id !== songId);
-        localStorage.setItem('songs', JSON.stringify(songs));
-        // Remove from backend
+    // Centralized song deletion logic
+    async function deleteSongById(songId, postDeleteCallback) {
         try {
             const resp = await fetch(`${API_BASE_URL}/api/songs/${songId}`, {
                 method: 'DELETE',
                 headers: jwtToken ? { 'Authorization': `Bearer ${jwtToken}` } : {}
             });
             if (resp.ok) {
+                songs = songs.filter(s => s.id !== songId);
+                localStorage.setItem('songs', JSON.stringify(songs));
                 showNotification('Song deleted successfully');
+                if (typeof postDeleteCallback === 'function') postDeleteCallback();
+            } else if (resp.status === 404) {
+                showNotification('Song not found in backend (already deleted)');
+                // Do NOT remove from local list
             } else {
                 showNotification('Failed to delete song from backend');
             }
         } catch (err) {
             showNotification('Error deleting song from backend');
         }
-        renderDuplicateDetection();
         updateSongCount();
+    }
+
+    window.deleteSingleDuplicateSong = async function(songId) {
+        await deleteSongById(songId, renderDuplicateDetection);
     }
         // Show login modal (local/JWT)
         function showLoginModal() {
@@ -3988,24 +3994,13 @@ window.viewSingleLyrics = function(songId, otherId) {
             deleteSongForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const id = Number(document.getElementById('deleteSongId').value);
-                try {
-                    const response = await authFetch(`${API_BASE_URL}/api/songs/${id}`, {
-                        method: 'DELETE'
-                    });
-                    if (response.ok) {
-                        showNotification('Song deleted successfully!');
-                        deleteSongModal.style.display = 'none';
-                        // Remove song from local cache and memory
-                        songs = songs.filter(song => song.id !== id);
-                        localStorage.setItem('songs', JSON.stringify(songs));
-                        renderSongs('New', keyFilter.value, genreFilter.value);
-                        updateSongCount();
-                    } else {
-                        showNotification('Failed to delete song');
-                    }
-                } catch (err) {
-                    showNotification('Error deleting song');
-                }
+                const deleteBtn = deleteSongForm.querySelector('button[type="submit"]');
+                if (deleteBtn) deleteBtn.disabled = true;
+                await deleteSongById(id, () => {
+                    deleteSongModal.style.display = 'none';
+                    renderSongs('New', keyFilter.value, genreFilter.value);
+                    if (deleteBtn) deleteBtn.disabled = false;
+                });
             });
     
             // Preview scrolling
