@@ -3904,7 +3904,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                             renderSongs('New', keyFilter.value, genreFilter.value);
                             updateSongCount();
                         } else {
-                            showNotification('Failed to add song');
+                            showNotification('Please login to add a song');
                         }
                     } catch (err) {
                         showNotification('Error adding song');
