@@ -2123,9 +2123,11 @@ window.viewSingleLyrics = function(songId, otherId) {
         function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue) {
             let songsToRender;
             let container;
+            
             if (typeof categoryOrSongs === 'string') {
                 const category = categoryOrSongs;
                 const keyFilterValue = filterOrContainer;
+                
                 songsToRender = songs
                     .filter(song => song.category === category)
                     .filter(song => {
@@ -2136,6 +2138,35 @@ window.viewSingleLyrics = function(songId, otherId) {
                         // If 'All Genres' or empty, show all
                         return !genreFilterValue || genreFilterValue === 'All Genres' || (song.genres ? song.genres.includes(genreFilterValue) : song.genre === genreFilterValue);
                     });
+                
+                // --- Prioritize search results: title matches first, then lyrics matches ---
+                const searchTerm = (searchInput && searchInput.value) ? searchInput.value.trim().toLowerCase() : '';
+                
+                if (searchTerm) {
+                    songsToRender.sort((a, b) => {
+                        // Check title matches
+                        const aTitleMatch = a.title && a.title.toLowerCase().includes(searchTerm);
+                        const bTitleMatch = b.title && b.title.toLowerCase().includes(searchTerm);
+                        
+                        // If both have title matches or both don't, check lyrics
+                        if (aTitleMatch === bTitleMatch) {
+                            const aLyricsMatch = a.lyrics && a.lyrics.toLowerCase().includes(searchTerm);
+                            const bLyricsMatch = b.lyrics && b.lyrics.toLowerCase().includes(searchTerm);
+                            
+                            // Prioritize lyrics matches over non-matches
+                            if (aLyricsMatch && !bLyricsMatch) return -1;
+                            if (!aLyricsMatch && bLyricsMatch) return 1;
+                            
+                            // If both have same match status, maintain original order
+                            return 0;
+                        }
+                        
+                        // Prioritize title matches over non-title matches
+                        return aTitleMatch ? -1 : 1;
+                    });
+                }
+            
+        
                 // Sorting logic
                 const sortValue = document.getElementById('sortFilter')?.value || 'recent';
                 if (sortValue === 'az') {
@@ -4037,7 +4068,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     saveSearchQuery(query);
                 }
     
-                const filtered = songs.filter(song => {
+                let filtered = songs.filter(song => {
                     return (
                         song.title.toLowerCase().includes(query) ||
                         (song.lyrics && song.lyrics.toLowerCase().includes(query)) ||
@@ -4045,6 +4076,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                         (song.genre && song.genre.toLowerCase().includes(query)) ||
                         (song.genres && song.genres.some(g => g.toLowerCase().includes(query)))
                     );
+                });
+                // Sort: title matches first, then lyrics, then others
+                filtered.sort((a, b) => {
+                    const aTitleMatch = a.title && a.title.toLowerCase().includes(query) ? 1 : 0;
+                    const bTitleMatch = b.title && b.title.toLowerCase().includes(query) ? 1 : 0;
+                    if (aTitleMatch !== bTitleMatch) return bTitleMatch - aTitleMatch;
+                    const aLyricsMatch = a.lyrics && a.lyrics.toLowerCase().includes(query) ? 1 : 0;
+                    const bLyricsMatch = b.lyrics && b.lyrics.toLowerCase().includes(query) ? 1 : 0;
+                    if (aLyricsMatch !== bLyricsMatch) return bLyricsMatch - aLyricsMatch;
+                    return 0;
                 });
     
                 if (filtered.length === 0) {
