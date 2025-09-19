@@ -2914,34 +2914,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         function attachPreviewEventListeners(song) {
             // Favorite button event listener is attached after rendering preview HTML, not here.
 
-            // Setlist button
-            document.getElementById('previewSetlistBtn')?.addEventListener('click', () => {
-                const isInSetlist = song.category === 'New' 
-                    ? NewSetlist.some(s => s.id === song.id)
-                    : OldSetlist.some(s => s.id === song.id);
-                
-                if (isInSetlist) {
-                    removeFromSetlist(song.id, song.category);
-                } else {
-                    addToSetlist(song.id);
-                }
-                
-                // Update the button after a short delay to allow state to update
-                setTimeout(() => {
-                    const newIsInSetlist = song.category === 'New' 
-                        ? NewSetlist.some(s => s.id === song.id)
-                        : OldSetlist.some(s => s.id === song.id);
-                    const setlistBtn = document.getElementById('previewSetlistBtn');
-                    setlistBtn.textContent = newIsInSetlist ? 'Remove from Setlist' : 'Add to Setlist';
-                    setlistBtn.classList.toggle('btn-primary', !newIsInSetlist);
-                    setlistBtn.classList.toggle('btn-delete', newIsInSetlist);
-                }, 100);
-            });
-            
-            document.getElementById('previewEditBtn')?.addEventListener('click', () => {
-                editSong(song.id);
-            });
-
             // Transpose controls
             document.getElementById('transpose-up')?.addEventListener('click', () => {
                 let currentLevel = parseInt(document.getElementById('transpose-level').textContent);
@@ -3210,7 +3182,12 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             
             document.getElementById('previewSetlistBtn').addEventListener('click', (e) => {
-                if (isInSetlist) {
+                // Check current state dynamically
+                const currentlyInSetlist = song.category === 'New' 
+                    ? NewSetlist.some(s => s.id === song.id)
+                    : OldSetlist.some(s => s.id === song.id);
+                    
+                if (currentlyInSetlist) {
                     removeFromSetlist(song.id, song.category);
                 } else {
                     addToSetlist(song.id);
@@ -3474,10 +3451,11 @@ window.viewSingleLyrics = function(songId, otherId) {
                 setlist.push(song);
                 queueSaveUserData();
                 showNotification(`"${song.title}" added to ${song.category} setlist`);
+                
+                // Update both song list button and preview button
                 updateSetlistButton(id, true);
-                if (songPreviewEl.dataset.songId == id) {
-                    updatePreviewSetlistButton(true);
-                }
+                updatePreviewSetlistButton(true);
+                
                 if (setlistSection.style.display === 'block') {
                     renderSetlist(song.category);
                 }
@@ -3497,11 +3475,9 @@ window.viewSingleLyrics = function(songId, otherId) {
             
             showNotification(`"${song.title}" removed from ${category} setlist`);
             
+            // Update both song list button and preview button
             updateSetlistButton(id, false);
-            
-            if (songPreviewEl.dataset.songId == id) {
-                updatePreviewSetlistButton(false);
-            }
+            updatePreviewSetlistButton(false);
             
             if (setlistSection.style.display === 'block') {
                 renderSetlist(category);
@@ -3510,11 +3486,26 @@ window.viewSingleLyrics = function(songId, otherId) {
     
         function updatePreviewSetlistButton(isInSetlist) {
             const previewBtn = document.getElementById('previewSetlistBtn');
-            if (previewBtn) {
-                previewBtn.textContent = isInSetlist ? 'Remove from Setlist' : 'Add to Setlist';
-                previewBtn.classList.toggle('btn-primary', !isInSetlist);
-                previewBtn.classList.toggle('btn-delete', isInSetlist);
+            if (!previewBtn) return; // Exit if button doesn't exist
+            
+            const icon = previewBtn.querySelector('i');
+            const span = previewBtn.querySelector('span');
+            
+            // Remove all existing classes and add base classes
+            previewBtn.className = 'preview-action-btn preview-setlist-btn';
+            
+            if (isInSetlist) {
+                previewBtn.classList.add('remove');
+                if (icon) icon.className = 'fas fa-minus';
+                if (span) span.textContent = 'Remove from Setlist';
+            } else {
+                previewBtn.classList.add('add');
+                if (icon) icon.className = 'fas fa-plus';
+                if (span) span.textContent = 'Add to Setlist';
             }
+            
+            // Force a reflow to ensure styles are applied
+            previewBtn.offsetHeight;
         }
     
         function toggleFavorite(id) {

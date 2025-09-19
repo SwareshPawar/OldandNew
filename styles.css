@@ -382,20 +382,21 @@
 
         .song-preview-metadata {
             background: var(--background-secondary);
-            border-radius: 6px;
-            padding: 10px 12px;
-            margin-bottom: 15px;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 18px;
             border: 1px solid var(--song-item-border);
             display: flex;
             flex-wrap: wrap;
-            gap: 12px 16px;
+            gap: 16px 20px;
             align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .preview-meta-row {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             white-space: nowrap;
         }
 
@@ -404,50 +405,57 @@
         }
 
         .preview-meta-label {
-            font-size: 0.7rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             color: var(--song-meta-color);
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
         }
 
         .preview-meta-value {
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             color: var(--text-color);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .preview-key {
             background: var(--accent-color);
             color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-weight: 700;
+            font-size: 1rem;
         }
 
         .preview-mood {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .preview-genre-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 4px;
+            gap: 6px;
             flex: 1;
         }
 
         .preview-genre-tag {
-            background: var(--background-color);
-            border: 1px solid var(--song-item-border);
-            color: var(--text-color);
-            padding: 1px 6px;
-            border-radius: 3px;
-            font-size: 0.7rem;
-            font-weight: 500;
+            background: var(--accent-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            opacity: 0.9;
+            transition: opacity 0.2s ease;
+        }
+
+        .preview-genre-tag:hover {
+            opacity: 1;
         }
 
         .song-preview-audit {
@@ -474,14 +482,14 @@
         .song-preview-actions {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 18px;
         }
 
         /* Desktop button width optimization */
         @media (min-width: 768px) {
             .song-preview-actions {
-                max-width: 500px;
+                max-width: 480px;
                 margin-left: auto;
                 margin-right: auto;
             }
@@ -492,16 +500,17 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 10px 12px;
+            padding: 12px 16px;
             border: none;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
-            max-width: 180px;
+            max-width: 160px;
             flex: 1;
+            min-height: 44px;
         }
 
         .preview-setlist-btn.add {
@@ -573,8 +582,8 @@
         }
 
         .preview-transpose-controls .favorite-btn {
-            width: 28px;
-            height: 28px;
+            width: 36px;
+            height: 36px;
             border: 1px solid var(--song-item-border);
             background: var(--background-color);
             color: #ccc;
@@ -584,9 +593,9 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
-            font-size: 0.9rem;
+            font-size: 1rem;
             padding: 0;
-            margin-left: 6px;
+            margin-left: 8px;
         }
 
         .preview-transpose-controls .favorite-btn:hover {
@@ -602,8 +611,8 @@
         }
 
         .preview-transpose-btn {
-            width: 28px;
-            height: 28px;
+            width: 36px;
+            height: 36px;
             border: 1px solid var(--song-item-border);
             background: var(--background-color);
             color: var(--text-color);
@@ -613,7 +622,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
         }
 
         .preview-transpose-btn:hover {
@@ -698,9 +707,9 @@
             
             .preview-transpose-btn,
             .preview-transpose-controls .favorite-btn {
-                width: 24px;
-                height: 24px;
-                font-size: 0.75rem;
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
             }
             
             .preview-transpose-display {
@@ -710,15 +719,20 @@
             }
             
             .preview-meta-row {
-                gap: 3px;
+                gap: 4px;
             }
             
             .preview-meta-label {
-                font-size: 0.65rem;
+                font-size: 0.7rem;
             }
             
             .preview-meta-value {
-                font-size: 0.8rem;
+                font-size: 0.85rem;
+            }
+            
+            .preview-genre-tag {
+                font-size: 0.7rem;
+                padding: 2px 6px;
             }
         }
 
