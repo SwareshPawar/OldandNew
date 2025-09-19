@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate-genres-to-moods:preview": "node migrate-genres-to-moods.js --preview",
+    "migrate-genres-to-moods": "node migrate-genres-to-moods.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -11,7 +13,7 @@
     "express": "^4.17.1",
     "express-jwt": "^8.5.1",
     "jwks-rsa": "^3.2.0",
-  "mongodb": "^6.0.0",
+    "mongodb": "^6.0.0",
   "bcryptjs": "^2.4.3",
   "jsonwebtoken": "^9.0.2"
   },
