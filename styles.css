@@ -658,9 +658,9 @@
             border-radius: 4px;
             font-weight: 600;
             color: var(--text-color);
-            min-width: 30px;
+            min-width: 40px;
             text-align: center;
-            font-size: 0.85rem;
+            font-size: 20px;
         }
 
         /* Mobile Responsive Adjustments */
@@ -815,6 +815,13 @@
         .suggested-song-meta {
             font-size: 0.85rem;
             color: var(--song-meta-color);
+        }
+
+        .suggested-song-mood {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            margin: 3px 0;
+            font-style: italic;
         }
 
         .suggested-song-match {
@@ -1804,7 +1811,7 @@ body.dark-mode .modal-content {
             position: absolute;
             top: 100%;
             left: 0;
-            width: 40%;
+            width: 100%;
             max-height: 150px;
             overflow-y: auto;
             background: var(--light-bg);
@@ -1812,6 +1819,7 @@ body.dark-mode .modal-content {
             border-radius: 0 0 4px 4px;
             z-index: 1000;
             display: none;
+            box-sizing: border-box;
         }
 
             .multiselect-dropdown.show {
@@ -1821,6 +1829,7 @@ body.dark-mode .modal-content {
         .multiselect-option {
             padding: 8px 10px;
             cursor: pointer;
+            text-align: center;
         }
 
             .multiselect-option:hover {

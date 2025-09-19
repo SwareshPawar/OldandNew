@@ -192,6 +192,10 @@ async function saveRecommendationWeightsToBackend(weights) {
                                         <td style="padding:10px 8px;">Vocal</td>
                                         <td style="padding:10px 8px;"><input type="number" id="weightVocal" min="0" max="100" step="5" required style="width:60px;"></td>
                                     </tr>
+                                    <tr>
+                                        <td style="padding:10px 8px;">Mood</td>
+                                        <td style="padding:10px 8px;"><input type="number" id="weightMood" min="0" max="100" step="5" required style="width:60px;"></td>
+                                    </tr>
                                 </tbody>
                             </table>
                             <button type="submit" class="btn" style="width:100%;margin-top:8px;">Save Weights</button>
@@ -337,13 +341,21 @@ async function saveRecommendationWeightsToBackend(weights) {
   <!-- Options will be populated by JS -->
                 </select>
                 <label for="songArtist">Artist Details:</label>
-                <select id="songArtist">
-  <!-- Options will be populated by JS -->
-                </select>
+                <div class="multiselect-container">
+                    <input type="text" id="songArtist" class="compact-input" placeholder="Search and select artists..." readonly>
+                    <div class="multiselect-dropdown" id="artistDropdown">
+                        <!-- Artist options will be rendered dynamically by JS -->
+                    </div>
+                    <div class="multiselect-selected" id="selectedArtists"></div>
+                </div>
                 <label for="songMood">Mood:</label>
-                <select id="songMood">
-  <!-- Options will be populated by JS -->
-                </select>
+                <div class="multiselect-container">
+                    <input type="text" id="songMood" class="compact-input" placeholder="Search and select moods..." readonly>
+                    <div class="multiselect-dropdown" id="moodDropdown">
+                        <!-- Mood options will be rendered dynamically by JS -->
+                    </div>
+                    <div class="multiselect-selected" id="selectedMoods"></div>
+                </div>
                 <label for="songTempo">Tempo (BPM):</label>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <input type="text" id="songTempo" placeholder="e.g., 80 BPM" >
@@ -389,13 +401,21 @@ async function saveRecommendationWeightsToBackend(weights) {
   <!-- Options will be populated by JS -->
                 </select>
                 <label for="editSongArtist">Artist Details:</label>
-                <select id="editSongArtist">
-  <!-- Options will be populated by JS -->
-                </select>
+                <div class="multiselect-container">
+                    <input type="text" id="editSongArtist" class="compact-input" placeholder="Search and select artists..." readonly>
+                    <div class="multiselect-dropdown" id="editArtistDropdown">
+                        <!-- Artist options will be rendered dynamically by JS -->
+                    </div>
+                    <div class="multiselect-selected" id="editSelectedArtists"></div>
+                </div>
                 <label for="editSongMood">Mood:</label>
-                <select id="editSongMood">
-  <!-- Options will be populated by JS -->
-                </select>
+                <div class="multiselect-container">
+                    <input type="text" id="editSongMood" class="compact-input" placeholder="Search and select moods..." readonly>
+                    <div class="multiselect-dropdown" id="editMoodDropdown">
+                        <!-- Mood options will be rendered dynamically by JS -->
+                    </div>
+                    <div class="multiselect-selected" id="editSelectedMoods"></div>
+                </div>
                 <label for="editSongTempo">Tempo (BPM):</label>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <input type="text" id="editSongTempo" placeholder="e.g., 80 BPM">

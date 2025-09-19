@@ -4,8 +4,8 @@
 
 
 const GENRES = [
-    "New", "Old","Mid","Hindi", "Marathi", "English", "Romantic", "Acoustic", "Dance", "Love", "Sad", "Patriotic", "Happy", "Qawalli", "Evergreen", "Classical", "Ghazal", "Sufi", "Powerfull",  "Rock",
-    "Blues", "Female","Male","Duet"
+    "New", "Old", "Mid", "Hindi", "Marathi", "English", "Acoustic", "Qawalli", "Classical", "Ghazal", "Sufi", "Rock",
+    "Blues", "Female", "Male", "Duet"
 ];
 
 const VOCAL_TAGS = ['Male', 'Female', 'Duet'];
@@ -18,13 +18,13 @@ const KEYS = [
 const CATEGORIES = ["New", "Old"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
-    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba","RD Patch", "Western", "Waltz", "K-Pop", "Hip-Hop", "Pop", "Rock", "Jazz", "Funk", "March Rhythm"
+    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba","RD Patch", "Western", "Waltz", "Rock", "Jazz", "March Rhythm"
 ];
 
 const MOODS = [
-    "Happy", "Sad", "Romantic", "Energetic", "Calm", "Melancholic", "Uplifting", "Peaceful", "Intense", "Joyful", 
-    "Nostalgic", "Spiritual", "Devotional", "Celebratory", "Reflective", "Passionate", "Soothing", "Motivational",
-    "Dramatic", "Playful", "Contemplative", "Festive", "Sorrowful", "Triumphant", "Mysterious", "Hopeful"
+    "Happy", "Sad", "Romantic", "Powerful", "Soothing", "Motivational", "Joyful",
+    "Nostalgic", "Celebratory", "Passionate", "Festive", "Sorrowful",
+    "Love", "Evergreen", "Dance", "Patriotic"
 ];
 
 const ARTISTS = [
@@ -32,7 +32,7 @@ const ARTISTS = [
     "Kishore Kumar", "Mohammed Rafi", "Asha Bhosle", "Udit Narayan", "Alka Yagnik", "Kumar Sanu", "Sonu Nigam",
     "Sunidhi Chauhan", "Shaan", "KK", "Armaan Malik", "Asees Kaur", "Jubin Nautiyal", "Darshan Raval",
     "Guru Randhawa", "Badshah", "Yo Yo Honey Singh", "Divine", "RAFTAAR", "Nucleya", "Diljit Dosanjh",
-    "Raghav", "Shankar Mahadevan", "Hariharan", "Kailash Kher", "Mohit Chauhan", "Papon", "Vishal Dadlani",
+    "Raghav", "Shankar Mahadevan", "Hariharan", "Mohit Chauhan", "Papon", "Vishal Dadlani",
     "Shekhar Ravjiani", "Vishal-Shekhar", "Shankar-Ehsaan-Loy", "Pritam", "Ilaiyaraaja", "Harris Jayaraj",
     "Anirudh Ravichander", "Devi Sri Prasad", "Thaman S", "Gopi Sundar", "Ajay-Atul", "Sachin-Jigar",
     "Tanishk Bagchi", "Rochak Kohli", "Amaal Mallik", "Himesh Reshammiya", "Javed Ali", "Palak Muchhal",
@@ -43,7 +43,7 @@ const ARTISTS = [
     "Benny Dayal", "Roop Kumar Rathod", "Sunali Rathod", "Rekha Bhardwaj", "Kausar Munir", "Irshad Kamil",
     "Gulzar", "Javed Akhtar", "Prasoon Joshi", "Manoj Muntashir", "Amitabh Bhattacharya", "Kumaar",
     "Dr. Devika Rani", "Nusrat Fateh Ali Khan", "Abida Parveen", "Jagjit Singh", "Chitra Singh", "Ghulam Ali",
-    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali", "Other"
+    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali","Amit Trivedi","Monali Thakur", "Other"
 ];
 
 const TIME_GENRE_MAP = {
@@ -323,6 +323,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Genre multiselect (lazy setup; only once each)
     setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
     setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+    
+    // Mood and Artist multiselects
+    setupSearchableMultiselect('songMood', 'moodDropdown', 'selectedMoods', MOODS, true);
+    setupSearchableMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods', MOODS, true);
+    setupSearchableMultiselect('songArtist', 'artistDropdown', 'selectedArtists', ARTISTS, true);
+    setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
 
     // Theme
      isDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -537,6 +543,42 @@ function renderGenreOptions(dropdownId) {
         .join('');
 }
 
+// Global multiselect management
+let multiselectInstances = new Map();
+let globalClickListenerAdded = false;
+
+function addGlobalClickListener() {
+    if (globalClickListenerAdded) return;
+    
+    document.addEventListener('click', (e) => {
+        multiselectInstances.forEach((instance, key) => {
+            const { dropdown, input, selectedContainer } = instance;
+            
+            // Check if click is outside the entire multiselect component
+            const isClickInsideDropdown = dropdown.contains(e.target);
+            const isClickOnInput = e.target === input;
+            const isClickInSelectedContainer = selectedContainer && selectedContainer.contains(e.target);
+            const isClickOnRemoveTag = e.target.classList.contains('remove-tag');
+            
+            // Get the multiselect container for this dropdown
+            const multiselectContainer = dropdown.closest('.multiselect-container') || 
+                                       input.closest('.multiselect-container');
+            const isClickInThisMultiselect = multiselectContainer && multiselectContainer.contains(e.target);
+            
+            // Only close if click is truly outside this entire multiselect component
+            // Don't close if clicking on remove tag buttons
+            if (!isClickInsideDropdown && !isClickOnInput && !isClickInSelectedContainer && 
+                !isClickInThisMultiselect && !isClickOnRemoveTag) {
+                dropdown.classList.remove('show');
+                if (instance.updateInput) {
+                    instance.updateInput();
+                }
+            }
+        });
+    });
+    globalClickListenerAdded = true;
+}
+
 function setupGenreMultiselect(inputId, dropdownId, selectedId) {
     const input = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
@@ -549,7 +591,6 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
     // Remove previous listeners if any
     if (input._genreListener) input.removeEventListener('click', input._genreListener);
     if (dropdown._genreListener) dropdown.removeEventListener('click', dropdown._genreListener);
-    if (document._genreListener) document.removeEventListener('click', document._genreListener);
 
     // Make input always focusable and clickable
     input.setAttribute('readonly', 'true');
@@ -557,17 +598,24 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
 
     input._genreListener = (e) => {
         e.stopPropagation();
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
         dropdown.classList.toggle('show');
     };
     input.addEventListener('click', input._genreListener);
 
-    // Hide dropdown when clicking outside
-    document._genreListener = (e) => {
-        if (!dropdown.contains(e.target) && e.target !== input) {
-            dropdown.classList.remove('show');
-        }
-    };
-    document.addEventListener('click', document._genreListener);
+    // Register this instance for global click handling
+    multiselectInstances.set(inputId, {
+        dropdown: dropdown,
+        input: input,
+        selectedContainer: selectedContainer,
+        updateInput: null // Genre doesn't need input update
+    });
+    addGlobalClickListener();
 
     // Select/deselect genres
     dropdown._genreListener = (e) => {
@@ -591,6 +639,150 @@ function updateSelectedGenres(selectedId, dropdownId) {
         span.textContent = opt.dataset.value;
         container.appendChild(span);
     });
+}
+
+// Generic searchable multiselect function
+function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, allowMultiple = true) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedContainer = document.getElementById(selectedId);
+    if (!input || !dropdown || !selectedContainer) return;
+
+    // Store original data for filtering
+    dropdown.dataset.originalData = JSON.stringify(dataArray);
+    
+    // Render initial options
+    renderMultiselectOptions(dropdownId, dataArray);
+
+    // Remove previous listeners if any
+    if (input._multiselectListener) input.removeEventListener('input', input._multiselectListener);
+    if (input._clickListener) input.removeEventListener('click', input._clickListener);
+    if (dropdown._multiselectListener) dropdown.removeEventListener('click', dropdown._multiselectListener);
+
+    // Make input searchable
+    input.removeAttribute('readonly');
+    input.style.cursor = 'text';
+    input.placeholder = `Search and select...`;
+
+    // Filter options as user types
+    input._multiselectListener = (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredData = dataArray.filter(item => 
+            item.toLowerCase().includes(searchTerm)
+        );
+        renderMultiselectOptions(dropdownId, filteredData);
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.add('show');
+    };
+    input.addEventListener('input', input._multiselectListener);
+
+    // Show dropdown on click
+    input._clickListener = (e) => {
+        e.stopPropagation();
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.toggle('show');
+    };
+    input.addEventListener('click', input._clickListener);
+
+    // Register this instance for global click handling
+    multiselectInstances.set(inputId, {
+        dropdown: dropdown,
+        input: input,
+        selectedContainer: selectedContainer,
+        updateInput: () => updateSearchableInput(inputId, selectedId)
+    });
+    addGlobalClickListener();
+
+    // Select/deselect options
+    dropdown._multiselectListener = (e) => {
+        const option = e.target.closest('.multiselect-option');
+        if (!option) return;
+        
+        if (allowMultiple) {
+            option.classList.toggle('selected');
+        } else {
+            // Single select - clear all others first
+            dropdown.querySelectorAll('.multiselect-option.selected').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            option.classList.add('selected');
+            dropdown.classList.remove('show');
+        }
+        
+        updateSelectedMultiselect(selectedId, dropdownId, allowMultiple);
+        updateSearchableInput(inputId, selectedId);
+    };
+    dropdown.addEventListener('click', dropdown._multiselectListener);
+}
+
+function renderMultiselectOptions(dropdownId, dataArray) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = dataArray
+        .map(item => `<div class="multiselect-option" data-value="${item}">${item}</div>`)
+        .join('');
+}
+
+function updateSelectedMultiselect(selectedId, dropdownId, allowMultiple) {
+    const container = document.getElementById(selectedId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!container || !dropdown) return;
+    
+    container.innerHTML = '';
+    const selected = dropdown.querySelectorAll('.multiselect-option.selected');
+    
+    if (allowMultiple) {
+        selected.forEach(opt => {
+            const span = document.createElement('span');
+            span.className = 'multiselect-tag';
+            span.innerHTML = `${opt.dataset.value} <span class="remove-tag" data-value="${opt.dataset.value}">×</span>`;
+            container.appendChild(span);
+        });
+        
+        // Add click listeners to remove tags
+        container.querySelectorAll('.remove-tag').forEach(removeBtn => {
+            removeBtn.addEventListener('click', (e) => {
+                const value = e.target.dataset.value;
+                const option = dropdown.querySelector(`[data-value="${value}"]`);
+                if (option) option.classList.remove('selected');
+                updateSelectedMultiselect(selectedId, dropdownId, allowMultiple);
+                updateSearchableInput(selectedId.replace('Selected', ''), selectedId);
+            });
+        });
+    } else {
+        // Single select - just show the selected value
+        if (selected.length > 0) {
+            const span = document.createElement('span');
+            span.className = 'selected-single-option';
+            span.textContent = selected[0].dataset.value;
+            container.appendChild(span);
+        }
+    }
+}
+
+function updateSearchableInput(inputId, selectedId) {
+    const input = document.getElementById(inputId);
+    const container = document.getElementById(selectedId);
+    if (!input || !container) return;
+    
+    const selected = container.querySelectorAll('.multiselect-tag, .selected-single-option');
+    if (selected.length === 0) {
+        input.value = '';
+    } else if (selected.length === 1 && selected[0].classList.contains('selected-single-option')) {
+        input.value = selected[0].textContent;
+    } else {
+        input.value = `${selected.length} selected`;
+    }
 }
 
 function applyTheme(isDark) {
@@ -638,6 +830,14 @@ async function init() {
     if (typeof setupGenreMultiselect === 'function') {
         setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
         setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
+    }
+    
+    // Mood and Artist multiselects
+    if (typeof setupSearchableMultiselect === 'function') {
+        setupSearchableMultiselect('songMood', 'moodDropdown', 'selectedMoods', MOODS, true);
+        setupSearchableMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods', MOODS, true);
+        setupSearchableMultiselect('songArtist', 'artistDropdown', 'selectedArtists', ARTISTS, true);
+        setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
     }
     // Load songs (always from backend)
     songs = await loadSongsFromFile();
@@ -2184,6 +2384,19 @@ window.viewSingleLyrics = function(songId, otherId) {
             return genres ? genres.filter(g => !VOCAL_TAGS.includes(g)) : [];
         }
 
+        function getMoodTags(moodString) {
+            if (!moodString || typeof moodString !== 'string') return [];
+            return moodString.split(',').map(mood => mood.trim()).filter(mood => mood);
+        }
+
+        function getMoodMatchScore(mood1, mood2) {
+            const moods1 = getMoodTags(mood1);
+            const moods2 = getMoodTags(mood2);
+            if (!moods1.length || !moods2.length) return 0;
+            const commonMoods = moods1.filter(m => moods2.includes(m));
+            return commonMoods.length / Math.max(moods1.length, moods2.length);
+        }
+
         function getVocalMatchScore(genres1, genres2) {
             const vocals1 = getVocalTags(genres1);
             const vocals2 = getVocalTags(genres2);
@@ -2584,7 +2797,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                     taalMatch: false,
                     tempoSimilarity: 0,
                     genreMatch: 0,
-                    vocalScore: 0
+                    vocalScore: 0,
+                    moodScore: 0
                 };
 
                 let score = 0;
@@ -2643,12 +2857,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                 );
                 score += WEIGHTS.genre * details.genreMatch;
 
-                // 7. Vocal tags match (move here!)
+                // 7. Vocal tags match
                 details.vocalScore = getVocalMatchScore(
                     currentSong.genres || (currentSong.genre ? [currentSong.genre] : []),
                     song.genres || (song.genre ? [song.genre] : [])
                 );
                 score += WEIGHTS.vocal * details.vocalScore;
+
+                // 8. Mood match
+                details.moodScore = getMoodMatchScore(currentSong.mood, song.mood);
+                score += WEIGHTS.mood * details.moodScore;
 
                 return {
                     ...song,
@@ -2658,7 +2876,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         languageScore: Math.round(details.languageScore * 100),
                         tempoSimilarity: Math.round(details.tempoSimilarity * 100),
                         genreMatch: Math.round(details.genreMatch * 100),
-                        vocalScore: Math.round(details.vocalScore * 100)
+                        vocalScore: Math.round(details.vocalScore * 100),
+                        moodScore: Math.round(details.moodScore * 100)
                     }
                 };
             });
@@ -2687,6 +2906,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                     <div class="suggested-song-title">${song.title}</div>
                     <div class="suggested-song-meta">
                         Key: ${song.key} | Tempo: ${song.tempo} | Time: ${song.time} | Taal: ${song.taal}
+                    </div>
+                    <div class="suggested-song-mood">
+                        Mood: ${song.mood || 'Not specified'}
                     </div>
                     <div class="suggested-song-match">Match Score: ${song.matchScore}%</div>
                 `;
@@ -3616,8 +3838,37 @@ window.viewSingleLyrics = function(songId, otherId) {
             document.getElementById('editSongTitle').value = song.title;
             document.getElementById('editSongCategory').value = song.category;
             document.getElementById('editSongKey').value = song.key;
-            document.getElementById('editSongArtist').value = song.artistDetails || '';
-            document.getElementById('editSongMood').value = song.mood || '';
+            
+            // Handle multiselect artist field
+            const artists = song.artistDetails ? song.artistDetails.split(',').map(a => a.trim()).filter(a => a) : [];
+            setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
+            // Set selected artists
+            const editSelectedArtists = document.getElementById('editSelectedArtists');
+            editSelectedArtists.innerHTML = '';
+            document.querySelectorAll('#editArtistDropdown .multiselect-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (artists.includes(opt.dataset.value)) {
+                    opt.classList.add('selected');
+                }
+            });
+            updateSelectedMultiselect('editSelectedArtists', 'editArtistDropdown', true);
+            updateSearchableInput('editSongArtist', 'editSelectedArtists');
+            
+            // Handle multiselect mood field
+            const moods = song.mood ? song.mood.split(',').map(m => m.trim()).filter(m => m) : [];
+            setupSearchableMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods', MOODS, true);
+            // Set selected moods
+            const editSelectedMoods = document.getElementById('editSelectedMoods');
+            editSelectedMoods.innerHTML = '';
+            document.querySelectorAll('#editMoodDropdown .multiselect-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (moods.includes(opt.dataset.value)) {
+                    opt.classList.add('selected');
+                }
+            });
+            updateSelectedMultiselect('editSelectedMoods', 'editMoodDropdown', true);
+            updateSearchableInput('editSongMood', 'editSelectedMoods');
+            
             document.getElementById('editSongTempo').value = song.tempo;
             document.getElementById('editSongTime').value = song.time;
             // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
@@ -3717,7 +3968,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                     parseInt(document.getElementById('weightTaal').value) || 0,
                     parseInt(document.getElementById('weightTempo').value) || 0,
                     parseInt(document.getElementById('weightGenre').value) || 0,
-                    parseInt(document.getElementById('weightVocal').value) || 0
+                    parseInt(document.getElementById('weightVocal').value) || 0,
+                    parseInt(document.getElementById('weightMood').value) || 0
                 ];
                 const total = vals.reduce((a, b) => a + b, 0);
                 const bar = document.getElementById('weightsTotalBar');
@@ -3731,7 +3983,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                 'weightTaal',
                 'weightTempo',
                 'weightGenre',
-                'weightVocal'
+                'weightVocal',
+                'weightMood'
             ].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', updateWeightsTotalBar);
@@ -3775,7 +4028,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         taal: parseInt(document.getElementById('weightTaal').value),
                         tempo: parseInt(document.getElementById('weightTempo').value),
                         genre: parseInt(document.getElementById('weightGenre').value),
-                        vocal: parseInt(document.getElementById('weightVocal').value)
+                        vocal: parseInt(document.getElementById('weightVocal').value),
+                        mood: parseInt(document.getElementById('weightMood').value)
                     };
                     const total = Object.values(newWeights).reduce((a, b) => a + b, 0);
                     const notif = document.getElementById('weightsNotification');
@@ -3820,6 +4074,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 document.getElementById('weightTempo').value = WEIGHTS.tempo;
                 document.getElementById('weightGenre').value = WEIGHTS.genre;
                 document.getElementById('weightVocal').value = WEIGHTS.vocal;
+                document.getElementById('weightMood').value = WEIGHTS.mood;
             }
             // Tab switching
             NewTab.addEventListener('click', () => {
@@ -4078,12 +4333,19 @@ window.viewSingleLyrics = function(songId, otherId) {
                     }
                     const selectedGenres = Array.from(document.querySelectorAll('#genreDropdown .multiselect-option.selected'))
                         .map(opt => opt.dataset.value);
+                    
+                    // Collect multiselect values for mood and artist
+                    const selectedMoods = Array.from(document.querySelectorAll('#moodDropdown .multiselect-option.selected'))
+                        .map(opt => opt.dataset.value);
+                    const selectedArtists = Array.from(document.querySelectorAll('#artistDropdown .multiselect-option.selected'))
+                        .map(opt => opt.dataset.value);
+                    
                     const newSong = {
                         title: title,
                         category: document.getElementById('songCategory').value,
                         key: document.getElementById('songKey').value,
-                        artistDetails: document.getElementById('songArtist').value,
-                        mood: document.getElementById('songMood').value,
+                        artistDetails: selectedArtists.length > 0 ? selectedArtists.join(', ') : '',
+                        mood: selectedMoods.length > 0 ? selectedMoods.join(', ') : '',
                         tempo: document.getElementById('songTempo').value,
                         time: document.getElementById('songTime').value,
                         taal: document.getElementById('songTaal').value,
@@ -4131,6 +4393,12 @@ window.viewSingleLyrics = function(songId, otherId) {
 
                 const selectedGenres = Array.from(document.querySelectorAll('#editGenreDropdown .multiselect-option.selected'))
                     .map(opt => opt.dataset.value);
+                
+                // Collect multiselect values for mood and artist
+                const selectedMoods = Array.from(document.querySelectorAll('#editMoodDropdown .multiselect-option.selected'))
+                    .map(opt => opt.dataset.value);
+                const selectedArtists = Array.from(document.querySelectorAll('#editArtistDropdown .multiselect-option.selected'))
+                    .map(opt => opt.dataset.value);
 
                 // Find the original song for missing fields
                 const original = songs.find(s => s.id == id) || {};
@@ -4140,8 +4408,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                     title: title,
                     category: document.getElementById('editSongCategory').value,
                     key: document.getElementById('editSongKey').value,
-                    artistDetails: document.getElementById('editSongArtist').value,
-                    mood: document.getElementById('editSongMood').value,
+                    artistDetails: selectedArtists.length > 0 ? selectedArtists.join(', ') : '',
+                    mood: selectedMoods.length > 0 ? selectedMoods.join(', ') : '',
                     tempo: document.getElementById('editSongTempo').value,
                     time: document.getElementById('editSongTime').value,
                     taal: document.getElementById('editSongTaal').value,
