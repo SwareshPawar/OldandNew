@@ -1,7 +1,17 @@
-// --- GLOBAL CONSTANTS: must be at the very top ---
+// --- GLOBAL CONSTANTS AND VARIABLES ---
 
+// Global variables for app state
+let jwtToken = localStorage.getItem('jwtToken') || '';
+let currentUser = null;
+let isDarkMode = localStorage.getItem('darkMode') === 'true';
 
-
+// Initialize currentUser from localStorage
+try {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) currentUser = JSON.parse(storedUser);
+} catch (e) {
+    console.warn('Failed to parse stored user data:', e);
+}
 
 const GENRES = [
     "New", "Old", "Mid", "Hindi", "Marathi", "English", "Acoustic", "Qawalli", "Classical", "Ghazal", "Sufi", "Rock",
@@ -43,7 +53,7 @@ const ARTISTS = [
     "Benny Dayal", "Roop Kumar Rathod", "Sunali Rathod", "Rekha Bhardwaj", "Kausar Munir", "Irshad Kamil",
     "Gulzar", "Javed Akhtar", "Prasoon Joshi", "Manoj Muntashir", "Amitabh Bhattacharya", "Kumaar",
     "Dr. Devika Rani", "Nusrat Fateh Ali Khan", "Abida Parveen", "Jagjit Singh", "Chitra Singh", "Ghulam Ali",
-    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali","Amit Trivedi","Monali Thakur", "Other"
+    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali","Amit Trivedi","Monali Thakur", "Suresh Wadkar","Anu Malik","Other"
 ];
 
 const TIME_GENRE_MAP = {
@@ -82,15 +92,11 @@ const CHORD_REGEX = new RegExp(`([A-G](?:#|b)?)(?:${CHORD_TYPE_REGEX})?(?:\\/[A-
 const CHORD_LINE_REGEX = new RegExp(`^(\\s*[A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?\\s*)+$`, "i");
 const INLINE_CHORD_REGEX = new RegExp(`[\\[(]([A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?)[\\])]`, "gi");
 
-let isDarkMode = localStorage.getItem('darkMode') === 'true';
-//let jwtToken = localStorage.getItem('jwtToken') || '';
-//let currentUser = null;
- jwtToken = localStorage.getItem('jwtToken') || '';
-
-// currentUser already initialized globally
+// Re-initialize variables from localStorage (no redeclaration)
+jwtToken = localStorage.getItem('jwtToken') || '';
 isDarkMode = localStorage.getItem('darkMode') === 'true';
 
-
+// Update currentUser from localStorage again if needed
 try {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) currentUser = JSON.parse(storedUser);
@@ -116,14 +122,9 @@ function populateGenreDropdown(id, timeSignature) {
 document.addEventListener('DOMContentLoaded', () => {
     // Always fetch latest weights on app load
     fetchRecommendationWeights();
-    // Restore auth state
-    //let jwtToken = localStorage.getItem('jwtToken') || '';
-    //let currentUser = null;
-    try {
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) currentUser = JSON.parse(storedUser);
-    } catch {}
-
+    
+    // Auth state is already initialized globally - no need to reload
+    
     // Helper: authFetch
     async function authFetch(url, options = {}) {
         const headers = options.headers || {};
@@ -325,10 +326,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
     
     // Mood and Artist multiselects
-    setupSearchableMultiselect('songMood', 'moodDropdown', 'selectedMoods', MOODS, true);
-    setupSearchableMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods', MOODS, true);
-    setupSearchableMultiselect('songArtist', 'artistDropdown', 'selectedArtists', ARTISTS, true);
-    setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
+    setupMoodMultiselect('songMood', 'moodDropdown', 'selectedMoods');
+    setupMoodMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods');
+    setupArtistMultiselect('songArtist', 'artistDropdown', 'selectedArtists');
+    setupArtistMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists');
 
     // Theme
      isDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -491,23 +492,38 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- FIXED helper implementations (fill in if previously incomplete) ---
 
 function setupTapTempo(buttonId, inputId) {
+    let tapTimes = [];
     const btn = document.getElementById(buttonId);
     const input = document.getElementById(inputId);
     if (!btn || !input) return;
-    let taps = [];
+    
     btn.addEventListener('click', () => {
-        const now = performance.now();
-        taps.push(now);
-        if (taps.length > 8) taps.shift();
-        if (taps.length >= 2) {
+        const now = Date.now();
+        tapTimes.push(now);
+        // Only keep last 6 taps
+        if (tapTimes.length > 6) tapTimes.shift();
+        if (tapTimes.length >= 2) {
             const intervals = [];
-            for (let i = 1; i < taps.length; i++) intervals.push(taps[i] - taps[i - 1]);
+            for (let i = 1; i < tapTimes.length; i++) {
+                intervals.push(tapTimes[i] - tapTimes[i - 1]);
+            }
             const avgMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
             const bpm = Math.round(60000 / avgMs);
             input.value = bpm;
         }
+        // Reset if last tap was >2s ago
+        if (tapTimes.length > 1 && now - tapTimes[tapTimes.length - 2] > 2000) {
+            tapTimes = [now];
+        }
     });
-    btn.addEventListener('dblclick', () => { taps = []; });
+    
+    // Double-click to reset
+    btn.addEventListener('dblclick', () => {
+        tapTimes = [];
+        input.value = '';
+    });
+    
+    // Space key support
     input.addEventListener('keydown', e => {
         if (e.code === 'Space') {
             e.preventDefault();
@@ -539,13 +555,75 @@ function renderGenreOptions(dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
     dropdown.innerHTML = GENRES
-        .map(g => `<div class="multiselect-option" data-value="${g}">${g}</div>`)
+        .map((g, index) => {
+            const isFirstItem = index === 0 ? ' highlighted' : '';
+            return `<div class="multiselect-option${isFirstItem}" data-value="${g}">${g}</div>`;
+        })
+        .join('');
+}
+
+function renderGenreOptionsWithSelections(dropdownId, genreList, selections) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = genreList
+        .map((genre, index) => {
+            const isSelected = selections.has(genre) ? ' selected' : '';
+            const isFirstItem = index === 0 ? ' highlighted' : '';
+            return `<div class="multiselect-option${isSelected}${isFirstItem}" data-value="${genre}">${genre}</div>`;
+        })
+        .join('');
+}
+
+function renderMoodOptions(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = MOODS
+        .map((m, index) => {
+            const isFirstItem = index === 0 ? ' highlighted' : '';
+            return `<div class="multiselect-option${isFirstItem}" data-value="${m}">${m}</div>`;
+        })
+        .join('');
+}
+
+function renderArtistOptions(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = ARTISTS
+        .map((a, index) => {
+            const isFirstItem = index === 0 ? ' highlighted' : '';
+            return `<div class="multiselect-option${isFirstItem}" data-value="${a}">${a}</div>`;
+        })
+        .join('');
+}
+
+function renderMoodOptionsWithSelections(dropdownId, moodList, selections) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = moodList
+        .map((mood, index) => {
+            const isSelected = selections.has(mood) ? ' selected' : '';
+            const isFirstItem = index === 0 ? ' highlighted' : '';
+            return `<div class="multiselect-option${isSelected}${isFirstItem}" data-value="${mood}">${mood}</div>`;
+        })
+        .join('');
+}
+
+function renderArtistOptionsWithSelections(dropdownId, artistList, selections) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.innerHTML = artistList
+        .map((artist, index) => {
+            const isSelected = selections.has(artist) ? ' selected' : '';
+            const isFirstItem = index === 0 ? ' highlighted' : '';
+            return `<div class="multiselect-option${isSelected}${isFirstItem}" data-value="${artist}">${artist}</div>`;
+        })
         .join('');
 }
 
 // Global multiselect management
 let multiselectInstances = new Map();
 let globalClickListenerAdded = false;
+let globalKeyListenerAdded = false;
 
 function addGlobalClickListener() {
     if (globalClickListenerAdded) return;
@@ -577,6 +655,30 @@ function addGlobalClickListener() {
         });
     });
     globalClickListenerAdded = true;
+    
+    // Also add global escape key listener
+    addGlobalKeyListener();
+}
+
+function addGlobalKeyListener() {
+    if (globalKeyListenerAdded) return;
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            // Close all open dropdowns
+            multiselectInstances.forEach((instance) => {
+                if (instance.dropdown.classList.contains('show')) {
+                    instance.dropdown.classList.remove('show');
+                    if (instance.updateInput) {
+                        instance.updateInput();
+                    }
+                    // Also blur the input to remove focus
+                    instance.input.blur();
+                }
+            });
+        }
+    });
+    globalKeyListenerAdded = true;
 }
 
 function setupGenreMultiselect(inputId, dropdownId, selectedId) {
@@ -585,19 +687,49 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
     const selectedContainer = document.getElementById(selectedId);
     if (!input || !dropdown || !selectedContainer) return;
 
+    // Store selections to preserve during search
+    dropdown._genreSelections = new Set();
+
     // Render genre options
     renderGenreOptions(dropdownId);
 
     // Remove previous listeners if any
-    if (input._genreListener) input.removeEventListener('click', input._genreListener);
+    if (input._genreClickListener) input.removeEventListener('click', input._genreClickListener);
+    if (input._genreFocusListener) input.removeEventListener('focus', input._genreFocusListener);
+    if (input._genreInputListener) input.removeEventListener('input', input._genreInputListener);
     if (dropdown._genreListener) dropdown.removeEventListener('click', dropdown._genreListener);
 
-    // Make input always focusable and clickable
-    input.setAttribute('readonly', 'true');
-    input.style.cursor = 'pointer';
+    // Make input searchable
+    input.removeAttribute('readonly');
+    input.style.cursor = 'text';
+    input.placeholder = 'Search genres...';
 
-    input._genreListener = (e) => {
+    // Handle search input
+    input._genreInputListener = (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredGenres = GENRES.filter(genre => 
+            genre.toLowerCase().includes(searchTerm)
+        );
+        
+        // Render filtered options while preserving selections
+        renderGenreOptionsWithSelections(dropdownId, filteredGenres, dropdown._genreSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.add('show');
+    };
+    input.addEventListener('input', input._genreInputListener);
+
+    // Handle click to show all options
+    input._genreClickListener = (e) => {
         e.stopPropagation();
+        // Show all options with current selections when clicked
+        renderGenreOptionsWithSelections(dropdownId, GENRES, dropdown._genreSelections);
+        
         // Close all other dropdowns before opening this one
         multiselectInstances.forEach((instance) => {
             if (instance.dropdown !== dropdown) {
@@ -606,14 +738,92 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
         });
         dropdown.classList.toggle('show');
     };
-    input.addEventListener('click', input._genreListener);
+    input.addEventListener('click', input._genreClickListener);
+
+    // Show dropdown on focus
+    input._genreFocusListener = (e) => {
+        // Show all options with current selections when focused
+        renderGenreOptionsWithSelections(dropdownId, GENRES, dropdown._genreSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.add('show');
+    };
+    input.addEventListener('focus', input._genreFocusListener);
+
+    // Add keyboard navigation support
+    if (input._genreKeyListener) input.removeEventListener('keydown', input._genreKeyListener);
+    input._genreKeyListener = (e) => {
+        if (!dropdown.classList.contains('show')) return;
+        
+        const options = dropdown.querySelectorAll('.multiselect-option');
+        let currentHighlighted = dropdown.querySelector('.multiselect-option.highlighted');
+        let currentIndex = currentHighlighted ? Array.from(options).indexOf(currentHighlighted) : -1;
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                // Remove previous highlight
+                if (currentHighlighted) currentHighlighted.classList.remove('highlighted');
+                // Move to next option
+                currentIndex = (currentIndex + 1) % options.length;
+                options[currentIndex].classList.add('highlighted');
+                // Scroll into view
+                options[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                // Remove previous highlight
+                if (currentHighlighted) currentHighlighted.classList.remove('highlighted');
+                // Move to previous option
+                currentIndex = currentIndex <= 0 ? options.length - 1 : currentIndex - 1;
+                options[currentIndex].classList.add('highlighted');
+                // Scroll into view
+                options[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case ' ':
+            case 'Enter':
+                e.preventDefault();
+                if (currentHighlighted) {
+                    const value = currentHighlighted.dataset.value;
+                    
+                    // Toggle selection in our Set
+                    if (dropdown._genreSelections.has(value)) {
+                        dropdown._genreSelections.delete(value);
+                        currentHighlighted.classList.remove('selected');
+                    } else {
+                        dropdown._genreSelections.add(value);
+                        currentHighlighted.classList.add('selected');
+                    }
+                    
+                    updateSelectedGenres(selectedId, dropdownId);
+                    input.value = '';  // Clear search input
+                }
+                break;
+                
+            case 'Escape':
+                e.preventDefault();
+                dropdown.classList.remove('show');
+                input.blur();
+                break;
+        }
+    };
+    input.addEventListener('keydown', input._genreKeyListener);
 
     // Register this instance for global click handling
     multiselectInstances.set(inputId, {
         dropdown: dropdown,
         input: input,
         selectedContainer: selectedContainer,
-        updateInput: null // Genre doesn't need input update
+        updateInput: () => {
+            input.value = '';  // Clear search input after selection
+        }
     });
     addGlobalClickListener();
 
@@ -621,8 +831,20 @@ function setupGenreMultiselect(inputId, dropdownId, selectedId) {
     dropdown._genreListener = (e) => {
         const option = e.target.closest('.multiselect-option');
         if (!option) return;
-        option.classList.toggle('selected');
+        
+        const value = option.dataset.value;
+        
+        // Toggle selection in our Set
+        if (dropdown._genreSelections.has(value)) {
+            dropdown._genreSelections.delete(value);
+            option.classList.remove('selected');
+        } else {
+            dropdown._genreSelections.add(value);
+            option.classList.add('selected');
+        }
+        
         updateSelectedGenres(selectedId, dropdownId);
+        input.value = '';  // Clear search input
     };
     dropdown.addEventListener('click', dropdown._genreListener);
 }
@@ -632,12 +854,433 @@ function updateSelectedGenres(selectedId, dropdownId) {
     const dropdown = document.getElementById(dropdownId);
     if (!container || !dropdown) return;
     container.innerHTML = '';
-    const selected = dropdown.querySelectorAll('.multiselect-option.selected');
-    selected.forEach(opt => {
+    
+    // Use the stored selections instead of DOM queries
+    const selectedValues = Array.from(dropdown._genreSelections || []);
+    selectedValues.forEach(value => {
         const span = document.createElement('span');
-        span.className = 'selected-genre-chip';
-        span.textContent = opt.dataset.value;
+        span.className = 'multiselect-tag';
+        span.innerHTML = `${value} <span class="remove-tag" data-value="${value}">×</span>`;
         container.appendChild(span);
+    });
+    
+    // Add click listeners to remove tags
+    container.querySelectorAll('.remove-tag').forEach(removeBtn => {
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent dropdown from closing
+            const value = e.target.dataset.value;
+            
+            // Remove from stored selections
+            dropdown._genreSelections.delete(value);
+            
+            // Remove from visible dropdown options if present
+            const option = dropdown.querySelector(`[data-value="${value}"]`);
+            if (option) option.classList.remove('selected');
+            
+            updateSelectedGenres(selectedId, dropdownId);
+        });
+    });
+}
+
+function setupMoodMultiselect(inputId, dropdownId, selectedId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedContainer = document.getElementById(selectedId);
+    if (!input || !dropdown || !selectedContainer) return;
+
+    // Store selections to preserve during search
+    dropdown._moodSelections = new Set();
+
+    // Render mood options
+    renderMoodOptions(dropdownId);
+
+    // Remove previous listeners if any
+    if (input._moodClickListener) input.removeEventListener('click', input._moodClickListener);
+    if (input._moodFocusListener) input.removeEventListener('focus', input._moodFocusListener);
+    if (input._moodInputListener) input.removeEventListener('input', input._moodInputListener);
+    if (dropdown._moodListener) dropdown.removeEventListener('click', dropdown._moodListener);
+
+    // Make input searchable
+    input.removeAttribute('readonly');
+    input.style.cursor = 'text';
+    input.placeholder = 'Search moods...';
+
+    // Handle search input
+    input._moodInputListener = (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredMoods = MOODS.filter(mood => 
+            mood.toLowerCase().includes(searchTerm)
+        );
+        
+        // Render filtered options while preserving selections
+        renderMoodOptionsWithSelections(dropdownId, filteredMoods, dropdown._moodSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.add('show');
+    };
+    input.addEventListener('input', input._moodInputListener);
+
+    // Handle click to show all options
+    input._moodClickListener = (e) => {
+        e.stopPropagation();
+        // Show all options with current selections when clicked
+        renderMoodOptionsWithSelections(dropdownId, MOODS, dropdown._moodSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.toggle('show');
+    };
+    input.addEventListener('click', input._moodClickListener);
+
+    // Show dropdown on focus
+    input._moodFocusListener = (e) => {
+        // Show all options with current selections when focused
+        renderMoodOptionsWithSelections(dropdownId, MOODS, dropdown._moodSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.add('show');
+    };
+    input.addEventListener('focus', input._moodFocusListener);
+
+    // Add keyboard navigation support
+    if (input._moodKeyListener) input.removeEventListener('keydown', input._moodKeyListener);
+    input._moodKeyListener = (e) => {
+        if (!dropdown.classList.contains('show')) return;
+        
+        const options = dropdown.querySelectorAll('.multiselect-option');
+        let currentHighlighted = dropdown.querySelector('.multiselect-option.highlighted');
+        let currentIndex = currentHighlighted ? Array.from(options).indexOf(currentHighlighted) : -1;
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                // Remove previous highlight
+                if (currentHighlighted) currentHighlighted.classList.remove('highlighted');
+                // Move to next option
+                currentIndex = (currentIndex + 1) % options.length;
+                options[currentIndex].classList.add('highlighted');
+                // Scroll into view
+                options[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                // Remove previous highlight
+                if (currentHighlighted) currentHighlighted.classList.remove('highlighted');
+                // Move to previous option
+                currentIndex = currentIndex <= 0 ? options.length - 1 : currentIndex - 1;
+                options[currentIndex].classList.add('highlighted');
+                // Scroll into view
+                options[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case ' ':
+            case 'Enter':
+                e.preventDefault();
+                if (currentHighlighted) {
+                    const value = currentHighlighted.dataset.value;
+                    
+                    // Toggle selection in our Set
+                    if (dropdown._moodSelections.has(value)) {
+                        dropdown._moodSelections.delete(value);
+                        currentHighlighted.classList.remove('selected');
+                    } else {
+                        dropdown._moodSelections.add(value);
+                        currentHighlighted.classList.add('selected');
+                    }
+                    
+                    updateSelectedMoods(selectedId, dropdownId);
+                    input.value = '';  // Clear search input
+                }
+                break;
+                
+            case 'Escape':
+                e.preventDefault();
+                dropdown.classList.remove('show');
+                input.blur();
+                break;
+        }
+    };
+    input.addEventListener('keydown', input._moodKeyListener);
+
+    // Register this instance for global click handling
+    multiselectInstances.set(inputId, {
+        dropdown: dropdown,
+        input: input,
+        selectedContainer: selectedContainer,
+        updateInput: () => {
+            input.value = '';  // Clear search input after selection
+        }
+    });
+    addGlobalClickListener();
+
+    // Select/deselect moods
+    dropdown._moodListener = (e) => {
+        const option = e.target.closest('.multiselect-option');
+        if (!option) return;
+        
+        const value = option.dataset.value;
+        
+        // Toggle selection in our Set
+        if (dropdown._moodSelections.has(value)) {
+            dropdown._moodSelections.delete(value);
+            option.classList.remove('selected');
+        } else {
+            dropdown._moodSelections.add(value);
+            option.classList.add('selected');
+        }
+        
+        updateSelectedMoods(selectedId, dropdownId);
+        input.value = '';  // Clear search input
+    };
+    dropdown.addEventListener('click', dropdown._moodListener);
+}
+
+function updateSelectedMoods(selectedId, dropdownId) {
+    const container = document.getElementById(selectedId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!container || !dropdown) return;
+    container.innerHTML = '';
+    
+    // Use the stored selections instead of DOM queries
+    const selectedValues = Array.from(dropdown._moodSelections || []);
+    selectedValues.forEach(value => {
+        const span = document.createElement('span');
+        span.className = 'multiselect-tag';
+        span.innerHTML = `${value} <span class="remove-tag" data-value="${value}">×</span>`;
+        container.appendChild(span);
+    });
+    
+    // Add click listeners to remove tags
+    container.querySelectorAll('.remove-tag').forEach(removeBtn => {
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent dropdown from closing
+            const value = e.target.dataset.value;
+            
+            // Remove from stored selections
+            dropdown._moodSelections.delete(value);
+            
+            // Remove from visible dropdown options if present
+            const option = dropdown.querySelector(`[data-value="${value}"]`);
+            if (option) option.classList.remove('selected');
+            
+            updateSelectedMoods(selectedId, dropdownId);
+        });
+    });
+}
+
+function setupArtistMultiselect(inputId, dropdownId, selectedId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const selectedContainer = document.getElementById(selectedId);
+    if (!input || !dropdown || !selectedContainer) return;
+
+    // Store selections to preserve during search
+    dropdown._artistSelections = new Set();
+
+    // Render artist options
+    renderArtistOptions(dropdownId);
+
+    // Remove previous listeners if any
+    if (input._artistClickListener) input.removeEventListener('click', input._artistClickListener);
+    if (input._artistFocusListener) input.removeEventListener('focus', input._artistFocusListener);
+    if (input._artistInputListener) input.removeEventListener('input', input._artistInputListener);
+    if (dropdown._artistListener) dropdown.removeEventListener('click', dropdown._artistListener);
+
+    // Make input searchable
+    input.removeAttribute('readonly');
+    input.style.cursor = 'text';
+    input.placeholder = 'Search artists...';
+
+    // Handle search input
+    input._artistInputListener = (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredArtists = ARTISTS.filter(artist => 
+            artist.toLowerCase().includes(searchTerm)
+        );
+        
+        // Render filtered options while preserving selections
+        renderArtistOptionsWithSelections(dropdownId, filteredArtists, dropdown._artistSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.add('show');
+    };
+    input.addEventListener('input', input._artistInputListener);
+
+    // Handle click to show all options
+    input._artistClickListener = (e) => {
+        e.stopPropagation();
+        // Show all options with current selections when clicked
+        renderArtistOptionsWithSelections(dropdownId, ARTISTS, dropdown._artistSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.toggle('show');
+    };
+    input.addEventListener('click', input._artistClickListener);
+
+    // Show dropdown on focus
+    input._artistFocusListener = (e) => {
+        // Show all options with current selections when focused
+        renderArtistOptionsWithSelections(dropdownId, ARTISTS, dropdown._artistSelections);
+        
+        // Close all other dropdowns before opening this one
+        multiselectInstances.forEach((instance) => {
+            if (instance.dropdown !== dropdown) {
+                instance.dropdown.classList.remove('show');
+            }
+        });
+        dropdown.classList.add('show');
+    };
+    input.addEventListener('focus', input._artistFocusListener);
+
+    // Add keyboard navigation support
+    if (input._artistKeyListener) input.removeEventListener('keydown', input._artistKeyListener);
+    input._artistKeyListener = (e) => {
+        if (!dropdown.classList.contains('show')) return;
+        
+        const options = dropdown.querySelectorAll('.multiselect-option');
+        let currentHighlighted = dropdown.querySelector('.multiselect-option.highlighted');
+        let currentIndex = currentHighlighted ? Array.from(options).indexOf(currentHighlighted) : -1;
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                // Remove previous highlight
+                if (currentHighlighted) currentHighlighted.classList.remove('highlighted');
+                // Move to next option
+                currentIndex = (currentIndex + 1) % options.length;
+                options[currentIndex].classList.add('highlighted');
+                // Scroll into view
+                options[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                // Remove previous highlight
+                if (currentHighlighted) currentHighlighted.classList.remove('highlighted');
+                // Move to previous option
+                currentIndex = currentIndex <= 0 ? options.length - 1 : currentIndex - 1;
+                options[currentIndex].classList.add('highlighted');
+                // Scroll into view
+                options[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case ' ':
+            case 'Enter':
+                e.preventDefault();
+                if (currentHighlighted) {
+                    const value = currentHighlighted.dataset.value;
+                    
+                    // Toggle selection in our Set
+                    if (dropdown._artistSelections.has(value)) {
+                        dropdown._artistSelections.delete(value);
+                        currentHighlighted.classList.remove('selected');
+                    } else {
+                        dropdown._artistSelections.add(value);
+                        currentHighlighted.classList.add('selected');
+                    }
+                    
+                    updateSelectedArtists(selectedId, dropdownId);
+                    input.value = '';  // Clear search input
+                }
+                break;
+                
+            case 'Escape':
+                e.preventDefault();
+                dropdown.classList.remove('show');
+                input.blur();
+                break;
+        }
+    };
+    input.addEventListener('keydown', input._artistKeyListener);
+
+    // Register this instance for global click handling
+    multiselectInstances.set(inputId, {
+        dropdown: dropdown,
+        input: input,
+        selectedContainer: selectedContainer,
+        updateInput: () => {
+            input.value = '';  // Clear search input after selection
+        }
+    });
+    addGlobalClickListener();
+
+    // Select/deselect artists
+    dropdown._artistListener = (e) => {
+        const option = e.target.closest('.multiselect-option');
+        if (!option) return;
+        
+        const value = option.dataset.value;
+        
+        // Toggle selection in our Set
+        if (dropdown._artistSelections.has(value)) {
+            dropdown._artistSelections.delete(value);
+            option.classList.remove('selected');
+        } else {
+            dropdown._artistSelections.add(value);
+            option.classList.add('selected');
+        }
+        
+        updateSelectedArtists(selectedId, dropdownId);
+        input.value = '';  // Clear search input
+    };
+    dropdown.addEventListener('click', dropdown._artistListener);
+}
+
+function updateSelectedArtists(selectedId, dropdownId) {
+    const container = document.getElementById(selectedId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!container || !dropdown) return;
+    container.innerHTML = '';
+    
+    // Use the stored selections instead of DOM queries
+    const selectedValues = Array.from(dropdown._artistSelections || []);
+    selectedValues.forEach(value => {
+        const span = document.createElement('span');
+        span.className = 'multiselect-tag';
+        span.innerHTML = `${value} <span class="remove-tag" data-value="${value}">×</span>`;
+        container.appendChild(span);
+    });
+    
+    // Add click listeners to remove tags
+    container.querySelectorAll('.remove-tag').forEach(removeBtn => {
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent dropdown from closing
+            const value = e.target.dataset.value;
+            
+            // Remove from stored selections
+            dropdown._artistSelections.delete(value);
+            
+            // Remove from visible dropdown options if present
+            const option = dropdown.querySelector(`[data-value="${value}"]`);
+            if (option) option.classList.remove('selected');
+            
+            updateSelectedArtists(selectedId, dropdownId);
+        });
     });
 }
 
@@ -651,8 +1294,11 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
     // Store original data for filtering
     dropdown.dataset.originalData = JSON.stringify(dataArray);
     
-    // Render initial options
-    renderMultiselectOptions(dropdownId, dataArray);
+    // Create a property to track all selections (not just visible ones)
+    dropdown._allSelections = new Set();
+    
+    // Render initial options (no selections initially)
+    renderMultiselectOptions(dropdownId, dataArray, []);
 
     // Remove previous listeners if any
     if (input._multiselectListener) input.removeEventListener('input', input._multiselectListener);
@@ -670,7 +1316,12 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
         const filteredData = dataArray.filter(item => 
             item.toLowerCase().includes(searchTerm)
         );
-        renderMultiselectOptions(dropdownId, filteredData);
+        
+        // Use the stored selections instead of reading from DOM
+        const selectedValues = Array.from(dropdown._allSelections || []);
+        
+        renderMultiselectOptions(dropdownId, filteredData, selectedValues);
+        
         // Close all other dropdowns before opening this one
         multiselectInstances.forEach((instance) => {
             if (instance.dropdown !== dropdown) {
@@ -684,6 +1335,15 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
     // Show dropdown on click
     input._clickListener = (e) => {
         e.stopPropagation();
+        
+        // Use the stored selections instead of reading from DOM
+        const selectedValues = Array.from(dropdown._allSelections || []);
+        
+        // If dropdown is being opened, ensure all options are shown with proper states
+        if (!dropdown.classList.contains('show')) {
+            renderMultiselectOptions(dropdownId, dataArray, selectedValues);
+        }
+        
         // Close all other dropdowns before opening this one
         multiselectInstances.forEach((instance) => {
             if (instance.dropdown !== dropdown) {
@@ -708,8 +1368,17 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
         const option = e.target.closest('.multiselect-option');
         if (!option) return;
         
+        const value = option.dataset.value;
+        
         if (allowMultiple) {
             option.classList.toggle('selected');
+            
+            // Update stored selections
+            if (option.classList.contains('selected')) {
+                dropdown._allSelections.add(value);
+            } else {
+                dropdown._allSelections.delete(value);
+            }
         } else {
             // Single select - clear all others first
             dropdown.querySelectorAll('.multiselect-option.selected').forEach(opt => {
@@ -717,54 +1386,70 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
             });
             option.classList.add('selected');
             dropdown.classList.remove('show');
+            
+            // Update stored selections for single select
+            dropdown._allSelections.clear();
+            dropdown._allSelections.add(value);
         }
         
-        updateSelectedMultiselect(selectedId, dropdownId, allowMultiple);
+        updateSelectedMultiselect(selectedId, dropdownId, allowMultiple, inputId);
         updateSearchableInput(inputId, selectedId);
     };
     dropdown.addEventListener('click', dropdown._multiselectListener);
 }
 
-function renderMultiselectOptions(dropdownId, dataArray) {
+function renderMultiselectOptions(dropdownId, dataArray, selectedValues = []) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
     dropdown.innerHTML = dataArray
-        .map(item => `<div class="multiselect-option" data-value="${item}">${item}</div>`)
+        .map(item => {
+            const isSelected = selectedValues.includes(item) ? ' selected' : '';
+            return `<div class="multiselect-option${isSelected}" data-value="${item}">${item}</div>`;
+        })
         .join('');
 }
 
-function updateSelectedMultiselect(selectedId, dropdownId, allowMultiple) {
+function updateSelectedMultiselect(selectedId, dropdownId, allowMultiple, inputId = null) {
     const container = document.getElementById(selectedId);
     const dropdown = document.getElementById(dropdownId);
     if (!container || !dropdown) return;
     
     container.innerHTML = '';
-    const selected = dropdown.querySelectorAll('.multiselect-option.selected');
+    
+    // Use stored selections instead of DOM selections
+    const selectedValues = Array.from(dropdown._allSelections || []);
     
     if (allowMultiple) {
-        selected.forEach(opt => {
+        selectedValues.forEach(value => {
             const span = document.createElement('span');
             span.className = 'multiselect-tag';
-            span.innerHTML = `${opt.dataset.value} <span class="remove-tag" data-value="${opt.dataset.value}">×</span>`;
+            span.innerHTML = `${value} <span class="remove-tag" data-value="${value}">×</span>`;
             container.appendChild(span);
         });
         
         // Add click listeners to remove tags
         container.querySelectorAll('.remove-tag').forEach(removeBtn => {
             removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent dropdown from closing
                 const value = e.target.dataset.value;
+                
+                // Remove from stored selections
+                dropdown._allSelections.delete(value);
+                
+                // Remove from visible dropdown options if present
                 const option = dropdown.querySelector(`[data-value="${value}"]`);
                 if (option) option.classList.remove('selected');
-                updateSelectedMultiselect(selectedId, dropdownId, allowMultiple);
-                updateSearchableInput(selectedId.replace('Selected', ''), selectedId);
+                
+                updateSelectedMultiselect(selectedId, dropdownId, allowMultiple, inputId);
+                if (inputId) updateSearchableInput(inputId, selectedId);
             });
         });
     } else {
         // Single select - just show the selected value
-        if (selected.length > 0) {
+        if (selectedValues.length > 0) {
             const span = document.createElement('span');
             span.className = 'selected-single-option';
-            span.textContent = selected[0].dataset.value;
+            span.textContent = selectedValues[0];
             container.appendChild(span);
         }
     }
@@ -781,17 +1466,29 @@ function updateSearchableInput(inputId, selectedId) {
     } else if (selected.length === 1 && selected[0].classList.contains('selected-single-option')) {
         input.value = selected[0].textContent;
     } else {
-        input.value = `${selected.length} selected`;
+        // Clear input field when multiple items are selected instead of showing count
+        input.value = '';
     }
 }
 
 function applyTheme(isDark) {
     const body = document.body;
     const toggle = document.getElementById('themeToggle');
+    
+    // Apply theme class
     body.classList.toggle('dark-mode', isDark);
+    
+    // Update toggle button if present
     if (toggle) {
         toggle.setAttribute('aria-pressed', String(isDark));
+        if (isDark) {
+            toggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+        } else {
+            toggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+        }
     }
+    
+    // Redraw preview if function exists
     if (typeof redrawPreviewOnThemeChange === 'function') {
         redrawPreviewOnThemeChange();
     }
@@ -833,11 +1530,11 @@ async function init() {
     }
     
     // Mood and Artist multiselects
-    if (typeof setupSearchableMultiselect === 'function') {
-        setupSearchableMultiselect('songMood', 'moodDropdown', 'selectedMoods', MOODS, true);
-        setupSearchableMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods', MOODS, true);
-        setupSearchableMultiselect('songArtist', 'artistDropdown', 'selectedArtists', ARTISTS, true);
-        setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
+    if (typeof setupMoodMultiselect === 'function') {
+        setupMoodMultiselect('songMood', 'moodDropdown', 'selectedMoods');
+        setupMoodMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods');
+        setupArtistMultiselect('songArtist', 'artistDropdown', 'selectedArtists');
+        setupArtistMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists');
     }
     // Load songs (always from backend)
     songs = await loadSongsFromFile();
@@ -885,18 +1582,7 @@ async function init() {
     // Admin panel button
     if (typeof updateAdminPanelBtn === 'function') updateAdminPanelBtn();
 }
-function applyTheme(isDark) {
-    if (isDark) {
-        document.body.classList.add('dark-mode');
-        const toggle = document.getElementById('themeToggle');
-        if (toggle) toggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
-    } else {
-        document.body.classList.remove('dark-mode');
-        const toggle = document.getElementById('themeToggle');
-        if (toggle) toggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
-    }
-    redrawPreviewOnThemeChange();
-}
+
 // --- JWT expiry helpers: must be at the very top ---
 // ===== GENRE MULTISELECT LOGIC =====
 // Helper to update Taal dropdowns based on selected time signature
@@ -937,154 +1623,10 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         updateTaalDropdown('editSongTime', 'editSongTaal'); // Initial population
     }
 // ...existing code...
-// --- Tap Tempo Logic ---
-function setupTapTempo(buttonId, inputId) {
-    let tapTimes = [];
-    const btn = document.getElementById(buttonId);
-    const input = document.getElementById(inputId);
-    if (!btn || !input) return;
-    btn.addEventListener('click', () => {
-        const now = Date.now();
-        tapTimes.push(now);
-        // Only keep last 6 taps
-        if (tapTimes.length > 6) tapTimes.shift();
-        if (tapTimes.length >= 2) {
-            const intervals = [];
-            for (let i = 1; i < tapTimes.length; i++) {
-                intervals.push(tapTimes[i] - tapTimes[i - 1]);
-            }
-            const avgMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-            const bpm = Math.round(60000 / avgMs);
-            input.value = bpm;
-        }
-        // Reset if last tap was >2s ago
-        if (tapTimes.length > 1 && now - tapTimes[tapTimes.length - 2] > 2000) {
-            tapTimes = [now];
-        }
-    });
-    // Optional: double-click to reset
-    btn.addEventListener('dblclick', () => {
-        tapTimes = [];
-        input.value = '';
-    });
-    // Spacebar tap tempo support
-    input.addEventListener('keydown', function(e) {
-        if (e.code === 'Space' || e.key === ' ') {
-            e.preventDefault();
-            btn.click();
-        }
-    });
-}
 
 
-// ...existing code...
-
-function populateDropdown(id, options, withLabel = false) {
-    const select = document.getElementById(id);
-    if (!select) return;
-    select.innerHTML = '';
-    if (withLabel) {
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = withLabel;
-        select.appendChild(opt);
-    }
-    options.forEach(val => {
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = val;
-        select.appendChild(opt);
-    });
-}
-
-
-
-function renderGenreOptions(dropdownId) {
-    const dropdown = document.getElementById(dropdownId);
-    if (!dropdown) return;
-    dropdown.innerHTML = GENRES.map(genre => `<div class=\"multiselect-option\" data-value=\"${genre}\">${genre}</div>`).join("");
-}
-
-function setupGenreMultiselect(inputId, dropdownId, selectedId) {
-    const input = document.getElementById(inputId);
-    const dropdown = document.getElementById(dropdownId);
-    const selectedContainer = document.getElementById(selectedId);
-    if (!input || !dropdown || !selectedContainer) return;
-
-    // Render options
-    renderGenreOptions(dropdownId);
-
-    // Remove previous listeners if any
-    if (input._genreListener) input.removeEventListener('click', input._genreListener);
-    if (dropdown._genreListener) dropdown.removeEventListener('click', dropdown._genreListener);
-    if (document._genreListener) document.removeEventListener('click', document._genreListener);
-
-    // Make input always focusable and clickable
-    input.setAttribute('tabindex', '0');
-    input.style.cursor = 'pointer';
-    input._genreListener = (e) => {
-        e.preventDefault();
-        dropdown.classList.toggle('show');
-    };
-    input.addEventListener('click', input._genreListener);
-
-    // Hide dropdown when clicking outside
-    document._genreListener = (e) => {
-        if (!e.target.closest('.multiselect-container')) {
-            dropdown.classList.remove('show');
-        }
-    };
-    document.addEventListener('click', document._genreListener);
-
-    // Select/deselect genres
-    dropdown._genreListener = (e) => {
-        const option = e.target.closest('.multiselect-option');
-        if (!option) return;
-        option.classList.toggle('selected');
-        updateSelectedGenres(selectedId, dropdownId);
-    };
-    dropdown.addEventListener('click', dropdown._genreListener);
-}
-
-function updateSelectedGenres(selectedId, dropdownId) {
-    const selectedContainer = document.getElementById(selectedId);
-    const dropdown = document.getElementById(dropdownId);
-    selectedContainer.innerHTML = '';
-    const selectedOptions = dropdown.querySelectorAll('.multiselect-option.selected');
-    selectedOptions.forEach(opt => {
-        // Prevent duplicate tags
-        if ([...selectedContainer.children].some(tag => tag.textContent.trim().startsWith(opt.dataset.value))) return;
-        const tag = document.createElement('div');
-        tag.className = 'multiselect-tag';
-        tag.innerHTML = `
-            ${opt.dataset.value}
-            <span class=\"remove-tag\">×</span>
-        `;
-        selectedContainer.appendChild(tag);
-        tag.querySelector('.remove-tag').onclick = (e) => {
-            e.stopPropagation();
-            opt.classList.remove('selected');
-            updateSelectedGenres(selectedId, dropdownId);
-        };
-    });
-}
 
 // Initialize genre multiselects on DOMContentLoaded
-
-function getJwtExpiry(token) {
-    if (!token) return 0;
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.exp ? payload.exp * 1000 : 0;
-    } catch {
-        return 0;
-    }
-}
-
-function isJwtValid(token) {
-    const expiry = getJwtExpiry(token);
-    return token && expiry && Date.now() < expiry;
-}
 
 // Always define notificationEl first so it's available to all functions
     const notificationEl = document.getElementById('notification');
@@ -1100,12 +1642,13 @@ function isJwtValid(token) {
         let suggestedSongsDrawerOpen = false;
         let isScrolling = false;
 
-        let currentUser = (() => {
-            try {
-                const s = localStorage.getItem('currentUser');
-                return s ? JSON.parse(s) : null;
-            } catch { return null; }
-        })();
+        // Update currentUser from localStorage (no redeclaration needed)
+        try {
+            const s = localStorage.getItem('currentUser');
+            currentUser = s ? JSON.parse(s) : null;
+        } catch { 
+            currentUser = null; 
+        }
          isDarkMode = localStorage.getItem('darkMode') === 'true';
 
 
@@ -1977,8 +2520,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
             document.documentElement.style.setProperty('--preview-margin-left', `${previewMargin}px`);
 
-            document.getElementById('sidebarWidthInput').value = sidebarWidth;
-            document.getElementById('songsPanelWidthInput').value = songsPanelWidth;
+            document.getElementById('panelWidthInput').value = sidebarWidth;
             document.getElementById('previewMarginInput').value = previewMargin;
             document.getElementById('autoScrollSpeedInput').value = savedAutoScrollSpeed;
             document.getElementById("sessionResetOption").value = sessionResetOption;
@@ -3048,35 +3590,35 @@ window.viewSingleLyrics = function(songId, otherId) {
             const setlist = category === 'New' ? NewSetlist : OldSetlist;
             container.innerHTML = '';
             if (setlist.length === 0) {
-                container.innerHTML = '<p>Your ' + category + ' setlist is empty.</p>';
+                container.innerHTML = '<p style="text-align: center; color: var(--song-meta-color); font-style: italic; padding: 20px;">Your ' + category + ' setlist is empty.</p>';
                 return;
             }
     
             const ul = document.createElement('ul');
             ul.className = 'setlist-sortable';
-            ul.style.listStyle = 'none';
-            ul.style.padding = '0';
     
             setlist.forEach((song, index) => {
                 const li = document.createElement('li');
-                li.style.display = 'flex';
-                li.style.justifyContent = 'space-between';
-                li.style.alignItems = 'center';
-                li.style.padding = '10px';
-                li.style.marginBottom = '8px';
-                li.style.background = '#f5f7fa';
-                li.style.borderRadius = '5px';
+                li.className = 'setlist-item';
                 li.setAttribute('draggable', 'true');
                 li.dataset.songId = song.id;
-    
+
                 li.innerHTML = `
-                    <span><span class="setlist-index">${index + 1}.</span> ${song.title} (${song.key} | ${song.genre})</span>
-                    <div class="song-actions">
-                        <button class="btn btn-delete" onclick="removeFromSetlist(${song.id}, '${song.category}')">Remove</button>
+                    <div class="setlist-item-content">
+                        <span class="setlist-index">${index + 1}.</span>
+                        <div class="setlist-item-info">
+                            <div class="setlist-item-title">${song.title}</div>
+                        </div>
                     </div>
-                `;
-    
-                li.addEventListener('click', (e) => {
+                    <div class="setlist-item-actions">
+                        <button class="btn btn-delete" onclick="removeFromSetlist(${song.id}, '${song.category}')" title="Remove from setlist">
+                            ×
+                        </button>
+                        <div class="setlist-item-meta">
+                            <span class="setlist-item-key">${song.key}</span>
+                        </div>
+                    </div>
+                `;                li.addEventListener('click', (e) => {
                     if (!e.target.classList.contains('btn')) {
                         showPreview(song);
                     }
@@ -3278,7 +3820,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             ${song.artistDetails ? `
             <div class="preview-meta-row">
                 <span class="preview-meta-label">Artist:</span>
-                <span class="preview-meta-value">${song.artistDetails}</span>
+                <span class="preview-meta-value preview-artist">${song.artistDetails}</span>
             </div>` : ''}
             ${song.mood ? `
             <div class="preview-meta-row">
@@ -3805,6 +4347,25 @@ window.viewSingleLyrics = function(songId, otherId) {
             currentModal = null;
             document.body.style.overflow = '';
             
+            // Clear multiselect selections when closing add song modal
+            if (modal.id === 'addSongModal') {
+                // Clear DOM-based selections for mood and artist multiselects
+                document.querySelectorAll('#moodDropdown .multiselect-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                document.querySelectorAll('#artistDropdown .multiselect-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                // Update displays
+                updateSelectedMoods('selectedMoods', 'moodDropdown');
+                updateSelectedArtists('selectedArtists', 'artistDropdown');
+                // Clear genre multiselect
+                const genreSelectedContainer = document.getElementById('selectedGenres');
+                if (genreSelectedContainer) {
+                    genreSelectedContainer.innerHTML = '';
+                }
+            }
+            
             // Update history if we're closing via back button
             if (history.state?.modalOpen) {
                 history.back();
@@ -3841,33 +4402,23 @@ window.viewSingleLyrics = function(songId, otherId) {
             
             // Handle multiselect artist field
             const artists = song.artistDetails ? song.artistDetails.split(',').map(a => a.trim()).filter(a => a) : [];
-            setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
-            // Set selected artists
-            const editSelectedArtists = document.getElementById('editSelectedArtists');
-            editSelectedArtists.innerHTML = '';
-            document.querySelectorAll('#editArtistDropdown .multiselect-option').forEach(opt => {
-                opt.classList.remove('selected');
-                if (artists.includes(opt.dataset.value)) {
-                    opt.classList.add('selected');
-                }
-            });
-            updateSelectedMultiselect('editSelectedArtists', 'editArtistDropdown', true);
-            updateSearchableInput('editSongArtist', 'editSelectedArtists');
+            setupArtistMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists');
+            // Initialize the Set with existing artists
+            const editArtistDropdown = document.getElementById('editArtistDropdown');
+            if (editArtistDropdown) {
+                editArtistDropdown._artistSelections = new Set(artists);
+                updateSelectedArtists('editSelectedArtists', 'editArtistDropdown');
+            }
             
             // Handle multiselect mood field
             const moods = song.mood ? song.mood.split(',').map(m => m.trim()).filter(m => m) : [];
-            setupSearchableMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods', MOODS, true);
-            // Set selected moods
-            const editSelectedMoods = document.getElementById('editSelectedMoods');
-            editSelectedMoods.innerHTML = '';
-            document.querySelectorAll('#editMoodDropdown .multiselect-option').forEach(opt => {
-                opt.classList.remove('selected');
-                if (moods.includes(opt.dataset.value)) {
-                    opt.classList.add('selected');
-                }
-            });
-            updateSelectedMultiselect('editSelectedMoods', 'editMoodDropdown', true);
-            updateSearchableInput('editSongMood', 'editSelectedMoods');
+            setupMoodMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods');
+            // Initialize the Set with existing moods
+            const editMoodDropdown = document.getElementById('editMoodDropdown');
+            if (editMoodDropdown) {
+                editMoodDropdown._moodSelections = new Set(moods);
+                updateSelectedMoods('editSelectedMoods', 'editMoodDropdown');
+            }
             
             document.getElementById('editSongTempo').value = song.tempo;
             document.getElementById('editSongTime').value = song.time;
@@ -3876,22 +4427,22 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Render correct genre options for multiselect
             renderGenreOptions('editGenreDropdown');
             setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
-            // Set selected genres
+            
+            // Set selected genres using the Set-based approach
             const genres = song.genres || (song.genre ? [song.genre] : []);
-            const editSelectedGenres = document.getElementById('editSelectedGenres');
-            editSelectedGenres.innerHTML = '';
-            document.querySelectorAll('#editGenreDropdown .multiselect-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            genres.forEach(genre => {
-                const options = document.querySelectorAll('#editGenreDropdown .multiselect-option');
-                options.forEach(opt => {
-                    if (opt.dataset.value === genre) {
-                        opt.classList.add('selected');
-                    }
+            const editGenreDropdown = document.getElementById('editGenreDropdown');
+            if (editGenreDropdown && editGenreDropdown._genreSelections) {
+                // Clear existing selections
+                editGenreDropdown._genreSelections.clear();
+                // Add current song's genres to the Set
+                genres.forEach(genre => {
+                    editGenreDropdown._genreSelections.add(genre);
                 });
-            });
-            updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
+                // Update the display
+                updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
+                // Re-render the options with current selections
+                renderGenreOptionsWithSelections('editGenreDropdown', GENRES, editGenreDropdown._genreSelections);
+            }
             document.getElementById('editSongLyrics').value = song.lyrics;
             editSongModal.style.display = 'flex';
         }
@@ -3935,8 +4486,8 @@ window.viewSingleLyrics = function(songId, otherId) {
             const showSetlistEl = document.getElementById('showSetlist');
             const newHeader = document.getElementById("sidebarHeaderInput").value;
             const newSetlist = document.getElementById("setlistTextInput").value;
-            const sidebarWidth = document.getElementById("sidebarWidthInput").value;
-            const songsPanelWidth = document.getElementById("songsPanelWidthInput").value;
+            const sidebarWidth = document.getElementById("panelWidthInput").value;
+            const songsPanelWidth = document.getElementById("panelWidthInput").value;
             const previewMargin = document.getElementById("previewMarginInput").value;
             const newAutoScrollSpeed = document.getElementById("autoScrollSpeedInput").value;
             const sessionResetOption = document.getElementById("sessionResetOption").value;
@@ -4335,10 +4886,10 @@ window.viewSingleLyrics = function(songId, otherId) {
                         .map(opt => opt.dataset.value);
                     
                     // Collect multiselect values for mood and artist
-                    const selectedMoods = Array.from(document.querySelectorAll('#moodDropdown .multiselect-option.selected'))
-                        .map(opt => opt.dataset.value);
-                    const selectedArtists = Array.from(document.querySelectorAll('#artistDropdown .multiselect-option.selected'))
-                        .map(opt => opt.dataset.value);
+                    const moodDropdown = document.getElementById('moodDropdown');
+                    const artistDropdown = document.getElementById('artistDropdown');
+                    const selectedMoods = Array.from(moodDropdown._moodSelections || []);
+                    const selectedArtists = Array.from(artistDropdown._artistSelections || []);
                     
                     const newSong = {
                         title: title,
@@ -4368,7 +4919,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                             showNotification('Song added successfully!');
                             addSongModal.style.display = 'none';
                             newSongForm.reset();
+                            // Clear all multiselect selections
                             document.getElementById('selectedGenres').innerHTML = '';
+                            document.querySelectorAll('#moodDropdown .multiselect-option').forEach(opt => {
+                                opt.classList.remove('selected');
+                            });
+                            document.querySelectorAll('#artistDropdown .multiselect-option').forEach(opt => {
+                                opt.classList.remove('selected');
+                            });
+                            updateSelectedMoods('selectedMoods', 'moodDropdown');
+                            updateSelectedArtists('selectedArtists', 'artistDropdown');
                             // Reload songs from backend
                             songs = await loadSongsFromFile();
                             renderSongs('New', keyFilter.value, genreFilter.value);
@@ -4395,10 +4955,10 @@ window.viewSingleLyrics = function(songId, otherId) {
                     .map(opt => opt.dataset.value);
                 
                 // Collect multiselect values for mood and artist
-                const selectedMoods = Array.from(document.querySelectorAll('#editMoodDropdown .multiselect-option.selected'))
-                    .map(opt => opt.dataset.value);
-                const selectedArtists = Array.from(document.querySelectorAll('#editArtistDropdown .multiselect-option.selected'))
-                    .map(opt => opt.dataset.value);
+                const editMoodDropdown = document.getElementById('editMoodDropdown');
+                const editArtistDropdown = document.getElementById('editArtistDropdown');
+                const selectedMoods = Array.from(editMoodDropdown._moodSelections || []);
+                const selectedArtists = Array.from(editArtistDropdown._artistSelections || []);
 
                 // Find the original song for missing fields
                 const original = songs.find(s => s.id == id) || {};
