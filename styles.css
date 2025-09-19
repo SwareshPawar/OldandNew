@@ -383,12 +383,12 @@
         .song-preview-metadata {
             background: var(--background-secondary);
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 18px;
+            padding: 8px;
+            margin-bottom: 5px;
             border: 1px solid var(--song-item-border);
             display: flex;
             flex-wrap: wrap;
-            gap: 16px 20px;
+            gap: 10px 10px;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
@@ -459,7 +459,7 @@
         }
 
         .song-preview-audit {
-            margin-bottom: 15px;
+            margin-bottom: 1px;
             padding: 8px 12px;
             background: var(--background-secondary);
             border-radius: 4px;
@@ -483,7 +483,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 12px;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
         }
 
         /* Desktop button width optimization */
@@ -557,7 +557,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             padding: 10px;
             background: var(--background-secondary);
             border-radius: 6px;
@@ -707,14 +707,14 @@
             
             .preview-transpose-btn,
             .preview-transpose-controls .favorite-btn {
-                width: 32px;
+                width: 20%;
                 height: 32px;
                 font-size: 0.9rem;
             }
             
             .preview-transpose-display {
                 min-width: 20px;
-                padding: 2px 4px;
+                padding: 7px 14px;
                 font-size: 0.75rem;
             }
             
