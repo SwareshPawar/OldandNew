@@ -20,6 +20,32 @@ const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
     "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba","RD Patch", "Western", "Waltz", "K-Pop", "Hip-Hop", "Pop", "Rock", "Jazz", "Funk", "March Rhythm"
 ];
+
+const MOODS = [
+    "Happy", "Sad", "Romantic", "Energetic", "Calm", "Melancholic", "Uplifting", "Peaceful", "Intense", "Joyful", 
+    "Nostalgic", "Spiritual", "Devotional", "Celebratory", "Reflective", "Passionate", "Soothing", "Motivational",
+    "Dramatic", "Playful", "Contemplative", "Festive", "Sorrowful", "Triumphant", "Mysterious", "Hopeful"
+];
+
+const ARTISTS = [
+    "Arijit Singh", "Shreya Ghoshal", "Atif Aslam", "Rahat Fateh Ali Khan", "A.R. Rahman", "Lata Mangeshkar",
+    "Kishore Kumar", "Mohammed Rafi", "Asha Bhosle", "Udit Narayan", "Alka Yagnik", "Kumar Sanu", "Sonu Nigam",
+    "Sunidhi Chauhan", "Shaan", "KK", "Armaan Malik", "Asees Kaur", "Jubin Nautiyal", "Darshan Raval",
+    "Guru Randhawa", "Badshah", "Yo Yo Honey Singh", "Divine", "RAFTAAR", "Nucleya", "Diljit Dosanjh",
+    "Raghav", "Shankar Mahadevan", "Hariharan", "Kailash Kher", "Mohit Chauhan", "Papon", "Vishal Dadlani",
+    "Shekhar Ravjiani", "Vishal-Shekhar", "Shankar-Ehsaan-Loy", "Pritam", "Ilaiyaraaja", "Harris Jayaraj",
+    "Anirudh Ravichander", "Devi Sri Prasad", "Thaman S", "Gopi Sundar", "Ajay-Atul", "Sachin-Jigar",
+    "Tanishk Bagchi", "Rochak Kohli", "Amaal Mallik", "Himesh Reshammiya", "Javed Ali", "Palak Muchhal",
+    "Dhvani Bhanushali", "Tulsi Kumar", "Neha Kakkar", "Tony Kakkar", "Mika Singh", "Raghuvir Yadav",
+    "Kailash Kher", "Sukhwinder Singh", "Shilpa Rao", "Chinmayi", "Sid Sriram", "Pradeep Kumar", "Abhijeet",
+    "Sadhana Sargam", "Kavita Krishnamurthy", "S.P. Balasubrahmanyam", "Jesudas", "Yesudas", "Hariharan",
+    "Unni Menon", "Vijay Yesudas", "Karthik", "Vijay Prakash", "Kunal Ganjawala", "Raghav Sachar",
+    "Benny Dayal", "Roop Kumar Rathod", "Sunali Rathod", "Rekha Bhardwaj", "Kausar Munir", "Irshad Kamil",
+    "Gulzar", "Javed Akhtar", "Prasoon Joshi", "Manoj Muntashir", "Amitabh Bhattacharya", "Kumaar",
+    "Dr. Devika Rani", "Nusrat Fateh Ali Khan", "Abida Parveen", "Jagjit Singh", "Chitra Singh", "Ghulam Ali",
+    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali", "Other"
+];
+
 const TIME_GENRE_MAP = {
     "4/4": [
         "Keherwa", "Keherwa Slow","Keherwa Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
@@ -128,6 +154,49 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(() => {});
     }
 
+    // Enhanced progress tracking system
+    const loadingTasks = {
+        spinnerInit: { weight: 5, completed: false },
+        fetchSongs: { weight: 40, completed: false },
+        processSongs: { weight: 15, completed: false },
+        populateDropdowns: { weight: 10, completed: false },
+        loadUserData: { weight: 15, completed: false },
+        renderSongs: { weight: 10, completed: false },
+        finalSetup: { weight: 5, completed: false }
+    };
+
+    let currentProgress = 0;
+
+    function updateProgress(taskName, customPercent = null) {
+        if (customPercent !== null) {
+            // For tasks that want to report custom progress
+            const task = loadingTasks[taskName];
+            if (task) {
+                const taskProgress = (customPercent / 100) * task.weight;
+                currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
+                    if (key === taskName) return total + taskProgress;
+                    return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
+                }, 0);
+            }
+        } else {
+            // Mark task as completed
+            if (loadingTasks[taskName]) {
+                loadingTasks[taskName].completed = true;
+                currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
+                    return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
+                }, 0);
+            }
+        }
+        
+        const roundedProgress = Math.min(100, Math.round(currentProgress));
+        showLoading(roundedProgress);
+        
+        // Only hide loading when all tasks are truly complete
+        if (roundedProgress >= 100) {
+            setTimeout(hideLoading, 500);
+        }
+    }
+
     function showLoading(percent) {
         const overlay = document.getElementById('loadingOverlay');
         const percentEl = document.getElementById('loadingPercent');
@@ -142,34 +211,43 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ensure these elements exist before use later
     const keyFilter = document.getElementById('keyFilter');
     const genreFilter = document.getElementById('genreFilter');
+    const moodFilter = document.getElementById('moodFilter');
+    const artistFilter = document.getElementById('artistFilter');
 
     async function loadSongsWithProgress() {
-        showLoading(0);
+        updateProgress('spinnerInit');
+        
         let response;
         try {
-            for (let i = 0; i <= 20; i += 2) {
-                showLoading(i);
-                await new Promise(r => setTimeout(r, 25));
-            }
+            // Real API call - report progress during fetch
+            updateProgress('fetchSongs', 10);
             response = await authFetch(`${API_BASE_URL}/api/songs`);
-            showLoading(30);
+            updateProgress('fetchSongs', 80);
         } catch (err) {
             console.error('Network error fetching songs:', err);
             hideLoading();
             return;
         }
+        
         if (!response.ok) {
             console.error('API error fetching songs:', response.status);
             hideLoading();
             return;
         }
+        
+        updateProgress('fetchSongs'); // Mark fetch as complete
+        
         let allSongs = [];
         try {
+            updateProgress('processSongs', 20);
             allSongs = await response.json();
+            updateProgress('processSongs', 60);
         } catch (e) {
             console.error('Error parsing songs JSON', e);
+            hideLoading();
+            return;
         }
-        showLoading(50);
+        
         // Deduplicate
         const seen = new Set();
         const unique = [];
@@ -181,32 +259,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         window.songs = unique;
         localStorage.setItem('songs', JSON.stringify(unique));
-        showLoading(70);
-        // Simulate render progress
-        for (let i = 70; i <= 95; i += 5) {
-            showLoading(i);
-            await new Promise(r => setTimeout(r, 15));
+        updateProgress('processSongs'); // Mark processing as complete
+        
+        // Load user data if authenticated
+        if (currentUser && currentUser.id) {
+            try {
+                updateProgress('loadUserData', 30);
+                const userDataResponse = await authFetch(`${API_BASE_URL}/api/userdata`);
+                if (userDataResponse.ok) {
+                    const userData = await userDataResponse.json();
+                    window.userData = userData;
+                    updateProgress('loadUserData', 80);
+                }
+            } catch (err) {
+                console.error('Error loading user data:', err);
+            }
         }
+        updateProgress('loadUserData'); // Mark user data loading as complete
+        
+        // Render songs
+        updateProgress('renderSongs', 30);
         if (typeof renderSongs === 'function') {
-            renderSongs('New', keyFilter ? keyFilter.value : '', genreFilter ? genreFilter.value : '');
+            const filters = getCurrentFilterValues();
+            renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+            updateProgress('renderSongs', 80);
         }
         if (typeof updateSongCount === 'function') updateSongCount();
-        showLoading(100);
-        setTimeout(hideLoading, 300);
+        updateProgress('renderSongs'); // Mark rendering as complete
+        
+        // Final setup tasks
+        updateProgress('finalSetup');
     }
     loadSongsWithProgress();
 
-    // Populate dropdowns once
+    // Populate dropdowns once - report progress
+    updateProgress('populateDropdowns', 10);
     populateDropdown('keyFilter', ['All Keys', ...KEYS]);
+    updateProgress('populateDropdowns', 25);
     populateDropdown('genreFilter', ['All Genres', ...GENRES]);
+    updateProgress('populateDropdowns', 40);
+    populateDropdown('moodFilter', ['All Moods', ...MOODS]);
+    updateProgress('populateDropdowns', 55);
+    populateDropdown('artistFilter', ['All Artists', ...ARTISTS]);
+    updateProgress('populateDropdowns', 70);
     populateDropdown('songKey', KEYS);
     populateDropdown('editSongKey', KEYS);
+    updateProgress('populateDropdowns', 80);
     populateDropdown('songCategory', CATEGORIES);
     populateDropdown('editSongCategory', CATEGORIES);
+    updateProgress('populateDropdowns', 85);
     populateDropdown('songTime', TIMES);
     populateDropdown('editSongTime', TIMES);
+    updateProgress('populateDropdowns', 90);
     populateDropdown('songTaal', TAALS);
     populateDropdown('editSongTaal', TAALS);
+    updateProgress('populateDropdowns', 95);
+    populateDropdown('songArtist', ARTISTS);
+    populateDropdown('editSongArtist', ARTISTS);
+    populateDropdown('songMood', MOODS);
+    populateDropdown('editSongMood', MOODS);
+    updateProgress('populateDropdowns'); // Mark as complete
 
     // Genre multiselect (lazy setup; only once each)
     setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
@@ -255,7 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sortFilter.addEventListener('change', () => {
             const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
             if (typeof renderSongs === 'function') {
-                renderSongs(activeTab, keyFilter ? keyFilter.value : '', genreFilter ? genreFilter.value : '');
+                const filters = getCurrentFilterValues();
+                renderSongs(activeTab, filters.key, filters.genre, filters.mood, filters.artist);
             }
         });
     }
@@ -532,7 +645,7 @@ async function init() {
     loadSettings();
     addEventListeners();
     addPanelToggles();
-    renderSongs('New', '', '');
+    renderSongs('New', '', '', '', '');
     applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
     connectWebSocket();
     updateSongCount();
@@ -893,6 +1006,8 @@ function isJwtValid(token) {
         const OldContent = document.getElementById('OldContent');
         const keyFilter = document.getElementById('keyFilter');
         const genreFilter = document.getElementById('genreFilter');
+        const moodFilter = document.getElementById('moodFilter');
+        const artistFilter = document.getElementById('artistFilter');
         const songPreviewEl = document.getElementById('songPreview');
         const showSetlistEl = document.getElementById('showSetlist');
         const showAllEl = document.getElementById('showAll');
@@ -1993,9 +2108,11 @@ window.viewSingleLyrics = function(songId, otherId) {
     
                         showNotification(`${newSongs.length} new songs merged successfully.`);
                         if (NewTab.classList.contains('active')) {
-                            renderSongs('New', keyFilter.value, genreFilter.value);
+                            const filters = getCurrentFilterValues();
+                            renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                         } else {
-                            renderSongs('Old', keyFilter.value, genreFilter.value);
+                            const filters = getCurrentFilterValues();
+                            renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                         }
                     } else {
                         throw new Error('Invalid file format');
@@ -2126,7 +2243,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             return text.replace(regex, match => `<span class="highlight">${match}</span>`);
         }
     
-        function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue) {
+        function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue, moodFilterValue, artistFilterValue) {
             let songsToRender;
             let container;
             
@@ -2143,6 +2260,14 @@ window.viewSingleLyrics = function(songId, otherId) {
                     .filter(song => {
                         // If 'All Genres' or empty, show all
                         return !genreFilterValue || genreFilterValue === 'All Genres' || (song.genres ? song.genres.includes(genreFilterValue) : song.genre === genreFilterValue);
+                    })
+                    .filter(song => {
+                        // If 'All Moods' or empty, show all
+                        return !moodFilterValue || moodFilterValue === 'All Moods' || song.mood === moodFilterValue;
+                    })
+                    .filter(song => {
+                        // If 'All Artists' or empty, show all
+                        return !artistFilterValue || artistFilterValue === 'All Artists' || song.artistDetails === artistFilterValue;
                     });
                 
                 // --- Prioritize search results: title matches first, then lyrics matches ---
@@ -2675,6 +2800,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                 });
         }
 
+        // Helper function to get current filter values
+        function getCurrentFilterValues() {
+            return {
+                key: keyFilter ? keyFilter.value : '',
+                genre: genreFilter ? genreFilter.value : '',
+                mood: moodFilter ? moodFilter.value : '',
+                artist: artistFilter ? artistFilter.value : ''
+            };
+        }
+
         function isAdmin() {
             if (!jwtToken) return false;
             try {
@@ -2957,6 +3092,8 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         <div class="song-meta">
             <p><strong>Key:</strong> <span id="current-key">${song.key}</span></p>
+            ${song.artistDetails ? `<p><strong>Artist:</strong> ${song.artistDetails}</p>` : ''}
+            ${song.mood ? `<p><strong>Mood:</strong> ${song.mood}</p>` : ''}
             ${song.tempo ? `<p><strong>Tempo:</strong> ${song.tempo}</p>` : ''}
             ${song.time ? `<p><strong>Time Signature:</strong> ${song.time}</p>` : ''}
             ${song.taal ? `<p><strong>Taal:</strong> ${song.taal}</p>` : ''}
@@ -3430,6 +3567,8 @@ window.viewSingleLyrics = function(songId, otherId) {
             document.getElementById('editSongTitle').value = song.title;
             document.getElementById('editSongCategory').value = song.category;
             document.getElementById('editSongKey').value = song.key;
+            document.getElementById('editSongArtist').value = song.artistDetails || '';
+            document.getElementById('editSongMood').value = song.mood || '';
             document.getElementById('editSongTempo').value = song.tempo;
             document.getElementById('editSongTime').value = song.time;
             // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
@@ -3675,22 +3814,40 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             // Filter changes
             keyFilter.addEventListener('change', () => {
+                const filters = getCurrentFilterValues();
                 if (NewTab.classList.contains('active')) {
-                    renderSongs('New', keyFilter.value, genreFilter.value);
+                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                 } else {
-                    renderSongs('Old', keyFilter.value, genreFilter.value);
+                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                 }
             });
-    
+
             genreFilter.addEventListener('change', () => {
+                const filters = getCurrentFilterValues();
                 if (NewTab.classList.contains('active')) {
-                    renderSongs('New', keyFilter.value, genreFilter.value);
+                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                 } else {
-                    renderSongs('Old', keyFilter.value, genreFilter.value);
+                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                 }
             });
-    
-            // Menu navigation
+
+            moodFilter.addEventListener('change', () => {
+                const filters = getCurrentFilterValues();
+                if (NewTab.classList.contains('active')) {
+                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                } else {
+                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
+                }
+            });
+
+            artistFilter.addEventListener('change', () => {
+                const filters = getCurrentFilterValues();
+                if (NewTab.classList.contains('active')) {
+                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                } else {
+                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
+                }
+            });            // Menu navigation
             showSetlistEl.addEventListener('click', (e) => {
                 e.preventDefault();
                 NewContent.classList.remove('active');
@@ -3876,6 +4033,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                         title: title,
                         category: document.getElementById('songCategory').value,
                         key: document.getElementById('songKey').value,
+                        artistDetails: document.getElementById('songArtist').value,
+                        mood: document.getElementById('songMood').value,
                         tempo: document.getElementById('songTempo').value,
                         time: document.getElementById('songTime').value,
                         taal: document.getElementById('songTaal').value,
@@ -3932,6 +4091,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                     title: title,
                     category: document.getElementById('editSongCategory').value,
                     key: document.getElementById('editSongKey').value,
+                    artistDetails: document.getElementById('editSongArtist').value,
+                    mood: document.getElementById('editSongMood').value,
                     tempo: document.getElementById('editSongTempo').value,
                     time: document.getElementById('editSongTime').value,
                     taal: document.getElementById('editSongTaal').value,
@@ -4051,10 +4212,11 @@ window.viewSingleLyrics = function(songId, otherId) {
 
                 if (query.length === 0) {
                     searchResults.classList.remove('active');
+                    const filters = getCurrentFilterValues();
                     if (NewTab.classList.contains('active')) {
-                        renderSongs('New', keyFilter.value, genreFilter.value);
+                        renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                     } else {
-                        renderSongs('Old', keyFilter.value, genreFilter.value);
+                        renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                     }
                     return;
                 }
@@ -4069,7 +4231,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                         (song.lyrics && song.lyrics.toLowerCase().includes(query)) ||
                         (song.taal && song.taal.toLowerCase().includes(query)) ||
                         (song.genre && song.genre.toLowerCase().includes(query)) ||
-                        (song.genres && song.genres.some(g => g.toLowerCase().includes(query)))
+                        (song.genres && song.genres.some(g => g.toLowerCase().includes(query))) ||
+                        (song.mood && song.mood.toLowerCase().includes(query)) ||
+                        (song.artistDetails && song.artistDetails.toLowerCase().includes(query))
                     );
                 });
                 // Sort: title matches first, then lyrics, then others

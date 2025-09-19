@@ -235,6 +235,15 @@ app.post('/api/songs', authMiddleware, async (req, res) => {
     if (!req.body.createdAt) {
       req.body.createdAt = new Date().toISOString();
     }
+    
+    // Ensure artistDetails and mood fields are included
+    if (!req.body.artistDetails) {
+      req.body.artistDetails = '';
+    }
+    if (!req.body.mood) {
+      req.body.mood = '';
+    }
+    
     const result = await songsCollection.insertOne(req.body);
     const insertedSong = await songsCollection.findOne({ _id: result.insertedId });
     res.status(201).json(insertedSong);
