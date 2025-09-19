@@ -739,22 +739,14 @@
 
 
 
-        .panel-toggle.draggable {
-         /* right: 10px;  */
-        /* Remove bottom/top if set elsewhere */
-        }
-
         #toggle-sidebar {
-        top: 40%;
-        /* right: 10px; */
+            z-index: 1000; /* Initial position set by JavaScript */
         }
         #toggle-songs {
-        top: calc(40% + 50px);
-        /* right: 10px; */
+            z-index: 1000; /* Initial position set by JavaScript */
         }
         #toggle-all-panels {
-        top: calc(40% + 100px);
-        /* right: 10px; */
+            z-index: 1000; /* Initial position set by JavaScript */
         }
 
         /* Suggested Songs Drawer */
@@ -986,6 +978,7 @@
             transition: all 0.3s ease;
             opacity: 0.9;
             transform: scale(1);
+            border: none;
         }
 
         .sidebar-footer {
@@ -2174,8 +2167,9 @@ body.dark-mode .modal-content {
     #toggle-sidebar,
     #toggle-songs,
     #toggle-all-panels {
-        /* Remove right: 10px; so JS can set left/right */
-        bottom: unset !important;
+        /* Ensure JavaScript has control over positioning on mobile */
+        position: fixed !important;
+        z-index: 1100 !important;
     }
 
     .suggested-songs-drawer {
@@ -2188,24 +2182,17 @@ body.dark-mode .modal-content {
         bottom: 180px;
     }
     
-    /* Remove these hardcoded right positions for draggable toggles */
+    /* Individual toggle button positioning now handled by JavaScript */
     #toggle-sidebar {
-        bottom: 280px;
-        /* right: 10px; */
+        z-index: 1000; /* All positioning handled by JavaScript */
     }
 
     #toggle-songs {
-        bottom: 180px;
-        /* right: 10px; */
+        z-index: 1000; /* All positioning handled by JavaScript */
     }
 
     #toggle-all-panels {
-        bottom: 230px;
-        /* right: 10px; */
-    }
-
-    .sidebar.hidden ~ #toggle-songs {
-        left: 15px;
+        z-index: 1000; /* All positioning handled by JavaScript */
     }
 
     .sidebar {

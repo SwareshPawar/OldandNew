@@ -4484,11 +4484,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                     el.style.right = pos.right || '';
                     el.style.bottom = pos.bottom || '';
                 } else {
-                    el.style.top = id === 'toggle-sidebar' ? '200px' :
-                        id === 'toggle-songs' ? '260px' :
-                        id === 'toggle-all-panels' ? '320px' : '200px';
-                    el.style.left = '10px';
-                    el.style.right = '';
+                    // Default to top right corner for initial load
+                    // Position buttons side by side horizontally
+                    const isMobile = window.innerWidth <= 768;
+                    const spacing = isMobile ? 60 : 50; // Horizontal spacing between buttons
+                    
+                    el.style.top = '20px'; // All buttons at same top position
+                    el.style.right = id === 'toggle-sidebar' ? '20px' :
+                        id === 'toggle-songs' ? (20 + spacing) + 'px' :
+                        id === 'toggle-all-panels' ? (20 + spacing * 2) + 'px' : '20px';
+                    el.style.left = '';
                     el.style.bottom = '';
                 }
             };
