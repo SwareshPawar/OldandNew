@@ -4163,6 +4163,35 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Download/upload
             downloadBtn.addEventListener('click', downloadSongs);
     
+            // HTML download
+            document.getElementById('downloadHtmlWithSongsBtn').addEventListener('click', () => {
+                try {
+                    const clone = document.documentElement.cloneNode(true);
+                    const embedded = clone.querySelector('#embeddedSongs');
+                    if (embedded) {
+                        embedded.textContent = JSON.stringify(songs, null, 2);
+                    } else {
+                        const script = document.createElement('script');
+                        script.id = 'embeddedSongs';
+                        script.type = 'application/json';
+                        script.textContent = JSON.stringify(songs, null, 2);
+                        clone.querySelector('body').appendChild(script);
+                    }
+    
+                    const fullHtml = '<!DOCTYPE html>\n' + clone.outerHTML;
+                    const blob = new Blob([fullHtml], { type: 'text/html' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'NewOld_Songs_Updated.html';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showNotification('HTML file downloaded with all songs');
+                } catch (err) {
+                    showNotification('Failed to generate updated HTML: ' + err.message);
+                }
+            });
     
             // Settings
             const settingsBtn = document.createElement("button");
