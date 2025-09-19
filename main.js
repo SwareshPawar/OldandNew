@@ -3072,51 +3072,108 @@ window.viewSingleLyrics = function(songId, otherId) {
             songPreviewEl.innerHTML = `
 <div class="song-preview-container">
     <div class="song-slide">
-        <div class="preview-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <h2>${song.title}</h2>
+        <div class="song-preview-header">
+            <h2 class="song-preview-title">${song.title}</h2>
+        </div>
+
+        <div class="song-preview-metadata">
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Key:</span>
+                <span class="preview-meta-value preview-key" id="current-key">${song.key}</span>
             </div>
+            ${song.artistDetails ? `
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Artist:</span>
+                <span class="preview-meta-value">${song.artistDetails}</span>
+            </div>` : ''}
+            ${song.mood ? `
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Mood:</span>
+                <span class="preview-meta-value preview-mood">${song.mood}</span>
+            </div>` : ''}
+            ${song.tempo ? `
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Tempo:</span>
+                <span class="preview-meta-value">${song.tempo}</span>
+            </div>` : ''}
+            ${song.time ? `
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Time:</span>
+                <span class="preview-meta-value">${song.time}</span>
+            </div>` : ''}
+            ${song.taal ? `
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Taal:</span>
+                <span class="preview-meta-value">${song.taal}</span>
+            </div>` : ''}
+            ${song.genres ? `
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Genres:</span>
+                <div class="preview-genre-tags">
+                    ${song.genres.map(genre => `<span class="preview-genre-tag">${genre}</span>`).join('')}
+                </div>
+            </div>` : song.genre ? `
+            <div class="preview-meta-row">
+                <span class="preview-meta-label">Genre:</span>
+                <span class="preview-meta-value">${song.genre}</span>
+            </div>` : ''}
         </div>
 
-        <div class="song-meta">
-            <p><strong>Key:</strong> <span id="current-key">${song.key}</span></p>
-            ${song.artistDetails ? `<p><strong>Artist:</strong> ${song.artistDetails}</p>` : ''}
-            ${song.mood ? `<p><strong>Mood:</strong> ${song.mood}</p>` : ''}
-            ${song.tempo ? `<p><strong>Tempo:</strong> ${song.tempo}</p>` : ''}
-            ${song.time ? `<p><strong>Time Signature:</strong> ${song.time}</p>` : ''}
-            ${song.taal ? `<p><strong>Taal:</strong> ${song.taal}</p>` : ''}
-            ${song.genres ? `<p><strong>Genres:</strong> ${song.genres.join(', ')}</p>` : song.genre ? `<p><strong>Genre:</strong> ${song.genre}</p>` : ''}
-        </div>
-
-        <div class="song-audit">
+        <div class="song-preview-audit">
             ${song.updatedAt && song.updatedBy
-                ? `<p><strong>Updated by:</strong> ${song.updatedBy} <span style=\"color:#888;font-size:0.9em\">on ${new Date(song.updatedAt).toLocaleString()}</span></p>`
+                ? `<div class="preview-audit-info">
+                    <i class="fas fa-edit"></i>
+                    <span>Updated by <strong>${song.updatedBy}</strong> on ${new Date(song.updatedAt).toLocaleDateString()}</span>
+                   </div>`
                 : (song.createdBy && song.createdAt
-                    ? `<p><strong>Added by:</strong> ${song.createdBy} <span style=\"color:#888;font-size:0.9em\">on ${new Date(song.createdAt).toLocaleString()}</span></p>`
+                    ? `<div class="preview-audit-info">
+                        <i class="fas fa-plus"></i>
+                        <span>Added by <strong>${song.createdBy}</strong> on ${new Date(song.createdAt).toLocaleDateString()}</span>
+                       </div>`
                     : '')
             }
         </div>
 
-        <div class="preview-actions">
-            <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}">
-                <i class="fas fa-heart"></i>
+        <div class="song-preview-actions">
+            <button class="preview-action-btn preview-setlist-btn ${isInSetlist ? 'remove' : 'add'}" id="previewSetlistBtn">
+                <i class="fas ${isInSetlist ? 'fa-minus' : 'fa-plus'}"></i>
+                <span>${isInSetlist ? 'Remove from Setlist' : 'Add to Setlist'}</span>
             </button>
-            <button class="btn ${isInSetlist ? 'btn-delete' : 'btn-primary'}" id="previewSetlistBtn">
-                ${isInSetlist ? 'Remove from Setlist' : 'Add to Setlist'}
+            <button class="preview-action-btn preview-edit-btn" id="previewEditBtn">
+                <i class="fas fa-edit"></i>
+                <span>Edit</span>
             </button>
-            <button class="btn btn-edit" id="previewEditBtn">
-                <i class="fas fa-edit"></i> Edit
-            </button>
-            ${isAdmin() ? `<button class="btn btn-delete" id="previewDeleteBtn"><i class="fas fa-trash-alt"></i> Delete</button>` : ''}
+            ${isAdmin() ? `<button class="preview-action-btn preview-delete-btn" id="previewDeleteBtn">
+                <i class="fas fa-trash-alt"></i>
+                <span>Delete</span>
+            </button>` : ''}
         </div>
 
-        <div class="transpose-controls">
-            <button class="btn btn-primary" id="transpose-down">-</button>
-            <span>Transpose: <span id="transpose-level">${transposeLevel}</span></span>
-            <button class="btn btn-primary" id="transpose-up">+</button>
-            <button id="transposeReset" class="btn btn-primary">Reset</button>
-            <button id="saveTransposeBtn" class="btn btn-primary"><i class="fas fa-save"></i></button>
+        <div class="song-preview-transpose">
+            <div class="preview-transpose-label">
+                <i class="fas fa-music"></i>
+                <span>Transpose</span>
+            </div>
+            <div class="preview-transpose-controls">
+                <button class="preview-transpose-btn" id="transpose-down">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span class="preview-transpose-display" id="transpose-level">${transposeLevel}</span>
+                <button class="preview-transpose-btn" id="transpose-up">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="preview-transpose-btn preview-reset" id="transposeReset">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button class="preview-transpose-btn preview-save" id="saveTransposeBtn">
+                    <i class="fas fa-save"></i>
+                </button>
+                <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}" title="Add to Favorites">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
         </div>
+        
         <div class="song-lyrics">${formatLyricsWithChords(song.lyrics, transposeLevel)}</div>
         <!-- Add these new swipe indicators -->
         <div class="swipe-indicator prev">←</div>
