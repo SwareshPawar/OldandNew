@@ -3076,18 +3076,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             <div style="display: flex; align-items: center; gap: 10px;">
                 <h2>${song.title}</h2>
             </div>
-            <div class="preview-actions">
-                <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}">
-                    <i class="fas fa-heart"></i>
-                </button>
-                <button class="btn ${isInSetlist ? 'btn-delete' : 'btn-primary'}" id="previewSetlistBtn">
-                    ${isInSetlist ? 'Remove from Setlist' : 'Add to Setlist'}
-                </button>
-                <button class="btn btn-edit" id="previewEditBtn">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                ${isAdmin() ? `<button class="btn btn-delete" id="previewDeleteBtn"><i class="fas fa-trash-alt"></i> Delete</button>` : ''}
-            </div>
         </div>
 
         <div class="song-meta">
@@ -3107,6 +3095,19 @@ window.viewSingleLyrics = function(songId, otherId) {
                     ? `<p><strong>Added by:</strong> ${song.createdBy} <span style=\"color:#888;font-size:0.9em\">on ${new Date(song.createdAt).toLocaleString()}</span></p>`
                     : '')
             }
+        </div>
+
+        <div class="preview-actions">
+            <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}">
+                <i class="fas fa-heart"></i>
+            </button>
+            <button class="btn ${isInSetlist ? 'btn-delete' : 'btn-primary'}" id="previewSetlistBtn">
+                ${isInSetlist ? 'Remove from Setlist' : 'Add to Setlist'}
+            </button>
+            <button class="btn btn-edit" id="previewEditBtn">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            ${isAdmin() ? `<button class="btn btn-delete" id="previewDeleteBtn"><i class="fas fa-trash-alt"></i> Delete</button>` : ''}
         </div>
 
         <div class="transpose-controls">
