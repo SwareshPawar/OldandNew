@@ -29,7 +29,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'], // <-- Add 'Authorization' if not present
 }));
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('.'));
 
 const { registerUser, authenticateUser, verifyToken } = require('./utils/auth');
 
@@ -304,12 +304,12 @@ app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
 app.get('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const doc = await db.collection('UserData').findOne({ _id: userId });
-  res.json(doc || { favorites: [], NewSetlist: [], OldSetlist: [], transpose: {} });
+  res.json(doc || { favorites: [], transpose: {} });
 });
 
 app.put('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;
-  const { favorites, NewSetlist, OldSetlist, name, email, transpose } = req.body;
+  const { favorites, name, email, transpose } = req.body;
   // Always use firstName and lastName from authenticated user
   const firstName = req.user.firstName;
   const lastName = req.user.lastName;
@@ -317,12 +317,347 @@ app.put('/api/userdata', authMiddleware, async (req, res) => {
   const Activitydate = new Date().toISOString();
   await db.collection('UserData').updateOne(
     { _id: userId },
-    { $set: { favorites, NewSetlist, OldSetlist, name, email, transpose, firstName, lastName, Activitydate } },
+    { $set: { favorites, name, email, transpose, firstName, lastName, Activitydate } },
     { upsert: true }
   );
   res.json({ message: 'User data updated' });
 });
 
+// Global Setlist endpoints (admin only)
+app.get('/api/global-setlists', async (req, res) => {
+  try {
+    const setlists = await db.collection('GlobalSetlists').find({}).toArray();
+    res.json(setlists);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/global-setlists', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { name, description, songs } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Setlist name is required' });
+    }
+    
+    const setlist = {
+      name,
+      description: description || '',
+      songs: songs || [],
+      createdBy: req.user.firstName || req.user.username,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    const result = await db.collection('GlobalSetlists').insertOne(setlist);
+    const insertedSetlist = await db.collection('GlobalSetlists').findOne({ _id: result.insertedId });
+    res.status(201).json(insertedSetlist);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/global-setlists/:id', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, songs } = req.body;
+    
+    const update = {
+      $set: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(songs && { songs }),
+        updatedBy: req.user.firstName || req.user.username,
+        updatedAt: new Date().toISOString()
+      }
+    };
+    
+    const result = await db.collection('GlobalSetlists').updateOne(
+      { _id: new (require('mongodb').ObjectId)(id) },
+      update
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Global setlist not found' });
+    }
+    res.json({ message: 'Global setlist updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/global-setlists/:id', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await db.collection('GlobalSetlists').deleteOne({
+      _id: new (require('mongodb').ObjectId)(id)
+    });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Global setlist not found' });
+    }
+    res.json({ message: 'Global setlist deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// My Setlist endpoints (user specific)
+app.get('/api/my-setlists', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const setlists = await db.collection('MySetlists').find({ userId }).toArray();
+    res.json(setlists);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/my-setlists', authMiddleware, async (req, res) => {
+  try {
+    const { name, description, songs } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Setlist name is required' });
+    }
+    
+    const setlist = {
+      name,
+      description: description || '',
+      songs: songs || [],
+      userId: req.user.id,
+      createdBy: req.user.firstName || req.user.username,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    const result = await db.collection('MySetlists').insertOne(setlist);
+    const insertedSetlist = await db.collection('MySetlists').findOne({ _id: result.insertedId });
+    res.status(201).json(insertedSetlist);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/my-setlists/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, songs } = req.body;
+    const userId = req.user.id;
+    
+    const update = {
+      $set: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(songs && { songs }),
+        updatedBy: req.user.firstName || req.user.username,
+        updatedAt: new Date().toISOString()
+      }
+    };
+    
+    const result = await db.collection('MySetlists').updateOne(
+      { _id: new (require('mongodb').ObjectId)(id), userId },
+      update
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'My setlist not found' });
+    }
+    res.json({ message: 'My setlist updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/my-setlists/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const result = await db.collection('MySetlists').deleteOne({
+      _id: new (require('mongodb').ObjectId)(id),
+      userId
+    });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'My setlist not found' });
+    }
+    res.json({ message: 'My setlist deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add song to global setlist
+app.post('/api/global-setlists/add-song', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { setlistId, songId } = req.body;
+    if (!setlistId || !songId) {
+      return res.status(400).json({ error: 'Setlist ID and song ID are required' });
+    }
+    
+    const result = await db.collection('GlobalSetlists').updateOne(
+      { _id: new (require('mongodb').ObjectId)(setlistId) },
+      { 
+        $addToSet: { songs: songId },  // Store just the song ID
+        $set: { updatedAt: new Date().toISOString() }
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Global setlist not found' });
+    }
+    
+    res.json({ success: true, message: 'Song added to global setlist' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Remove song from global setlist
+app.post('/api/global-setlists/remove-song', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { setlistId, songId } = req.body;
+    console.log('Removing song from global setlist:', { setlistId, songId });
+    if (!setlistId || !songId) {
+      return res.status(400).json({ error: 'Setlist ID and song ID are required' });
+    }
+    
+    // First, let's check what the setlist looks like before removal
+    const setlistBefore = await db.collection('GlobalSetlists').findOne(
+      { _id: new (require('mongodb').ObjectId)(setlistId) }
+    );
+    console.log('Setlist before removal:', setlistBefore ? setlistBefore.songs : 'not found');
+    
+    // Try to remove song ID directly (for new format)
+    let result = await db.collection('GlobalSetlists').updateOne(
+      { _id: new (require('mongodb').ObjectId)(setlistId) },
+      { 
+        $pull: { songs: songId },
+        $set: { updatedAt: new Date().toISOString() }
+      }
+    );
+    
+    // If no modification happened, try to remove song object (for old format)
+    if (result.modifiedCount === 0) {
+      result = await db.collection('GlobalSetlists').updateOne(
+        { _id: new (require('mongodb').ObjectId)(setlistId) },
+        { 
+          $pull: { songs: { id: songId } },
+          $set: { updatedAt: new Date().toISOString() }
+        }
+      );
+    }
+    
+    console.log('Remove result:', result);
+    
+    // Check what the setlist looks like after removal
+    const setlistAfter = await db.collection('GlobalSetlists').findOne(
+      { _id: new (require('mongodb').ObjectId)(setlistId) }
+    );
+    console.log('Setlist after removal:', setlistAfter ? setlistAfter.songs : 'not found');
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Global setlist not found' });
+    }
+    
+    res.json({ success: true, message: 'Song removed from global setlist' });
+  } catch (err) {
+    console.error('Error removing song from global setlist:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add song to personal setlist
+app.post('/api/my-setlists/add-song', authMiddleware, async (req, res) => {
+  try {
+    const { setlistId, songId } = req.body;
+    const userId = req.user.id;
+    
+    if (!setlistId || !songId) {
+      return res.status(400).json({ error: 'Setlist ID and song ID are required' });
+    }
+    
+    const result = await db.collection('MySetlists').updateOne(
+      { 
+        _id: new (require('mongodb').ObjectId)(setlistId),
+        userId 
+      },
+      { 
+        $addToSet: { songs: songId },  // Store just the song ID
+        $set: { updatedAt: new Date().toISOString() }
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Personal setlist not found' });
+    }
+    
+    res.json({ success: true, message: 'Song added to personal setlist' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Remove song from personal setlist
+app.post('/api/my-setlists/remove-song', authMiddleware, async (req, res) => {
+  try {
+    const { setlistId, songId } = req.body;
+    const userId = req.user.id;
+    console.log('Removing song from personal setlist:', { setlistId, songId, userId });
+    
+    if (!setlistId || !songId) {
+      return res.status(400).json({ error: 'Setlist ID and song ID are required' });
+    }
+    
+    // First, let's check what the setlist looks like before removal
+    const setlistBefore = await db.collection('MySetlists').findOne(
+      { _id: new (require('mongodb').ObjectId)(setlistId), userId }
+    );
+    console.log('Personal setlist before removal:', setlistBefore ? setlistBefore.songs : 'not found');
+    
+    // Try to remove song ID directly (for new format)
+    let result = await db.collection('MySetlists').updateOne(
+      { 
+        _id: new (require('mongodb').ObjectId)(setlistId),
+        userId 
+      },
+      { 
+        $pull: { songs: songId },
+        $set: { updatedAt: new Date().toISOString() }
+      }
+    );
+    
+    // If no modification happened, try to remove song object (for old format)
+    if (result.modifiedCount === 0) {
+      result = await db.collection('MySetlists').updateOne(
+        { 
+          _id: new (require('mongodb').ObjectId)(setlistId),
+          userId 
+        },
+        { 
+          $pull: { songs: { id: songId } },
+          $set: { updatedAt: new Date().toISOString() }
+        }
+      );
+    }
+    
+    console.log('Remove result:', result);
+    
+    // Check what the setlist looks like after removal
+    const setlistAfter = await db.collection('MySetlists').findOne(
+      { _id: new (require('mongodb').ObjectId)(setlistId), userId }
+    );
+    console.log('Personal setlist after removal:', setlistAfter ? setlistAfter.songs : 'not found');
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Personal setlist not found' });
+    }
+    
+    res.json({ success: true, message: 'Song removed from personal setlist' });
+  } catch (err) {
+    console.error('Error removing song from personal setlist:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 main().then(() => {
   const PORT = process.env.PORT || 3001;
