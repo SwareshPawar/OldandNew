@@ -2392,7 +2392,7 @@
 
         .setlist h3 {
             color: var(--title-color);
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-weight: 600;
             text-align: center;
             font-size: 1.5em;
