@@ -4629,6 +4629,11 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             toggleSidebarBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                // Don't toggle if the button was just dragged
+                if (toggleSidebarBtn._wasDragged) {
+                    toggleSidebarBtn._wasDragged = false;
+                    return;
+                }
                 sidebar.classList.toggle('hidden');
                 if (window.innerWidth <= 768) {
                     if (!sidebar.classList.contains('hidden')) {
@@ -4640,6 +4645,11 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             toggleSongsBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                // Don't toggle if the button was just dragged
+                if (toggleSongsBtn._wasDragged) {
+                    toggleSongsBtn._wasDragged = false;
+                    return;
+                }
                 songsSection.classList.toggle('hidden');
                 if (window.innerWidth <= 768) {
                     if (!songsSection.classList.contains('hidden')) {
@@ -4651,6 +4661,11 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             toggleAllPanelsBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                // Don't toggle if the button was just dragged
+                if (toggleAllPanelsBtn._wasDragged) {
+                    toggleAllPanelsBtn._wasDragged = false;
+                    return;
+                }
                 const areBothHidden = sidebar.classList.contains('hidden') && songsSection.classList.contains('hidden');
                 sidebar.classList.toggle('hidden', !areBothHidden);
                 songsSection.classList.toggle('hidden', !areBothHidden);
@@ -7914,7 +7929,14 @@ window.viewSingleLyrics = function(songId, otherId) {
     
         function makeToggleDraggable(id) {
             const el = document.getElementById(id);
+            if (!el) return;
+            
+            // Prevent multiple initializations
+            if (el._isDraggableInitialized) return;
+            el._isDraggableInitialized = true;
+            
             let isDragging = false, offsetX = 0, offsetY = 0;
+            let dragStarted = false; // To distinguish between click and drag
 
             const savePosition = () => {
                 const pos = { top: el.style.top, left: el.style.left, right: el.style.right, bottom: el.style.bottom };
@@ -7982,6 +8004,8 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
 
             const onMove = (clientX, clientY) => {
+                if (!isDragging) return;
+                dragStarted = true; // Mark that actual dragging has started
                 let newLeft = clientX - offsetX;
                 let newTop = clientY - offsetY;
                 el.style.left = newLeft + 'px';
@@ -7991,39 +8015,60 @@ window.viewSingleLyrics = function(songId, otherId) {
             };
 
             const onEnd = () => {
+                if (isDragging && dragStarted) {
+                    snapToEdge();
+                    // Mark that the element was dragged to prevent click event
+                    el._wasDragged = true;
+                    // Clear the flag after a short delay to allow normal clicks later
+                    setTimeout(() => {
+                        el._wasDragged = false;
+                    }, 100);
+                }
                 isDragging = false;
+                dragStarted = false;
                 document.body.style.userSelect = '';
-                snapToEdge();
             };
 
-            el.addEventListener('mousedown', function (e) {
+            const onMouseDown = (e) => {
+                e.preventDefault();
                 isDragging = true;
-                offsetX = e.clientX - el.offsetLeft;
-                offsetY = e.clientY - el.offsetTop;
+                dragStarted = false;
+                const rect = el.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
                 document.body.style.userSelect = 'none';
-            });
+            };
 
-            document.addEventListener('mousemove', function (e) {
-                if (isDragging) onMove(e.clientX, e.clientY);
-            });
+            const onMouseMove = (e) => {
+                if (isDragging) {
+                    onMove(e.clientX, e.clientY);
+                }
+            };
 
-            document.addEventListener('mouseup', onEnd);
-
-            el.addEventListener('touchstart', function (e) {
+            const onTouchStart = (e) => {
                 isDragging = true;
+                dragStarted = false;
                 const touch = e.touches[0];
-                offsetY = touch.clientY - el.offsetTop;
-                offsetX = touch.clientX - el.offsetLeft;
-            }, { passive: false });
+                const rect = el.getBoundingClientRect();
+                offsetX = touch.clientX - rect.left;
+                offsetY = touch.clientY - rect.top;
+            };
 
-            el.addEventListener('touchmove', function (e) {
+            const onTouchMove = (e) => {
                 if (isDragging) {
                     const touch = e.touches[0];
                     onMove(touch.clientX, touch.clientY);
                     e.preventDefault();
                 }
-            }, { passive: false });
+            };
 
+            // Add event listeners
+            el.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onEnd);
+
+            el.addEventListener('touchstart', onTouchStart, { passive: false });
+            el.addEventListener('touchmove', onTouchMove, { passive: false });
             el.addEventListener('touchend', onEnd);
 
             // Snap to edge on window resize
