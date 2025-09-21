@@ -1,4 +1,10 @@
 // --- GLOBAL CONSTANTS AND VARIABLES ---
+// --- Cache expiry times in milliseconds (move to top to avoid ReferenceError) ---
+const CACHE_EXPIRY = {
+    songs: 5 * 60 * 1000,      // 5 minutes
+    userdata: 10 * 60 * 1000,  // 10 minutes
+    setlists: 2 * 60 * 1000    // 2 minutes
+};  
 
 // Global variables for app state
 let jwtToken = localStorage.getItem('jwtToken') || '';
@@ -29,7 +35,7 @@ const KEYS = [
 const CATEGORIES = ["New", "Old"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
-    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow", "Rupak", "EkTaal", "JhapTaal", "TeenTaal", "Deepchandi", "Garba","RD Patch", "Western", "Waltz", "Rock", "Jazz", "March Rhythm"
+    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow",  "EkTaal", "JhapTaal", "TeenTaal","Rupak", "Deepchandi", "Garba","RD Patch","Desi Drum", "Western", "Waltz", "Rock", "Jazz", "March Rhythm"
 ];
 
 const MOODS = [
@@ -54,7 +60,7 @@ const ARTISTS = [
     "Benny Dayal", "Roop Kumar Rathod", "Sunali Rathod", "Rekha Bhardwaj", "Kausar Munir", "Irshad Kamil",
     "Gulzar", "Javed Akhtar", "Prasoon Joshi", "Manoj Muntashir", "Amitabh Bhattacharya", "Kumaar",
     "Dr. Devika Rani", "Nusrat Fateh Ali Khan", "Abida Parveen", "Jagjit Singh", "Chitra Singh", "Ghulam Ali",
-    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali","Amit Trivedi","Monali Thakur", "Suresh Wadkar","Anu Malik","Other"
+    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali","Amit Trivedi","Monali Thakur", "Suresh Wadkar","Anu Malik","Bappi Lahiri","Hemant Kumar","Other"
 ];
 
 const TIME_GENRE_MAP = {
@@ -137,17 +143,23 @@ window.dataCache = {
 try {
     const storedSongs = localStorage.getItem('songs');
     const storedSongsTimestamp = localStorage.getItem('songsTimestamp');
-    
+
+    function isCacheFresh(type, timestamp) {
+        if (!timestamp) return false;
+        const cacheAge = Date.now() - parseInt(timestamp);
+        const expiry = CACHE_EXPIRY[type] || CACHE_EXPIRY.setlists;
+        return cacheAge < expiry;
+    }
+
     if (storedSongs && storedSongsTimestamp) {
-        const cacheAge = Date.now() - parseInt(storedSongsTimestamp);
-        const CACHE_EXPIRY_SONGS = 5 * 60 * 1000; // 5 minutes
-        
-        if (cacheAge < CACHE_EXPIRY_SONGS) {
+        if (isCacheFresh('songs', storedSongsTimestamp)) {
             window.dataCache.songs = JSON.parse(storedSongs);
             window.dataCache.lastFetch.songs = parseInt(storedSongsTimestamp);
             console.log('✅ Restored songs from localStorage:', window.dataCache.songs.length, 'songs');
         } else {
-            console.log('⏰ Cached songs expired, will fetch fresh data. Cache age:', Math.round(cacheAge / 1000), 'seconds, Max age:', Math.round(CACHE_EXPIRY_SONGS / 1000), 'seconds');
+            const cacheAge = Date.now() - parseInt(storedSongsTimestamp);
+            const expiry = CACHE_EXPIRY.songs;
+            console.log('⏰ Cached songs expired, will fetch fresh data. Cache age:', Math.round(cacheAge / 1000), 'seconds, Max age:', Math.round(expiry / 1000), 'seconds');
             localStorage.removeItem('songs');
             localStorage.removeItem('songsTimestamp');
         }
@@ -158,12 +170,6 @@ try {
     console.warn('Error loading songs from localStorage:', e);
 }
 
-// Cache expiry times in milliseconds
-const CACHE_EXPIRY = {
-    songs: 5 * 60 * 1000,      // 5 minutes
-    userdata: 10 * 60 * 1000,  // 10 minutes
-    setlists: 2 * 60 * 1000    // 2 minutes
-};
 
 // Initialization state to prevent duplicate loading
 let initializationState = {
@@ -367,22 +373,6 @@ document.addEventListener('keydown', schedulePrefetch);
 document.addEventListener('scroll', schedulePrefetch);
 
 // Disable Live Server WebSocket if it's causing delays
-if (window.WebSocket && window.location.hostname === '127.0.0.1') {
-    const originalWebSocket = window.WebSocket;
-    window.WebSocket = function(url, protocols) {
-        // Block Live Server WebSocket connections that might cause delays
-        if (url.includes('//ws') || url.includes('/ws')) {
-            console.log('Blocked WebSocket connection to:', url);
-            return {
-                readyState: 3, // CLOSED
-                close: () => {},
-                send: () => {},
-                addEventListener: () => {}
-            };
-        }
-        return new originalWebSocket(url, protocols);
-    };
-}
 
 // Global loading functions
 function showLoading(percent) {
@@ -7961,24 +7951,18 @@ window.viewSingleLyrics = function(songId, otherId) {
                         let updated;
                         try {
                             updated = await response.json();
-                            console.log(`✅ Backend update successful, received updated song data`);
+                            console.log(`✅ Backend update successful, received updated song data`, updated);
                         } catch (parseError) {
-                            // If response doesn't contain song data, use our sent data
                             console.log(`⚠️ Backend updated but no song data in response, using sent data`);
                             updated = { ...updatedSong, id: Number(id) };
                         }
-                        
-                        showNotification('Song updated successfully!');
-                        editSongModal.style.display = 'none';
-                        editSongForm.reset();
-                        
-                        // Update cache directly instead of invalidating
-                        console.log(`💾 Updating cache with updated song data`);
-                        updateSongInCache(updated, false);
-                        
-                        // Render correct tab
-                        if (updated) {
-                            // Only render if the updated song's category matches the active tab
+                        // Validate backend response
+                        if (updated && updated.id && updated.title) {
+                            showNotification('Song updated successfully!');
+                            editSongModal.style.display = 'none';
+                            editSongForm.reset();
+                            console.log(`💾 Updating cache with updated song data`);
+                            updateSongInCache(updated, false);
                             const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
                             console.log(`🎵 Edit song complete - Updated song category: ${updated.category}, Active tab: ${activeTab}`);
                             if (updated.category === activeTab) {
@@ -7987,10 +7971,18 @@ window.viewSingleLyrics = function(songId, otherId) {
                             } else {
                                 console.log(`⏭️ Skipping render - song category (${updated.category}) doesn't match active tab (${activeTab})`);
                             }
-                            // If previewing this song, update preview
                             if (songPreviewEl.dataset.songId == id) {
                                 showPreview(updated);
                             }
+                        } else if (updated && updated.message) {
+                            // Backend returned only a message, not a song object
+                            console.error('❌ Backend did not return updated song object. Received:', updated);
+                            showNotification('Backend did not return updated song object. Please check server response.', 'error');
+                            return;
+                        } else {
+                            console.error('❌ Cannot update cache - invalid song data:', updated);
+                            showNotification('Failed to update song: invalid backend response', 'error');
+                            return;
                         }
                     } else {
                         const errorText = await response.text();
