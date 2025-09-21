@@ -4,6 +4,7 @@
 let jwtToken = localStorage.getItem('jwtToken') || '';
 let currentUser = null;
 let isDarkMode = localStorage.getItem('darkMode') === 'true';
+let songs = []; // Global songs array
 
 // Initialize currentUser from localStorage
 try {
@@ -132,6 +133,31 @@ window.dataCache = {
     }
 };
 
+// Initialize cache from localStorage on page load
+try {
+    const storedSongs = localStorage.getItem('songs');
+    const storedSongsTimestamp = localStorage.getItem('songsTimestamp');
+    
+    if (storedSongs && storedSongsTimestamp) {
+        const cacheAge = Date.now() - parseInt(storedSongsTimestamp);
+        const CACHE_EXPIRY_SONGS = 5 * 60 * 1000; // 5 minutes
+        
+        if (cacheAge < CACHE_EXPIRY_SONGS) {
+            window.dataCache.songs = JSON.parse(storedSongs);
+            window.dataCache.lastFetch.songs = parseInt(storedSongsTimestamp);
+            console.log('✅ Restored songs from localStorage:', window.dataCache.songs.length, 'songs');
+        } else {
+            console.log('⏰ Cached songs expired, will fetch fresh data. Cache age:', Math.round(cacheAge / 1000), 'seconds, Max age:', Math.round(CACHE_EXPIRY_SONGS / 1000), 'seconds');
+            localStorage.removeItem('songs');
+            localStorage.removeItem('songsTimestamp');
+        }
+    } else {
+        console.log('💽 No cached songs found in localStorage - will fetch from API');
+    }
+} catch (e) {
+    console.warn('Error loading songs from localStorage:', e);
+}
+
 // Cache expiry times in milliseconds
 const CACHE_EXPIRY = {
     songs: 5 * 60 * 1000,      // 5 minutes
@@ -139,8 +165,42 @@ const CACHE_EXPIRY = {
     setlists: 2 * 60 * 1000    // 2 minutes
 };
 
-// Optimized fetch with caching (moved to global scope)
-async function cachedFetch(endpoint, forceRefresh = false) {
+// Initialization state to prevent duplicate loading
+let initializationState = {
+    isInitializing: false,
+    isInitialized: false,
+    initPromise: null
+};
+
+// Global authFetch function with timeout
+async function authFetch(url, options = {}) {
+    const headers = options.headers || {};
+    if (jwtToken) headers.Authorization = `Bearer ${jwtToken}`;
+    
+    // Add 30-second timeout to prevent long-hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
+    try {
+        const response = await fetch(url, { 
+            ...options, 
+            headers, 
+            signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            console.warn(`Request timeout for ${url}`);
+            throw new Error('Request timeout');
+        }
+        throw error;
+    }
+}
+
+// Optimized fetch with caching and retry logic
+async function cachedFetch(endpoint, forceRefresh = false, retries = 2) {
     const cacheKey = endpoint.replace(`${API_BASE_URL}/api/`, '').split('/')[0].split('?')[0];
     const now = Date.now();
     
@@ -154,17 +214,36 @@ async function cachedFetch(endpoint, forceRefresh = false) {
         }
     }
 
-    // Fetch fresh data
-    const response = await authFetch(endpoint);
-    
-    if (response.ok) {
-        const data = await response.json();
-        window.dataCache[cacheKey] = data;
-        window.dataCache.lastFetch[cacheKey] = now;
-        return { ok: true, json: () => Promise.resolve(data) };
+    // Retry logic for failed requests
+    let lastError;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const response = await authFetch(endpoint);
+            
+            if (response.ok) {
+                const data = await response.json();
+                window.dataCache[cacheKey] = data;
+                window.dataCache.lastFetch[cacheKey] = now;
+                return { ok: true, json: () => Promise.resolve(data) };
+            }
+            
+            // If not a 5xx error, don't retry
+            if (response.status < 500) {
+                return response;
+            }
+            
+            lastError = new Error(`HTTP ${response.status}`);
+        } catch (error) {
+            lastError = error;
+            if (attempt < retries) {
+                // Exponential backoff: wait 1s, then 2s, then 4s
+                await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            }
+        }
     }
     
-    return response;
+    // If all retries failed, throw the last error
+    throw lastError;
 }
 
 // Invalidate specific cache entries when data changes (moved to global scope)
@@ -172,116 +251,273 @@ function invalidateCache(cacheKeys) {
     if (typeof cacheKeys === 'string') cacheKeys = [cacheKeys];
     
     cacheKeys.forEach(key => {
+        console.log(`🗑️ Cache invalidated for: ${key}`, new Error().stack.split('\n')[2].trim());
         window.dataCache[key] = null;
         window.dataCache.lastFetch[key] = null;
     });
 }
 
-// Merge all DOMContentLoaded logic into one handler
-document.addEventListener('DOMContentLoaded', () => {
-    // Always fetch latest weights on app load
-    fetchRecommendationWeights();
+// Efficiently update song cache without invalidating entire cache
+function updateSongInCache(song, isNewSong = false) {
+    if (!song || !song.id) {
+        console.error(`❌ Cannot update cache - invalid song data:`, song);
+        return false;
+    }
     
-    // Auth state is already initialized globally - no need to reload
-
-    // Helper: authFetch
-    async function authFetch(url, options = {}) {
-        const headers = options.headers || {};
-        if (jwtToken) headers.Authorization = `Bearer ${jwtToken}`;
-        return fetch(url, { ...options, headers });
+    console.log(`🔄 Updating song cache - ${isNewSong ? 'Adding new' : 'Updating existing'} song:`, song.title, `(ID: ${song.id})`);
+    
+    // Update window.dataCache.songs
+    if (!window.dataCache.songs) {
+        console.log(`🔧 Initializing empty cache array`);
+        window.dataCache.songs = [];
     }
-
-    async function updateLocalTransposeCache() {
-        if (currentUser && currentUser.id) {
-            try {
-                const response = await cachedFetch(`${API_BASE_URL}/api/userdata`);
-                if (response.ok) {
-                    const userData = await response.json();
-                    if (userData.transpose) {
-                        localStorage.setItem('transposeCache', JSON.stringify(userData.transpose));
-                    }
-                }
-            } catch {}
-        }
-    }
-    updateLocalTransposeCache();
-
-    // Inject spinner overlay if absent
-    if (!document.getElementById('loadingOverlay')) {
-        fetch('spinner.html')
-            .then(r => r.text())
-            .then(html => document.body.insertAdjacentHTML('beforeend', html))
-            .catch(() => {});
-    }
-
-    // Enhanced progress tracking system
-    const loadingTasks = {
-        spinnerInit: { weight: 5, completed: false },
-        fetchSongs: { weight: 40, completed: false },
-        processSongs: { weight: 15, completed: false },
-        populateDropdowns: { weight: 10, completed: false },
-        loadUserData: { weight: 15, completed: false },
-        renderSongs: { weight: 10, completed: false },
-        finalSetup: { weight: 5, completed: false }
-    };
-
-    let currentProgress = 0;
-
-    function updateProgress(taskName, customPercent = null) {
-        if (customPercent !== null) {
-            // For tasks that want to report custom progress
-            const task = loadingTasks[taskName];
-            if (task) {
-                const taskProgress = (customPercent / 100) * task.weight;
-                currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
-                    if (key === taskName) return total + taskProgress;
-                    return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
-                }, 0);
-            }
+    
+    if (isNewSong) {
+        // Check for duplicate before adding
+        const existingIndex = window.dataCache.songs.findIndex(s => s.id === song.id);
+        if (existingIndex !== -1) {
+            console.log(`⚠️ Song ID ${song.id} already exists in cache, updating instead of adding`);
+            window.dataCache.songs[existingIndex] = song;
         } else {
-            // Mark task as completed
-            if (loadingTasks[taskName]) {
-                loadingTasks[taskName].completed = true;
-                currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
-                    return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
-                }, 0);
-            }
+            window.dataCache.songs.push(song);
+            console.log(`✅ Added song to cache. Total songs: ${window.dataCache.songs.length}`);
         }
-        
-        const roundedProgress = Math.min(100, Math.round(currentProgress));
-        showLoading(roundedProgress);
-        
-        // Only hide loading when all tasks are truly complete
-        if (roundedProgress >= 100) {
-            setTimeout(hideLoading, 500);
+    } else {
+        // Update existing song in cache
+        const index = window.dataCache.songs.findIndex(s => s.id === song.id);
+        if (index !== -1) {
+            window.dataCache.songs[index] = song;
+            console.log(`✅ Updated existing song in cache at index ${index}`);
+        } else {
+            // Fallback: add as new song if not found
+            window.dataCache.songs.push(song);
+            console.log(`⚠️ Song ID ${song.id} not found in cache, added as new song`);
         }
     }
-
-    function showLoading(percent) {
-        const overlay = document.getElementById('loadingOverlay');
-        const percentEl = document.getElementById('loadingPercent');
-        if (overlay) overlay.style.display = 'flex';
-        if (percentEl && typeof percent === 'number') percentEl.textContent = percent + '%';
+    
+    // Update global songs array
+    if (isNewSong) {
+        const globalExistingIndex = songs.findIndex(s => s.id === song.id);
+        if (globalExistingIndex !== -1) {
+            songs[globalExistingIndex] = song;
+        } else {
+            songs.push(song);
+        }
+    } else {
+        const globalIndex = songs.findIndex(s => s.id === song.id);
+        if (globalIndex !== -1) {
+            songs[globalIndex] = song;
+        } else {
+            songs.push(song);
+            console.log(`⚠️ Song ID ${song.id} not found in global songs array, added as new`);
+        }
     }
-    function hideLoading() {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) overlay.style.display = 'none';
+    
+    // Update localStorage with validation
+    try {
+        localStorage.setItem('songs', JSON.stringify(window.dataCache.songs));
+        localStorage.setItem('songsTimestamp', Date.now().toString());
+        console.log(`💾 Updated localStorage with ${window.dataCache.songs.length} songs`);
+        return true;
+    } catch (error) {
+        console.error(`❌ Failed to update localStorage:`, error);
+        return false;
     }
+}
 
-    // Ensure these elements exist before use later
+// Background prefetching to improve perceived performance
+async function prefetchData() {
+    // Only prefetch if not already in progress and user has been idle for 2 seconds
+    if (document.hidden) return; // Don't prefetch if tab is not visible
+    
+    const prefetchPromises = [];
+    
+    // Prefetch songs if cache is getting stale
+    if (window.dataCache.lastFetch.songs) {
+        const songsAge = Date.now() - window.dataCache.lastFetch.songs;
+        if (songsAge > CACHE_EXPIRY.songs * 0.8) { // Refresh when 80% expired
+            prefetchPromises.push(cachedFetch(`${API_BASE_URL}/api/songs`, true).catch(() => {}));
+        }
+    }
+    
+    // Prefetch user data if logged in and cache is getting stale
+    if (jwtToken && window.dataCache.lastFetch.userdata) {
+        const userdataAge = Date.now() - window.dataCache.lastFetch.userdata;
+        if (userdataAge > CACHE_EXPIRY.userdata * 0.8) {
+            prefetchPromises.push(cachedFetch(`${API_BASE_URL}/api/userdata`, true).catch(() => {}));
+        }
+    }
+    
+    // Execute prefetch promises without blocking
+    if (prefetchPromises.length > 0) {
+        Promise.allSettled(prefetchPromises);
+    }
+}
+
+// Schedule background prefetching
+let prefetchTimer;
+function schedulePrefetch() {
+    clearTimeout(prefetchTimer);
+    prefetchTimer = setTimeout(prefetchData, 2000); // Wait 2 seconds of inactivity
+}
+
+// Add event listeners for user activity to trigger prefetching
+document.addEventListener('mousedown', schedulePrefetch);
+document.addEventListener('keydown', schedulePrefetch);
+document.addEventListener('scroll', schedulePrefetch);
+
+// Disable Live Server WebSocket if it's causing delays
+if (window.WebSocket && window.location.hostname === '127.0.0.1') {
+    const originalWebSocket = window.WebSocket;
+    window.WebSocket = function(url, protocols) {
+        // Block Live Server WebSocket connections that might cause delays
+        if (url.includes('//ws') || url.includes('/ws')) {
+            console.log('Blocked WebSocket connection to:', url);
+            return {
+                readyState: 3, // CLOSED
+                close: () => {},
+                send: () => {},
+                addEventListener: () => {}
+            };
+        }
+        return new originalWebSocket(url, protocols);
+    };
+}
+
+// Global loading functions
+function showLoading(percent) {
+    const overlay = document.getElementById('loadingOverlay');
+    const percentEl = document.getElementById('loadingPercent');
+    if (overlay) overlay.style.display = 'flex';
+    if (percentEl && typeof percent === 'number') percentEl.textContent = percent + '%';
+    
+    // Safety timeout - hide loading after 30 seconds max
+    clearTimeout(window.loadingTimeout);
+    window.loadingTimeout = setTimeout(() => {
+        console.warn('Loading timeout reached, forcing hide');
+        hideLoading();
+    }, 30000);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        console.log('Loading hidden');
+    }
+    
+    // Clear the safety timeout
+    clearTimeout(window.loadingTimeout);
+}
+
+// Debug function to manually hide loader
+window.forceHideLoader = function() {
+    hideLoading();
+    console.log('Loader force hidden');
+};
+
+// Global function to get current filter values
+function getCurrentFilterValues() {
     const keyFilter = document.getElementById('keyFilter');
     const genreFilter = document.getElementById('genreFilter');
     const moodFilter = document.getElementById('moodFilter');
     const artistFilter = document.getElementById('artistFilter');
+    
+    return {
+        key: keyFilter ? keyFilter.value : 'Key',
+        genre: genreFilter ? genreFilter.value : 'Genre',
+        mood: moodFilter ? moodFilter.value : 'Mood',
+        artist: artistFilter ? artistFilter.value : 'Artist'
+    };
+}
 
-    async function loadSongsWithProgress() {
+// Global songs loading function with progress tracking
+async function loadSongsWithProgress(forceRefresh = false) {
+    try {
+        // Enhanced progress tracking system
+        const loadingTasks = {
+            spinnerInit: { weight: 5, completed: false },
+            fetchSongs: { weight: 40, completed: false },
+            processSongs: { weight: 15, completed: false },
+            populateDropdowns: { weight: 10, completed: false },
+            loadUserData: { weight: 15, completed: false },
+            renderSongs: { weight: 10, completed: false },
+            finalSetup: { weight: 5, completed: false }
+        };
+
+        let currentProgress = 0;
+
+        function updateProgress(taskName, customPercent = null) {
+            if (customPercent !== null) {
+                // For tasks that want to report custom progress
+                const task = loadingTasks[taskName];
+                if (task) {
+                    const taskProgress = (customPercent / 100) * task.weight;
+                    currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
+                        if (key === taskName) return total + taskProgress;
+                        return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
+                    }, 0);
+                }
+            } else {
+                // Mark task as completed
+                if (loadingTasks[taskName]) {
+                    loadingTasks[taskName].completed = true;
+                    currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
+                        return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
+                    }, 0);
+                }
+            }
+            
+            const roundedProgress = Math.min(100, Math.round(currentProgress));
+            showLoading(roundedProgress);
+            
+            // Only hide loading when all tasks are truly complete
+            if (roundedProgress >= 100) {
+                setTimeout(hideLoading, 500);
+            }
+        }
+
         updateProgress('spinnerInit');
+        
+        // Check if songs are already cached
+        if (window.dataCache.songs && !forceRefresh) {
+            songs = window.dataCache.songs;
+            updateProgress('fetchSongs', 100);
+            updateProgress('processSongs', 100);
+            updateProgress('loadUserData', 100);
+            updateProgress('renderSongs', 100);
+            updateProgress('finalSetup', 100);
+            
+            // Still render the songs even from cache
+            if (typeof renderSongs === 'function') {
+                try {
+                    const filters = getCurrentFilterValues();
+                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                } catch (err) {
+                    console.warn('Error rendering cached songs:', err);
+                }
+            }
+            if (typeof updateSongCount === 'function') {
+                try {
+                    updateSongCount();
+                } catch (err) {
+                    console.warn('Error updating song count:', err);
+                }
+            }
+            
+            // Force hide loading for cached data
+            setTimeout(() => {
+                hideLoading();
+            }, 100);
+            
+            return songs;
+        }
         
         let response;
         try {
             // Real API call - report progress during fetch
             updateProgress('fetchSongs', 10);
-            response = await cachedFetch(`${API_BASE_URL}/api/songs`);
+            response = await cachedFetch(`${API_BASE_URL}/api/songs`, forceRefresh);
             updateProgress('fetchSongs', 80);
         } catch (err) {
             hideLoading();
@@ -315,7 +551,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         window.songs = unique;
+        songs = unique; // Also set the global variable
+        console.log('loadSongsWithProgress completed. Set global songs to:', songs.length, 'songs');
+        // Update both cache and localStorage
+        window.dataCache.songs = unique;
+        window.dataCache.lastFetch.songs = Date.now();
         localStorage.setItem('songs', JSON.stringify(unique));
+        localStorage.setItem('songsTimestamp', Date.now().toString());
         updateProgress('processSongs'); // Mark processing as complete
         
         // Load user data if authenticated
@@ -337,17 +579,92 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render songs
         updateProgress('renderSongs', 30);
         if (typeof renderSongs === 'function') {
-            const filters = getCurrentFilterValues();
-            renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
-            updateProgress('renderSongs', 80);
+            try {
+                const filters = getCurrentFilterValues();
+                renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                updateProgress('renderSongs', 80);
+            } catch (err) {
+                console.warn('Error rendering songs:', err);
+            }
         }
-        if (typeof updateSongCount === 'function') updateSongCount();
+        if (typeof updateSongCount === 'function') {
+            try {
+                updateSongCount();
+            } catch (err) {
+                console.warn('Error updating song count:', err);
+            }
+        }
         updateProgress('renderSongs'); // Mark rendering as complete
         
         // Final setup tasks
         updateProgress('finalSetup');
+        
+        // Ensure loading is hidden when complete
+        setTimeout(() => {
+            hideLoading();
+        }, 200);
+        
+        return unique;
+        
+    } catch (error) {
+        console.error('Error in loadSongsWithProgress:', error);
+        // Always hide loading on error
+        hideLoading();
+        return [];
     }
-    loadSongsWithProgress();
+}
+
+// Merge all DOMContentLoaded logic into one handler
+document.addEventListener('DOMContentLoaded', () => {
+    // Always fetch latest weights on app load
+    fetchRecommendationWeights();
+    
+    // Auth state is already initialized globally - no need to reload
+
+    // Backup mechanism to hide loader if it gets stuck
+    setTimeout(() => {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay && overlay.style.display !== 'none') {
+            console.warn('Loader backup timeout - force hiding');
+            hideLoading();
+        }
+    }, 45000); // 45 seconds max loading time
+
+    async function updateLocalTransposeCache() {
+        if (currentUser && currentUser.id) {
+            try {
+                const response = await cachedFetch(`${API_BASE_URL}/api/userdata`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.transpose) {
+                        localStorage.setItem('transposeCache', JSON.stringify(userData.transpose));
+                    }
+                }
+            } catch {}
+        }
+    }
+    updateLocalTransposeCache();
+
+    // Inject spinner overlay if absent
+    if (!document.getElementById('loadingOverlay')) {
+        fetch('spinner.html')
+            .then(r => r.text())
+            .then(html => document.body.insertAdjacentHTML('beforeend', html))
+            .catch(() => {});
+    }
+
+    // Use window.init() for all initialization - no direct song loading here
+    if (!initializationState.isInitialized && !initializationState.isInitializing) {
+        // Show loading immediately
+        showLoading(0);
+        window.init();
+    }
+
+    // Simple progress function for dropdown population (since global loadSongsWithProgress handles main progress)
+    function updateProgress(taskName, percent = null) {
+        // These calls are less critical, just ignore for now
+        return;
+    }
 
     // Populate dropdowns once - report progress
     updateProgress('populateDropdowns', 10);
@@ -528,7 +845,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (res.ok && data.token) {
                     localStorage.setItem('jwtToken', data.token);
                     if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
-                    location.reload();
+                    jwtToken = data.token;
+                    currentUser = data.user;
+                    
+                    // Update UI without page reload
+                    updateAuthButtons();
+                    await loadUserData();
+                    await loadMySetlists();
+                    renderMySetlists();
+                    
+                    // Close login modal
+                    document.getElementById('loginModal').style.display = 'none';
+                    
+                    showNotification('Login successful!', 2000);
                 } else {
                     errorDiv.textContent = data.error || 'Login failed';
                     errorDiv.style.display = 'block';
@@ -542,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Final init hooks (if defined externally)
     if (typeof addEventListeners === 'function') addEventListeners();
-    if (typeof loadSongsFromFile === 'function') loadSongsFromFile();
+    // Remove duplicate loadSongsFromFile call - handled by window.init()
     
     // Force initial display to none for both setlist folders
     setTimeout(() => {
@@ -1592,16 +1921,41 @@ function isJwtValid(token) {
 // Robust theme switching function
 // Global async init function for app initialization
 window.init = async function init() {
+    // Prevent multiple simultaneous initializations
+    if (initializationState.isInitializing) {
+        return initializationState.initPromise;
+    }
+    
+    if (initializationState.isInitialized) {
+        return Promise.resolve();
+    }
+    
+    initializationState.isInitializing = true;
+    initializationState.initPromise = performInitialization();
+    
+    try {
+        await initializationState.initPromise;
+        initializationState.isInitialized = true;
+    } finally {
+        initializationState.isInitializing = false;
+    }
+    
+    return initializationState.initPromise;
+};
+
+async function performInitialization() {
     // Restore JWT and user state
     jwtToken = localStorage.getItem('jwtToken') || '';
-    if (jwtToken) {
+    if (jwtToken && isJwtValid(jwtToken)) {
         updateAuthButtons();
         await loadUserData();
     } else {
         updateAuthButtons();
     }
+    
     // Theme and UI setup
     if (typeof applyTheme === 'function') applyTheme(isDarkMode);
+    
     // Genre multiselects
     if (typeof setupGenreMultiselect === 'function') {
         setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
@@ -1615,12 +1969,23 @@ window.init = async function init() {
         setupArtistMultiselect('songArtist', 'artistDropdown', 'selectedArtists');
         setupArtistMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists');
     }
-    // Load songs (always from backend)
-    songs = await loadSongsFromFile();
     
-    // Load setlists
+    // Load songs only if not already cached - use unified approach
+    console.log('🔍 Checking cache - window.dataCache.songs exists:', !!window.dataCache.songs);
+    if (!window.dataCache.songs) {
+        console.log('📥 No cached songs, loading from API...');
+        await loadSongsWithProgress();
+    } else {
+        // Songs already cached, just use them
+        console.log('✅ Using cached songs:', window.dataCache.songs.length);
+        songs = window.dataCache.songs;
+    }
+    
+    console.log('After song loading - Global songs length:', songs.length);
+    
+    // Load setlists efficiently
     await loadGlobalSetlists();
-    if (jwtToken) {
+    if (jwtToken && isJwtValid(jwtToken)) {
         await loadMySetlists();
     }
     
@@ -1642,7 +2007,7 @@ window.init = async function init() {
     addPanelToggles();
     renderSongs('New', '', '', '', '');
     applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
-    connectWebSocket();
+    // connectWebSocket(); // Removed - not needed and may cause delays
     updateSongCount();
     initScreenWakeLock();
     setupModalClosing();
@@ -1732,7 +2097,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     // Initialize songs and setlists
     // Remove duplicate isDarkMode initialization; handled in DOMContentLoaded
         let socket = null;
-        let songs = [];
+        // songs is now global - don't redeclare it here
         let lastSongsFetch = null; // ISO string of last fetch
         let favorites = [];
         let keepScreenOn = false;
@@ -1786,44 +2151,15 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 
             
         async function loadSongsFromFile() {
-            // ...removed console.time...
-            // Always fetch all songs from backend and update localStorage
-            try {
-                const url = `${API_BASE_URL}/api/songs`;
-                const response = await cachedFetch(url);
-                if (response.ok) {
-                    const allSongs = await response.json();
-                    if (Array.isArray(allSongs)) {
-                        // Deduplicate by ID
-                        const uniqueSongs = [];
-                        const seenIds = new Set();
-                        for (const song of allSongs) {
-                            if (!seenIds.has(song.id)) {
-                                uniqueSongs.push(song);
-                                seenIds.add(song.id);
-                            }
-                        }
-                        songs = uniqueSongs;
-                        localStorage.setItem('songs', JSON.stringify(songs));
-                        if (uniqueSongs.length > 0) {
-                            const latest = uniqueSongs.reduce((max, s) => {
-                                const t = s.updatedAt || s.createdAt;
-                                return (!max || t > max) ? t : max;
-                            }, null);
-                            lastSongsFetch = latest;
-                        }
-                    } else {
-                        songs = [];
-                    }
-                } else {
-                    songs = [];
-                }
-                return songs;
-            } catch (err) {
-                songs = [];
+            // Always use cached data - actual fetching is handled by loadSongsWithProgress()
+            if (window.dataCache.songs && window.dataCache.songs.length > 0) {
+                songs = window.dataCache.songs;
                 return songs;
             }
-            // ...removed console.timeEnd...
+            
+            // If no cached data, fallback to empty array
+            songs = [];
+            return songs;
         }
     
         function connectWebSocket() {
@@ -1890,10 +2226,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     // --- Admin Panel Logic ---
     async function fetchUsers() {
         try {
-            const jwtToken = localStorage.getItem('jwtToken');
-            const res = await fetch(`${API_BASE_URL}/api/users`, {
-                headers: { 'Authorization': `Bearer ${jwtToken}` }
-            });
+            const res = await authFetch(`${API_BASE_URL}/api/users`);
             if (!res.ok) {
                 return [];
             }
@@ -1904,11 +2237,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     }
     async function markAdmin(userId) {
         try {
-            const jwtToken = localStorage.getItem('jwtToken');
-            const res = await fetch(`${API_BASE_URL}/api/users/${userId}/admin`, {
+            const res = await authFetch(`${API_BASE_URL}/api/users/${userId}/admin`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${jwtToken}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ isAdmin: true })
@@ -2202,9 +2533,8 @@ window.viewSingleLyrics = function(songId, otherId) {
     // Centralized song deletion logic
     async function deleteSongById(songId, postDeleteCallback) {
         try {
-            const resp = await fetch(`${API_BASE_URL}/api/songs/${songId}`, {
-                method: 'DELETE',
-                headers: jwtToken ? { 'Authorization': `Bearer ${jwtToken}` } : {}
+            const resp = await authFetch(`${API_BASE_URL}/api/songs/${songId}`, {
+                method: 'DELETE'
             });
             if (resp.ok) {
                 songs = songs.filter(s => s.id !== songId);
@@ -2391,78 +2721,53 @@ window.viewSingleLyrics = function(songId, otherId) {
         dropdownMenu.appendChild(defaultOption);
         
         // Only show real setlists that exist in the database
-        // Add real Global Setlists
-        if (hasGlobalData) {
-            const globalGroup = document.createElement('optgroup');
-            globalGroup.label = 'Global Setlists';
-            
-            // Add section header to custom dropdown
-            const globalHeader = document.createElement('div');
-            globalHeader.className = 'dropdown-section-header';
-            globalHeader.textContent = 'Global Setlists';
-            globalHeader.style.cssText = 'padding: 8px 10px; font-weight: bold; background: rgba(255,255,255,0.1); font-size: 12px; color: #ccc;';
-            dropdownMenu.appendChild(globalHeader);
-            
-            globalSetlists.forEach(setlist => {
-                // Add to original select (hidden)
-                const option = document.createElement('option');
-                option.value = `global_${setlist._id}`;
-                option.textContent = setlist.name;
-                globalGroup.appendChild(option);
-                
-                // Add to custom dropdown
-                const customOption = document.createElement('div');
-                customOption.className = 'dropdown-option';
-                customOption.dataset.value = `global_${setlist._id}`;
-                customOption.dataset.type = 'global';
-                customOption.dataset.setlistId = setlist._id;
-                customOption.textContent = setlist.name;
-                dropdownMenu.appendChild(customOption);
-            });
-            setlistDropdown.appendChild(globalGroup);
-        }
-        
-        // Add real My Setlists (if user is logged in)
+        // Add real My Setlists first with compact suffix (if user is logged in)
         if (currentUser && hasMyData) {
-            const myGroup = document.createElement('optgroup');
-            myGroup.label = 'My Setlists';
-            
-            // Add section header to custom dropdown
-            const myHeader = document.createElement('div');
-            myHeader.className = 'dropdown-section-header';
-            myHeader.textContent = 'My Setlists';
-            myHeader.style.cssText = 'padding: 8px 10px; font-weight: bold; background: rgba(255,255,255,0.1); font-size: 12px; color: #ccc;';
-            dropdownMenu.appendChild(myHeader);
-            
             mySetlists.forEach(setlist => {
                 // Add to original select (hidden)
                 const option = document.createElement('option');
                 option.value = `my_${setlist._id}`;
-                option.textContent = setlist.name;
-                myGroup.appendChild(option);
+                option.textContent = `${setlist.name} (My)`;
+                setlistDropdown.appendChild(option);
                 
-                // Add to custom dropdown
+                // Add to custom dropdown with suffix
                 const customOption = document.createElement('div');
                 customOption.className = 'dropdown-option';
                 customOption.dataset.value = `my_${setlist._id}`;
                 customOption.dataset.type = 'my';
                 customOption.dataset.setlistId = setlist._id;
-                customOption.textContent = setlist.name;
+                customOption.innerHTML = `${setlist.name} <span style="color: #888; font-size: 0.85em; float: right;">(My)</span>`;
                 dropdownMenu.appendChild(customOption);
             });
-            setlistDropdown.appendChild(myGroup);
+        }
+        
+        // Add real Global Setlists second with compact suffix
+        if (hasGlobalData) {
+            globalSetlists.forEach(setlist => {
+                // Add to original select (hidden)
+                const option = document.createElement('option');
+                option.value = `global_${setlist._id}`;
+                option.textContent = `${setlist.name} (Global)`;
+                setlistDropdown.appendChild(option);
+                
+                // Add to custom dropdown with suffix
+                const customOption = document.createElement('div');
+                customOption.className = 'dropdown-option';
+                customOption.dataset.value = `global_${setlist._id}`;
+                customOption.dataset.type = 'global';
+                customOption.dataset.setlistId = setlist._id;
+                customOption.innerHTML = `${setlist.name} <span style="color: #888; font-size: 0.85em; float: right;">(Global)</span>`;
+                dropdownMenu.appendChild(customOption);
+            });
         }
         
         // Show helpful message when no setlists are available
         if (!hasGlobalData && (!currentUser || !hasMyData)) {
-            const noSetlistsGroup = document.createElement('optgroup');
-            noSetlistsGroup.label = 'No Setlists Available';
             const helpOption = document.createElement('option');
             helpOption.value = '';
             helpOption.disabled = true;
             helpOption.textContent = currentUser ? 'Create your first setlist to get started' : 'Login to create and access setlists';
-            noSetlistsGroup.appendChild(helpOption);
-            setlistDropdown.appendChild(noSetlistsGroup);
+            setlistDropdown.appendChild(helpOption);
             
             // Add to custom dropdown
             const helpCustomOption = document.createElement('div');
@@ -2682,6 +2987,7 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         // Render a specific song list with checkboxes
         function renderSongList(container, songList, category) {
+            console.log(`renderSongList called for ${category} with ${songList.length} songs`);
             container.innerHTML = '';
             
             if (songList.length === 0) {
@@ -2731,9 +3037,15 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         // Update the selected songs display
         function updateSelectedSongsDisplay() {
-            const { oldSongs, newSongs } = categorizeSongs();
-            const selectedOldSongs = selectedSongs.filter(id => oldSongs.some(song => song.id === id));
-            const selectedNewSongs = selectedSongs.filter(id => newSongs.some(song => song.id === id));
+            // Get already categorized songs without re-filtering
+            const selectedOldSongs = selectedSongs.filter(id => {
+                const song = songs.find(s => s.id === id);
+                return song && song.category === 'Old';
+            });
+            const selectedNewSongs = selectedSongs.filter(id => {
+                const song = songs.find(s => s.id === id);
+                return song && song.category === 'New';
+            });
             
             selectedCountSpan.textContent = selectedSongs.length;
             selectedOldCountSpan.textContent = selectedOldSongs.length;
@@ -2782,8 +3094,14 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         // Update select all checkbox states for both categories
         function updateSelectAllStates() {
-            updateSelectAllState(selectAllOldCheckbox, filteredOldSongs, 'old');
-            updateSelectAllState(selectAllNewCheckbox, filteredNewSongs, 'new');
+            // Get current filtered songs without re-rendering
+            const oldSongs = songs.filter(song => song.category === 'Old');
+            const newSongs = songs.filter(song => song.category === 'New');
+            const currentFilteredOldSongs = applyFilters(oldSongs);
+            const currentFilteredNewSongs = applyFilters(newSongs);
+            
+            updateSelectAllState(selectAllOldCheckbox, currentFilteredOldSongs, 'old');
+            updateSelectAllState(selectAllNewCheckbox, currentFilteredNewSongs, 'new');
         }
 
         // Update select all checkbox state for a specific category
@@ -2869,6 +3187,51 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         // Tab functionality
         function initializeTabs() {
+            // Main tab functionality for both My Setlist and Global Setlist modals
+            if (prefix === 'my') {
+                const selectedSongsMainTab = document.getElementById('selectedSongsMainTab');
+                const addSongsMainTab = document.getElementById('addSongsMainTab');
+                const selectedSongsContent = document.getElementById('selectedSongsContent');
+                const addSongsContent = document.getElementById('addSongsContent');
+                
+                if (selectedSongsMainTab && addSongsMainTab && selectedSongsContent && addSongsContent) {
+                    selectedSongsMainTab.addEventListener('click', () => {
+                        selectedSongsMainTab.classList.add('active');
+                        addSongsMainTab.classList.remove('active');
+                        selectedSongsContent.classList.add('active');
+                        addSongsContent.classList.remove('active');
+                    });
+                    
+                    addSongsMainTab.addEventListener('click', () => {
+                        addSongsMainTab.classList.add('active');
+                        selectedSongsMainTab.classList.remove('active');
+                        addSongsContent.classList.add('active');
+                        selectedSongsContent.classList.remove('active');
+                    });
+                }
+            } else if (prefix === 'global') {
+                const globalSelectedSongsMainTab = document.getElementById('globalSelectedSongsMainTab');
+                const globalAddSongsMainTab = document.getElementById('globalAddSongsMainTab');
+                const globalSelectedSongsContent = document.getElementById('globalSelectedSongsContent');
+                const globalAddSongsContent = document.getElementById('globalAddSongsContent');
+                
+                if (globalSelectedSongsMainTab && globalAddSongsMainTab && globalSelectedSongsContent && globalAddSongsContent) {
+                    globalSelectedSongsMainTab.addEventListener('click', () => {
+                        globalSelectedSongsMainTab.classList.add('active');
+                        globalAddSongsMainTab.classList.remove('active');
+                        globalSelectedSongsContent.classList.add('active');
+                        globalAddSongsContent.classList.remove('active');
+                    });
+                    
+                    globalAddSongsMainTab.addEventListener('click', () => {
+                        globalAddSongsMainTab.classList.add('active');
+                        globalSelectedSongsMainTab.classList.remove('active');
+                        globalAddSongsContent.classList.add('active');
+                        globalSelectedSongsContent.classList.remove('active');
+                    });
+                }
+            }
+            
             // Song selection tabs
             if (oldSongsTab && newSongsTab && oldSongsContent && newSongsContent) {
                 oldSongsTab.addEventListener('click', () => {
@@ -2972,9 +3335,15 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 
     // Load global setlists
-    async function loadGlobalSetlists() {
+    async function loadGlobalSetlists(forceRefresh = false) {
         try {
-            const res = await cachedFetch(`${API_BASE_URL}/api/global-setlists`);
+            // Skip if already cached and not forcing refresh
+            if (!forceRefresh && window.dataCache['global-setlists']) {
+                globalSetlists = window.dataCache['global-setlists'];
+                return;
+            }
+            
+            const res = await cachedFetch(`${API_BASE_URL}/api/global-setlists`, forceRefresh);
             if (res.ok) {
                 globalSetlists = await res.json();
                 renderGlobalSetlists();
@@ -2986,10 +3355,16 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 
     // Load my setlists
-    async function loadMySetlists() {
+    async function loadMySetlists(forceRefresh = false) {
         if (!jwtToken) return;
         try {
-            const res = await cachedFetch(`${API_BASE_URL}/api/my-setlists`);
+            // Skip if already cached and not forcing refresh
+            if (!forceRefresh && window.dataCache['my-setlists']) {
+                mySetlists = window.dataCache['my-setlists'];
+                return;
+            }
+            
+            const res = await cachedFetch(`${API_BASE_URL}/api/my-setlists`, forceRefresh);
             if (res.ok) {
                 mySetlists = await res.json();
                 renderMySetlists();
@@ -3353,7 +3728,17 @@ window.viewSingleLyrics = function(songId, otherId) {
         document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
         const setlistDropdown = document.getElementById('setlistDropdown');
         if (setlistDropdown) {
-            setlistDropdown.value = `global_${setlistId}`;
+            // Use selectDropdownOption to ensure proper synchronization
+            // But prevent infinite loop by temporarily setting a flag
+            if (!window.updatingFromFolderNav) {
+                window.updatingFromFolderNav = true;
+                selectDropdownOption(`global_${setlistId}`, setlist.name);
+                // Manually update the description since change event is blocked
+                showDropdownSetlistDescription(`global_${setlistId}`);
+                setTimeout(() => {
+                    window.updatingFromFolderNav = false;
+                }, 100);
+            }
         }
 
         // Convert setlist songs to format expected by renderSetlist
@@ -3459,7 +3844,17 @@ window.viewSingleLyrics = function(songId, otherId) {
         document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
         const setlistDropdown = document.getElementById('setlistDropdown');
         if (setlistDropdown) {
-            setlistDropdown.value = `my_${setlistId}`;
+            // Use selectDropdownOption to ensure proper synchronization
+            // But prevent infinite loop by temporarily setting a flag
+            if (!window.updatingFromFolderNav) {
+                window.updatingFromFolderNav = true;
+                selectDropdownOption(`my_${setlistId}`, setlist.name);
+                // Manually update the description since change event is blocked
+                showDropdownSetlistDescription(`my_${setlistId}`);
+                setTimeout(() => {
+                    window.updatingFromFolderNav = false;
+                }, 100);
+            }
         }
 
         // Convert setlist songs to format expected by renderSetlist
@@ -3545,7 +3940,10 @@ window.viewSingleLyrics = function(songId, otherId) {
                     </div>
                 </div>
                 <div class="setlist-song-actions">
-                    <button class="remove-from-setlist-btn" data-song-id="${song.id}" title="Remove from setlist" type="button">×</button>
+                    ${(currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? 
+                        `<button class="remove-from-setlist-btn" data-song-id="${song.id}" title="Remove from setlist" type="button">×</button>` : 
+                        ''
+                    }
                 </div>`;
 
             // Add hover effect for the list item (now handled by CSS)
@@ -3561,15 +3959,23 @@ window.viewSingleLyrics = function(songId, otherId) {
                 showPreview(song);
             });
 
-            // Add click handler for remove button
+            // Add click handler for remove button (if it exists)
             const removeBtn = li.querySelector('.remove-from-setlist-btn');
-            removeBtn.addEventListener('click', async (e) => {
-                e.preventDefault(); // Prevent any default behavior
-                e.stopPropagation(); // Prevent triggering song preview
-                
-                // Remove song from current setlist
-                await removeSongFromSetlist(song.id);
-            });
+            if (removeBtn) {
+                removeBtn.addEventListener('click', async (e) => {
+                    e.preventDefault(); // Prevent any default behavior
+                    e.stopPropagation(); // Prevent triggering song preview
+                    
+                    // Check if user has permission to modify global setlists
+                    if (currentSetlistType === 'global' && (!currentUser || !currentUser.isAdmin)) {
+                        showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
+                        return;
+                    }
+                    
+                    // Remove song from current setlist
+                    await removeSongFromSetlist(song.id);
+                });
+            }
 
             ul.appendChild(li);
         });
@@ -3596,11 +4002,10 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Update setlist on server
         const endpoint = currentSetlistType === 'global' ? '/api/global-setlists' : '/api/my-setlists';
         
-        fetch(`${API_BASE_URL}${endpoint}/${currentViewingSetlist._id}`, {
+        authFetch(`${API_BASE_URL}${endpoint}/${currentViewingSetlist._id}`, {
             method: 'PUT',
             headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${jwtToken}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 name: currentViewingSetlist.name,
@@ -3610,6 +4015,9 @@ window.viewSingleLyrics = function(songId, otherId) {
         })
         .then(response => {
             if (!response.ok) {
+                if (response.status === 403) {
+                    throw new Error('FORBIDDEN_ACCESS');
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
@@ -3659,6 +4067,14 @@ window.viewSingleLyrics = function(songId, otherId) {
         })
         .catch(error => {
             console.error('Error removing song from setlist:', error);
+            
+            // Handle specific error types
+            if (error.message === 'FORBIDDEN_ACCESS') {
+                showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
+            } else {
+                showNotification('❌ Failed to remove song from setlist', 'error');
+            }
+            
             // Revert the change on error - but only if currentViewingSetlist is still valid
             if (currentViewingSetlist && currentViewingSetlist.songs && Array.isArray(currentViewingSetlist.songs)) {
                 currentViewingSetlist.songs.splice(songIndex, 0, songIdInt);
@@ -3793,9 +4209,12 @@ window.viewSingleLyrics = function(songId, otherId) {
                 <div class="setlist-song-title">${song.title}</div>
                 <div class="setlist-song-meta">${song.key} | ${song.artistDetails || 'Unknown'}</div>
             </div>
-            <button class="remove-from-setlist" onclick="removeFromSetlist(${song.id})" title="Remove from setlist">
-                <i class="fas fa-times"></i>
-            </button>
+            ${(currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? 
+                `<button class="remove-from-setlist" onclick="removeFromSetlist(${song.id})" title="Remove from setlist">
+                    <i class="fas fa-times"></i>
+                </button>` : 
+                ''
+            }
         `;
 
         div.addEventListener('click', (e) => {
@@ -3814,6 +4233,12 @@ window.viewSingleLyrics = function(songId, otherId) {
             return;
         }
 
+        // Check if user has permission to modify global setlists
+        if (currentSetlistType === 'global' && (!currentUser || !currentUser.isAdmin)) {
+            showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
+            return;
+        }
+
         const updatedSongs = currentViewingSetlist.songs.filter(id => id !== songId);
         
         try {
@@ -3825,29 +4250,35 @@ window.viewSingleLyrics = function(songId, otherId) {
                 body: JSON.stringify({ songs: updatedSongs })
             });
 
-            if (res.ok) {
-                currentViewingSetlist.songs = updatedSongs;
-                
-                // Update the setlist in the appropriate array
-                if (currentSetlistType === 'global') {
-                    const index = globalSetlists.findIndex(s => s._id === currentViewingSetlist._id);
-                    if (index !== -1) globalSetlists[index] = currentViewingSetlist;
-                } else {
-                    const index = mySetlists.findIndex(s => s._id === currentViewingSetlist._id);
-                    if (index !== -1) mySetlists[index] = currentViewingSetlist;
+            if (!res.ok) {
+                if (res.status === 403) {
+                    showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
+                    return;
                 }
-
-                renderSetlistSongs();
-                refreshSetlistDisplay(); // Also update the main setlist display
-                
-                // Refresh setlist data from backend to ensure synchronization
-                await refreshSetlistDataOnly();
-                
-                showNotification('Song removed from setlist');
+                throw new Error(`HTTP error! status: ${res.status}`);
             }
+
+            currentViewingSetlist.songs = updatedSongs;
+            
+            // Update the setlist in the appropriate array
+            if (currentSetlistType === 'global') {
+                const index = globalSetlists.findIndex(s => s._id === currentViewingSetlist._id);
+                if (index !== -1) globalSetlists[index] = currentViewingSetlist;
+            } else {
+                const index = mySetlists.findIndex(s => s._id === currentViewingSetlist._id);
+                if (index !== -1) mySetlists[index] = currentViewingSetlist;
+            }
+
+            renderSetlistSongs();
+            refreshSetlistDisplay(); // Also update the main setlist display
+            
+            // Refresh setlist data from backend to ensure synchronization
+            await refreshSetlistDataOnly();
+            
+            showNotification('Song removed from setlist');
         } catch (err) {
             console.error('Failed to remove song from setlist:', err);
-            showNotification('Failed to remove song from setlist');
+            showNotification('❌ Failed to remove song from setlist', 'error');
         }
     }
 
@@ -3934,6 +4365,11 @@ window.viewSingleLyrics = function(songId, otherId) {
                     renderGlobalSetlists();
                     showNotification('Global setlist deleted');
                     modal.style.display = 'none';
+                } else if (res.status === 403) {
+                    showNotification('❌ Access denied: Only administrators can delete global setlists', 'error');
+                    modal.style.display = 'none';
+                } else {
+                    showNotification('Failed to delete global setlist');
                 }
             } catch (err) {
                 console.error('Failed to delete global setlist:', err);
@@ -4604,12 +5040,25 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
         }
     
-        function showNotification(message, duration = 3000) {
+        function showNotification(message, typeOrDuration = 3000) {
+            // Handle both old format (duration) and new format (type)
+            let duration = 3000;
+            let type = 'info';
+            
+            if (typeof typeOrDuration === 'string') {
+                type = typeOrDuration;
+                duration = 3000;
+            } else if (typeof typeOrDuration === 'number') {
+                duration = typeOrDuration;
+                type = 'info';
+            }
+            
             notificationEl.textContent = message;
-            notificationEl.classList.add('show');
+            notificationEl.classList.remove('error', 'success', 'info');
+            notificationEl.classList.add('show', type);
             
             setTimeout(() => {
-                notificationEl.classList.remove('show');
+                notificationEl.classList.remove('show', 'error', 'success', 'info');
             }, duration);
         }
     
@@ -5105,15 +5554,46 @@ window.viewSingleLyrics = function(songId, otherId) {
         function highlightText(text, query) {
             if (!query) return text;
     
-            const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-            return text.replace(regex, match => `<span class="highlight">${match}</span>`);
+        const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        return text.replace(regex, match => `<span class="highlight">${match}</span>`);
+    }
+
+    // Debouncing mechanism for renderSongs
+    let renderSongsTimeout = null;
+    let lastRenderParams = null;
+
+    function debouncedRenderSongs(categoryOrSongs, filterOrContainer, genreFilterValue, moodFilterValue, artistFilterValue) {
+        // Create parameter signature for comparison
+        const currentParams = JSON.stringify([categoryOrSongs, filterOrContainer, genreFilterValue, moodFilterValue, artistFilterValue]);
+        
+        // Get calling function for debugging
+        const stack = new Error().stack.split('\n');
+        const caller = stack[1] ? stack[1].trim() : 'unknown';
+        console.log(`🎬 debouncedRenderSongs called from: ${caller}`);
+        
+        // If parameters are exactly the same as last call, skip entirely
+        if (currentParams === lastRenderParams) {
+            console.log('renderSongs skipped - identical parameters');
+            return;
         }
-    
-        function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue, moodFilterValue, artistFilterValue) {
-            let songsToRender;
-            let container;
-            
-            if (typeof categoryOrSongs === 'string') {
+        
+        // Clear any pending render
+        if (renderSongsTimeout) {
+            clearTimeout(renderSongsTimeout);
+        }
+        
+        // Schedule new render after 50ms delay
+        renderSongsTimeout = setTimeout(() => {
+            lastRenderParams = currentParams;
+            renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue, moodFilterValue, artistFilterValue);
+            renderSongsTimeout = null;
+        }, 50);
+    }
+
+    function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue, moodFilterValue, artistFilterValue) {
+        console.log('renderSongs called with:', categoryOrSongs, 'Global songs length:', songs.length);
+        let songsToRender;
+        let container;            if (typeof categoryOrSongs === 'string') {
                 const category = categoryOrSongs;
                 const keyFilterValue = filterOrContainer;
                 
@@ -5182,7 +5662,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                         return (b.id || 0) - (a.id || 0);
                     });
                 }
-                container = category === 'New' ? NewContent : OldContent;
+                container = category === 'New' ? document.getElementById('NewContent') : document.getElementById('OldContent');
             } else {
                 songsToRender = categoryOrSongs;
                 container = filterOrContainer;
@@ -6344,6 +6824,12 @@ window.viewSingleLyrics = function(songId, otherId) {
                 return;
             }
             
+            // Check if user has permission to modify global setlists
+            if (setlistId.startsWith('global_') && (!currentUser || !currentUser.isAdmin)) {
+                showNotification('❌ Access denied: Only administrators can modify Global Setlists', 'error');
+                return;
+            }
+            
             const song = songs.find(s => s.id === songId);
             if (!song) {
                 console.error('Song not found:', songId);
@@ -6377,7 +6863,12 @@ window.viewSingleLyrics = function(songId, otherId) {
                     songId: song.id  // Send just the song ID, not the full song object
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status === 403) {
+                    throw new Error('FORBIDDEN_ACCESS');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     const selectedDropdown = document.getElementById('setlistDropdown');
@@ -6398,7 +6889,11 @@ window.viewSingleLyrics = function(songId, otherId) {
                 }
             })
             .catch(error => {
-                showNotification('Error adding song to setlist');
+                if (error.message === 'FORBIDDEN_ACCESS') {
+                    showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
+                } else {
+                    showNotification('❌ Error adding song to setlist', 'error');
+                }
                 console.error('Error adding song to setlist:', error);
             });
         }
@@ -6442,7 +6937,12 @@ window.viewSingleLyrics = function(songId, otherId) {
                     songId: songId
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status === 403) {
+                    throw new Error('FORBIDDEN_ACCESS');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     const selectedDropdown = document.getElementById('setlistDropdown');
@@ -6464,7 +6964,11 @@ window.viewSingleLyrics = function(songId, otherId) {
                 }
             })
             .catch(error => {
-                showNotification('Error removing song from setlist');
+                if (error.message === 'FORBIDDEN_ACCESS') {
+                    showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
+                } else {
+                    showNotification('❌ Error removing song from setlist', 'error');
+                }
                 console.error('Error removing song from setlist:', error);
             });
         }
@@ -7002,7 +7506,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 OldTab.classList.remove('active');
                 NewContent.classList.add('active');
                 OldContent.classList.remove('active');
-                renderSongs('New', keyFilter.value, genreFilter.value);
+                debouncedRenderSongs('New', keyFilter.value, genreFilter.value);
                 applyLyricsBackground(true);
                 
                 // Mobile view: show songs panel and hide sidebar
@@ -7023,7 +7527,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 NewTab.classList.remove('active');
                 OldContent.classList.add('active');
                 NewContent.classList.remove('active');
-                renderSongs('Old', keyFilter.value, genreFilter.value);
+                debouncedRenderSongs('Old', keyFilter.value, genreFilter.value);
                 applyLyricsBackground(false);
                 
                 // Mobile view: show songs panel and hide sidebar
@@ -7038,36 +7542,36 @@ window.viewSingleLyrics = function(songId, otherId) {
             keyFilter.addEventListener('change', () => {
                 const filters = getCurrentFilterValues();
                 if (NewTab.classList.contains('active')) {
-                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                 } else {
-                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                 }
             });
 
             genreFilter.addEventListener('change', () => {
                 const filters = getCurrentFilterValues();
                 if (NewTab.classList.contains('active')) {
-                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                 } else {
-                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                 }
             });
 
             moodFilter.addEventListener('change', () => {
                 const filters = getCurrentFilterValues();
                 if (NewTab.classList.contains('active')) {
-                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                 } else {
-                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                 }
             });
 
             artistFilter.addEventListener('change', () => {
                 const filters = getCurrentFilterValues();
                 if (NewTab.classList.contains('active')) {
-                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
                 } else {
-                    renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
+                    debouncedRenderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
                 }
             });
 
@@ -7077,6 +7581,11 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Handle setlist selection
             if (setlistDropdown) {
                 setlistDropdown.addEventListener('change', (e) => {
+                    // Prevent infinite loop when updating from folder navigation
+                    if (window.updatingFromFolderNav) {
+                        return;
+                    }
+                    
                     const selectedValue = e.target.value;
                     
                     // Show/hide setlist description
@@ -7340,6 +7849,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                         createdAt: new Date().toISOString()
                     };
                     try {
+                        console.log(`🔄 Adding song to backend: ${newSong.title}`);
                         const jwtToken = localStorage.getItem('jwtToken') || '';
                         const response = await fetch(`${API_BASE_URL}/api/songs`, {
                             method: 'POST',
@@ -7349,7 +7859,19 @@ window.viewSingleLyrics = function(songId, otherId) {
                             },
                             body: JSON.stringify(newSong)
                         });
+                        
                         if (response.ok) {
+                            let addedSong;
+                            try {
+                                addedSong = await response.json();
+                                console.log(`✅ Backend add successful, received song data with ID: ${addedSong.id}`);
+                            } catch (parseError) {
+                                console.error(`⚠️ Backend added song but response parsing failed:`, parseError);
+                                showNotification('Song may have been added, but there was an issue with the response. Please refresh to see changes.');
+                                addSongSubmitting = false;
+                                return;
+                            }
+                            
                             showNotification('Song added successfully!');
                             addSongModal.style.display = 'none';
                             newSongForm.reset();
@@ -7364,10 +7886,17 @@ window.viewSingleLyrics = function(songId, otherId) {
                             updateSelectedMoods('selectedMoods', 'moodDropdown');
                             updateSelectedArtists('selectedArtists', 'artistDropdown');
                             
-                            // Invalidate songs cache and reload from backend
-                            invalidateCache(['songs']);
-                            songs = await loadSongsFromFile();
-                            renderSongs('New', keyFilter.value, genreFilter.value);
+                            // Update cache directly instead of invalidating
+                            updateSongInCache(addedSong, true);
+                            
+                            // Only render if we're on the same category tab as the new song
+                            const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
+                            if (addedSong.category === activeTab) {
+                                console.log(`✅ Rendering ${addedSong.category} tab after adding song`);
+                                debouncedRenderSongs(addedSong.category, keyFilter.value, genreFilter.value);
+                            } else {
+                                console.log(`⏭️ Skipping render - new song category (${addedSong.category}) doesn't match active tab (${activeTab})`);
+                            }
                             updateSongCount();
                         } else {
                             showNotification('Please login to add a song');
@@ -7417,45 +7946,56 @@ window.viewSingleLyrics = function(songId, otherId) {
                 };
 
                 try {
+                    // Store original song for potential rollback
+                    const originalSong = songs.find(s => s.id == id);
+                    
+                    console.log(`🔄 Updating song in backend: ${updatedSong.title}`);
                     const response = await authFetch(`${API_BASE_URL}/api/songs/${id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updatedSong)
                     });
+                    
                     if (response.ok) {
-                        // Invalidate songs cache and fetch only the updated song from backend
-                        invalidateCache(['songs']);
-                        const updatedSongRes = await authFetch(`${API_BASE_URL}/api/songs?id=${id}`);
-                        let updated = null;
-                        if (updatedSongRes.ok) {
-                            const arr = await updatedSongRes.json();
-                            updated = Array.isArray(arr) ? arr.find(s => s.id == id) : arr;
+                        // Try to get updated song from response
+                        let updated;
+                        try {
+                            updated = await response.json();
+                            console.log(`✅ Backend update successful, received updated song data`);
+                        } catch (parseError) {
+                            // If response doesn't contain song data, use our sent data
+                            console.log(`⚠️ Backend updated but no song data in response, using sent data`);
+                            updated = { ...updatedSong, id: Number(id) };
                         }
-                        // Merge updated song into local cache and songs array
-                        if (updated) {
-                            let localSongs = JSON.parse(localStorage.getItem('songs') || '[]');
-                            const idx = localSongs.findIndex(s => s.id == id);
-                            if (idx !== -1) {
-                                localSongs[idx] = updated;
-                            } else {
-                                localSongs.push(updated);
-                            }
-                            songs = localSongs;
-                            localStorage.setItem('songs', JSON.stringify(songs));
-                        }
+                        
                         showNotification('Song updated successfully!');
                         editSongModal.style.display = 'none';
                         editSongForm.reset();
+                        
+                        // Update cache directly instead of invalidating
+                        console.log(`💾 Updating cache with updated song data`);
+                        updateSongInCache(updated, false);
+                        
                         // Render correct tab
                         if (updated) {
-                            renderSongs(updated.category, keyFilter.value, genreFilter.value);
+                            // Only render if the updated song's category matches the active tab
+                            const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
+                            console.log(`🎵 Edit song complete - Updated song category: ${updated.category}, Active tab: ${activeTab}`);
+                            if (updated.category === activeTab) {
+                                console.log(`✅ Rendering ${updated.category} tab after edit`);
+                                debouncedRenderSongs(updated.category, keyFilter.value, genreFilter.value);
+                            } else {
+                                console.log(`⏭️ Skipping render - song category (${updated.category}) doesn't match active tab (${activeTab})`);
+                            }
                             // If previewing this song, update preview
                             if (songPreviewEl.dataset.songId == id) {
                                 showPreview(updated);
                             }
                         }
                     } else {
-                        showNotification('Failed to update song');
+                        const errorText = await response.text();
+                        console.error(`❌ Backend update failed:`, response.status, errorText);
+                        showNotification(`Failed to update song: ${response.status}`);
                     }
                 } catch (err) {
                     showNotification('Error updating song');
@@ -7473,7 +8013,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                 if (deleteBtn) deleteBtn.disabled = true;
                 await deleteSongById(id, () => {
                     deleteSongModal.style.display = 'none';
-                    renderSongs('New', keyFilter.value, genreFilter.value);
+                    // Only render if we're on the correct tab
+                    const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
+                    debouncedRenderSongs(activeTab, keyFilter.value, genreFilter.value);
                     if (deleteBtn) deleteBtn.disabled = false;
                 });
             });
@@ -7844,6 +8386,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                                 modal.songSelector.clearSelection();
                             }
                             showNotification(setlistId ? 'Global setlist updated' : 'Global setlist created');
+                        } else if (res.status === 403) {
+                            showNotification('❌ Access denied: Only administrators can create/modify global setlists', 'error');
                         } else {
                             const error = await res.json();
                             showNotification(error.error || 'Failed to save global setlist');
