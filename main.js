@@ -6839,8 +6839,8 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Determine if this is a global setlist or personal setlist
             let apiEndpoint;
             const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? `http://localhost:3001` 
-                : '';
+    ? 'http://localhost:3001' 
+    : 'https://oldand-new.vercel.app'; // or your actual backend URL
             
             if (setlistId.startsWith('global_')) {
                 apiEndpoint = `${API_BASE_URL}/api/global-setlists/add-song`;
