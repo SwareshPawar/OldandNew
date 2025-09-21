@@ -617,8 +617,41 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <label for="globalSetlistDescription">Description (optional):</label>
                 <textarea id="globalSetlistDescription" placeholder="Enter setlist description"></textarea>
                 
-                <div class="song-selection-section">
-                    <label>Select Songs:</label>
+                <!-- Main Tabs for Global Setlist -->
+                <div class="setlist-main-tabs">
+                    <div class="setlist-main-tab active" id="globalSelectedSongsMainTab">Selected Songs</div>
+                    <div class="setlist-main-tab" id="globalAddSongsMainTab">Add Songs</div>
+                </div>
+                
+                <!-- Selected Songs Tab Content -->
+                <div class="setlist-main-tab-content active" id="globalSelectedSongsContent">
+                    <div class="selected-songs-summary">
+                        <h4>Selected Songs: <span id="globalSelectedCount">0</span></h4>
+                        
+                        <!-- Tabs for Selected Old/New Songs -->
+                        <div class="modal-song-tabs">
+                            <div class="modal-tab active" id="globalSelectedOldTab">Old Songs (<span id="globalSelectedOldCount">0</span>)</div>
+                            <div class="modal-tab" id="globalSelectedNewTab">New Songs (<span id="globalSelectedNewCount">0</span>)</div>
+                        </div>
+                        
+                        <div class="selected-songs-container">
+                            <!-- Selected Old Songs Tab Content -->
+                            <div class="modal-tab-content active" id="globalSelectedOldContent">
+                                <div id="globalSelectedOldSongsList" class="selected-songs-list modal-scrollable-summary"></div>
+                            </div>
+                            
+                            <!-- Selected New Songs Tab Content -->
+                            <div class="modal-tab-content" id="globalSelectedNewContent">
+                                <div id="globalSelectedNewSongsList" class="selected-songs-list modal-scrollable-summary"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add Songs Tab Content -->
+                <div class="setlist-main-tab-content" id="globalAddSongsContent">
+                    <div class="song-selection-section">
+                        <label>Select Songs:</label>
                     
                     <!-- Search and Filters -->
                     <div class="modal-filters-container">
@@ -667,33 +700,14 @@ async function saveRecommendationWeightsToBackend(weights) {
                             </div>
                             <div id="globalNewSongSelectionList" class="song-selection-list modal-scrollable"></div>
                         </div>
-                        
-                        <!-- Selected Songs Summary with Tabs -->
-                        <div class="selected-songs-summary">
-                            <h4>Selected Songs: <span id="globalSelectedCount">0</span></h4>
-                            
-                            <!-- Tabs for Selected Old/New Songs -->
-                            <div class="modal-song-tabs">
-                                <div class="modal-tab active" id="globalSelectedOldTab">Old Songs (<span id="globalSelectedOldCount">0</span>)</div>
-                                <div class="modal-tab" id="globalSelectedNewTab">New Songs (<span id="globalSelectedNewCount">0</span>)</div>
-                            </div>
-                            
-                            <div class="selected-songs-container">
-                                <!-- Selected Old Songs Tab Content -->
-                                <div class="modal-tab-content active" id="globalSelectedOldContent">
-                                    <div id="globalSelectedOldSongsList" class="selected-songs-list modal-scrollable-summary"></div>
-                                </div>
-                                
-                                <!-- Selected New Songs Tab Content -->
-                                <div class="modal-tab-content" id="globalSelectedNewContent">
-                                    <div id="globalSelectedNewSongsList" class="selected-songs-list modal-scrollable-summary"></div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" id="globalSetlistSubmit">Create Setlist</button>
+                <!-- Submit button moved to Add Songs tab -->
+                <div class="setlist-submit-container">
+                    <button type="submit" class="btn btn-primary" id="globalSetlistSubmit">Create Setlist</button>
+                </div>
+            </div>
             </form>
         </div>
     </div>
@@ -710,83 +724,97 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <label for="mySetlistDescription">Description (optional):</label>
                 <textarea id="mySetlistDescription" placeholder="Enter setlist description"></textarea>
                 
-                <div class="song-selection-section">
-                    <label>Select Songs:</label>
-                    
-                    <!-- Search and Filters -->
-                    <div class="modal-filters-container">
-                        <div class="song-search-container">
-                            <input type="text" id="mySetlistSongSearch" placeholder="Search songs..." class="song-search-input">
-                        </div>
-                        <div class="modal-filters-row">
-                            <select id="myKeyFilter" class="compact-select">
-                                <option value="">Keys</option>
-                            </select>
-                            <select id="myGenreFilter" class="compact-select">
-                                <option value="">Genres</option>
-                            </select>
-                            <select id="myMoodFilter" class="compact-select">
-                                <option value="">Moods</option>
-                            </select>
-                            <select id="myArtistFilter" class="compact-select">
-                                <option value="">Artists</option>
-                            </select>
-                        </div>
+                <!-- Main Tab Navigation -->
+                <div class="setlist-main-tabs">
+                    <div class="setlist-main-tab active" id="selectedSongsMainTab">
+                        <i class="fas fa-list"></i> Selected Songs (<span id="mySelectedCount">0</span>)
                     </div>
-                    
-                    <!-- Tabs for Old/New Songs -->
-                    <div class="modal-song-tabs">
-                        <div class="modal-tab active" id="myOldSongsTab">Old Songs</div>
-                        <div class="modal-tab" id="myNewSongsTab">New Songs</div>
+                    <div class="setlist-main-tab" id="addSongsMainTab">
+                        <i class="fas fa-plus"></i> Add Songs
                     </div>
-                    
-                    <div class="song-selection-container">
-                        <!-- Old Songs Tab Content -->
-                        <div class="modal-tab-content active" id="myOldSongsContent">
-                            <div class="song-category-header">
-                                <label class="select-all-label">
-                                    <input type="checkbox" id="mySelectAllOldSongs"> Select All Old Songs (<span id="myOldSongsCount">0</span>)
-                                </label>
-                            </div>
-                            <div id="myOldSongSelectionList" class="song-selection-list modal-scrollable"></div>
+                </div>
+                
+                <!-- Selected Songs Tab Content -->
+                <div class="setlist-main-tab-content active" id="selectedSongsContent">
+                    <div class="selected-songs-summary">
+                        <!-- Tabs for Selected Old/New Songs -->
+                        <div class="modal-song-tabs">
+                            <div class="modal-tab active" id="mySelectedOldTab">Old Songs (<span id="mySelectedOldCount">0</span>)</div>
+                            <div class="modal-tab" id="mySelectedNewTab">New Songs (<span id="mySelectedNewCount">0</span>)</div>
                         </div>
                         
-                        <!-- New Songs Tab Content -->
-                        <div class="modal-tab-content" id="myNewSongsContent">
-                            <div class="song-category-header">
-                                <label class="select-all-label">
-                                    <input type="checkbox" id="mySelectAllNewSongs"> Select All New Songs (<span id="myNewSongsCount">0</span>)
-                                </label>
-                            </div>
-                            <div id="myNewSongSelectionList" class="song-selection-list modal-scrollable"></div>
-                        </div>
-                        
-                        <!-- Selected Songs Summary with Tabs -->
-                        <div class="selected-songs-summary">
-                            <h4>Selected Songs: <span id="mySelectedCount">0</span></h4>
-                            
-                            <!-- Tabs for Selected Old/New Songs -->
-                            <div class="modal-song-tabs">
-                                <div class="modal-tab active" id="mySelectedOldTab">Old Songs (<span id="mySelectedOldCount">0</span>)</div>
-                                <div class="modal-tab" id="mySelectedNewTab">New Songs (<span id="mySelectedNewCount">0</span>)</div>
+                        <div class="selected-songs-container">
+                            <!-- Selected Old Songs Tab Content -->
+                            <div class="modal-tab-content active" id="mySelectedOldContent">
+                                <div id="mySelectedOldSongsList" class="selected-songs-list modal-scrollable-summary"></div>
                             </div>
                             
-                            <div class="selected-songs-container">
-                                <!-- Selected Old Songs Tab Content -->
-                                <div class="modal-tab-content active" id="mySelectedOldContent">
-                                    <div id="mySelectedOldSongsList" class="selected-songs-list modal-scrollable-summary"></div>
-                                </div>
-                                
-                                <!-- Selected New Songs Tab Content -->
-                                <div class="modal-tab-content" id="mySelectedNewContent">
-                                    <div id="mySelectedNewSongsList" class="selected-songs-list modal-scrollable-summary"></div>
-                                </div>
+                            <!-- Selected New Songs Tab Content -->
+                            <div class="modal-tab-content" id="mySelectedNewContent">
+                                <div id="mySelectedNewSongsList" class="selected-songs-list modal-scrollable-summary"></div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" id="mySetlistSubmit">Create Setlist</button>
+                <!-- Add Songs Tab Content -->
+                <div class="setlist-main-tab-content" id="addSongsContent">
+                    <div class="song-selection-section">
+                        <!-- Search and Filters -->
+                        <div class="modal-filters-container">
+                            <div class="song-search-container">
+                                <input type="text" id="mySetlistSongSearch" placeholder="Search songs..." class="song-search-input">
+                            </div>
+                            <div class="modal-filters-row">
+                                <select id="myKeyFilter" class="compact-select">
+                                    <option value="">Keys</option>
+                                </select>
+                                <select id="myGenreFilter" class="compact-select">
+                                    <option value="">Genres</option>
+                                </select>
+                                <select id="myMoodFilter" class="compact-select">
+                                    <option value="">Moods</option>
+                                </select>
+                                <select id="myArtistFilter" class="compact-select">
+                                    <option value="">Artists</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabs for Old/New Songs -->
+                        <div class="modal-song-tabs">
+                            <div class="modal-tab active" id="myOldSongsTab">Old Songs</div>
+                            <div class="modal-tab" id="myNewSongsTab">New Songs</div>
+                        </div>
+                        
+                        <div class="song-selection-container">
+                            <!-- Old Songs Tab Content -->
+                            <div class="modal-tab-content active" id="myOldSongsContent">
+                                <div class="song-category-header">
+                                    <label class="select-all-label">
+                                        <input type="checkbox" id="mySelectAllOldSongs"> Select All Old Songs (<span id="myOldSongsCount">0</span>)
+                                    </label>
+                                </div>
+                                <div id="myOldSongSelectionList" class="song-selection-list modal-scrollable"></div>
+                            </div>
+                            
+                            <!-- New Songs Tab Content -->
+                            <div class="modal-tab-content" id="myNewSongsContent">
+                                <div class="song-category-header">
+                                    <label class="select-all-label">
+                                        <input type="checkbox" id="mySelectAllNewSongs"> Select All New Songs (<span id="myNewSongsCount">0</span>)
+                                    </label>
+                                </div>
+                                <div id="myNewSongSelectionList" class="song-selection-list modal-scrollable"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit button moved to Add Songs tab -->
+                    <div class="setlist-submit-container">
+                        <button type="submit" class="btn btn-primary" id="mySetlistSubmit">Create Setlist</button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>

@@ -2004,11 +2004,11 @@
         }
 
         .setlist-song-key {
-            color: var(--song-meta-color) !important;
+            color: var(--song-item-text) !important;
             font-size: 0.7em !important;
             line-height: 1 !important;
             font-weight: 500 !important;
-            background: var(--light-bg) !important;
+            background: var(--accent-color) !important;
             padding: 1px 4px !important;
             border-radius: 8px !important;
             display: inline-block !important;
@@ -3055,6 +3055,16 @@ body.dark-mode .modal-content {
             .notification.show {
                 opacity: 1;
             }
+            
+            .notification.error {
+                background: #dc3545;
+                color: white;
+            }
+            
+            .notification.success {
+                background: #28a745;
+                color: white;
+            }
 
         /* Multi-select styles */
         .multiselect-container {
@@ -3503,4 +3513,62 @@ body.dark-mode .modal-content {
         bottom: 130px;
         right: 10px;
     }
+}
+
+/* Setlist Submit Button Container */
+.setlist-submit-container {
+    padding: 20px 0 10px 0;
+    text-align: center;
+    border-top: 1px solid var(--song-item-border, #ddd);
+    margin-top: 15px;
+}
+
+.setlist-submit-container .btn {
+    min-width: 150px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Main Tab Styling for Setlist Modal */
+.setlist-main-tabs {
+    display: flex;
+    margin: 20px 0 0 0;
+    border-bottom: 2px solid #ddd;
+}
+
+.setlist-main-tab {
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    cursor: pointer;
+    margin-right: 2px;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setlist-main-tab:hover {
+    background: #e9ecef;
+}
+
+.setlist-main-tab.active {
+    background: white;
+    border-bottom: 2px solid white;
+    margin-bottom: -2px;
+    color: #007bff;
+    font-weight: 600;
+}
+
+.setlist-main-tab-content {
+    display: none;
+    padding: 20px 0;
+}
+
+.setlist-main-tab-content.active {
+    display: block;
 }

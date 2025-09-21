@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Song Loading</title>
+</head>
+<body>
+    <h1>Song Loading Test</h1>
+    <div id="result"></div>
+    <script>
+        async function testSongLoading() {
+            console.log('Testing song loading...');
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/songs');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const songs = await response.json();
+                console.log('Songs loaded:', songs.length);
+                console.log('First song:', songs[0]);
+                
+                resultDiv.innerHTML = `
+                    <p>✅ Successfully loaded ${songs.length} songs!</p>
+                    <p>First song: ${songs[0]?.title || 'No title'}</p>
+                    <p>API is working correctly.</p>
+                `;
+                
+                return songs;
+            } catch (error) {
+                console.error('Error loading songs:', error);
+                resultDiv.innerHTML = `
+                    <p>❌ Error loading songs: ${error.message}</p>
+                `;
+                return [];
+            }
+        }
+        
+        // Run test when page loads
+        testSongLoading();
+    </script>
+</body>
+</html>
