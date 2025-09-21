@@ -257,7 +257,7 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
   console.log('DEBUG /api/songs/:id req.user:', req.user);
   try {
     const { id } = req.params;
-  // Always set updatedAt to now on edit
+    // Always set updatedAt to now on edit
     req.body.updatedAt = new Date().toISOString();
     if (req.user && req.user.firstName) {
       // Capitalize first letter of firstName only
@@ -268,12 +268,14 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
       const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
       req.body.updatedBy = cap(req.user.username);
     }
-  const update = { $set: req.body };
+    const update = { $set: req.body };
     const result = await songsCollection.updateOne({ id: parseInt(id) }, update);
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Song not found' });
     }
-    res.json({ message: 'Song updated' });
+    // Fetch and return the updated song object
+    const updatedSong = await songsCollection.findOne({ id: parseInt(id) });
+    res.json(updatedSong);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
