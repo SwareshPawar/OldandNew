@@ -5223,10 +5223,7 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Add this function
         function optimizeMemoryUsage() {
             // Clean up large data structures when not needed
-            if (songs.length > 500) {
-                songs = songs.slice(0, 500);
-                saveSongs();
-            }
+            // Removed artificial truncation of songs array to 500 items
             
             if (searchHistory.length > 50) {
                 searchHistory = searchHistory.slice(0, 50);
