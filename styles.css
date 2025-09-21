@@ -1350,6 +1350,90 @@
             transition: opacity 0.2s;
         }
 
+        /* Setlist Section Header Styles */
+        .setlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .setlist-header h3 {
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .setlist-header-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .setlist-action-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 36px;
+            text-decoration: none;
+        }
+
+        .setlist-action-btn.btn-secondary {
+            background: var(--accent-color);
+            color: var(--primary-color);
+            border-color: var(--accent-color);
+        }
+
+        .setlist-action-btn.btn-secondary:hover {
+            background: var(--primary-color);
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .setlist-action-btn.btn-danger {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .setlist-action-btn.btn-danger:hover {
+            background: #c82333;
+            border-color: #c82333;
+        }
+
+        /* Mobile responsive styles for setlist actions */
+        @media (max-width: 768px) {
+            .setlist-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .setlist-header-actions {
+                width: 100%;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .setlist-action-btn {
+                flex: 1;
+                max-width: 120px;
+                padding: 12px 16px;
+                font-size: 14px;
+                min-height: 44px;
+                border-radius: 8px;
+                justify-content: center;
+            }
+        }
+
         .setlist-item:hover .setlist-actions {
             opacity: 1;
         }

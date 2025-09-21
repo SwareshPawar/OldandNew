@@ -370,7 +370,17 @@ async function saveRecommendationWeightsToBackend(weights) {
             <div class="tab-content active" id="NewContent"></div>
             <div class="tab-content" id="OldContent"></div>
             <div class="setlist" id="setlistSection" style="display: none;">
-                <h3 id="setlistViewHeader">Setlist View</h3>
+                <div class="setlist-header">
+                    <h3 id="setlistViewHeader">Setlist View</h3>
+                    <div class="setlist-header-actions" id="setlistSectionActions" style="display: none;">
+                        <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button id="deleteSetlistSectionBtn" class="btn btn-danger setlist-action-btn">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
                 <div class="setlist-tabs">
                     <div class="setlist-tab active" id="NewSetlistTab">New</div>
                     <div class="setlist-tab" id="OldSetlistTab">Old</div>

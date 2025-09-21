@@ -1881,6 +1881,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     const toggleAllPanelsBtn = document.getElementById('toggle-all-panels');
     const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
     const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
+    const editSetlistSectionBtn = document.getElementById('editSetlistSectionBtn');
+    const deleteSetlistSectionBtn = document.getElementById('deleteSetlistSectionBtn');
+    const setlistSectionActions = document.getElementById('setlistSectionActions');
 
     document.getElementById('loginBtn').onclick = () => showLoginModal();
     document.getElementById('logoutBtn').onclick = () => logout();
@@ -3309,6 +3312,27 @@ window.viewSingleLyrics = function(songId, otherId) {
             setlistHeader.textContent = setlist.name;
         }
 
+        // Show action buttons when setlist is loaded 
+        if (setlistSectionActions) {
+            setlistSectionActions.style.display = 'flex';
+            
+            // Update button appearance based on permissions
+            const canEdit = currentUser?.isAdmin;
+            if (editSetlistSectionBtn && deleteSetlistSectionBtn) {
+                if (canEdit) {
+                    editSetlistSectionBtn.style.opacity = '1';
+                    deleteSetlistSectionBtn.style.opacity = '1';
+                    editSetlistSectionBtn.style.cursor = 'pointer';
+                    deleteSetlistSectionBtn.style.cursor = 'pointer';
+                } else {
+                    editSetlistSectionBtn.style.opacity = '0.5';
+                    deleteSetlistSectionBtn.style.opacity = '0.5';
+                    editSetlistSectionBtn.style.cursor = 'not-allowed';
+                    deleteSetlistSectionBtn.style.cursor = 'not-allowed';
+                }
+            }
+        }
+
         // Clear any existing selections
         clearSetlistSelections();
 
@@ -3400,6 +3424,19 @@ window.viewSingleLyrics = function(songId, otherId) {
         const setlistHeader = document.getElementById('setlistViewHeader');
         if (setlistHeader) {
             setlistHeader.textContent = setlist.name;
+        }
+
+        // Show action buttons when setlist is loaded
+        if (setlistSectionActions) {
+            setlistSectionActions.style.display = 'flex';
+            
+            // Users can always edit their own setlists, so show full opacity
+            if (editSetlistSectionBtn && deleteSetlistSectionBtn) {
+                editSetlistSectionBtn.style.opacity = '1';
+                deleteSetlistSectionBtn.style.opacity = '1';
+                editSetlistSectionBtn.style.cursor = 'pointer';
+                deleteSetlistSectionBtn.style.cursor = 'pointer';
+            }
         }
 
         // Clear any existing selections
@@ -6958,6 +6995,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Tab switching
             NewTab.addEventListener('click', () => {
                 setlistSection.style.display = 'none';
+                if (setlistSectionActions) setlistSectionActions.style.display = 'none';
                 deleteSection.style.display = 'none';
                 favoritesSection.style.display = 'none';
                 NewTab.classList.add('active');
@@ -6978,6 +7016,7 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             OldTab.addEventListener('click', () => {
                 setlistSection.style.display = 'none';
+                if (setlistSectionActions) setlistSectionActions.style.display = 'none';
                 deleteSection.style.display = 'none';
                 favoritesSection.style.display = 'none';
                 OldTab.classList.add('active');
@@ -7912,6 +7951,39 @@ window.viewSingleLyrics = function(songId, otherId) {
                             deleteMySetlist(currentViewingSetlist._id);
                         }
                         document.getElementById('setlistViewModal').style.display = 'none';
+                    }
+                });
+            }
+
+            // Add event handlers for setlist section buttons
+            if (editSetlistSectionBtn) {
+                editSetlistSectionBtn.addEventListener('click', () => {
+                    if (currentViewingSetlist && currentSetlistType) {
+                        if (currentSetlistType === 'global') {
+                            if (currentUser?.isAdmin) {
+                                editGlobalSetlist(currentViewingSetlist._id);
+                            } else {
+                                showNotification('Only admins can edit global setlists', 3000);
+                            }
+                        } else {
+                            editMySetlist(currentViewingSetlist._id);
+                        }
+                    }
+                });
+            }
+
+            if (deleteSetlistSectionBtn) {
+                deleteSetlistSectionBtn.addEventListener('click', () => {
+                    if (currentViewingSetlist && currentSetlistType) {
+                        if (currentSetlistType === 'global') {
+                            if (currentUser?.isAdmin) {
+                                deleteGlobalSetlist(currentViewingSetlist._id);
+                            } else {
+                                showNotification('Only admins can delete global setlists', 3000);
+                            }
+                        } else {
+                            deleteMySetlist(currentViewingSetlist._id);
+                        }
                     }
                 });
             }
