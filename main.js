@@ -7159,16 +7159,13 @@ window.viewSingleLyrics = function(songId, otherId) {
                 return;
             }
 
-            // Determine if this is a global setlist or personal setlist
-            let apiEndpoint;
-            const baseURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? `http://localhost:3001` 
-                : '';
             
             if (setlistId.startsWith('global_')) {
-                apiEndpoint = `${baseURL}/api/global-setlists/remove-song`;
+                apiEndpoint = `${API_BASE_URL}/api/global-setlists/remove-song`;
+                setlistId = setlistId.replace('global_', '');
             } else if (setlistId.startsWith('my_')) {
-                apiEndpoint = `${baseURL}/api/my-setlists/remove-song`;
+                apiEndpoint = `${API_BASE_URL}/api/my-setlists/remove-song`;
+                setlistId = setlistId.replace('my_', '');
             } else {
                 console.error('Unknown setlist type:', setlistId);
                 return;
