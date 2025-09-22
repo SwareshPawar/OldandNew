@@ -117,7 +117,9 @@ const CHORD_TYPES = [
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
             ? 'http://localhost:3001'
-            : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
+            : 'https://oldandnew.onrender.com'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
+
+console.log('API_BASE_URL:', API_BASE_URL);
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
