@@ -21,7 +21,7 @@ try {
 }
 
 const GENRES = [
-    "New", "Old", "Mid", "Hindi", "Marathi", "English", "Acoustic", "Qawalli", "Classical", "Ghazal", "Sufi", "Rock",
+    "New", "Old", "Mid", "Hindi", "Marathi", "English", "RD Pattern","Acoustic", "Qawalli", "Classical", "Ghazal", "Sufi", "Rock",
     "Blues", "Female", "Male", "Duet"
 ];
 
@@ -35,7 +35,7 @@ const KEYS = [
 const CATEGORIES = ["New", "Old"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
-    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow",  "EkTaal", "JhapTaal", "TeenTaal","Rupak", "Deepchandi", "Garba","RD Patch","Desi Drum", "Western", "Waltz", "Rock", "Jazz", "March Rhythm"
+    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow",  "EkTaal", "JhapTaal", "TeenTaal","Rupak", "Deepchandi", "Garba","RD Pattern","Desi Drum", "Western", "Waltz", "Rock", "Jazz", "March Rhythm"
 ];
 
 const MOODS = [
@@ -45,30 +45,60 @@ const MOODS = [
 ];
 
 const ARTISTS = [
-    "Arijit Singh", "Shreya Ghoshal", "Atif Aslam", "Rahat Fateh Ali Khan", "A.R. Rahman", "Lata Mangeshkar",
-    "Kishore Kumar", "Mohammed Rafi", "Asha Bhosle", "Udit Narayan", "Alka Yagnik", "Kumar Sanu", "Sonu Nigam",
-    "Sunidhi Chauhan", "Shaan", "KK", "Armaan Malik", "Asees Kaur", "Jubin Nautiyal", "Darshan Raval",
-    "Guru Randhawa", "Badshah", "Yo Yo Honey Singh", "Divine", "RAFTAAR", "Nucleya", "Diljit Dosanjh",
-    "Raghav", "Shankar Mahadevan", "Hariharan", "Mohit Chauhan", "Papon", "Vishal Dadlani",
-    "Shekhar Ravjiani", "Vishal-Shekhar", "Shankar-Ehsaan-Loy", "Pritam", "Ilaiyaraaja", "Harris Jayaraj",
-    "Anirudh Ravichander", "Devi Sri Prasad", "Thaman S", "Gopi Sundar", "Ajay-Atul", "Sachin-Jigar",
-    "Tanishk Bagchi", "Rochak Kohli", "Amaal Mallik", "Himesh Reshammiya", "Javed Ali", "Palak Muchhal",
-    "Dhvani Bhanushali", "Tulsi Kumar", "Neha Kakkar", "Tony Kakkar", "Mika Singh", "Raghuvir Yadav",
-    "Kailash Kher", "Sukhwinder Singh", "Shilpa Rao", "Chinmayi", "Sid Sriram", "Pradeep Kumar", "Abhijeet",
-    "Sadhana Sargam", "Kavita Krishnamurthy", "S.P. Balasubrahmanyam", "Jesudas", "Yesudas", "Hariharan",
-    "Unni Menon", "Vijay Yesudas", "Karthik", "Vijay Prakash", "Kunal Ganjawala", "Raghav Sachar",
-    "Benny Dayal", "Roop Kumar Rathod", "Sunali Rathod", "Rekha Bhardwaj", "Kausar Munir", "Irshad Kamil",
-    "Gulzar", "Javed Akhtar", "Prasoon Joshi", "Manoj Muntashir", "Amitabh Bhattacharya", "Kumaar",
-    "Dr. Devika Rani", "Nusrat Fateh Ali Khan", "Abida Parveen", "Jagjit Singh", "Chitra Singh", "Ghulam Ali",
-    "Mehdi Hassan", "Farida Khanum", "Tina Sani", "Shafqat Amanat Ali","Amit Trivedi","Monali Thakur", "Suresh Wadkar","Anu Malik","Bappi Lahiri","Hemant Kumar","Other"
+  // Legendary Male Singers
+  "Kishore Kumar", "Mohammed Rafi", "Mukesh", "Manna Dey", "Talat Mahmood",
+  "Hemant Kumar", "Mahendra Kapoor", "Suresh Wadkar", "Udit Narayan", "Kumar Sanu",
+  "Abhijeet", "Vinod Rathod", "Shabbir Kumar", "Kunal Ganjawala", "Sonu Nigam",
+  "Shaan", "KK", "Javed Ali", "Arijit Singh", "Atif Aslam", "Jubin Nautiyal",
+  "Darshan Raval", "Armaan Malik", "Papon", "Mohit Chauhan", "Hariharan",
+  "Sukhwinder Singh", "Kailash Kher", "Benny Dayal", "Vijay Prakash",
+  "Karthik", "Sid Sriram", "Raghav Sachar", "Raghav", "Ankit Tiwari",
+
+  // Legendary Female Singers
+  "Lata Mangeshkar", "Asha Bhosle", "Geeta Dutt", "Shamshad Begum",
+  "Kavita Krishnamurthy", "Anuradha Paudwal", "Sadhana Sargam", "Alka Yagnik",
+  "Sunidhi Chauhan", "Shreya Ghoshal", "Palak Muchhal", "Tulsi Kumar",
+  "Neha Kakkar", "Monali Thakur", "Shilpa Rao", "Dhvani Bhanushali",
+  "Chinmayi", "Sunali Rathod", "Rekha Bhardwaj", "Ankita Bhattacharyya",
+  "Usha Uthup", "Annie Khalid",
+
+  // Golden Era Composers
+  "Naushad", "Shankar-Jaikishan", "S.D. Burman", "R.D. Burman", "Madan Mohan",
+  "Salil Chowdhury", "O.P. Nayyar", "Roshan", "Kalyanji-Anandji",
+  "Laxmikant-Pyarelal", "Ravindra Jain", "Anu Malik", "Bappi Lahiri",
+
+  // Modern Composers
+  "A.R. Rahman", "Ilaiyaraaja", "Harris Jayaraj", "Anirudh Ravichander",
+  "Devi Sri Prasad", "Thaman S", "Gopi Sundar", "Ajay-Atul", "Sachin-Jigar",
+  "Vishal-Shekhar", "Shankar-Ehsaan-Loy", "Pritam", "Amit Trivedi",
+  "Amaal Mallik", "Tanishk Bagchi", "Rochak Kohli", "Himesh Reshammiya","Sanam Puri","Neeti Mohan","Zubeen Garg","Vishal Dadlani",
+
+  // Ghazal / Qawwali / Classical Legends
+  "Jagjit Singh", "Chitra Singh", "Pankaj Udhas", "Anup Jalota",
+  "Ghulam Ali", "Mehdi Hassan", "Nusrat Fateh Ali Khan",
+  "Rahat Fateh Ali Khan", "Abida Parveen", "Tina Sani", "Shafqat Amanat Ali",
+  "Pt. Bhimsen Joshi", "Kumar Gandharva", "Pt. Jasraj",
+
+  // Modern Lyricists
+  "Gulzar", "Javed Akhtar", "Prasoon Joshi", "Amitabh Bhattacharya",
+  "Manoj Muntashir", "Kumaar", "Kausar Munir", "Irshad Kamil",
+
+  // Pop / Indie / Rap / Others
+  "Lucky Ali", "Euphoria (Palash Sen)", "Adnan Sami", "Colonial Cousins",
+  "Mika Singh", "Daler Mehndi", "Guru Randhawa", "Badshah",
+  "Yo Yo Honey Singh", "Divine", "Raftaar", "Nucleya",
+
+  // Others / Misc
+  "Dr. Devika Rani", "Other"
 ];
+
 
 const TIME_GENRE_MAP = {
     "4/4": [
         "Keherwa", "Keherwa Slow","Keherwa Bhajani",  "Bhangra", "Pop", "Rock", "Jazz", "Funk", "Shuffle",
         "Blues", "Disco", "Reggae", "R&B", "Hip-Hop","K-Pop"
     ],
-    "3/4": ["Waltz","Western", "Mazurka", "Viennese Waltz"],
+    "3/4": ["Waltz","Western", "Darda"],
     "2/4": ["Waltz","Western", "March", "Polka", "Samba"],
     "6/8": ["Rock","Dadra", "Dadra Slow","Dadra Bhajani", "Bhangra in 6/8", "Garba",],
     "5/4": ["JhapTaal", "Sultaal", "Jazz 5-beat"],
