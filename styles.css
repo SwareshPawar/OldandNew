@@ -1,3 +1,10 @@
+/* Style for favorites count number in #showFavorites */
+#showFavorites .favorites-count {
+    font-weight: bold;
+    color: #ff7323;
+    font-size: 1.1em;
+    margin-left: 2px;
+}
 @media (max-width: 700px) {
     .songs-section {
         width: var(--songs-panel-width) !important;
