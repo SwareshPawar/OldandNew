@@ -379,6 +379,12 @@ async function saveRecommendationWeightsToBackend(weights) {
                         <button id="deleteSetlistSectionBtn" class="btn btn-danger setlist-action-btn">
                             <i class="fas fa-trash"></i> Delete
                         </button>
+                        <button id="resequenceSetlistSectionBtn" class="btn btn-primary setlist-action-btn">
+                            <i class="fas fa-random"></i> Resequence
+                        </button>
+                        <button id="saveSetlistSequenceBtn" class="btn btn-success setlist-action-btn" style="display:none;">
+                            <i class="fas fa-save"></i> Save Sequence
+                        </button>
                     </div>
                 </div>
                 <div class="setlist-tabs">
@@ -703,12 +709,13 @@ async function saveRecommendationWeightsToBackend(weights) {
                     </div>
                 </div>
                 
-                <!-- Submit button moved to Add Songs tab -->
-                <div class="setlist-submit-container">
-                    <button type="submit" class="btn btn-primary" id="globalSetlistSubmit">Create Setlist</button>
-                </div>
+                <!-- End of Add Songs tab content -->
             </div>
-            </form>
+            <!-- Submit button now outside tab content -->
+            <div class="setlist-submit-container">
+                <button type="submit" class="btn btn-primary" id="globalSetlistSubmit">Create Setlist</button>
+            </div>
+        </form>
         </div>
     </div>
 
@@ -810,10 +817,11 @@ async function saveRecommendationWeightsToBackend(weights) {
                         </div>
                     </div>
                     
-                    <!-- Submit button moved to Add Songs tab -->
-                    <div class="setlist-submit-container">
-                        <button type="submit" class="btn btn-primary" id="mySetlistSubmit">Create Setlist</button>
-                    </div>
+                    <!-- End of Add Songs tab content -->
+                </div>
+                <!-- Submit button now outside tab content -->
+                <div class="setlist-submit-container">
+                    <button type="submit" class="btn btn-primary" id="mySetlistSubmit">Create Setlist</button>
                 </div>
             </form>
         </div>
