@@ -2208,6 +2208,32 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
     const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
     const editSetlistSectionBtn = document.getElementById('editSetlistSectionBtn');
+    const resequenceSetlistSectionBtn = document.getElementById('resequenceSetlistSectionBtn');
+    if (resequenceSetlistSectionBtn) {
+        resequenceSetlistSectionBtn.onclick = async function() {
+            if (!window.setlistResequenceMode) {
+                window.setlistResequenceMode = true;
+                resequenceSetlistSectionBtn.textContent = 'Save Sequence';
+                refreshSetlistDisplay();
+            } else {
+                // Save new sequence to backend
+                const endpoint = currentSetlistType === 'global' ? '/api/global-setlists' : '/api/my-setlists';
+                await authFetch(`${API_BASE_URL}${endpoint}/${currentViewingSetlist._id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: currentViewingSetlist.name,
+                        description: currentViewingSetlist.description,
+                        songs: currentViewingSetlist.songs
+                    })
+                });
+                window.setlistResequenceMode = false;
+                resequenceSetlistSectionBtn.textContent = 'Resequence';
+                refreshSetlistDisplay();
+                showNotification('Setlist sequence saved!', 'success');
+            }
+        };
+    }
     const deleteSetlistSectionBtn = document.getElementById('deleteSetlistSectionBtn');
     const setlistSectionActions = document.getElementById('setlistSectionActions');
 
@@ -3049,36 +3075,121 @@ window.viewSingleLyrics = function(songId, otherId) {
             if (selectedOldSongsList) selectedOldSongsList.innerHTML = '';
             if (selectedNewSongsList) selectedNewSongsList.innerHTML = '';
             
-            // Show selected old songs in old tab
-            if (selectedOldSongs.length > 0 && selectedOldSongsList) {
-                selectedOldSongs.forEach(songId => {
+            // Helper to render a resequencable list
+            function renderResequencableList(songIds, container, category) {
+                songIds.forEach((songId, idx) => {
                     const song = songs.find(s => s.id === songId);
                     if (song) {
                         const selectedItem = document.createElement('div');
                         selectedItem.className = 'selected-song-item';
+                        selectedItem.draggable = true;
+                        selectedItem.dataset.songId = songId;
                         selectedItem.innerHTML = `
                             <div class="selected-song-title">${song.title}</div>
                             <div class="selected-song-artist">${song.artist || song.originalArtist || 'Unknown Artist'}</div>
+                            <div class="selected-song-actions">
+                                <button class="move-up-btn" title="Move Up" ${idx === 0 ? 'disabled' : ''}>&uarr;</button>
+                                <button class="move-down-btn" title="Move Down" ${idx === songIds.length - 1 ? 'disabled' : ''}>&darr;</button>
+                            </div>
                         `;
-                        selectedOldSongsList.appendChild(selectedItem);
+                        // Arrow button logic
+                        selectedItem.querySelector('.move-up-btn').onclick = function() {
+                            const arr = category === 'Old' ? selectedOldSongs : selectedNewSongs;
+                            if (idx > 0) {
+                                const temp = arr[idx - 1];
+                                arr[idx - 1] = arr[idx];
+                                arr[idx] = temp;
+                                // Update main selectedSongs order
+                                const mainIdx = selectedSongs.indexOf(arr[idx]);
+                                const prevIdx = selectedSongs.indexOf(arr[idx - 1]);
+                                if (mainIdx > -1 && prevIdx > -1) {
+                                    selectedSongs.splice(mainIdx, 1);
+                                    selectedSongs.splice(prevIdx, 0, arr[idx]);
+                                }
+                                updateSelectedSongsDisplay();
+                            }
+                        };
+                        selectedItem.querySelector('.move-down-btn').onclick = function() {
+                            const arr = category === 'Old' ? selectedOldSongs : selectedNewSongs;
+                            if (idx < arr.length - 1) {
+                                const temp = arr[idx + 1];
+                                arr[idx + 1] = arr[idx];
+                                arr[idx] = temp;
+                                // Update main selectedSongs order
+                                const mainIdx = selectedSongs.indexOf(arr[idx]);
+                                const nextIdx = selectedSongs.indexOf(arr[idx + 1]);
+                                if (mainIdx > -1 && nextIdx > -1) {
+                                    selectedSongs.splice(mainIdx, 1);
+                                    selectedSongs.splice(nextIdx, 0, arr[idx]);
+                                }
+                                updateSelectedSongsDisplay();
+                            }
+                        };
+                        container.appendChild(selectedItem);
+                    }
+                });
+                // Drag-and-drop logic
+                let dragSrcEl = null;
+                container.addEventListener('dragstart', function(e) {
+                    const item = e.target.closest('.selected-song-item');
+                    if (!item) return;
+                    dragSrcEl = item;
+                    item.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', item.dataset.songId);
+                });
+                container.addEventListener('dragend', function(e) {
+                    if (dragSrcEl) dragSrcEl.classList.remove('dragging');
+                    dragSrcEl = null;
+                });
+                container.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    const item = e.target.closest('.selected-song-item');
+                    if (item && item !== dragSrcEl) {
+                        item.classList.add('drag-over');
+                    }
+                });
+                container.addEventListener('dragleave', function(e) {
+                    const item = e.target.closest('.selected-song-item');
+                    if (item) item.classList.remove('drag-over');
+                });
+                container.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    const item = e.target.closest('.selected-song-item');
+                    if (!item || !dragSrcEl || item === dragSrcEl) return;
+                    item.classList.remove('drag-over');
+                    // Update order in category array
+                    const draggedId = dragSrcEl.dataset.songId;
+                    const targetId = item.dataset.songId;
+                    const arr = category === 'Old' ? selectedOldSongs : selectedNewSongs;
+                    const oldIndex = arr.indexOf(draggedId);
+                    const newIndex = arr.indexOf(targetId);
+                    if (oldIndex > -1 && newIndex > -1) {
+                        const [removed] = arr.splice(oldIndex, 1);
+                        let insertAt = newIndex;
+                        if (oldIndex < newIndex) {
+                            insertAt = newIndex - 1;
+                        }
+                        arr.splice(insertAt, 0, removed);
+                        // Update main selectedSongs order
+                        const mainIdx = selectedSongs.indexOf(draggedId);
+                        selectedSongs.splice(mainIdx, 1);
+                        const targetMainIdx = selectedSongs.indexOf(targetId);
+                        selectedSongs.splice(insertAt + (category === 'Old' ? 0 : selectedOldSongs.length), 0, draggedId);
+                        updateSelectedSongsDisplay();
                     }
                 });
             }
-            
+
+            // Show selected old songs in old tab
+            if (selectedOldSongs.length > 0 && selectedOldSongsList) {
+                renderResequencableList(selectedOldSongs, selectedOldSongsList, 'Old');
+            }
+
             // Show selected new songs in new tab
             if (selectedNewSongs.length > 0 && selectedNewSongsList) {
-                selectedNewSongs.forEach(songId => {
-                    const song = songs.find(s => s.id === songId);
-                    if (song) {
-                        const selectedItem = document.createElement('div');
-                        selectedItem.className = 'selected-song-item';
-                        selectedItem.innerHTML = `
-                            <div class="selected-song-title">${song.title}</div>
-                            <div class="selected-song-artist">${song.artist || song.originalArtist || 'Unknown Artist'}</div>
-                        `;
-                        selectedNewSongsList.appendChild(selectedItem);
-                    }
-                });
+                renderResequencableList(selectedNewSongs, selectedNewSongsList, 'New');
             }
         }
 
@@ -3336,7 +3447,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             const res = await cachedFetch(`${API_BASE_URL}/api/global-setlists`, forceRefresh);
             if (res.ok) {
                 globalSetlists = await res.json();
-                renderGlobalSetlists();
+                // Only update dropdown, do not re-render sidebar here
                 populateSetlistDropdown(); // Update dropdown when global setlists load
             }
         } catch (err) {
@@ -3357,7 +3468,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             const res = await cachedFetch(`${API_BASE_URL}/api/my-setlists`, forceRefresh);
             if (res.ok) {
                 mySetlists = await res.json();
-                renderMySetlists();
+                // Only update dropdown, do not re-render sidebar here
                 populateSetlistDropdown(); // Update dropdown when my setlists load
             }
         } catch (err) {
@@ -3527,19 +3638,19 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 
     // Render global setlists in sidebar
-    function renderGlobalSetlists() {
+    async function renderGlobalSetlists() {
         const content = document.getElementById('globalSetlistContent');
         if (!content) return;
 
+        // Fetch latest global setlists from backend
+        await loadGlobalSetlists(true);
+
         content.innerHTML = '';
-        
-        // Add a test message if no setlists
         if (globalSetlists.length === 0) {
             const testMsg = document.createElement('li');
             testMsg.innerHTML = '<div style="padding: 10px; color: #888; font-style: italic;">No global setlists available</div>';
             content.appendChild(testMsg);
         }
-        
         globalSetlists.forEach(setlist => {
             const li = document.createElement('li');
             li.innerHTML = `
@@ -3562,44 +3673,41 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Add event listeners
         content.querySelectorAll('.setlist-item').forEach(item => {
             const setlistId = item.dataset.setlistId;
-            
             item.addEventListener('click', (e) => {
                 if (!e.target.closest('.setlist-actions')) {
-                    // Show the setlist in main songs section
                     showGlobalSetlistInMainSection(setlistId);
-                    
-                    // Show description in sidebar
                     const setlist = globalSetlists.find(s => s._id === setlistId);
                     if (setlist) {
-                        hideSetlistDescription('my'); // Hide other type's description
+                        hideSetlistDescription('my');
                         showSetlistDescription(setlist, 'global');
                     }
-                    
-                    // Also open the setlist view modal for detailed view
-                    // openSetlistView(setlistId, 'global');
                 }
             });
-
             item.querySelector('.edit-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 editGlobalSetlist(setlistId);
             });
-
             item.querySelector('.delete-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 deleteGlobalSetlist(setlistId);
+            });
+            item.querySelector('.resequence-setlist')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.setlistResequenceMode = true;
+                showGlobalSetlistInMainSection(setlistId);
             });
         });
     }
 
     // Render my setlists in sidebar
-    function renderMySetlists() {
+    async function renderMySetlists() {
         const content = document.getElementById('mySetlistContent');
         if (!content) return;
 
+        // Fetch latest my setlists from backend
+        await loadMySetlists(true);
+
         content.innerHTML = '';
-        
-        // Add a test message if no setlists
         if (mySetlists.length === 0) {
             const testMsg = document.createElement('li');
             if (jwtToken) {
@@ -3609,7 +3717,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             content.appendChild(testMsg);
         }
-        
         mySetlists.forEach(setlist => {
             const li = document.createElement('li');
             li.innerHTML = `
@@ -3632,32 +3739,28 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Add event listeners
         content.querySelectorAll('.setlist-item').forEach(item => {
             const setlistId = item.dataset.setlistId;
-            
             item.addEventListener('click', (e) => {
                 if (!e.target.closest('.setlist-actions')) {
-                    // Show the setlist in main songs section
                     showMySetlistInMainSection(setlistId);
-                    
-                    // Show description in sidebar
                     const setlist = mySetlists.find(s => s._id === setlistId);
                     if (setlist) {
-                        hideSetlistDescription('global'); // Hide other type's description
+                        hideSetlistDescription('global');
                         showSetlistDescription(setlist, 'my');
                     }
-                    
-                    // Also open the setlist view modal for detailed view
-                    // openSetlistView(setlistId, 'my');
                 }
             });
-
             item.querySelector('.edit-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 editMySetlist(setlistId);
             });
-
             item.querySelector('.delete-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 deleteMySetlist(setlistId);
+            });
+            item.querySelector('.resequence-setlist')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.setlistResequenceMode = true;
+                showMySetlistInMainSection(setlistId);
             });
         });
     }
@@ -3905,22 +4008,31 @@ window.viewSingleLyrics = function(songId, otherId) {
     // Function to display setlist songs in the new simplified UI
     function displaySetlistSongs(songs, container) {
         container.innerHTML = '';
-        
+
+        // Resequence mode: enable drag-and-drop for all songs, hide remove buttons, show save button after drag
+        const isResequenceMode = !!window.setlistResequenceMode;
+
         if (!songs || songs.length === 0) {
             container.innerHTML = '<p class="setlist-empty-message">This setlist is empty.</p>';
             return;
         }
+
+        // Remove Save New Sequence button; resequenceSetlistSectionBtn will handle saving
 
         const ul = document.createElement('ul');
         ul.className = 'setlist-songs-list';
 
         songs.forEach((song, index) => {
             if (!song) return;
-            
             const li = document.createElement('li');
             li.className = 'setlist-song-item';
             li.dataset.songId = song.id;
-
+            // Enable drag-and-drop for all songs in resequence mode
+            if (isResequenceMode) {
+                li.setAttribute('draggable', 'true');
+            } else if (currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) {
+                li.setAttribute('draggable', 'true');
+            }
             li.innerHTML = `
                 <div class="setlist-song-info">
                     <span class="setlist-song-number">${index + 1}.</span>
@@ -3930,22 +4042,14 @@ window.viewSingleLyrics = function(songId, otherId) {
                     </div>
                 </div>
                 <div class="setlist-song-actions">
-                    ${(currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? 
-                        `<button class="remove-from-setlist-btn" data-song-id="${song.id}" title="Remove from setlist" type="button">×</button>` : 
-                        ''
-                    }
+                    ${!isResequenceMode && (currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? `<button class="remove-from-setlist-btn" data-song-id="${song.id}" title="Remove from setlist" type="button">×</button>` : ''}
                 </div>`;
 
-            // Add hover effect for the list item (now handled by CSS)
             // Add click handler for song info (not the remove button)
             const songInfo = li.querySelector('.setlist-song-info');
             songInfo.addEventListener('click', () => {
-                // Clear all previous selections globally (in both New and Old containers)
                 clearSetlistSelections();
-                
-                // Set current selection
                 li.classList.add('selected');
-                
                 showPreview(song);
             });
 
@@ -3953,22 +4057,69 @@ window.viewSingleLyrics = function(songId, otherId) {
             const removeBtn = li.querySelector('.remove-from-setlist-btn');
             if (removeBtn) {
                 removeBtn.addEventListener('click', async (e) => {
-                    e.preventDefault(); // Prevent any default behavior
-                    e.stopPropagation(); // Prevent triggering song preview
-                    
-                    // Check if user has permission to modify global setlists
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (currentSetlistType === 'global' && (!currentUser || !currentUser.isAdmin)) {
                         showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
                         return;
                     }
-                    
-                    // Remove song from current setlist
                     await removeSongFromSetlist(song.id);
                 });
             }
-
             ul.appendChild(li);
         });
+
+        // Drag-and-drop logic for resequence mode
+        if (isResequenceMode) {
+            let dragSrcEl = null;
+            ul.addEventListener('dragstart', function(e) {
+                const li = e.target.closest('.setlist-song-item');
+                if (!li) return;
+                dragSrcEl = li;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', li.dataset.songId);
+                li.classList.add('dragging');
+            });
+            ul.addEventListener('dragend', function(e) {
+                if (dragSrcEl) dragSrcEl.classList.remove('dragging');
+                dragSrcEl = null;
+            });
+            ul.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const li = e.target.closest('.setlist-song-item');
+                if (li && li !== dragSrcEl) {
+                    li.classList.add('drag-over');
+                }
+            });
+            ul.addEventListener('dragleave', function(e) {
+                const li = e.target.closest('.setlist-song-item');
+                if (li) li.classList.remove('drag-over');
+            });
+            ul.addEventListener('drop', function(e) {
+                e.preventDefault();
+                const li = e.target.closest('.setlist-song-item');
+                if (!li || !dragSrcEl || li === dragSrcEl) return;
+                li.classList.remove('drag-over');
+                // Update setlist order in memory only
+                const draggedId = dragSrcEl.dataset.songId;
+                const targetId = li.dataset.songId;
+                const oldIndex = currentViewingSetlist.songs.findIndex(id => id == draggedId);
+                const newIndex = currentViewingSetlist.songs.findIndex(id => id == targetId);
+                if (oldIndex > -1 && newIndex > -1) {
+                    // Remove dragged item
+                    const [removed] = currentViewingSetlist.songs.splice(oldIndex, 1);
+                    // Insert at correct index
+                    let insertAt = newIndex;
+                    if (oldIndex < newIndex) {
+                        insertAt = newIndex - 1;
+                    }
+                    currentViewingSetlist.songs.splice(insertAt, 0, removed);
+                }
+                // Refresh the setlist display to show new order
+                refreshSetlistDisplay();
+            });
+        }
 
         container.appendChild(ul);
     }
@@ -4141,6 +4292,35 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         renderSetlistSongs();
         modal.style.display = 'flex';
+
+        // Add submit event listener to update setlist and UI immediately
+        if (form) {
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                const setlistId = document.getElementById('globalSetlistId').value;
+                const name = document.getElementById('globalSetlistName').value.trim();
+                const description = document.getElementById('globalSetlistDescription').value.trim();
+                const selectedSongs = modal.songSelector.getSelectedSongs();
+                const res = await authFetch(`${API_BASE_URL}/api/global-setlists/${setlistId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description, songs: selectedSongs })
+                });
+                if (res.ok) {
+                    // Update local setlist
+                    const updatedSetlist = await res.json();
+                    const idx = globalSetlists.findIndex(s => s._id === setlistId);
+                    if (idx !== -1) globalSetlists[idx] = updatedSetlist;
+                    // Update dropdown and sidebar immediately
+                    renderGlobalSetlists();
+                    populateSetlistDropdown();
+                    showNotification('Setlist updated!', 'success');
+                    modal.style.display = 'none';
+                } else {
+                    showNotification('Failed to update setlist', 'error');
+                }
+            };
+        }
     }
 
     // Render setlist songs in the view modal
@@ -4286,13 +4466,34 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         title.textContent = 'Create Global Setlist';
         submitBtn.textContent = 'Create Setlist';
-        form.reset();
+        if (form) form.reset();
         document.getElementById('globalSetlistId').value = '';
 
         // Initialize song selection with checkboxes
         modal.songSelector = initializeSetlistSongSelection('global');
 
         modal.style.display = 'flex';
+
+        // Add submit event listener to refresh setlists after creation
+        if (form) {
+            form.onsubmit = async function(e) {
+                // ...existing code for setlist creation...
+                setTimeout(async () => {
+                    await refreshSetlistDataAndUI();
+                    renderGlobalSetlists();
+                    renderMySetlists();
+                    // Select the newly added setlist in dropdown
+                    const dropdown = document.getElementById('setlistDropdown');
+                    const nameInput = document.getElementById('globalSetlistName'); // or 'mySetlistName'
+                    const newSetlist = globalSetlists.find(s => s.name === nameInput.value); // or mySetlists
+                    if (dropdown && newSetlist) {
+                        dropdown.value = `global_${newSetlist._id}`; // or `my_${newSetlist._id}`
+                        dropdown.dispatchEvent(new Event('change'));
+                    }
+                }, 100);
+            };
+        }
+
     }
 
     // Edit global setlist
@@ -4377,18 +4578,36 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         const modal = document.getElementById('mySetlistModal');
         const title = document.getElementById('mySetlistModalTitle');
-        const form = document.getElementById('mySetlistForm');
+        const mySetlistForm = document.getElementById('mySetlistForm');
         const submitBtn = document.getElementById('mySetlistSubmit');
 
         title.textContent = 'Create My Setlist';
         submitBtn.textContent = 'Create Setlist';
-        form.reset();
+        mySetlistForm.reset();
         document.getElementById('mySetlistId').value = '';
 
         // Initialize song selection with checkboxes
         modal.songSelector = initializeSetlistSongSelection('my');
 
         modal.style.display = 'flex';
+
+        // Add submit event listener to refresh setlists after creation
+        mySetlistForm.onsubmit = async function(e) {
+            // ...existing code for setlist creation...
+            setTimeout(async () => {
+                await refreshSetlistDataAndUI();
+                renderGlobalSetlists();
+                renderMySetlists();
+                // Select the newly added setlist in dropdown
+                const dropdown = document.getElementById('setlistDropdown');
+                const nameInput = document.getElementById('globalSetlistName'); // or 'mySetlistName'
+                const newSetlist = globalSetlists.find(s => s.name === nameInput.value); // or mySetlists
+                if (dropdown && newSetlist) {
+                    dropdown.value = `global_${newSetlist._id}`; // or `my_${newSetlist._id}`
+                    dropdown.dispatchEvent(new Event('change'));
+                }
+            }, 100);
+        };
     }
 
     // Edit my setlist
@@ -4850,6 +5069,10 @@ window.viewSingleLyrics = function(songId, otherId) {
     
         function renderFavorites() {
             favoritesContent.innerHTML = '';
+            // Update favorites count in showFavoritesEl
+            if (showFavoritesEl) {
+                showFavoritesEl.innerHTML = `Favorites (${favorites.length})`;
+            }
         
             if (favorites.length === 0) {
                 favoritesContent.innerHTML = '<p>No favorite songs yet.</p>';
@@ -5257,11 +5480,20 @@ window.viewSingleLyrics = function(songId, otherId) {
                     const data = await response.json();
                     // Always update favorites from backend
                     favorites = Array.isArray(data.favorites) ? data.favorites : [];
+                    if (!Array.isArray(favorites)) favorites = [];
                     if (data.user && data.user.username) {
                         currentUser = data.user;
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     }
                     updateAuthButtons();
+                        // Force re-render songs to update favorite icons for both tabs
+                        const filters = getCurrentFilterValues();
+                        renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
+                        renderSongs('Old', filters.key, filters.genre, filters.mood, filters.artist);
+                        // Always re-render favorites list after loading
+                        if (typeof renderFavorites === 'function') {
+                            renderFavorites();
+                        }
                 } else if (response.status === 401 || response.status === 403) {
                     logout();
                     showNotification('Session expired. Please log in again.');
@@ -5280,8 +5512,8 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         async function saveUserData() {
             try {
-                // Limit favorites to 100 items to avoid payload too large
-                const limitedFavorites = Array.isArray(favorites) ? favorites.slice(0, 100) : [];
+                // No cap on favorites, send all
+                const limitedFavorites = Array.isArray(favorites) ? favorites : [];
                 // Use name, email, transpose as expected by backend
                 const name = currentUser && currentUser.username ? currentUser.username : '';
                 const email = currentUser && currentUser.email ? currentUser.email : '';
@@ -5556,7 +5788,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Get calling function for debugging
         const stack = new Error().stack.split('\n');
         const caller = stack[1] ? stack[1].trim() : 'unknown';
-        console.log(`🎬 debouncedRenderSongs called from: ${caller}`);
         
         // If parameters are exactly the same as last call, skip entirely
         if (currentParams === lastRenderParams) {
@@ -5578,7 +5809,6 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 
     function renderSongs(categoryOrSongs, filterOrContainer, genreFilterValue, moodFilterValue, artistFilterValue) {
-        console.log('renderSongs called with:', categoryOrSongs, 'Global songs length:', songs.length);
         let songsToRender;
         let container;            if (typeof categoryOrSongs === 'string') {
                 const category = categoryOrSongs;
@@ -5719,7 +5949,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 }
                 // No fallback to old system - if no setlist selected, buttons show "Add"
                 
-                const isFavorite = favorites.includes(song.id);
+                const isFavorite = Array.isArray(favorites) && favorites.includes(song.id);
                 const displayGenres = song.genres ? song.genres.join(', ') : song.genre || '';
                 div.innerHTML = `
                 <div class="song-header">
