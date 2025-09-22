@@ -5071,7 +5071,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             favoritesContent.innerHTML = '';
             // Update favorites count in showFavoritesEl
             if (showFavoritesEl) {
-                showFavoritesEl.innerHTML = `Favorites (${favorites.length})`;
+                showFavoritesEl.innerHTML = `Favorites (<span class="favorites-count">${favorites.length}</span>)`;
             }
         
             if (favorites.length === 0) {
