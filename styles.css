@@ -603,6 +603,8 @@
             align-items: center;
             gap: 6px;
             flex: 1;
+            justify-content: flex-start;
+            flex-wrap: wrap;
         }
 
         .preview-transpose-controls .favorite-btn {
@@ -619,7 +621,7 @@
             transition: all 0.2s ease;
             font-size: 1rem;
             padding: 0;
-            margin-left: 8px;
+            margin-left: auto;
         }
 
         .preview-transpose-controls .favorite-btn:hover {
@@ -628,11 +630,6 @@
             border-color: var(--favorite-color);
         }
 
-        .preview-transpose-controls .favorite-btn.favorited {
-            background: var(--favorite-color);
-            color: white;
-            border-color: var(--favorite-color);
-        }
 
         .preview-transpose-btn {
             width: 36px;
