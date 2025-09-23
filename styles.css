@@ -311,6 +311,23 @@
             transform: scale(1.1);
         }
 
+        .setlist-song-key-time {
+            display: inline-block;
+            background: #f3f3f3;
+            color: #725924;
+            font-weight: 600;
+            font-size: 0.75em;
+            padding: 2px 3px;
+            border-radius: 4px;
+            margin-left: 6px;
+            letter-spacing: 0.03em;
+            vertical-align: middle;
+        }
+        body.dark-mode .setlist-song-key-time {
+            background: #333;
+            color: #a3bffa;
+        }
+
         .song-title-row {
             display: flex;
             justify-content: space-between;
@@ -2014,12 +2031,12 @@
 
         .setlist-song-key {
             color: var(--song-item-text) !important;
-            font-size: 0.7em !important;
+            font-size: 0.8em !important;
             line-height: 1 !important;
             font-weight: 500 !important;
             background: var(--accent-color) !important;
-            padding: 1px 4px !important;
-            border-radius: 8px !important;
+            padding: 2px 4px !important;
+            border-radius: 4px !important;
             display: inline-block !important;
             border: 1px solid var(--song-item-border) !important;
         }
