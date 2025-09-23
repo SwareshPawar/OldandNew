@@ -311,7 +311,7 @@
             transform: scale(1.1);
         }
 
-        .setlist-song-key-time {
+        /* .setlist-song-key-time {
             display: inline-block;
             background: #f3f3f3;
             color: #725924;
@@ -322,11 +322,34 @@
             margin-left: 6px;
             letter-spacing: 0.03em;
             vertical-align: middle;
-        }
+        } */
         body.dark-mode .setlist-song-key-time {
             background: #333;
             color: #a3bffa;
         }
+
+        .setlist-song-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.setlist-song-key,
+.setlist-song-key-time,
+.setlist-song-key-tempo {
+    padding: 1px 1px;
+    font-size: 0.75em;
+    margin-right: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
         .song-title-row {
             display: flex;
