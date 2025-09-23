@@ -126,13 +126,15 @@
     font-weight: 500;
     box-shadow: 0 1px 4px rgba(0,0,0,0.07);
 }
+
 #weightsTable input[type="number"]:focus {
     outline: 2px solid #BCA88D;
     background: #23231A;
 }
+
 /* Highlight active song in songs-section */
 .song-item.active-song {
-    background: linear-gradient(90deg, #4f4d27 100%, var(--accent-color) 0%);
+    background: linear-gradient(90deg, #978754 100%, var(--accent-color) 0%);
     color: #F1F0E4;
     border-left: 4px solid var(--accent-color);
     box-shadow: 0 2px 8px rgba(62,63,41,0.18);
@@ -277,8 +279,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 3px;
-            gap: 10px;
+            margin-bottom: 2px;
+            gap: 2px;
         }
 
         .song-title {
@@ -317,7 +319,7 @@
         }
 
         .song-title {
-            font-weight: 600;
+            font-weight: 500;
             flex-grow: 1;
             margin-right: 10px;
             overflow: hidden;
@@ -347,7 +349,7 @@
 
         /* Make action buttons more compact */
         .song-actions .btn {
-            padding: 3px 8px;
+            padding: 4px 4px;
             font-size: 0.8rem;
         }
 
@@ -416,14 +418,14 @@
         .preview-meta-label {
             font-size: 0.75rem;
             font-weight: 700;
-            color: var(--song-meta-color);
+            color: var(--lyrics-text-color);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .preview-meta-value {
             font-size: 0.95rem;
-            color: var(--text-color);
+            color: var(--lyrics-text-color);
             font-weight: 600;
         }
 
@@ -2255,7 +2257,7 @@
         }
 
             .song-item:hover {
-                background: var(--sidebar-item-hover-bg);
+                background: linear-gradient(90deg, #cfbb76 100%, var(--accent-color) 0%);
                 color: var(--sidebar-text-hover);
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0,0,0,0.15);
@@ -2263,7 +2265,7 @@
 
         .song-title {
             font-size: 0.95rem;
-            font-weight: 600;
+            font-weight: 500;
             margin-bottom: 3px;
         }
 
@@ -2281,13 +2283,13 @@
 
         .song-meta {
             gap: 4px; 
-            padding: 5px 0;
+            padding: 2px 0;
             border-top: 1px solid var(--song-item-border);
             border-bottom: 1px solid var(--song-item-border);
-            margin: 5px 0;
-            color: var(--song-meta-color);
+            margin: 2px 0;
+            color: var(--lyrics-text-color);
             font-size: 0.85rem;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             transition: color 0.3s;
         }
 
@@ -2296,7 +2298,7 @@
             gap: 5px;
             flex-wrap: wrap;
             flex-shrink: 0; /* Prevent shrinking */
-            margin-left: 10px;
+            margin-left: 5px;
         }
 
         /* Setlist Close Button Styles */
