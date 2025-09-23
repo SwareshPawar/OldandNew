@@ -4071,6 +4071,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                     <div class="setlist-song-details">
                         <div class="setlist-song-title">${song.title}</div>
                         ${song.key ? `<div class="setlist-song-key">Key: ${song.key}</div>` : ''}
+                        ${song.time ? `<span class="setlist-song-key-time">${song.time}</span>` : ''}
+                        ${song.tempo ? `<span class="setlist-song-key-time">${song.tempo} BPM</span>` : ''}
                     </div>
                 </div>
                 <div class="setlist-song-actions">
