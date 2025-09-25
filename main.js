@@ -1,3 +1,11 @@
+// Register service worker for PWA installability
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+            .then(reg => console.log('Service Worker registered:', reg))
+            .catch(err => console.warn('Service Worker registration failed:', err));
+    });
+}
 // --- GLOBAL CONSTANTS AND VARIABLES ---
 // --- Cache expiry times in milliseconds (move to top to avoid ReferenceError) ---
 const CACHE_EXPIRY = {
@@ -5,7 +13,7 @@ const CACHE_EXPIRY = {
     userdata: 10 * 60 * 1000,  // 10 minutes
     setlists: 2 * 60 * 1000    // 2 minutes
 };  
-
+let deferredPrompt;
 // Global variables for app state
 let jwtToken = localStorage.getItem('jwtToken') || '';
 let currentUser = null;
@@ -170,6 +178,8 @@ window.dataCache = {
         'my-setlists': null
     }
 };
+
+
 
 // Initialize cache from localStorage on page load
 try {
@@ -917,6 +927,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }, 100);
+});
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show your custom install button
+    const installBtn = document.getElementById('installAppBtn');
+    if (installBtn) installBtn.style.display = 'block';
+});
+
+document.getElementById('installAppBtn')?.addEventListener('click', () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(choiceResult => {
+            deferredPrompt = null;
+            document.getElementById('installAppBtn').style.display = 'none';
+        });
+    }
 });
 
 // --- FIXED helper implementations (fill in if previously incomplete) ---
@@ -8812,64 +8840,80 @@ window.viewSingleLyrics = function(songId, otherId) {
             };
 
             const restorePosition = () => {
-                const saved = localStorage.getItem(id + '-pos');
-                if (saved) {
-                    const pos = JSON.parse(saved);
-                    el.style.top = pos.top || '';
-                    el.style.left = pos.left || '';
-                    el.style.right = pos.right || '';
-                    el.style.bottom = pos.bottom || '';
-                } else {
-                    // Default to top right corner for initial load
-                    // Position buttons side by side horizontally
-                    const isMobile = window.innerWidth <= 768;
-                    const spacing = isMobile ? 60 : 50; // Horizontal spacing between buttons
-                    
-                    el.style.top = '20px'; // All buttons at same top position
-                    el.style.right = id === 'toggle-sidebar' ? '20px' :
-                        id === 'toggle-songs' ? (20 + spacing) + 'px' :
-                        id === 'toggle-all-panels' ? (20 + spacing * 2) + 'px' : '20px';
-                    el.style.left = '';
-                    el.style.bottom = '';
-                }
-            };
+            const saved = localStorage.getItem(id + '-pos');
+            const minPadding = 20;
+            const btnSize = 36;
+            const spacing = window.innerWidth <= 768 ? 60 : 50;
+            const allIds = ['toggle-sidebar', 'toggle-songs', 'toggle-all-panels'];
+            const idx = allIds.indexOf(id);
 
-            // Snap to nearest edge
-            function snapToEdge() {
+            if (saved) {
+                const pos = JSON.parse(saved);
+                // Clamp to viewport
+                let top = parseInt(pos.top) || minPadding;
+                let left = parseInt(pos.left) || '';
+                let right = parseInt(pos.right) || '';
+                let bottom = parseInt(pos.bottom) || '';
+
+                // Clamp left/top to avoid offscreen
+                top = Math.max(minPadding, Math.min(top, window.innerHeight - btnSize - minPadding));
+                if (left !== '') left = Math.max(minPadding, Math.min(left, window.innerWidth - btnSize - minPadding));
+                el.style.top = top + 'px';
+                el.style.left = left !== '' ? left + 'px' : '';
+                el.style.right = right !== '' ? right + 'px' : '';
+                el.style.bottom = bottom !== '' ? bottom + 'px' : '';
+            } else {
+                // Default: space horizontally at top, never overlap
+                el.style.top = minPadding + 'px';
+                el.style.left = (minPadding + idx * (btnSize + spacing)) + 'px';
+                el.style.right = '';
+                el.style.bottom = '';
+            }
+        };
+
+        // Snap to nearest edge and prevent overlap/offscreen
+                function snapToEdge() {
             const rect = el.getBoundingClientRect();
             const winW = window.innerWidth;
             const winH = window.innerHeight;
-            const gap = 15; // 10px gap from edge
-            const distances = [
-                { edge: 'left', value: rect.left },
-                { edge: 'right', value: winW - rect.right },
-                { edge: 'top', value: rect.top },
-                { edge: 'bottom', value: winH - rect.bottom }
-            ];
-            distances.sort((a, b) => a.value - b.value);
-            const nearest = distances[0].edge;
+            const gap = 15;
+            const btnSize = rect.width || 36;
+
+            // Clamp to viewport
+            let left = Math.max(gap, Math.min(rect.left, winW - btnSize - gap));
+            let top = Math.max(gap, Math.min(rect.top, winH - btnSize - gap));
+
+            // Prevent overlap with other buttons
+            const allButtons = document.querySelectorAll('.panel-toggle.draggable');
+            for (const otherBtn of allButtons) {
+                if (otherBtn === el) continue;
+                const otherRect = otherBtn.getBoundingClientRect();
+                if (
+                    left < otherRect.right &&
+                    left + btnSize > otherRect.left &&
+                    top < otherRect.bottom &&
+                    top + btnSize > otherRect.top
+                ) {
+                    // Move right or down to avoid overlap
+                    left = otherRect.right + gap;
+                    if (left > winW - btnSize - gap) {
+                        left = gap;
+                        top = otherRect.bottom + gap;
+                        if (top > winH - btnSize - gap) top = gap;
+                    }
+                }
+            }
 
             // Reset all positions
-            el.style.left = '';
+            el.style.left = left + 'px';
+            el.style.top = top + 'px';
             el.style.right = '';
-            el.style.top = '';
             el.style.bottom = '';
-
-            if (nearest === 'left') {
-                el.style.left = gap + 'px';
-                el.style.top = rect.top + 'px';
-            } else if (nearest === 'right') {
-                el.style.right = gap + 'px';
-                el.style.top = rect.top + 'px';
-            } else if (nearest === 'top') {
-                el.style.top = gap + 'px';
-                el.style.left = rect.left + 'px';
-            } else if (nearest === 'bottom') {
-                el.style.bottom = gap + 'px';
-                el.style.left = rect.left + 'px';
-            }
             savePosition();
         }
+
+            // Snap to nearest edge
+            
 
             const onMove = (clientX, clientY) => {
                 if (!isDragging) return;

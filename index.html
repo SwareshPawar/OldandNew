@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#667eea">
 <script>
 // Recommendation weights: loaded from backend or localStorage fallback
 let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
@@ -408,6 +409,7 @@ async function saveRecommendationWeightsToBackend(weights) {
 
         <!-- Preview Section -->
         <div class="preview-section" id="songPreview">
+            <button id="installAppBtn" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;">Add to Home Screen</button>
             <h2>Select a song</h2>
             <div class="song-lyrics">No song is selected</div>
         </div>
