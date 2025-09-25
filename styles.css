@@ -3601,6 +3601,8 @@ body.dark-mode .modal-content {
 
     .songs-section {
         width: 50%;
+        overflow-y: auto;
+        height: 100%;
         max-width: none;
         left: 0;
     }
