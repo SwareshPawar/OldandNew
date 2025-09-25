@@ -68,7 +68,7 @@ const ARTISTS = [
   "Sunidhi Chauhan", "Shreya Ghoshal", "Palak Muchhal", "Tulsi Kumar",
   "Neha Kakkar", "Monali Thakur", "Shilpa Rao", "Dhvani Bhanushali",
   "Chinmayi", "Sunali Rathod", "Rekha Bhardwaj", "Ankita Bhattacharyya",
-  "Usha Uthup", "Annie Khalid",
+  "Usha Uthup", "Annie Khalid","Madhushree",
 
   // Golden Era Composers
   "Naushad", "Shankar-Jaikishan", "S.D. Burman", "R.D. Burman", "Madan Mohan",
