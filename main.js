@@ -955,10 +955,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     modal.style.display = 'flex';
 }
-
-    if (window.matchMedia('(display-mode: standalone)').matches && window.location.pathname !== '/') {
-    window.location.replace('/');
-}
 });
 
 
