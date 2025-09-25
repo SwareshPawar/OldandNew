@@ -992,6 +992,7 @@
                 --title-color: #BCA88D;
                 --chord-color: #7D8D86;
                 --favorite-color: #ff0000;
+                --song-item-text-bg: #3f3319;
             }
 
         /* Add these styles to your existing CSS */
