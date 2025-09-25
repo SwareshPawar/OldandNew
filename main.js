@@ -122,7 +122,7 @@ const ARTISTS = [
   "Deepika Padukone", "Priyanka Chopra", "Kareena Kapoor Khan",
   "Anushka Sharma", "Katrina Kaif", "Vidya Balan",
   "Kangana Ranaut", "Alia Bhatt", "Shraddha Kapoor",
-  "Kriti Sanon", "Kiara Advani", "Janhvi Kapoor", "Sara Ali Khan",
+  "Kriti Sanon", "Kiara Advani", "Janhvi Kapoor", "Sara Ali Khan","Farhan Akhtar",
 
   // Supporting / Character Actors
   "Pankaj Tripathi", "Manoj Bajpayee", "Irrfan Khan",
