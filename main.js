@@ -81,7 +81,7 @@ const ARTISTS = [
   "Vishal-Shekhar", "Shankar-Ehsaan-Loy", "Pritam", "Amit Trivedi",
   "Amaal Mallik", "Tanishk Bagchi", "Rochak Kohli", "Himesh Reshammiya","Sanam Puri",
   "Neeti Mohan","Zubeen Garg","Vishal Dadlani","Salim-Sulaiman","Shraddha Pandit",
-  "Anand Raj Anand","Javed Bashir","Diljit Dosanjh",
+  "Anand Raj Anand","Javed Bashir","Diljit Dosanjh","Richa Sharma","",
 
   // Ghazal / Qawwali / Classical Legends
   "Jagjit Singh", "Chitra Singh", "Pankaj Udhas", "Anup Jalota",
@@ -97,7 +97,41 @@ const ARTISTS = [
   "Lucky Ali", "Euphoria (Palash Sen)", "Adnan Sami", "Colonial Cousins",
   "Mika Singh", "Daler Mehndi", "Guru Randhawa", "Badshah",
   "Yo Yo Honey Singh", "Divine", "Raftaar", "Nucleya",
+  // Legendary Actors
+  "Amitabh Bachchan", "Dharmendra", "Jeetendra", "Rajesh Khanna",
+  "Shashi Kapoor", "Shammi Kapoor", "Dev Anand", "Raj Kapoor",
+  "Vinod Khanna", "Rishi Kapoor", "Amrish Puri", "Anupam Kher",
 
+  // Popular 90s & 2000s Actors
+  "Shah Rukh Khan", "Salman Khan", "Aamir Khan",
+  "Akshay Kumar", "Ajay Devgn", "Saif Ali Khan",
+  "Govinda", "Sunny Deol", "Sanjay Dutt", "Nana Patekar",
+
+  // Current Generation Male Actors
+  "Ranbir Kapoor", "Ranveer Singh", "Varun Dhawan",
+  "Sidharth Malhotra", "Tiger Shroff", "Kartik Aaryan",
+  "Ayushmann Khurrana", "Rajkummar Rao", "Shahid Kapoor",
+  "Vicky Kaushal", "Arjun Kapoor", "Aditya Roy Kapur",
+
+  // Leading Actresses (90s & 2000s)
+  "Madhuri Dixit", "Sridevi", "Juhi Chawla", "Karisma Kapoor",
+  "Kajol", "Raveena Tandon", "Shilpa Shetty", "Preity Zinta",
+  "Aishwarya Rai Bachchan", "Rani Mukerji",
+
+  // Current Generation Actresses
+  "Deepika Padukone", "Priyanka Chopra", "Kareena Kapoor Khan",
+  "Anushka Sharma", "Katrina Kaif", "Vidya Balan",
+  "Kangana Ranaut", "Alia Bhatt", "Shraddha Kapoor",
+  "Kriti Sanon", "Kiara Advani", "Janhvi Kapoor", "Sara Ali Khan",
+
+  // Supporting / Character Actors
+  "Pankaj Tripathi", "Manoj Bajpayee", "Irrfan Khan",
+  "Nawazuddin Siddiqui", "Boman Irani", "Paresh Rawal",
+  "Johnny Lever", "Kunal Khemu", "Abhay Deol",
+
+  // Young Actresses Rising
+  "Tara Sutaria", "Ananya Panday", "Rashmika Mandanna",
+  "Mrunal Thakur", "Disha Patani",
   // Others / Misc
   "Dr. Devika Rani", "Other"
 ];
