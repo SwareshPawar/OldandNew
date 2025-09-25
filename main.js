@@ -927,7 +927,41 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }, 100);
+
+    if (!jwtToken || !isJwtValid(jwtToken)) {
+    // Show a modal with both Login and Register options
+    let modal = document.getElementById('authChoiceModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'authChoiceModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="text-align:center;">
+                <h3>Welcome!</h3>
+                <p>Please login or register to continue.</p>
+                <button id="authLoginBtn" class="btn btn-primary" style="margin:8px 0 8px 0;width:80%;">Login</button>
+                <button id="authRegisterBtn" class="btn btn-secondary" style="margin-bottom:8px;width:80%;">Register</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('authLoginBtn').onclick = () => {
+            modal.style.display = 'none';
+            showLoginModal();
+        };
+        document.getElementById('authRegisterBtn').onclick = () => {
+            modal.style.display = 'none';
+            showRegisterModal();
+        };
+    }
+    modal.style.display = 'flex';
+}
+
+    if (window.matchMedia('(display-mode: standalone)').matches && window.location.pathname !== '/') {
+    window.location.replace('/');
+}
 });
+
+
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
