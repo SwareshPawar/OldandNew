@@ -79,7 +79,9 @@ const ARTISTS = [
   "A.R. Rahman", "Ilaiyaraaja", "Harris Jayaraj", "Anirudh Ravichander",
   "Devi Sri Prasad", "Thaman S", "Gopi Sundar", "Ajay-Atul", "Sachin-Jigar",
   "Vishal-Shekhar", "Shankar-Ehsaan-Loy", "Pritam", "Amit Trivedi",
-  "Amaal Mallik", "Tanishk Bagchi", "Rochak Kohli", "Himesh Reshammiya","Sanam Puri","Neeti Mohan","Zubeen Garg","Vishal Dadlani","Salim-Sulaiman","Shraddha Pandit",
+  "Amaal Mallik", "Tanishk Bagchi", "Rochak Kohli", "Himesh Reshammiya","Sanam Puri",
+  "Neeti Mohan","Zubeen Garg","Vishal Dadlani","Salim-Sulaiman","Shraddha Pandit",
+  "Anand Raj Anand","Javed Bashir","Diljit Dosanjh",
 
   // Ghazal / Qawwali / Classical Legends
   "Jagjit Singh", "Chitra Singh", "Pankaj Udhas", "Anup Jalota",
