@@ -1057,6 +1057,24 @@
             border: none;
         }
 
+        /* Add a container for your toggles */
+.panel-toggle-row {
+    position: fixed;
+    top: 12px;
+    left: 0;
+    width: 100vw;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+    z-index: 1200;
+    pointer-events: none; /* Only buttons inside are interactive */
+}
+.panel-toggle-row .panel-toggle.draggable {
+    position: static;
+    pointer-events: auto;
+    margin: 0;
+}
+
         .sidebar-footer {
             margin-top: auto;
             padding-top: 15px;
