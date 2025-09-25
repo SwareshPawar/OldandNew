@@ -953,6 +953,8 @@
             --lyrics-text-color: #3E3F29;
             --title-color: #3E3F29;
             --chord-color: #7D8D86;
+            --song-item-text-bg: #dfc07d;
+            
         }
 
         * {
@@ -1165,7 +1167,7 @@ body.dark-mode #installAppBtn {
         /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
-            background: var(--sidebar-item-bg);
+            background: var(--song-item-text-bg);
             color: var(--sidebar-text-color);
             padding: 15px;
             position: fixed;
