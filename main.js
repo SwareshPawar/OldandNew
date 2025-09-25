@@ -132,6 +132,39 @@ const ARTISTS = [
   // Young Actresses Rising
   "Tara Sutaria", "Ananya Panday", "Rashmika Mandanna",
   "Mrunal Thakur", "Disha Patani",
+
+  // Legends & Bhavgeet
+  "Sudhir Phadke",  "Arun Date",  "Yashwant Deo",  "Hridaynath Mangeshkar",  "Vasundhara Patwardhan",
+  "Shobha Gurtu",  "Padmaja Fenade",  "Prabhakar Karekar",  "Jaywant Kulkarni",
+  "Ranjana Joglekar",  "Ravindra Sathe",  "Mohan Atre",  "Sharad Jambhekar",
+  "Rama Marathe",  "Vijaya Jog",
+
+  // Mangeshkar Family
+  "Usha Mangeshkar",  "Meera Mangeshkar",  "Hridaynath Mangeshkar",
+
+  // Golden Voices
+  "Suman Kalyanpur",  "Anuradha Paudwal",  "Suresh Wadkar",  "Sadhana Sargam",
+  "Devaki Pandit",  "Shaila Chikale",  "Yogini Joglekar",
+  "Anjali Marathe",  "Shobha Joshi",
+
+  // Modern & Popular
+  "Vaishali Samant",  "Avdhoot Gupte",  "Ajay Gogavale",  "Atul Gogavale",
+  "Swapnil Bandodkar",  "Shankar Mahadevan",  "Shreya Ghoshal",  "Sonu Nigam",
+  "Hariharan",  "Kumar Sanu",  "Sunidhi Chauhan",
+
+  // New Generation
+  "Saleel Kulkarni",  "Rahul Deshpande",  "Mahesh Kale",  "Adarsh Shinde",
+  "Anand Shinde",  "Vaishali Made",  "Mugdha Karhade",  "Ketaki Mategaonkar",
+  "Bela Shende",  "Ranjana Jogalekar",  "Meenal Jain",
+  // Folk & Lavani
+  "Surekha Punekar",  "Reshma Sonawane",  "Shakuntala Jadhav",  "Kasturi Waje",
+  "Vishnu Waghmare",
+
+  // Others in Marathi Films
+  "Ajay-Atul",  "Avinash-Vishwajeet",  "Ashok Patki",  "Nandu Bhende",
+  "Neha Rajpal",  "Prajakta Shukre",  "Anand Bhate",
+  "Roopkumar Rathod",  "Jitendra Abhyankar",  "Rohit Raut",
+  "Arya Ambekar",  "Jaanvee Prabhu Arora",  "Hrishikesh Ranade",
   // Others / Misc
   "Dr. Devika Rani", "Other"
 ];
