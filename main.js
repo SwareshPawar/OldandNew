@@ -116,7 +116,7 @@ const ARTISTS = [
   // Leading Actresses (90s & 2000s)
   "Madhuri Dixit", "Sridevi", "Juhi Chawla", "Karisma Kapoor",
   "Kajol", "Raveena Tandon", "Shilpa Shetty", "Preity Zinta",
-  "Aishwarya Rai Bachchan", "Rani Mukerji",
+  "Aishwarya Rai Bachchan", "Rani Mukerji","Imran Hashmi","John Abraham",
 
   // Current Generation Actresses
   "Deepika Padukone", "Priyanka Chopra", "Kareena Kapoor Khan",
