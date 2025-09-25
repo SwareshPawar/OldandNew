@@ -409,7 +409,10 @@ async function saveRecommendationWeightsToBackend(weights) {
 
         <!-- Preview Section -->
         <div class="preview-section" id="songPreview">
-            <button id="installAppBtn" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;">Add to Home Screen</button>
+            <button id="installAppBtn" style="display:none;">
+            <i class="fas fa-download" style="margin-right:8px;"></i>
+            Add to Home Screen
+            </button>
             <h2>Select a song</h2>
             <div class="song-lyrics">No song is selected</div>
         </div>

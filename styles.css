@@ -1057,6 +1057,48 @@
             border: none;
         }
 
+#installAppBtn {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 28px;
+    font-size: 1.08rem;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(62,63,41,0.18);
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    letter-spacing: 0.03em;
+    outline: none;
+}
+
+#installAppBtn:hover, #installAppBtn:focus {
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    box-shadow: 0 8px 24px rgba(62,63,41,0.22);
+    transform: translateY(-2px) scale(1.04);
+    color: #ffd700;
+}
+
+body.dark-mode #installAppBtn {
+    background: linear-gradient(90deg, #BCA88D, #23231A);
+    color: #23231A;
+}
+
+@media (max-width: 600px) {
+    #installAppBtn {
+        bottom: 12px;
+        right: 12px;
+        padding: 10px 18px;
+        font-size: 1rem;
+        border-radius: 18px;
+    }
+}
+
         /* Add a container for your toggles */
 .panel-toggle-row {
     position: fixed;
