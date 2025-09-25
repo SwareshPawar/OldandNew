@@ -150,7 +150,7 @@ const ARTISTS = [
   // Modern & Popular
   "Vaishali Samant",  "Avdhoot Gupte",  "Ajay Gogavale",  "Atul Gogavale",
   "Swapnil Bandodkar",  "Shankar Mahadevan",  "Shreya Ghoshal",  "Sonu Nigam",
-  "Hariharan",  "Kumar Sanu",  "Sunidhi Chauhan",
+  "Kumar Sanu",  "Sunidhi Chauhan",
 
   // New Generation
   "Saleel Kulkarni",  "Rahul Deshpande",  "Mahesh Kale",  "Adarsh Shinde",
