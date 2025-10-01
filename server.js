@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -31,7 +30,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('.'));
 
-const { registerUser, authenticateUser, verifyToken } = require('./utils/auth');
+const { 
+  registerUser, 
+  authenticateUser, 
+  verifyToken,
+  generateOTP,
+  storeOTP,
+  sendEmailOTP,
+  sendSMSOTP,
+  findUserForPasswordReset,
+  resetUserPassword
+} = require('./utils/auth');
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -189,6 +198,80 @@ app.post('/api/login', async (req, res) => {
     res.json({ token, user });
   } catch (err) {
     res.status(401).json({ error: err.message });
+  }
+});
+
+// Initiate password reset (send OTP)
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { identifier, method } = req.body; // identifier can be email or phone, method is 'email' or 'sms'
+    
+    if (!identifier || !method) {
+      return res.status(400).json({ error: 'Email/phone and method are required' });
+    }
+    
+    if (!['email', 'sms'].includes(method)) {
+      return res.status(400).json({ error: 'Method must be email or sms' });
+    }
+    
+    // Find user
+    const user = await findUserForPasswordReset(db, identifier);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Generate OTP
+    const otp = generateOTP();
+    
+    // Store OTP in database
+    await storeOTP(db, identifier, otp, method);
+    
+    // Send OTP based on method
+    if (method === 'email') {
+      if (!user.email) {
+        return res.status(400).json({ error: 'No email associated with this account' });
+      }
+      await sendEmailOTP(user.email, otp, user.firstName);
+    } else if (method === 'sms') {
+      if (!user.phone) {
+        return res.status(400).json({ error: 'No phone number associated with this account' });
+      }
+      await sendSMSOTP(user.phone, otp, user.firstName);
+    }
+    
+    res.json({ 
+      message: `OTP sent successfully via ${method}`,
+      method,
+      maskedIdentifier: method === 'email' 
+        ? user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3')
+        : user.phone.replace(/(\+?\d{2})(\d*)(\d{2})/, '$1***$3')
+    });
+    
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: err.message || 'Failed to send OTP' });
+  }
+});
+
+// Verify OTP and reset password
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const { identifier, otp, newPassword } = req.body;
+    
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).json({ error: 'Identifier, OTP, and new password are required' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+    
+    const result = await resetUserPassword(db, identifier, newPassword, otp);
+    res.json(result);
+    
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(400).json({ error: err.message || 'Failed to reset password' });
   }
 });
 

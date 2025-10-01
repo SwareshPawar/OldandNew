@@ -2398,6 +2398,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 
     document.getElementById('loginBtn').onclick = () => showLoginModal();
     document.getElementById('logoutBtn').onclick = () => logout();
+    
+    // Password reset functionality
+    let currentResetData = null; // Store identifier and method for OTP verification
+    
+    // Setup password reset event listeners
+    setupPasswordResetEventListeners();
     // --- Admin Panel Logic ---
     async function fetchUsers() {
         try {
@@ -9161,3 +9167,307 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 }
 window.resetUserPassword = resetUserPassword;
+
+// =========================
+// PASSWORD RESET FUNCTIONALITY
+// =========================
+
+// Show forgot password modal
+function showForgotPasswordModal() {
+    console.log('🔐 Showing forgot password modal');
+    const modal = document.getElementById('forgotPasswordModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    document.getElementById('forgotPasswordError').style.display = 'none';
+    document.getElementById('forgotPasswordSuccess').style.display = 'none';
+}
+
+// Hide all password reset modals
+function hidePasswordResetModals() {
+    const forgotModal = document.getElementById('forgotPasswordModal');
+    const otpModal = document.getElementById('otpVerificationModal');
+    
+    forgotModal.style.display = 'none';
+    forgotModal.classList.remove('show');
+    
+    otpModal.style.display = 'none';
+    otpModal.classList.remove('show');
+}
+
+// Show notification for password reset
+function showPasswordResetNotification(message, isError = false) {
+    if (notificationEl) {
+        notificationEl.textContent = message;
+        notificationEl.className = `notification ${isError ? 'error' : 'success'} show`;
+        setTimeout(() => {
+            notificationEl.classList.remove('show');
+        }, 5000);
+    }
+}
+
+// Initiate password reset (send OTP)
+async function initiatePasswordReset(identifier, method) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ identifier, method })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Store reset data for OTP verification
+            currentResetData = { identifier, method };
+            
+            // Show success and switch to OTP modal
+            document.getElementById('forgotPasswordSuccess').textContent = data.message;
+            document.getElementById('forgotPasswordSuccess').style.display = 'block';
+            
+            console.log('✅ Email sent successfully, showing OTP modal in 1.5 seconds');
+            setTimeout(() => {
+                console.log('🔄 Switching to OTP modal');
+                hidePasswordResetModals();
+                showOtpVerificationModal(data);
+            }, 1500);
+            
+            return { success: true, data };
+        } else {
+            document.getElementById('forgotPasswordError').textContent = data.error;
+            document.getElementById('forgotPasswordError').style.display = 'block';
+            return { success: false, error: data.error };
+        }
+    } catch (error) {
+        const errorMsg = 'Network error. Please check your connection.';
+        document.getElementById('forgotPasswordError').textContent = errorMsg;
+        document.getElementById('forgotPasswordError').style.display = 'block';
+        return { success: false, error: errorMsg };
+    }
+}
+
+// Show OTP verification modal
+function showOtpVerificationModal(data) {
+    console.log('📱 Showing OTP verification modal', data);
+    const modal = document.getElementById('otpVerificationModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    document.getElementById('otpError').style.display = 'none';
+    
+    // Update instructions
+    const instructions = `OTP sent to your ${data.method} (${data.maskedIdentifier}). Please enter the 6-digit code below.`;
+    document.getElementById('otpInstructions').textContent = instructions;
+    
+    // Clear form
+    document.getElementById('otpCode').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmNewPassword').value = '';
+}
+
+// Verify OTP and reset password
+async function verifyOtpAndResetPassword(otp, newPassword) {
+    if (!currentResetData) {
+        document.getElementById('otpError').textContent = 'Session expired. Please restart the process.';
+        document.getElementById('otpError').style.display = 'block';
+        return { success: false };
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                identifier: currentResetData.identifier,
+                otp: otp,
+                newPassword: newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Success - clear reset data and hide modal
+            currentResetData = null;
+            hidePasswordResetModals();
+            showPasswordResetNotification('Password reset successfully! You can now login with your new password.', false);
+            return { success: true };
+        } else {
+            document.getElementById('otpError').textContent = data.error;
+            document.getElementById('otpError').style.display = 'block';
+            return { success: false, error: data.error };
+        }
+    } catch (error) {
+        const errorMsg = 'Network error. Please try again.';
+        document.getElementById('otpError').textContent = errorMsg;
+        document.getElementById('otpError').style.display = 'block';
+        return { success: false, error: errorMsg };
+    }
+}
+
+// Resend OTP
+async function resendOtp() {
+    if (!currentResetData) {
+        document.getElementById('otpError').textContent = 'Session expired. Please restart the process.';
+        document.getElementById('otpError').style.display = 'block';
+        return;
+    }
+
+    document.getElementById('resendOtpBtn').disabled = true;
+    document.getElementById('resendOtpBtn').textContent = 'Sending...';
+
+    const result = await initiatePasswordReset(currentResetData.identifier, currentResetData.method);
+    
+    setTimeout(() => {
+        document.getElementById('resendOtpBtn').disabled = false;
+        document.getElementById('resendOtpBtn').textContent = 'Resend OTP';
+    }, 3000);
+
+    if (result.success) {
+        document.getElementById('otpError').style.display = 'none';
+        const successMsg = document.createElement('div');
+        successMsg.style.color = '#28a745';
+        successMsg.style.marginTop = '10px';
+        successMsg.textContent = 'OTP resent successfully!';
+        document.getElementById('otpVerificationForm').appendChild(successMsg);
+        
+        setTimeout(() => {
+            if (successMsg.parentNode) {
+                successMsg.parentNode.removeChild(successMsg);
+            }
+        }, 3000);
+    }
+}
+
+// Setup Password Reset Event Listeners
+function setupPasswordResetEventListeners() {
+    // Forgot password link
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            hideAuthModals();
+            showForgotPasswordModal();
+        });
+    }
+
+    // Close modals
+    const closeForgotPasswordModal = document.getElementById('closeForgotPasswordModal');
+    if (closeForgotPasswordModal) {
+        closeForgotPasswordModal.addEventListener('click', hidePasswordResetModals);
+    }
+
+    const closeOtpModal = document.getElementById('closeOtpModal');
+    if (closeOtpModal) {
+        closeOtpModal.addEventListener('click', hidePasswordResetModals);
+    }
+
+    // Forgot password form submission
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const identifier = document.getElementById('resetIdentifier').value.trim();
+            const method = document.getElementById('resetMethod').value;
+            
+            if (!identifier) {
+                document.getElementById('forgotPasswordError').textContent = 'Please enter your email or phone number';
+                document.getElementById('forgotPasswordError').style.display = 'block';
+                return;
+            }
+
+            // Hide previous messages
+            document.getElementById('forgotPasswordError').style.display = 'none';
+            document.getElementById('forgotPasswordSuccess').style.display = 'none';
+            
+            // Disable submit button temporarily
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            
+            await initiatePasswordReset(identifier, method);
+            
+            // Re-enable submit button
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send OTP';
+            }, 2000);
+        });
+    }
+
+    // OTP verification form submission
+    const otpVerificationForm = document.getElementById('otpVerificationForm');
+    if (otpVerificationForm) {
+        otpVerificationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const otp = document.getElementById('otpCode').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmNewPassword').value;
+            
+            // Validation
+            if (!otp || otp.length !== 6) {
+                document.getElementById('otpError').textContent = 'Please enter a valid 6-digit OTP';
+                document.getElementById('otpError').style.display = 'block';
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                document.getElementById('otpError').textContent = 'Password must be at least 6 characters long';
+                document.getElementById('otpError').style.display = 'block';
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                document.getElementById('otpError').textContent = 'Passwords do not match';
+                document.getElementById('otpError').style.display = 'block';
+                return;
+            }
+
+            // Hide previous error
+            document.getElementById('otpError').style.display = 'none';
+            
+            // Disable submit button temporarily
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Resetting...';
+            
+            await verifyOtpAndResetPassword(otp, newPassword);
+            
+            // Re-enable submit button
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Reset Password';
+            }, 2000);
+        });
+    }
+
+    // Resend OTP button
+    const resendOtpBtn = document.getElementById('resendOtpBtn');
+    if (resendOtpBtn) {
+        resendOtpBtn.addEventListener('click', resendOtp);
+    }
+
+    // OTP input formatting (only allow numbers)
+    const otpCodeInput = document.getElementById('otpCode');
+    if (otpCodeInput) {
+        otpCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+    }
+}
+
+// Function to hide auth modals (already exists, but making sure it's accessible)
+function hideAuthModals() {
+    document.getElementById('loginModal').style.display = 'none';
+    document.getElementById('registerModal').style.display = 'none';
+}
+
+// Export functions for global access if needed
+window.showForgotPasswordModal = showForgotPasswordModal;
+window.initiatePasswordReset = initiatePasswordReset;
+window.verifyOtpAndResetPassword = verifyOtpAndResetPassword;
+window.resendOtp = resendOtp;

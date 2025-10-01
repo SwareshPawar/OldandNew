@@ -74,6 +74,9 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <input type="password" id="loginPassword" required autocomplete="current-password">
                 <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Login</button>
                 <div id="loginError" style="color:#c31010;margin-top:10px;display:none;"></div>
+                <p style="text-align:center;margin-top:15px;">
+                    <a href="#" id="forgotPasswordLink" style="color:#667eea;text-decoration:none;">Forgot Password?</a>
+                </p>
             </form>
         </div>
     </div>
@@ -98,6 +101,48 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <input type="password" id="registerPassword" required autocomplete="new-password">
                 <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Register</button>
                 <div id="registerError" style="color:#c31010;margin-top:10px;display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal" id="forgotPasswordModal" style="display:none;">
+        <div class="modal-content auth-modal-content">
+            <span class="close-modal" id="closeForgotPasswordModal" aria-label="Close">×</span>
+            <h2 style="text-align:center;margin-bottom:18px;">Reset Password</h2>
+            <form id="forgotPasswordForm" class="auth-form">
+                <label for="resetIdentifier">Email or Phone Number</label>
+                <input type="text" id="resetIdentifier" required placeholder="Enter email or phone number">
+                <label for="resetMethod">Send OTP via:</label>
+                <select id="resetMethod" required style="width:100%;padding:10px;margin-bottom:15px;border:1px solid #ddd;border-radius:4px;">
+                    <option value="email">Email</option>
+                    <option value="sms">SMS</option>
+                </select>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Send OTP</button>
+                <div id="forgotPasswordError" style="color:#c31010;margin-top:10px;display:none;"></div>
+                <div id="forgotPasswordSuccess" style="color:#28a745;margin-top:10px;display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div class="modal" id="otpVerificationModal" style="display:none;">
+        <div class="modal-content auth-modal-content">
+            <span class="close-modal" id="closeOtpModal" aria-label="Close">×</span>
+            <h2 style="text-align:center;margin-bottom:18px;">Verify OTP</h2>
+            <div id="otpInstructions" style="text-align:center;margin-bottom:20px;color:#666;"></div>
+            <form id="otpVerificationForm" class="auth-form">
+                <label for="otpCode">Enter OTP</label>
+                <input type="text" id="otpCode" required placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}">
+                <label for="newPassword">New Password</label>
+                <input type="password" id="newPassword" required autocomplete="new-password" placeholder="Enter new password (min 6 characters)">
+                <label for="confirmNewPassword">Confirm New Password</label>
+                <input type="password" id="confirmNewPassword" required autocomplete="new-password" placeholder="Confirm new password">
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Reset Password</button>
+                <div id="otpError" style="color:#c31010;margin-top:10px;display:none;"></div>
+                <div style="text-align:center;margin-top:15px;">
+                    <button type="button" id="resendOtpBtn" class="btn" style="background:none;border:1px solid #667eea;color:#667eea;padding:8px 16px;">Resend OTP</button>
+                </div>
             </form>
         </div>
     </div>
