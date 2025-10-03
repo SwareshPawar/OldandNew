@@ -153,17 +153,7 @@ app.patch('/api/users/:id/reset-password', authMiddleware, requireAdmin, async (
   }
 });
 
-async function main() {
-  try {
-    await client.connect();
-    db = client.db('OldNewSongs');
-    songsCollection = db.collection('OldNewSongs');
-    console.log('Connected to MongoDB');
-  } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
-    process.exit(1);
-  }
-}
+// Database connection will be handled by connectToDatabase() function
 
 function requireAdmin(req, res, next) {
   if (req.user && req.user.isAdmin) return next();
@@ -744,9 +734,41 @@ app.post('/api/my-setlists/remove-song', authMiddleware, async (req, res) => {
   }
 });
 
-main().then(() => {
+// Initialize connection for serverless
+let isConnected = false;
+
+async function connectToDatabase() {
+  if (isConnected) {
+    return;
+  }
+  
+  try {
+    await client.connect();
+    db = client.db('OldNewSongs');
+    songsCollection = db.collection('OldNewSongs');
+    isConnected = true;
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error('Failed to connect to MongoDB:', err);
+    throw err;
+  }
+}
+
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}).catch((err) => {
-  console.error('Error starting server:', err);
-});
+}
+
+// Export for Vercel
+module.exports = app;
