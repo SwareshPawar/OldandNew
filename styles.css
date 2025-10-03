@@ -407,6 +407,11 @@
             align-items: center;
             justify-content: center;
             gap: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            flex-shrink: 1;
         }
 
         .song-actions .btn:hover {
@@ -2724,13 +2729,14 @@ body.dark-mode #installAppBtn {
         .song-actions {
             display: flex;
             gap: 4px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             justify-content: flex-start;
             align-items: center;
             margin-top: 4px;
             padding-top: 6px;
             border-top: 1px solid var(--song-item-border);
             width: 100%;
+            overflow: hidden;
         }
 
         .song-actions .btn {
@@ -3003,26 +3009,20 @@ body.dark-mode #installAppBtn {
             }
 
             .song-actions {
-                gap: 3px;
+                gap: 2px;
+                flex-wrap: nowrap !important;
+                overflow: hidden;
             }
 
             .song-actions .btn {
-                padding: 3px 6px;
-                font-size: 0.7rem;
-                max-width: calc(60% / 2); /* Fewer buttons on mobile */
-            }
-
-            /* On very small screens, stack buttons */
-            @media (max-width: 360px) {
-                .song-actions {
-                    flex-direction: column;
-                    align-items: stretch;
-                }
-
-                .song-actions .btn {
-                    max-width: 60%;
-                    align-self: flex-start;
-                }
+                padding: 2px 4px;
+                font-size: 0.65rem;
+                min-width: 0;
+                flex: 1;
+                max-width: none;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
         }
 
@@ -3054,6 +3054,26 @@ body.dark-mode #installAppBtn {
             .song-meta span {
                 font-size: 0.65rem;
                 padding: 1px 3px;
+            }
+
+            .song-actions {
+                gap: 1px !important;
+            }
+
+            .song-actions .btn {
+                padding: 1px 2px !important;
+                font-size: 0.6rem !important;
+                border-radius: 2px;
+                min-height: 20px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 360px) {
+            .song-actions .btn {
+                padding: 1px 1px !important;
+                font-size: 0.55rem !important;
+                min-height: 18px;
             }
         }
 
