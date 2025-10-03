@@ -141,6 +141,19 @@
     font-weight: bold;
     transition: background 0.2s, border 0.2s;
 }
+
+/* Fix song-meta visibility in active song */
+.song-item.active-song .song-meta {
+    color: #F1F0E4;
+    border-color: rgba(241, 240, 228, 0.3);
+}
+
+.song-item.active-song .song-meta span {
+    background: rgba(241, 240, 228, 0.2);
+    color: #F1F0E4;
+    border-color: rgba(241, 240, 228, 0.4);
+    font-weight: 600;
+}
 /* Loading overlay styles */
 #loadingOverlay {
     position: fixed;
@@ -2491,7 +2504,41 @@ body.dark-mode #installAppBtn {
             overflow: hidden;
         }
 
-        .filter-row-1, .filter-row-2 {
+        /* Desktop 2x2 Grid Layout for Filters */
+        .filter-row-1 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 8px;
+            align-items: stretch;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-top: 6px;
+        }
+
+        /* Explicit positioning for 4 filters in 2x2 grid */
+        .filter-row-1 .compact-select:nth-child(1) {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .filter-row-1 .compact-select:nth-child(2) {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .filter-row-1 .compact-select:nth-child(3) {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .filter-row-1 .compact-select:nth-child(4) {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .filter-row-2 {
             display: flex;
             gap: 6px;
             align-items: center;
@@ -2543,40 +2590,11 @@ body.dark-mode #installAppBtn {
             padding-right: 32px;
         }
 
-        /* Responsive filter layout */
+        /* Mobile responsive filter layout - inherits desktop grid */
         @media (max-width: 768px) {
             .filter-row-1 {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                grid-template-rows: auto auto !important;
-                gap: 6px !important;
-                align-items: stretch !important;
-                margin-top: 6px !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-                overflow: hidden !important;
-            }
-
-            /* Ensure 4 filters create exactly 2 rows */
-            .filter-row-1 .compact-select:nth-child(1) {
-                grid-column: 1;
-                grid-row: 1;
-            }
-
-            .filter-row-1 .compact-select:nth-child(2) {
-                grid-column: 2;
-                grid-row: 1;
-            }
-
-            .filter-row-1 .compact-select:nth-child(3) {
-                grid-column: 1;
-                grid-row: 2;
-            }
-
-            .filter-row-1 .compact-select:nth-child(4) {
-                grid-column: 2;
-                grid-row: 2;
+                gap: 6px;
+                margin-top: 6px;
             }
 
             .compact-input,
@@ -2594,35 +2612,7 @@ body.dark-mode #installAppBtn {
 
         @media (max-width: 480px) {
             .filter-row-1 {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                grid-template-rows: auto auto !important;
-                gap: 4px !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-                overflow: hidden !important;
-            }
-
-            /* Maintain 2x2 grid even on very small screens */
-            .filter-row-1 .compact-select:nth-child(1) {
-                grid-column: 1;
-                grid-row: 1;
-            }
-
-            .filter-row-1 .compact-select:nth-child(2) {
-                grid-column: 2;
-                grid-row: 1;
-            }
-
-            .filter-row-1 .compact-select:nth-child(3) {
-                grid-column: 1;
-                grid-row: 2;
-            }
-
-            .filter-row-1 .compact-select:nth-child(4) {
-                grid-column: 2;
-                grid-row: 2;
+                gap: 4px;
             }
 
             .compact-input,
