@@ -347,7 +347,7 @@
         .setlist-song-meta-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 0;
     flex-wrap: nowrap;
     min-width: 0;
     max-width: 100%;
@@ -358,20 +358,47 @@
 .setlist-song-key-time,
 .setlist-song-key-tempo {
     background: var(--accent-color);
-    color: var(--primary-color);
+
     padding: 2px 6px;
     font-size: 0.7em;
     font-weight: 600;
     margin-right: 0;
     white-space: nowrap;
     flex-shrink: 0;
-    max-width: 70px;
+    max-width: none;
     overflow: hidden;
     text-overflow: ellipsis;
-    border-radius: 3px;
     border: 1px solid var(--song-item-border);
+    border-radius: 0;
     letter-spacing: 0.02em;
+    box-shadow: none;
+}
+
+/* First element gets left border radius */
+.setlist-song-key:first-child {
+    border-top-left-radius: 3px !important;
+    border-bottom-left-radius: 3px !important;
+}
+
+/* Last element gets right border radius */
+.setlist-song-key-tempo:last-child,
+.setlist-song-key-time:last-child,
+.setlist-song-key:last-child {
+    border-top-right-radius: 3px !important;
+    border-bottom-right-radius: 3px !important;
+}
+
+/* Remove left border from non-first elements to create seamless connection */
+.setlist-song-key-time,
+.setlist-song-key-tempo {
+    border-left: none !important;
+}
+
+/* Add unified shadow to the entire block */
+.setlist-song-meta-row {
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border-radius: 3px;
+    width: fit-content;
 }
 
         .song-title-row {
@@ -1507,6 +1534,7 @@ body.dark-mode #installAppBtn {
         .setlist-folder-content {
             max-height: 200px;
             overflow-y: auto;
+            overflow-x: hidden;
             list-style: none;
             padding: 8px 0 8px 15px;
             margin: 10px 0 0 15px;
@@ -1521,10 +1549,9 @@ body.dark-mode #installAppBtn {
         }
 
         .setlist-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
+            display: block;
+            position: relative;
+            padding: 8px 30px 8px 8px; /* Extra right padding for overlay buttons */
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -1533,6 +1560,8 @@ body.dark-mode #installAppBtn {
             background: var(--sidebar-item-bg);
             border: 1px solid var(--song-item-border);
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            overflow: hidden; /* Prevent content overflow */
+            min-height: 36px; /* Ensure minimum height for buttons */
         }
 
         .setlist-item:hover {
@@ -1572,11 +1601,17 @@ body.dark-mode #installAppBtn {
         }
 
         .setlist-actions {
-            margin-left: auto;
+            position: absolute;
+            top: 2px;
+            right: 2px;
             display: flex;
-            gap: 4px;
+            gap: 2px;
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: all 0.2s ease;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 4px;
+            padding: 2px;
+            backdrop-filter: blur(2px);
         }
 
         /* Setlist Section Header Styles */
@@ -1584,8 +1619,8 @@ body.dark-mode #installAppBtn {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            margin-bottom: 2px;
+            padding-bottom: 2px;
             border-bottom: 2px solid var(--primary-color);
         }
 
@@ -1666,23 +1701,32 @@ body.dark-mode #installAppBtn {
             }
         }
 
-        .setlist-item:hover .setlist-actions {
+        .setlist-item:hover .setlist-actions,
+        .setlist-item:hover .btn-delete {
             opacity: 1;
         }
 
-        .setlist-action-btn {
-            background: transparent;
-            border: none;
-            color: currentColor;
+        .setlist-actions .setlist-action-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #333;
             cursor: pointer;
-            padding: 2px 4px;
-            border-radius: 2px;
-            font-size: 0.8rem;
-            transition: background 0.2s;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            min-width: 16px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .setlist-action-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .setlist-actions .setlist-action-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         /* Setlist Modal Styles */
@@ -2224,8 +2268,10 @@ body.dark-mode #installAppBtn {
             font-size: 0.95em !important;
             line-height: 1.2 !important;
             overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
             margin-bottom: 2px !important;
             color: var(--song-item-text) !important;
         }
@@ -2236,18 +2282,52 @@ body.dark-mode #installAppBtn {
         }
 
         .setlist-song-key {
-            color: var(--song-item-text) !important;
-            font-size: 0.8em !important;
+
+            font-size: 0.7em !important;
             line-height: 1 !important;
-            font-weight: 500 !important;
+            font-weight: 600 !important;
             background: var(--accent-color) !important;
-            padding: 2px 4px !important;
-            border-radius: 4px !important;
+            padding: 2px 6px !important;
+            border-radius: 0 !important;
             display: inline-block !important;
             border: 1px solid var(--song-item-border) !important;
         }
 
         .setlist-song-item.selected .setlist-song-key {
+            background: var(--accent-color) !important;
+            color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+
+        .setlist-song-key-time {
+            font-size: 0.7em !important;
+            line-height: 1 !important;
+            font-weight: 600 !important;
+            background: var(--accent-color) !important;
+            padding: 2px 6px !important;
+            border-radius: 0 !important;
+            display: inline-block !important;
+            border: 1px solid var(--song-item-border) !important;
+        }
+
+        .setlist-song-key-tempo {
+            font-size: 0.7em !important;
+            line-height: 1 !important;
+            font-weight: 600 !important;
+            background: var(--accent-color) !important;
+            padding: 2px 6px !important;
+            border-radius: 0 !important;
+            display: inline-block !important;
+            border: 1px solid var(--song-item-border) !important;
+        }
+
+        .setlist-song-item.selected .setlist-song-key-time {
+            background: var(--accent-color) !important;
+            color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+
+        .setlist-song-item.selected .setlist-song-key-tempo {
             background: var(--accent-color) !important;
             color: var(--primary-color) !important;
             border-color: var(--primary-color) !important;
@@ -2633,16 +2713,16 @@ body.dark-mode #installAppBtn {
             background: var(--song-item-bg);
             color: var(--song-item-text);
             margin: 2px 0;
-            padding: 10px 12px;
-            border-radius: 8px;
+            padding: 2px 2px;
+            border-radius:2px;
             box-shadow: 0 1px 3px rgba(144, 135, 135, 0.1);
             cursor: pointer;
-            border: 1px solid var(--song-item-border);
+            border: 2px solid var(--song-item-border);
             transition: all 0.2s ease;
             position: relative;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 3px;
         }
 
         .song-item:hover {
@@ -2659,7 +2739,7 @@ body.dark-mode #installAppBtn {
         }
 
         .song-title {
-            font-size: 0.95rem;
+            font-size: 1.0rem;
             font-weight: 600;
             margin: 0;
             line-height: 1.2;
@@ -2754,27 +2834,27 @@ body.dark-mode #installAppBtn {
             border-color: rgba(188, 168, 141, 0.3);
         }
 
-        /* Setlist Close Button Styles */
+        /* Setlist Close Button Styles - Updated for overlay approach */
         .setlist-item .btn-delete {
             position: absolute;
-            top: 27px;
+            top: 2px;
             right: 2px;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             padding: 0;
             border-radius: 50%;
-            background: rgba(195, 16, 16, 0.8);
+            background: rgba(195, 16, 16, 0.9);
             color: white;
-            border: none;
-            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 10px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            opacity: 0.7;
-            z-index: 10;
+            opacity: 0;
+            z-index: 15;
         }
 
         .setlist-item .btn-delete:hover {
@@ -3027,8 +3107,8 @@ body.dark-mode #installAppBtn {
             }
 
             .song-item {
-                padding: 6px 8px;
-                gap: 4px;
+                padding: 3px 4px;
+                gap: 2px;
             }
 
             .song-title {
@@ -3075,6 +3155,9 @@ body.dark-mode #installAppBtn {
             margin: 2px 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border: 1px solid var(--song-item-border);
+            max-height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .setlist h3 {
@@ -3241,6 +3324,58 @@ body.dark-mode #installAppBtn {
             .setlist-item-key {
                 font-size: 0.6rem;
                 padding: 1px 3px;
+            }
+            
+            /* Mobile responsive styles for overlay setlist actions */
+            .setlist-item {
+                padding: 10px 35px 10px 10px; /* More right padding on mobile */
+                min-height: 40px;
+            }
+            
+            .setlist-actions {
+                top: 3px;
+                right: 3px;
+                gap: 3px;
+                padding: 3px;
+            }
+            
+            .setlist-actions .setlist-action-btn {
+                padding: 4px 7px;
+                font-size: 0.75rem;
+                min-width: 18px;
+                height: 22px;
+            }
+            
+            .setlist-item .btn-delete {
+                width: 18px;
+                height: 18px;
+                top: 3px;
+                right: 3px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .setlist-item {
+                padding: 8px 32px 8px 8px;
+                min-height: 36px;
+            }
+            
+            .setlist-actions {
+                opacity: 0.8; /* Always slightly visible on small screens */
+            }
+            
+            .setlist-actions .setlist-action-btn {
+                padding: 3px 5px;
+                font-size: 0.65rem;
+                min-width: 16px;
+                height: 20px;
+            }
+            
+            .setlist-item .btn-delete {
+                width: 16px;
+                height: 16px;
+                opacity: 0.8; /* Always slightly visible on small screens */
             }
         }
 
