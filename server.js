@@ -30,6 +30,37 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('.'));
 
+// Initialize connection for serverless
+let isConnected = false;
+
+async function connectToDatabase() {
+  if (isConnected) {
+    return;
+  }
+  
+  try {
+    await client.connect();
+    db = client.db('OldNewSongs');
+    songsCollection = db.collection('OldNewSongs');
+    isConnected = true;
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error('Failed to connect to MongoDB:', err);
+    throw err;
+  }
+}
+
+// Middleware to ensure DB connection - MUST be before routes
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    console.error('Database connection middleware error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
 const { 
   registerUser, 
   authenticateUser, 
@@ -731,36 +762,6 @@ app.post('/api/my-setlists/remove-song', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Error removing song from personal setlist:', err);
     res.status(500).json({ error: err.message });
-  }
-});
-
-// Initialize connection for serverless
-let isConnected = false;
-
-async function connectToDatabase() {
-  if (isConnected) {
-    return;
-  }
-  
-  try {
-    await client.connect();
-    db = client.db('OldNewSongs');
-    songsCollection = db.collection('OldNewSongs');
-    isConnected = true;
-    console.log('Connected to MongoDB');
-  } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
-    throw err;
-  }
-}
-
-// Middleware to ensure DB connection
-app.use(async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    next();
-  } catch (err) {
-    res.status(500).json({ error: 'Database connection failed' });
   }
 });
 
