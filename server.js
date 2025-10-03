@@ -34,18 +34,28 @@ app.use(express.static('.'));
 let isConnected = false;
 
 async function connectToDatabase() {
-  if (isConnected) {
+  if (isConnected && db) {
+    console.log('Database already connected, reusing connection');
     return;
   }
   
   try {
+    console.log('Attempting to connect to MongoDB...');
+    console.log('MongoDB URI available:', !!uri);
+    
+    if (!uri) {
+      throw new Error('MONGODB_URI environment variable is not set');
+    }
+    
     await client.connect();
     db = client.db('OldNewSongs');
     songsCollection = db.collection('OldNewSongs');
     isConnected = true;
-    console.log('Connected to MongoDB');
+    console.log('Successfully connected to MongoDB');
   } catch (err) {
     console.error('Failed to connect to MongoDB:', err);
+    isConnected = false;
+    db = null;
     throw err;
   }
 }
@@ -53,11 +63,21 @@ async function connectToDatabase() {
 // Middleware to ensure DB connection - MUST be before routes
 app.use(async (req, res, next) => {
   try {
+    // Skip connection attempt if we're in local development and already connected
+    if (process.env.NODE_ENV !== 'production' && db) {
+      return next();
+    }
+    
+    console.log('DB Middleware - Before connection check. DB exists:', !!db, 'isConnected:', isConnected);
     await connectToDatabase();
+    console.log('DB Middleware - After connection. DB exists:', !!db);
+    if (!db) {
+      throw new Error('Database connection failed - db is still undefined');
+    }
     next();
   } catch (err) {
     console.error('Database connection middleware error:', err);
-    res.status(500).json({ error: 'Database connection failed' });
+    res.status(500).json({ error: 'Database connection failed', details: err.message });
   }
 });
 
@@ -207,9 +227,30 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// Debug endpoint to check database connection
+app.get('/api/debug/db', async (req, res) => {
+  try {
+    res.json({ 
+      dbConnected: !!db,
+      isConnected,
+      mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not Set',
+      collections: db ? await db.listCollections().toArray() : 'DB not available'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, dbStatus: !!db });
+  }
+});
+
 // User login
 app.post('/api/login', async (req, res) => {
   try {
+    // Additional debug logging
+    console.log('Login attempt - DB status:', !!db);
+    if (!db) {
+      console.error('Database not connected in login endpoint');
+      return res.status(500).json({ error: 'Database connection not available' });
+    }
+    
     let { usernameOrEmail, username, password } = req.body;
     if ((!usernameOrEmail && !username) || !password) {
       return res.status(400).json({ error: 'Username/email and password required' });
@@ -218,6 +259,7 @@ app.post('/api/login', async (req, res) => {
     const { token, user } = await authenticateUser(db, { loginInput, password });
     res.json({ token, user });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(401).json({ error: err.message });
   }
 });
@@ -765,10 +807,19 @@ app.post('/api/my-setlists/remove-song', authMiddleware, async (req, res) => {
   }
 });
 
-// For local development
+// For local development - initialize database first
 if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  async function startLocalServer() {
+    try {
+      await connectToDatabase();
+      const PORT = process.env.PORT || 3001;
+      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    } catch (err) {
+      console.error('Failed to start server:', err);
+      process.exit(1);
+    }
+  }
+  startLocalServer();
 }
 
 // Export for Vercel

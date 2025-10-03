@@ -8599,7 +8599,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Settings
             const settingsBtn = document.createElement("button");
             settingsBtn.id = "settingsBtn";
-            settingsBtn.textContent = "🛠";
+            settingsBtn.textContent = "🛠 Settings";
             settingsBtn.className = "sidebar-settings-btn"; // Optional: for styling
 
             const sidebar = document.querySelector(".sidebar");
