@@ -7,11 +7,13 @@
 // Recommendation weights: loaded from backend or localStorage fallback
 let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
     language: 20,
-    scale: 30,
-    timeSignature: 25,
+    scale: 25,
+    timeSignature: 20,
     taal: 15,
     tempo: 5,
-    genre: 5
+    genre: 5,
+    vocal: 5,
+    mood: 5
 };
 
 async function fetchRecommendationWeights() {
@@ -174,85 +176,6 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <div id="userGreeting" style="display:none;font-weight:bold;margin-bottom:8px;"></div>
                 <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 <button id="adminPanelBtn" class="sidebar-btn" style="display:none;"><i class="fas fa-cogs"></i> Admin Panel</button>
-
-            <div id="adminPanelModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-modal" onclick="document.getElementById('adminPanelModal').style.display='none'">&times;</span>
-                    <h2>Admin Panel</h2>
-                    <div class="admin-tabs">
-                        <button class="admin-tab active" id="userMgmtTab">User Management</button>
-                        <button class="admin-tab" id="weightsTab">Recommendation Weights</button>
-                        <button class="admin-tab" id="duplicateDetectionTab">Duplicate Detection</button>
-                    </div>
-                    <div class="admin-tab-content" id="userMgmtTabContent">
-                        <div class="notification" id="adminNotification"></div>
-                        <table id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Admin</th>
-                                    <th>Action</th>
-                                    <th>Password Reset</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div class="admin-tab-content" id="weightsTabContent" style="display:none;">
-                        <div class="notification" id="weightsNotification"></div>
-                        <form id="weightsForm" style="max-width: 420px; margin: 0 auto;">
-                            <table id="weightsTable" style="width:100%; border-collapse:collapse; background:#fff; margin-bottom:16px;">
-                            <div id="weightsTotalBar" style="margin: 10px 0 8px 0; text-align:center; font-weight:600; font-size:1.08em;"></div>
-                                <thead>
-                                    <tr style="background:#f6f8fa; color:#3498db; font-weight:600;">
-                                        <th style="padding:10px 8px; text-align:left;">Parameter</th>
-                                        <th style="padding:10px 8px; text-align:left;">Weight</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Language</td>
-                                           <td style="padding:10px 8px;"><input type="number" id="weightLanguage" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Scale</td>
-                                           <td style="padding:10px 8px;"><input type="number" id="weightScale" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Time Signature</td>
-                                           <td style="padding:10px 8px;"><input type="number" id="weightTimeSignature" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Taal</td>
-                                           <td style="padding:10px 8px;"><input type="number" id="weightTaal" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Tempo</td>
-                                           <td style="padding:10px 8px;"><input type="number" id="weightTempo" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Genre</td>
-                                           <td style="padding:10px 8px;"><input type="number" id="weightGenre" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Vocal</td>
-                                        <td style="padding:10px 8px;"><input type="number" id="weightVocal" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:10px 8px;">Mood</td>
-                                        <td style="padding:10px 8px;"><input type="number" id="weightMood" min="0" max="100" step="5" required style="width:60px;"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <button type="submit" class="btn" style="width:100%;margin-top:8px;">Save Weights</button>
-                        </form>
-                        <div style="text-align:center; color:#888; font-size:0.98em; margin-top:4px;">Total should be 100 for best results.</div>
-                    </div>
-                    <div class="admin-tab-content" id="duplicateDetectionTabContent" style="display:none;">
-                        <!-- Duplicate detection results will be rendered by JS -->
-                    </div>
-                </div>
-            </div>
                 <li><a href="#" class="active" id="showAll">All Songs</a></li>
                 <li>
                     <div class="setlist-selector">
@@ -464,6 +387,85 @@ async function saveRecommendationWeightsToBackend(weights) {
     </div>
 
     <!-- Modals -->
+    <div class="modal" id="adminPanelModal">
+        <div class="modal-content">
+            <span class="close-modal" aria-label="Close">×</span>
+            <h2>Admin Panel</h2>
+            <div class="admin-tabs">
+                <button class="admin-tab active" id="userMgmtTab">User Management</button>
+                <button class="admin-tab" id="weightsTab">Recommendation Weights</button>
+                <button class="admin-tab" id="duplicateDetectionTab">Duplicate Detection</button>
+            </div>
+            <div class="admin-tab-content" id="userMgmtTabContent">
+                <div class="notification" id="adminNotification"></div>
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Admin</th>
+                            <th>Action</th>
+                            <th>Remove Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="admin-tab-content" id="weightsTabContent" style="display:none;">
+                <div class="notification" id="weightsNotification"></div>
+                <form id="weightsForm" style="max-width: 420px; margin: 0 auto;">
+                    <table id="weightsTable" style="width:100%; border-collapse:collapse; background:#fff; margin-bottom:16px;">
+                    <div id="weightsTotalBar" style="margin: 10px 0 8px 0; text-align:center; font-weight:600; font-size:1.08em;"></div>
+                        <thead>
+                            <tr style="background:#f6f8fa; color:#3498db; font-weight:600;">
+                                <th style="padding:10px 8px; text-align:left;">Parameter</th>
+                                <th style="padding:10px 8px; text-align:left;">Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding:10px 8px;">Language</td>
+                                   <td style="padding:10px 8px;"><input type="number" id="weightLanguage" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Scale</td>
+                                   <td style="padding:10px 8px;"><input type="number" id="weightScale" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Time Signature</td>
+                                   <td style="padding:10px 8px;"><input type="number" id="weightTimeSignature" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Taal</td>
+                                   <td style="padding:10px 8px;"><input type="number" id="weightTaal" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Tempo</td>
+                                   <td style="padding:10px 8px;"><input type="number" id="weightTempo" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Genre</td>
+                                   <td style="padding:10px 8px;"><input type="number" id="weightGenre" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Vocal</td>
+                                <td style="padding:10px 8px;"><input type="number" id="weightVocal" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Mood</td>
+                                <td style="padding:10px 8px;"><input type="number" id="weightMood" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="submit" class="btn" style="width:100%;margin-top:8px;">Save Weights</button>
+                </form>
+                <div style="text-align:center; color:#888; font-size:0.98em; margin-top:4px;">Total should be 100 for best results.</div>
+            </div>
+            <div class="admin-tab-content" id="duplicateDetectionTabContent" style="display:none;">
+                <!-- Duplicate detection results will be rendered by JS -->
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="addSongModal">
         <div class="modal-content">
             <span class="close-modal" aria-label="Close">×</span>

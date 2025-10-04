@@ -2467,7 +2467,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     <button class="btn" ${user.isAdmin ? 'disabled' : ''} onclick="markAdmin('${user._id}')">Mark Admin</button>
                 </td>
                 <td>
-                    <button class="btn btn-reset" onclick="resetUserPassword('${user._id}')">Reset Password</button>
+                    <button class="btn btn-danger" ${!user.isAdmin ? 'disabled' : ''} onclick="removeAdminRole('${user._id}')">Remove Admin</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -2477,45 +2477,78 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         const users = await fetchUsers();
         renderUsers(users);
     }
+    
+    // Load weights into form
+    async function loadWeightsToForm() {
+        await fetchRecommendationWeights();
+        document.getElementById('weightLanguage').value = WEIGHTS.language;
+        document.getElementById('weightScale').value = WEIGHTS.scale;
+        document.getElementById('weightTimeSignature').value = WEIGHTS.timeSignature;
+        document.getElementById('weightTaal').value = WEIGHTS.taal;
+        document.getElementById('weightTempo').value = WEIGHTS.tempo;
+        document.getElementById('weightGenre').value = WEIGHTS.genre;
+        document.getElementById('weightVocal').value = WEIGHTS.vocal;
+        document.getElementById('weightMood').value = WEIGHTS.mood;
+    }
+    
     function showAdminPanelModal() {
         document.getElementById('adminPanelModal').style.display = 'flex';
-        // Tab logic (future-proof)
+        
+        // Set active tab
         document.getElementById('userMgmtTab').classList.add('active');
-        document.getElementById('userMgmtTabContent').style.display = '';
+        document.getElementById('userMgmtTabContent').classList.add('active');
+        
+        // Hide other tabs
+        document.getElementById('weightsTab').classList.remove('active');
+        document.getElementById('weightsTabContent').classList.remove('active');
+        document.getElementById('duplicateDetectionTab').classList.remove('active');
+        document.getElementById('duplicateDetectionTabContent').classList.remove('active');
+        
+        // Load users and set up functions
         loadUsers();
         window.markAdmin = markAdmin;
-        document.getElementById('weightsTab').classList.remove('active');
-        document.getElementById('weightsTabContent').style.display = 'none';
-        document.getElementById('duplicateDetectionTab').classList.remove('active');
-        document.getElementById('duplicateDetectionTabContent').style.display = 'none';
     }
     const adminPanelBtn = document.getElementById('adminPanelBtn');
     adminPanelBtn.onclick = () => showAdminPanelModal();
 
     // Tab switching logic for admin panel
     document.getElementById('userMgmtTab').onclick = function() {
+        // Set active tab
         document.getElementById('userMgmtTab').classList.add('active');
-        document.getElementById('userMgmtTabContent').style.display = '';
+        document.getElementById('userMgmtTabContent').classList.add('active');
+        
+        // Remove active from other tabs
         document.getElementById('weightsTab').classList.remove('active');
-        document.getElementById('weightsTabContent').style.display = 'none';
+        document.getElementById('weightsTabContent').classList.remove('active');
         document.getElementById('duplicateDetectionTab').classList.remove('active');
-        document.getElementById('duplicateDetectionTabContent').style.display = 'none';
+        document.getElementById('duplicateDetectionTabContent').classList.remove('active');
     };
     document.getElementById('weightsTab').onclick = function() {
-        document.getElementById('userMgmtTab').classList.remove('active');
-        document.getElementById('userMgmtTabContent').style.display = 'none';
+        // Set active tab
         document.getElementById('weightsTab').classList.add('active');
-        document.getElementById('weightsTabContent').style.display = '';
+        document.getElementById('weightsTabContent').classList.add('active');
+        
+        // Remove active from other tabs
+        document.getElementById('userMgmtTab').classList.remove('active');
+        document.getElementById('userMgmtTabContent').classList.remove('active');
         document.getElementById('duplicateDetectionTab').classList.remove('active');
-        document.getElementById('duplicateDetectionTabContent').style.display = 'none';
+        document.getElementById('duplicateDetectionTabContent').classList.remove('active');
+        
+        // Load weights when switching to weights tab
+        loadWeightsToForm();
     };
     document.getElementById('duplicateDetectionTab').onclick = function() {
-        document.getElementById('userMgmtTab').classList.remove('active');
-        document.getElementById('userMgmtTabContent').style.display = 'none';
-        document.getElementById('weightsTab').classList.remove('active');
-        document.getElementById('weightsTabContent').style.display = 'none';
+        // Set active tab
         document.getElementById('duplicateDetectionTab').classList.add('active');
-        document.getElementById('duplicateDetectionTabContent').style.display = '';
+        document.getElementById('duplicateDetectionTabContent').classList.add('active');
+        
+        // Remove active from other tabs
+        document.getElementById('userMgmtTab').classList.remove('active');
+        document.getElementById('userMgmtTabContent').classList.remove('active');
+        document.getElementById('weightsTab').classList.remove('active');
+        document.getElementById('weightsTabContent').classList.remove('active');
+        
+        // Render duplicate detection when switching to this tab
         renderDuplicateDetection();
     };
 
@@ -5380,7 +5413,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     <button class=\"btn\" ${user.isAdmin ? 'disabled' : ''} onclick=\"markAdmin('${user._id}')\">Mark Admin</button>
                 </td>
                 <td>
-                    <button class=\"btn btn-reset\" onclick=\"resetUserPassword('${user._id}')\">Reset Password</button>
+                    <button class=\"btn btn-danger\" ${!user.isAdmin ? 'disabled' : ''} onclick=\"removeAdminRole('${user._id}')\">Remove Admin</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -5390,19 +5423,7 @@ window.viewSingleLyrics = function(songId, otherId) {
         const users = await fetchUsers();
         renderUsers(users);
     }
-    function showAdminPanelModal() {
-        document.getElementById('adminPanelModal').style.display = 'flex';
-        // Tab logic (future-proof)
-        document.getElementById('userMgmtTab').classList.add('active');
-        document.getElementById('userMgmtTabContent').style.display = '';
-        loadUsers();
-        window.markAdmin = markAdmin;
-    }
-    // Tab switching (future-proof, only one tab for now)
-    document.getElementById('userMgmtTab').onclick = function() {
-        document.getElementById('userMgmtTab').classList.add('active');
-        document.getElementById('userMgmtTabContent').style.display = '';
-    };
+    // Duplicate showAdminPanelModal function removed - using the one defined earlier
         // window.addEventListener('DOMContentLoaded', updateAuthButtons);
 
         async function authFetch(url, options = {}) {
@@ -7875,18 +7896,6 @@ window.viewSingleLyrics = function(songId, otherId) {
                 });
             }
 
-            // Load weights into form
-            async function loadWeightsToForm() {
-                await fetchRecommendationWeights();
-                document.getElementById('weightLanguage').value = WEIGHTS.language;
-                document.getElementById('weightScale').value = WEIGHTS.scale;
-                document.getElementById('weightTimeSignature').value = WEIGHTS.timeSignature;
-                document.getElementById('weightTaal').value = WEIGHTS.taal;
-                document.getElementById('weightTempo').value = WEIGHTS.tempo;
-                document.getElementById('weightGenre').value = WEIGHTS.genre;
-                document.getElementById('weightVocal').value = WEIGHTS.vocal;
-                document.getElementById('weightMood').value = WEIGHTS.mood;
-            }
             // Tab switching
             NewTab.addEventListener('click', () => {
                 setlistSection.style.display = 'none';
@@ -9152,10 +9161,16 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
         }, { passive: true });
 
-        async function resetUserPassword(userId) {
+        async function removeAdminRole(userId) {
     const jwtToken = localStorage.getItem('jwtToken');
+    
+    // Confirm action with user
+    if (!confirm('Are you sure you want to remove admin role from this user?')) {
+        return;
+    }
+    
     try {
-        const res = await fetch(`${API_BASE_URL}/api/users/${userId}/reset-password`, {
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}/remove-admin`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${jwtToken}`,
@@ -9164,17 +9179,19 @@ window.viewSingleLyrics = function(songId, otherId) {
         });
         let msg;
         if (res.ok) {
-            msg = 'Password reset to default (qwerty123)';
+            msg = 'Admin role removed successfully';
+            // Refresh the users list to update the UI
+            loadUsers();
         } else {
             const data = await res.json().catch(() => ({}));
-            msg = data.error ? `Failed: ${data.error}` : 'Failed to reset password';
+            msg = data.error ? `Failed: ${data.error}` : 'Failed to remove admin role';
         }
         showAdminNotification(msg);
     } catch (err) {
-        showAdminNotification('Network error during password reset');
+        showAdminNotification('Network error during admin role removal');
     }
 }
-window.resetUserPassword = resetUserPassword;
+window.removeAdminRole = removeAdminRole;
 
 // =========================
 // PASSWORD RESET FUNCTIONALITY
