@@ -853,7 +853,7 @@
             z-index: 950;
             transition: right 0.3s ease;
             overflow-y: auto;
-            padding: 20px;
+            padding: 12px;
             color: var(--text-color);
         }
 
@@ -865,69 +865,96 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 1px solid var(--song-item-border);
         }
 
         .suggested-songs-header h3 {
             margin: 0;
-            color:var(--text-color);
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: 600;
         }
 
         .close-suggested-songs {
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             cursor: pointer;
             color: var(--text-color);
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .close-suggested-songs:hover {
+            background: var(--hover-bg);
+            color: var(--primary-color);
         }
 
         .suggested-song-item {
-            padding: 6px;
-            margin-bottom: 5px;
+            padding: 8px 10px !important;
+            margin-bottom: 3px;
             background: var(--song-item-bg);
-            border-radius: 3px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             border: 1px solid var(--song-item-border);
+            position: relative;
+            overflow: hidden;
         }
 
         .suggested-song-item:hover {
-            transform: translateX(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+            background: var(--sidebar-item-hover-bg);
+            border-color: var(--accent-color);
         }
 
         .suggested-song-title {
             font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             color: var(--title-color);
+            line-height: 1.2;
         }
 
         .suggested-song-meta {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--song-meta-color);
+            margin-bottom: 2px;
+            line-height: 1.1;
         }
 
         .suggested-song-mood {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--accent-color);
-            margin: 3px 0;
+            margin: 2px 0;
             font-style: italic;
+            opacity: 0.9;
         }
 
         .suggested-song-match {
             display: inline-block;
-            margin-top: 5px;
-            padding: 2px 8px;
+            margin-top: 4px;
+            padding: 3px 8px;
             background: var(--accent-color);
             color: var(--primary-color);
-            border-radius: 12px;
-            font-size: 0.75rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .suggested-songs-content {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
         }
 
         .toggle-suggested-songs {
@@ -2630,27 +2657,27 @@ body.dark-mode #installAppBtn {
         .song-item {
             background: var(--song-item-bg);
             color: var(--song-item-text);
-            margin: 2px 0;
-            padding: 2px 2px;
-            border-radius:2px;
-            box-shadow: 0 1px 3px rgba(144, 135, 135, 0.1);
+            margin: 3px 0;
+            padding: 8px 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
             cursor: pointer;
-            border: 2px solid var(--song-item-border);
+            border: 1px solid var(--song-item-border);
             transition: all 0.2s ease;
             position: relative;
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 4px;
             min-height: 44px; /* Better touch target */
+            overflow: hidden;
         }
 
         .song-item:hover {
             background: linear-gradient(135deg, var(--accent-color) 0%, #cfbb76 100%);
             color: var(--sidebar-text-hover);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
             border-color: var(--accent-color);
-            margin-top: -1px;
-            margin-bottom: 1px;
+            transform: translateY(-1px);
         }
 
         .song-item:active {
@@ -2688,7 +2715,7 @@ body.dark-mode #installAppBtn {
         }
 
         .song-title {
-            font-size: 1.0rem;
+            font-size: 1.05rem;
             font-weight: 600;
             margin: 0;
             line-height: 1.3;
@@ -2701,7 +2728,7 @@ body.dark-mode #installAppBtn {
             flex-grow: 1;
             position: relative;
             display: block;
-            margin-right: 10px;
+            margin-right: 8px;
         }
 
         /* Only animate on hover - but with safer animation */
@@ -2726,15 +2753,15 @@ body.dark-mode #installAppBtn {
         .song-meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
-            padding: 6px 0 0 0;
+            padding: 4px 0 0 0;
             margin: 0;
             color: var(--song-meta-color);
             font-size: 0.8rem;
             line-height: 1.1;
             border-top: 1px solid var(--song-item-border);
-            padding-top: 6px;
+            padding-top: 4px;
         }
 
         .song-meta span {
@@ -3039,12 +3066,13 @@ body.dark-mode #installAppBtn {
             }
 
             .song-item {
-                padding: 8px 10px;
-                margin: 1px 0;
+                padding: 6px 10px;
+                margin: 2px 0;
+                border-radius: 10px;
             }
 
             .song-title {
-                font-size: 0.9rem;
+                font-size: 0.95rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -3105,12 +3133,13 @@ body.dark-mode #installAppBtn {
             }
 
             .song-item {
-                padding: 10px 12px;
-                gap: 6px;
+                padding: 8px 10px;
+                gap: 5px;
+                border-radius: 10px;
             }
 
             .song-title {
-                font-size: 0.9rem;
+                font-size: 0.95rem;
                 line-height: 1.4;
                 white-space: nowrap;
                 overflow: hidden;
@@ -3160,11 +3189,12 @@ body.dark-mode #installAppBtn {
         /* Extra small screens */
         @media (max-width: 360px) {
             .song-item {
-                padding: 4px 5px;
+                padding: 6px 8px;
+                border-radius: 8px;
             }
 
             .song-title {
-                font-size: 0.90rem;
+                font-size: 0.9rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -4402,8 +4432,9 @@ body.dark-mode .modal-content {
     }
 
     .suggested-songs-drawer {
-        width: 50%;
+        width: 55%;
         right: -85%;
+        padding: 8px;
     }
     
     .toggle-suggested-songs {
