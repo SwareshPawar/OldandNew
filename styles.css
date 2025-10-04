@@ -7,17 +7,17 @@
 }
 @media (max-width: 700px) {
     .songs-section {
-        width: var(--songs-panel-width) !important;
-        min-width: 0 !important;
-        max-width: 100vw !important;
+        width: var(--songs-panel-width) ;
+        min-width: 0 ;
+        max-width: 100vw ;
     }
     #toggle-all-panels {
-        display: none !important;
+        display: none ;
     }
     .sidebar {
-        width: var(--sidebar-width) !important;
-        min-width: 0 !important;
-        max-width: 100vw !important;
+        width: var(--sidebar-width) ;
+        min-width: 0 ;
+        max-width: 100vw ;
     }
 }
 /* Loading Spinner and Progress Bar */
@@ -71,10 +71,10 @@
 }
 @media (max-width: 400px) {
     #adminPanelModal .modal-content {
-        width: 98vw !important;
-        max-width: 100vw !important;
-        min-width: 0 !important;
-        padding: 12px 2vw 8px 2vw !important;
+        width: 98vw ;
+        max-width: 100vw ;
+        min-width: 0 ;
+        padding: 12px 2vw 8px 2vw ;
         border-radius: 8px;
         overflow-x: auto;
     }
@@ -832,13 +832,13 @@
 
 
         #toggle-sidebar {
-            z-index: 1200 !important; /* Ensure always on top */
+            z-index: 1200 ; /* Ensure always on top */
         }
         #toggle-songs {
-            z-index: 1200 !important; /* Ensure always on top */
+            z-index: 1200 ; /* Ensure always on top */
         }
         #toggle-all-panels {
-            z-index: 1200 !important; /* Ensure always on top */
+            z-index: 1200 ; /* Ensure always on top */
         }
 
         /* Suggested Songs Drawer */
@@ -894,7 +894,7 @@
         }
 
         .suggested-song-item {
-            padding: 8px 10px !important;
+            padding: 8px 10px ;
             margin-bottom: 3px;
             background: var(--song-item-bg);
             border-radius: 6px;
@@ -2631,36 +2631,36 @@ body.dark-mode #installAppBtn {
 
         /* Desktop 2x2 Grid Layout for Filters */
         .filter-row-1 {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            grid-template-rows: auto auto !important;
-            gap: 2px !important;
-            align-items: stretch !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-            margin-top: 6px !important;
+            display: grid ;
+            grid-template-columns: 1fr 1fr ;
+            grid-template-rows: auto auto ;
+            gap: 2px ;
+            align-items: stretch ;
+            width: 100% ;
+            max-width: 100% ;
+            box-sizing: border-box ;
+            margin-top: 6px ;
         }
 
         /* Explicit positioning for 4 filters in 2x2 grid */
         .filter-row-1 .compact-select:nth-child(1) {
-            grid-column: 1 !important;
-            grid-row: 1 !important;
+            grid-column: 1 ;
+            grid-row: 1 ;
         }
 
         .filter-row-1 .compact-select:nth-child(2) {
-            grid-column: 2 !important;
-            grid-row: 1 !important;
+            grid-column: 2 ;
+            grid-row: 1 ;
         }
 
         .filter-row-1 .compact-select:nth-child(3) {
-            grid-column: 1 !important;
-            grid-row: 2 !important;
+            grid-column: 1 ;
+            grid-row: 2 ;
         }
 
         .filter-row-1 .compact-select:nth-child(4) {
-            grid-column: 2 !important;
-            grid-row: 2 !important;
+            grid-column: 2 ;
+            grid-row: 2 ;
         }
 
         .filter-row-2 {
@@ -2674,11 +2674,11 @@ body.dark-mode #installAppBtn {
         }
 
         .filter-row-1 {
-            margin-top: 8px !important;
+            margin-top: 4px ;
         }
 
         .filter-row-2 {
-            margin-top: 6px !important;
+            margin-top: 4px ;
         }
 
         .compact-input,
@@ -3234,7 +3234,7 @@ body.dark-mode #installAppBtn {
 
             .song-item {
                 padding: 8px 10px;
-                gap: 5px;
+                gap: 2px;
                 border-radius: 10px;
             }
 
@@ -3807,7 +3807,7 @@ body.dark-mode #installAppBtn {
 
         /* Ensure modal is shown with flex display for centering */
         .modal.show {
-            display: flex !important;
+            display: flex ;
         }
 
         /* Password Reset Modal Specific Styles */
@@ -3825,7 +3825,7 @@ body.dark-mode #installAppBtn {
         }
 
         #forgotPasswordModal.show, #otpVerificationModal.show {
-            display: flex !important;
+            display: flex ;
             animation: fadeInScale 0.3s ease;
         }
 
@@ -3842,20 +3842,20 @@ body.dark-mode #installAppBtn {
 
         /* Enhanced Password Reset Form Styles */
         #resetMethod {
-            width: 100% !important;
-            padding: 10px !important;
-            margin-bottom: 15px !important;
-            border: 1px solid var(--song-item-border) !important;
-            border-radius: 4px !important;
-            background: var(--light-bg) !important;
-            color: var(--text-color) !important;
-            font-size: 14px !important;
+            width: 100% ;
+            padding: 10px ;
+            margin-bottom: 15px ;
+            border: 1px solid var(--song-item-border) ;
+            border-radius: 4px ;
+            background: var(--light-bg) ;
+            color: var(--text-color) ;
+            font-size: 14px ;
         }
 
         #resetMethod:focus {
-            border-color: var(--accent-color) !important;
-            box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.3) !important;
-            outline: none !important;
+            border-color: var(--accent-color) ;
+            box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.3) ;
+            outline: none ;
         }
 
         #otpInstructions {
@@ -3868,10 +3868,10 @@ body.dark-mode #installAppBtn {
         }
 
         #otpCode {
-            text-align: center !important;
-            font-size: 18px !important;
-            font-weight: bold !important;
-            letter-spacing: 2px !important;
+            text-align: center ;
+            font-size: 18px ;
+            font-weight: bold ;
+            letter-spacing: 2px ;
         }
 
         .btn:disabled {
@@ -4050,7 +4050,7 @@ body.dark-mode .modal-content {
 
         /* Hide all settings buttons except the first one */
         #settingsBtn:not(:first-of-type) {
-            display: none !important;
+            display: none ;
         }
 
         /* Hide settings buttons in nested footer divs and duplicates */
@@ -4059,14 +4059,14 @@ body.dark-mode .modal-content {
         .sidebar-footer .sidebar-footer button[class*="settings"],
         .sidebar-footer:last-child #settingsBtn,
         .sidebar .sidebar-footer:nth-child(2) #settingsBtn {
-            display: none !important;
+            display: none ;
         }
 
         /* Alternative approach - hide all duplicate settings buttons */
         .sidebar #settingsBtn ~ #settingsBtn,
         .sidebar button[onclick*="settings"] + button[onclick*="settings"],
         .sidebar-footer:not(:first-child) #settingsBtn {
-            display: none !important;
+            display: none ;
         }
 
             #settingsBtn:hover {
@@ -4433,7 +4433,7 @@ body.dark-mode .modal-content {
                 }
                 
                 #adminPanelModal .admin-tab-content.active {
-                    display: block !important;
+                    display: block ;
                 }
                 #adminPanelModal #usersTable {
                     width: 100%;
@@ -4532,8 +4532,8 @@ body.dark-mode .modal-content {
     #toggle-songs,
     #toggle-all-panels {
         /* Ensure JavaScript has control over positioning on mobile */
-        position: fixed !important;
-        z-index: 1100 !important;
+        position: fixed ;
+        z-index: 1100 ;
     }
 
     .suggested-songs-drawer {
@@ -4596,224 +4596,224 @@ body.dark-mode .modal-content {
 
     /* Admin Panel Mobile Optimizations */
     #adminPanelModal .modal-content {
-        width: 95vw !important;
-        height: 95vh !important;
-        max-width: 95vw !important;
-        max-height: 95vh !important;
-        margin: 2.5vh auto !important;
-        padding: 15px 10px 10px 10px !important;
-        border-radius: 8px !important;
-        overflow-y: auto !important;
+        width: 95% ;
+        height: 95% ;
+        max-width: 95% ;
+        max-height: 95% ;
+        margin: 2.5% auto ;
+        padding: 2% 1.5% 1.5% 1.5% ;
+        border-radius: 1% ;
+        overflow-y: auto ;
     }
 
     #adminPanelModal .admin-tabs {
-        flex-direction: column !important;
-        gap: 5px !important;
-        margin-bottom: 15px !important;
-        justify-content: stretch !important;
+        flex-direction: column ;
+        gap: 5px ;
+        margin-bottom: 15px ;
+        justify-content: stretch ;
     }
 
     #adminPanelModal .admin-tab {
-        width: 100% !important;
-        padding: 12px 8px !important;
-        font-size: 1.1em !important;
-        text-align: center !important;
-        border-radius: 6px !important;
-        margin-bottom: 2px !important;
+        width: 100% ;
+        padding:6px 4px ;
+        font-size: 1.1em ;
+        text-align: center ;
+        border-radius: 6px ;
+        margin-bottom: 2px ;
     }
 
     #adminPanelModal .admin-tab-content {
-        padding: 10px 5px 0 5px !important;
-        border-radius: 6px !important;
+        padding: 1.5% 1% 0 1% ;
+        border-radius: 1% ;
     }
 
     #adminPanelModal h2 {
-        font-size: 1.5em !important;
-        margin-bottom: 10px !important;
-        text-align: center !important;
+        font-size: 1.5em ;
+        margin-bottom: 10px ;
+        text-align: center ;
     }
 
     #adminPanelModal .close-modal {
-        font-size: 24px !important;
-        top: 10px !important;
-        right: 15px !important;
+        font-size: 24px ;
+        top: 10px ;
+        right: 15px ;
     }
 
     /* Mobile Table Optimizations */
     #adminPanelModal #usersTable {
-        font-size: 0.95em !important;
-        overflow-x: auto !important;
-        display: block !important;
-        white-space: nowrap !important;
+        font-size: 0.95em ;
+        overflow-x: auto ;
+        display: block ;
+        white-space: nowrap ;
     }
 
     #adminPanelModal #usersTable th,
     #adminPanelModal #usersTable td {
-        padding: 6px 4px !important;
-        font-size: 0.9em !important;
-        min-width: 90px !important;
+        padding: 6px 4px ;
+        font-size: 0.9em ;
+        min-width: 90px ;
     }
 
     /* Mobile Form Optimizations */
     #adminPanelModal #weightsForm {
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 10px !important;
+        max-width: 100% ;
+        margin: 0 ;
+        padding: 10px ;
     }
 
     #adminPanelModal #weightsTable {
-        font-size: 0.95em !important;
-        margin-bottom: 10px !important;
+        font-size: 0.95em ;
+        margin-bottom: 10px ;
     }
 
     #adminPanelModal #weightsTable th,
     #adminPanelModal #weightsTable td {
-        padding: 10px 6px !important;
-        font-size: 0.9em !important;
+        padding: 10px 6px ;
+        font-size: 0.9em ;
     }
 
     #adminPanelModal #weightsTable input[type="number"] {
-        width: 55px !important;
-        padding: 8px 6px !important;
-        font-size: 0.95em !important;
+        width: 55px ;
+        padding: 8px 6px ;
+        font-size: 0.95em ;
     }
 
     #adminPanelModal .btn {
-        padding: 10px 15px !important;
-        font-size: 1.0em !important;
-        margin: 5px 2px !important;
-        width: auto !important;
-        min-width: 110px !important;
+        padding: 10px 15px ;
+        font-size: 1.0em ;
+        margin: 5px 2px ;
+        width: auto ;
+        min-width: 110px ;
     }
 
     #adminPanelModal .notification {
-        font-size: 0.95em !important;
-        padding: 10px !important;
-        margin: 10px 0 !important;
-        border-radius: 4px !important;
+        font-size: 0.95em ;
+        padding: 10px ;
+        margin: 10px 0 ;
+        border-radius: 4px ;
     }
 
     /* Mobile Touch Improvements */
     #adminPanelModal .admin-tab {
-        min-height: 44px !important;
-        touch-action: manipulation !important;
+        min-height: 44px ;
+        touch-action: manipulation ;
     }
 
     #adminPanelModal .btn {
-        min-height: 44px !important;
-        touch-action: manipulation !important;
+        min-height: 44px ;
+        touch-action: manipulation ;
     }
 
     #adminPanelModal #weightsTable input[type="number"] {
-        min-height: 36px !important;
-        touch-action: manipulation !important;
+        min-height: 36px ;
+        touch-action: manipulation ;
     }
 
     /* Improve scrolling on mobile */
     #adminPanelModal .modal-content {
-        -webkit-overflow-scrolling: touch !important;
+        -webkit-overflow-scrolling: touch ;
     }
 
     /* Make duplicate detection content scrollable on mobile */
     #adminPanelModal #duplicateDetectionTabContent {
-        max-height: 60vh !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
+        max-height: 60vh ;
+        overflow-y: auto ;
+        -webkit-overflow-scrolling: touch ;
     }
 
     /* User management table mobile scroll */
     #adminPanelModal #userMgmtTabContent {
-        max-height: 60vh !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
+        max-height: 60vh ;
+        overflow-y: auto ;
+        -webkit-overflow-scrolling: touch ;
     }
 }
 
 /* Extra Small Screens (phones in portrait) */
 @media (max-width: 480px) {
     #adminPanelModal .modal-content {
-        width: 98vw !important;
-        height: 98vh !important;
-        margin: 1vh auto !important;
-        padding: 10px 5px 5px 5px !important;
+        width: 98% ;
+        height: 98% ;
+        margin: 1% auto ;
+        padding: 1.5% 1% 1% 1% ;
     }
 
     #adminPanelModal .admin-tabs {
-        gap: 3px !important;
-        margin-bottom: 10px !important;
+        gap: 3px ;
+        margin-bottom: 10px ;
     }
 
     #adminPanelModal .admin-tab {
-        padding: 12px 8px !important;
-        font-size: 1.0em !important;
+        padding: 12px 8px ;
+        font-size: 1.0em ;
     }
 
     #adminPanelModal h2 {
-        font-size: 1.3em !important;
-        margin-bottom: 8px !important;
+        font-size: 1.3em ;
+        margin-bottom: 8px ;
     }
 
     #adminPanelModal .close-modal {
-        font-size: 20px !important;
-        top: 5px !important;
-        right: 10px !important;
+        font-size: 20px ;
+        top: 5px ;
+        right: 10px ;
     }
 
     /* Very Small Screen Form Layout */
     #adminPanelModal #weightsForm {
-        padding: 5px !important;
+        padding: 5px ;
     }
 
     #adminPanelModal #weightsTable th,
     #adminPanelModal #weightsTable td {
-        padding: 8px 4px !important;
-        font-size: 0.85em !important;
+        padding: 8px 4px ;
+        font-size: 0.85em ;
     }
 
     #adminPanelModal #weightsTable input[type="number"] {
-        width: 50px !important;
-        padding: 6px 4px !important;
-        font-size: 0.9em !important;
+        width: 50px ;
+        padding: 6px 4px ;
+        font-size: 0.9em ;
     }
 
     #adminPanelModal .btn {
-        padding: 10px 14px !important;
-        font-size: 0.9em !important;
-        min-width: 90px !important;
+        padding: 10px 14px ;
+        font-size: 0.9em ;
+        min-width: 90px ;
     }
 
     #adminPanelModal #usersTable th,
     #adminPanelModal #usersTable td {
-        padding: 6px 4px !important;
-        font-size: 0.8em !important;
-        min-width: 70px !important;
+        padding: 6px 4px ;
+        font-size: 0.8em ;
+        min-width: 70px ;
     }
 }
 
 /* Mobile Landscape Orientation */
 @media (max-width: 768px) and (orientation: landscape) {
     #adminPanelModal .modal-content {
-        width: 90vw !important;
-        height: 90vh !important;
-        margin: 5vh auto !important;
+        width: 90% ;
+        height: 90% ;
+        margin: 5% auto ;
     }
 
     #adminPanelModal .admin-tabs {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        justify-content: center !important;
+        flex-direction: row ;
+        flex-wrap: wrap ;
+        justify-content: center ;
     }
 
     #adminPanelModal .admin-tab {
-        width: auto !important;
-        flex: 1 !important;
-        min-width: 120px !important;
-        padding: 8px 12px !important;
+        width: auto ;
+        flex: 1 ;
+        min-width: 120px ;
+        padding: 8px 12px ;
     }
 
     #adminPanelModal .admin-tab-content {
-        max-height: 50vh !important;
-        overflow-y: auto !important;
+        max-height: 50vh ;
+        overflow-y: auto ;
     }
 }
 
@@ -4934,7 +4934,7 @@ body.dark-mode .modal-content {
    UTILITY CLASSES
    =============================== *//* General utility classes */
 .hidden {
-    display: none !important;
+    display: none ;
 }
 
 /* Active state handled by specific components */

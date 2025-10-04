@@ -9001,10 +9001,13 @@ window.viewSingleLyrics = function(songId, otherId) {
                 el.style.right = right !== '' ? right + 'px' : '';
                 el.style.bottom = bottom !== '' ? bottom + 'px' : '';
             } else {
-                // Default: space horizontally at top, never overlap
-                el.style.top = minPadding + 'px';
-                el.style.left = (minPadding + idx * (btnSize + spacing)) + 'px';
-                el.style.right = '';
+                // Default: position vertically on right edge, centered
+                const centerY = Math.floor(window.innerHeight / 2);
+                const startY = centerY - Math.floor(allIds.length * (btnSize + spacing) / 2);
+                
+                el.style.top = Math.max(minPadding, startY + idx * (btnSize + spacing)) + 'px';
+                el.style.left = '';
+                el.style.right = minPadding + 'px';
                 el.style.bottom = '';
             }
         };
