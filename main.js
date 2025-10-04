@@ -187,7 +187,17 @@ const TIME_GENRE_MAP = {
 
 // --- CHORD TYPES: single source of truth ---
 const CHORD_TYPES = [
-    "maj", "min", "m", "dim", "aug", "sus2", "sus4", "7sus4", "7sus2", "m7", "maj7", "7", "m9", "maj9", "9", "m11", "maj11", "11", "add9", "add11", "6", "13", "5", "sus", "7b5", "7#5", "7b9", "7#9", "b5", "#5", "b9", "#9"
+    // Longest patterns first to prevent partial matches
+    "madd13", "madd11", "madd9", "madd7", "madd4", "madd2", // Minor add chords
+    "add13", "add11", "add9", "add7", "add6", "add4", "add2", // Major add chords
+    "maj13", "maj11", "maj9", "maj7", "maj", // Major chord variations
+    "min13", "min11", "min9", "min7", "min", // Minor chord variations (full names)
+    "m7sus4", "m7sus2", "7sus4", "7sus2", "7b13", "7#13", "7b11", "7#11", "7b9", "7#9", "7b5", "7#5", // 7th chord variations (longest first)
+    "m13", "m11", "m9", "m7", "m", // Minor chord variations (short names)
+    "dim7", "dim", "aug7", "aug", // Diminished and augmented
+    "sus4", "sus2", "sus", // Suspended chords
+    "b13", "#13", "b11", "#11", "b9", "#9", "b5", "#5", // Altered extensions
+    "13", "11", "9", "7", "6", "5" // Basic numbered chords (7 should come last)
 ];
 
         // Dynamic API base URL for local/dev/prod
@@ -205,7 +215,7 @@ console.log('API_BASE_URL:', API_BASE_URL);
 const CHORDS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const CHORD_TYPE_REGEX = CHORD_TYPES.join("|");
 const CHORD_REGEX = new RegExp(`([A-G](?:#|b)?)(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?`, "gi");
-const CHORD_LINE_REGEX = new RegExp(`^(\\s*[A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?\\s*)+$`, "i");
+const CHORD_LINE_REGEX = new RegExp(`^(\\s*[A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?[\\s\\-\\/\\|]*)+$`, "i");
 const INLINE_CHORD_REGEX = new RegExp(`[\\[(]([A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?)[\\])]`, "gi");
 
 // Re-initialize variables from localStorage (no redeclaration)
@@ -7078,25 +7088,34 @@ window.viewSingleLyrics = function(songId, otherId) {
             const baseNote = match[1];
             const quality = match[2] || '';
 
-            // Chromatic scale with both sharps and flats
-            const chromaticScale = [
-                'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-                'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'
-            ];
+            // Chromatic scale using sharps first
+            const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
             
-            // Find current position
+            // Find current position (check both sharp and flat versions)
             let currentIndex = chromaticScale.indexOf(baseNote);
+            if (currentIndex === -1) {
+                // Try flat notation (only for Bb and Eb)
+                const flatToSharp = { 'Eb': 'D#', 'Bb': 'A#' };
+                const sharpEquivalent = flatToSharp[baseNote];
+                if (sharpEquivalent) {
+                    currentIndex = chromaticScale.indexOf(sharpEquivalent);
+                }
+            }
             if (currentIndex === -1) return chord;
 
-            // Calculate new position (steps is already ±1)
+            // Calculate new position
             const newIndex = (currentIndex + steps + 12) % 12;
             let newBaseNote = chromaticScale[newIndex];
 
-            // Maintain notation style (sharp vs flat)
-            const preferFlats = ['F', 'Bb', 'Eb', 'Ab', 'Db'];
-            if (preferFlats.includes(newBaseNote)) {
-                const sharpToFlat = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
-                newBaseNote = sharpToFlat[newBaseNote] || newBaseNote;
+            // Only use flat notation for Bb and Eb specifically
+            const sharpToFlat = { 'D#': 'Eb', 'A#': 'Bb' };
+            const preferFlats = ['Bb', 'Eb']; // Only these two should be flats
+            
+            if (sharpToFlat[newBaseNote]) {
+                const flatVersion = sharpToFlat[newBaseNote];
+                if (preferFlats.includes(flatVersion)) {
+                    newBaseNote = flatVersion;
+                }
             }
 
             // Maintain case
