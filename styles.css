@@ -28,7 +28,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.4);
+    background: var(--loading-overlay);
     z-index: 9999;
     align-items: center;
     justify-content: center;
@@ -37,8 +37,8 @@
 .spinner {
     width: 48px;    
     height: 48px;
-    border: 6px solid #eee;
-    border-top: 6px solid var(--primary-color, #3E3F29);
+    border: 6px solid var(--spinner-track);
+    border-top: 6px solid var(--spinner-active);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     background: none;
@@ -49,25 +49,25 @@
 }
 #loadingPercent {
     font-weight: bold;
-    color: #ffd700;
+    color: var(--loading-text);
 }
 /* Tap Tempo Button Theme */
 .tap-tempo-btn {
-    background: var(--primary-color, #3E3F29);
-    color: #fff;
+    background: var(--primary-color);
+    color: var(--sidebar-text-color);
     border: none;
     border-radius: 4px;
     padding: 4px 14px;
     font-size: 0.95rem;
     cursor: pointer;
     transition: background 0.2s, box-shadow 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 3px var(--song-item-shadow);
     outline: none;
 }
 .tap-tempo-btn:hover, .tap-tempo-btn:focus {
-    background: #23231A;
-    color: #ffd700;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    background: var(--form-bg);
+    color: var(--loading-text);
+    box-shadow: 0 2px 6px var(--song-item-shadow);
 }
 @media (max-width: 400px) {
     #adminPanelModal .modal-content {
@@ -93,59 +93,59 @@
 }
 /* Admin Panel: Recommendation Weights Form Theme Fix */
 #weightsForm {
-    background: #23231A;
+    background: var(--form-bg);
     border-radius: 8px;
     padding: 18px 18px 12px 18px;
-    box-shadow: 0 2px 12px rgba(62,63,41,0.18);
+    box-shadow: 0 2px 12px var(--form-shadow);
 }
 #weightsTable {
-    background: #23231A;
-    color: #ECE6D6;
+    background: var(--form-bg);
+    color: var(--input-text);
     border-radius: 8px;
-    border: 1px solid #4A4F3A;
+    border: 1px solid var(--input-border);
     margin-bottom: 16px;
 }
 #weightsTable th, #weightsTable td {
-    background: #23231A;
-    color: #ECE6D6;
-    border-bottom: 1px solid #4A4F3A;
+    background: var(--form-bg);
+    color: var(--input-text);
+    border-bottom: 1px solid var(--input-border);
     padding: 10px 8px;
     font-size: 1em;
 }
 #weightsTable th {
-    background: #2d2c28;
-    color: #BCA88D;
+    background: var(--light-bg);
+    color: var(--accent-color);
 }
 #weightsTable input[type="number"] {
-    background: #181810;
-    color: #ECE6D6;
-    border: 1px solid #BCA88D;
+    background: var(--input-bg);
+    color: var(--input-text);
+    border: 1px solid var(--input-border);
     border-radius: 4px;
     padding: 6px 10px;
     font-size: 1.08em;
     font-weight: 500;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 4px var(--song-item-shadow);
 }
 
 #weightsTable input[type="number"]:focus {
-    outline: 2px solid #BCA88D;
-    background: #23231A;
+    outline: 2px solid var(--accent-color);
+    background: var(--form-bg);
 }
 
 /* Highlight active song in songs-section */
 .song-item.active-song {
-    background: linear-gradient(90deg, #978754 100%, var(--accent-color) 0%);
-    color: #F1F0E4;
+    background: linear-gradient(90deg, var(--text-color) 100%, var(--accent-color) 0%);
+    color: var(--sidebar-item-bg);
     border-left: 4px solid var(--accent-color);
-    box-shadow: 0 2px 8px rgba(62,63,41,0.18);
+    box-shadow: 0 2px 8px var(--form-shadow);
     font-weight: bold;
     transition: background 0.2s, border 0.2s;
 }
 
 /* Fix song-meta visibility in active song */
 .song-item.active-song .song-meta {
-    color: #F1F0E4;
-    border-color: rgba(241, 240, 228, 0.3);
+    color: var(--sidebar-item-bg);
+    border-color: var(--input-focus);
 }
 
 .song-item.active-song .song-meta span {
@@ -179,19 +179,19 @@
 
         /* Improve visibility of weights input fields in admin panel */
         #weightsTable input[type="number"] {
-            background: #f7edbd;
-            color: #222;
+            background: var(--input-highlight-bg);
+            color: var(--input-highlight-text);
             border: 1px solid var(--accent-color);
             border-radius: 4px;
             padding: 6px 10px;
             font-size: 1.08em;
             font-weight: 500;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            box-shadow: 0 1px 4px var(--song-item-shadow);
         }
         #weightsTable input[type="number"]:focus {
             outline: 2px solid var(--accent-color);
-            background: #fffbe6;
-            color: #222;
+            background: var(--input-focus-bg);
+            color: var(--input-highlight-text);
         }
 
          /* ===== SWIPE ANIMATIONS & FEEDBACK ===== */
@@ -218,7 +218,7 @@
 
         /* Visual feedback during swipe */
         body:active .song-lyrics {
-        background-color: rgba(0,0,0,0.02);
+        background-color: var(--swipe-feedback);
         }
 
 
@@ -615,32 +615,32 @@
         }
 
         .preview-setlist-btn.remove {
-            background: #e74c3c;
-            color: white;
+            background: var(--btn-danger-bg);
+            color: var(--btn-text-light);
         }
 
         .preview-setlist-btn.remove:hover {
-            background: #c0392b;
+            background: var(--btn-danger-hover);
             transform: translateY(-1px);
         }
 
         .preview-edit-btn {
-            background: #f39c12;
-            color: white;
+            background: var(--btn-warning-bg);
+            color: var(--btn-text-light);
         }
 
         .preview-edit-btn:hover {
-            background: #e67e22;
+            background: var(--btn-warning-hover);
             transform: translateY(-1px);
         }
 
         .preview-delete-btn {
-            background: #e74c3c;
-            color: white;
+            background: var(--btn-danger-bg);
+            color: var(--btn-text-light);
         }
 
         .preview-delete-btn:hover {
-            background: #c0392b;
+            background: var(--btn-danger-hover);
             transform: translateY(-1px);
         }
 
@@ -697,23 +697,23 @@
 
         .preview-transpose-btn:hover {
             background: var(--accent-color);
-            color: white;
+            color: var(--btn-text-light);
             border-color: var(--accent-color);
         }
 
         .preview-transpose-btn.preview-reset {
-            background: #95a5a6;
-            color: white;
-            border-color: #95a5a6;
+            background: var(--btn-secondary-bg);
+            color: var(--btn-text-light);
+            border-color: var(--btn-secondary-bg);
         }
 
         .preview-transpose-btn.preview-reset:hover {
-            background: #7f8c8d;
+            background: var(--btn-secondary-hover);
         }
 
         .preview-transpose-btn.preview-save {
             background: var(--accent-color);
-            color: white;
+            color: var(--btn-text-light);
             border-color: var(--accent-color);
         }
 
@@ -983,33 +983,82 @@
 
 
         :root {
-    --light-accent: #BCA88D;
-    --light-bg-highlight: #3E3F29;
+    /* Layout Variables */
     --admin-panel-width: 60%; /* Change this value to adjust admin panel width */
     --admin-panel-height: 80%; /* Change this value to adjust admin panel height */
-            --primary-color: #3E3F29;
-            --secondary-color: #7D8D86;
-            --accent-color: #BCA88D;
-            --light-bg: #2d2c28;
-            --text-color: #7a7c50;
-            --delete-color: #BCA88D;
-            --favorite-color: #ff0000;
-            --notification-bg: rgba(62, 63, 41, 0.9);
-            --sidebar-text-color: #3E3F29;
-            --sidebar-item-bg: #F1F0E4;
-            --sidebar-item-hover-bg: #BCA88D;
-            --sidebar-text-hover: #3E3F29;
-            --song-item-bg: #F1F0E4;
-            --song-item-text: #3E3F29;
-            --song-item-border: #BCA88D;
-            --song-meta-color: #7D8D86;
-            --lyrics-bg-color: #F1F0E4;
-            --lyrics-text-color: #3E3F29;
-            --title-color: #3E3F29;
-            --chord-color: #7D8D86;
-            --song-item-text-bg: #dfc07d;
-            
-        }
+    
+    /* Core Theme Colors */
+    --primary-color: #3E3F29;
+    --secondary-color: #7D8D86;
+    --accent-color: #BCA88D;
+    --light-bg: #2d2c28;
+    --text-color: #7a7c50;
+    
+    /* UI State Colors */
+    --delete-color: #BCA88D;
+    --favorite-color: #ff0000;
+    --success-color: #28a745;
+    --error-color: #e74c3c;
+    --warning-color: #f39c12;
+    --info-color: #667eea;
+    
+    /* Action Button Colors */
+    --btn-danger-bg: #e74c3c;
+    --btn-danger-hover: #c0392b;
+    --btn-warning-bg: #f39c12;
+    --btn-warning-hover: #e67e22;
+    --btn-secondary-bg: #95a5a6;
+    --btn-secondary-hover: #7f8c8d;
+    --btn-text-light: white;
+    
+    /* Loading & Spinner Colors */
+    --spinner-track: #eee;
+    --spinner-active: var(--primary-color);
+    --loading-text: #ffd700;
+    --loading-overlay: rgba(0,0,0,0.4);
+    --swipe-feedback: rgba(0,0,0,0.02);
+    
+    /* Notification & Modal Colors */
+    --notification-bg: rgba(62, 63, 41, 0.9);
+    --modal-overlay: rgba(0,0,0,0.4);
+    --form-bg: #23231A;
+    --form-shadow: rgba(62,63,41,0.18);
+    --modal-title-color: #2c3e50;
+    --modal-close-color: #888;
+    
+    /* Sidebar Theme */
+    --sidebar-text-color: #3E3F29;
+    --sidebar-item-bg: #F1F0E4;
+    --sidebar-item-hover-bg: #BCA88D;
+    --sidebar-text-hover: #3E3F29;
+    
+    /* Song Item Theme */
+    --song-item-bg: #F1F0E4;
+    --song-item-text: #3E3F29;
+    --song-item-border: #BCA88D;
+    --song-meta-color: #7D8D86;
+    --song-item-text-bg: #dfc07d;
+    --song-item-shadow: rgba(0,0,0,0.1);
+    
+    /* Lyrics Theme */
+    --lyrics-bg-color: #F1F0E4;
+    --lyrics-text-color: #3E3F29;
+    --title-color: #3E3F29;
+    --chord-color: #7D8D86;
+    
+    /* Input & Form Colors */
+    --input-bg: #F1F0E4;
+    --input-border: #BCA88D;
+    --input-focus: rgba(241, 240, 228, 0.4);
+    --input-text: #3E3F29;
+    --input-highlight-bg: #f7edbd;
+    --input-focus-bg: #fffbe6;
+    --input-highlight-text: #222;
+    
+    /* Legacy Variables for Compatibility */
+    --light-accent: #BCA88D;
+    --light-bg-highlight: #3E3F29;
+}
 
         * {
             margin: 0;
@@ -1027,26 +1076,77 @@
         }
 
             body.dark-mode {
-                --dark-accent: #646e6a;
-                --dark-light-bg: #4f4e4d;
+                /* Core Theme Colors */
                 --primary-color: #23231A;
                 --secondary-color: #4A4F3A;
                 --accent-color: #BCA88D;
-                --text-color: #594e32;
                 --light-bg: #181810;
+                --text-color: #594e32;
+                
+                /* UI State Colors */
+                --delete-color: #BCA88D;
+                --favorite-color: #ff0000;
+                --success-color: #27ae60;
+                --error-color: #e74c3c;
+                --warning-color: #f39c12;
+                --info-color: #667eea;
+                
+                /* Action Button Colors (darker variants for dark mode) */
+                --btn-danger-bg: #c0392b;
+                --btn-danger-hover: #a93226;
+                --btn-warning-bg: #e67e22;
+                --btn-warning-hover: #d35400;
+                --btn-secondary-bg: #7f8c8d;
+                --btn-secondary-hover: #6c7b7d;
+                --btn-text-light: white;
+                
+                /* Loading & Spinner Colors */
+                --spinner-track: #4A4F3A;
+                --spinner-active: #BCA88D;
+                --loading-text: #ffd700;
+                --loading-overlay: rgba(0,0,0,0.6);
+                --swipe-feedback: rgba(0,0,0,0.05);
+                
+                /* Notification & Modal Colors */
+                --notification-bg: rgba(35, 35, 26, 0.9);
+                --modal-overlay: rgba(0,0,0,0.6);
+                --form-bg: #23231A;
+                --form-shadow: rgba(35,35,26,0.3);
+                --modal-title-color: #BCA88D;
+                --modal-close-color: #ECE6D6;
+                
+                /* Sidebar Theme */
                 --sidebar-text-color: #ECE6D6;
                 --sidebar-item-bg: #23231A;
                 --sidebar-item-hover-bg: #4A4F3A;
+                --sidebar-text-hover: #ECE6D6;
+                
+                /* Song Item Theme */
                 --song-item-bg: #23231A;
                 --song-item-text: #ECE6D6;
                 --song-item-border: #BCA88D;
                 --song-meta-color: #ECE6D6;
+                --song-item-text-bg: #3f3319;
+                --song-item-shadow: rgba(0,0,0,0.3);
+                
+                /* Lyrics Theme */
                 --lyrics-bg-color: #181810;
                 --lyrics-text-color: #ECE6D6;
                 --title-color: #BCA88D;
                 --chord-color: #7D8D86;
-                --favorite-color: #ff0000;
-                --song-item-text-bg: #3f3319;
+                
+                /* Input & Form Colors */
+                --input-bg: #23231A;
+                --input-border: #4A4F3A;
+                --input-focus: rgba(74, 79, 58, 0.4);
+                --input-text: #ECE6D6;
+                --input-highlight-bg: #3f3319;
+                --input-focus-bg: #4A4F3A;
+                --input-highlight-text: #ECE6D6;
+                
+                /* Legacy Variables for Dark Mode */
+                --dark-accent: #646e6a;
+                --dark-light-bg: #4f4e4d;
             }
 
         /* Add these styles to your existing CSS */
@@ -4289,7 +4389,7 @@ body.dark-mode .modal-content {
                     margin-top: 0;
                     margin-bottom: 18px;
                     font-size: 1.5em;
-                    color: #2c3e50;
+                    color: var(--modal-title-color);
                     text-align: center;
                 }
                 #adminPanelModal .close-modal {
@@ -4297,12 +4397,12 @@ body.dark-mode .modal-content {
                     top: 12px;
                     right: 18px;
                     font-size: 2em;
-                    color: #888;
+                    color: var(--modal-close-color);
                     cursor: pointer;
                     transition: color 0.2s;
                 }
                 #adminPanelModal .close-modal:hover {
-                    color: #e74c3c;
+                    color: var(--error-color);
                 }
                 #adminPanelModal .admin-tabs {
                     display: flex;
