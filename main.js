@@ -37,8 +37,8 @@ const VOCAL_TAGS = ['Male', 'Female', 'Duet'];
 
 
 const KEYS = [
-    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
-    "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm"
+    "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B",
+    "Cm", "C#m", "Dm", "Ebm", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "Bbm", "Bm"
 ];
 const CATEGORIES = ["New", "Old"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
@@ -212,7 +212,7 @@ console.log('API_BASE_URL:', API_BASE_URL);
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
 
 // --- CHORD REGEXES: always use CHORD_TYPES ---
-const CHORDS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const CHORDS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
 const CHORD_TYPE_REGEX = CHORD_TYPES.join("|");
 const CHORD_REGEX = new RegExp(`([A-G](?:#|b)?)(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?`, "gi");
 const CHORD_LINE_REGEX = new RegExp(`^(\\s*[A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?[\\s\\-\\/\\|]*)+$`, "i");
@@ -6314,8 +6314,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                 'A': ['E', 'D', 'C#m'],
                 'E': ['B', 'A', 'G#m'],
                 'B': ['F#', 'E', 'G#m'],
-                'F#': ['C#', 'B', 'D#m'],
-                'C#': ['G#', 'F#', 'A#m'],
+                'F#': ['C#', 'B', 'Ebm'],
+                'C#': ['G#', 'F#', 'Bbm'],
                 'F': ['C', 'Bb', 'Dm'],
                 'Bb': ['F', 'Eb', 'Gm'],
                 'Eb': ['Bb', 'Ab', 'Cm'],
@@ -6329,9 +6329,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                 'Bm': ['F#m', 'Em', 'D'],
                 'F#m': ['C#m', 'Bm', 'A'],
                 'C#m': ['G#m', 'F#m', 'E'],
-                'G#m': ['D#m', 'C#m', 'B'],
-                'D#m': ['A#m', 'G#m', 'F#'],
-                'A#m': ['Fm', 'D#m', 'C#'],
+                'G#m': ['Ebm', 'C#m', 'B'],
+                'Ebm': ['Bbm', 'G#m', 'F#'],
+                'Bbm': ['Fm', 'Ebm', 'C#'],
                 'Dm': ['Am', 'Gm', 'F'],
                 'Gm': ['Dm', 'Cm', 'Bb'],
                 'Cm': ['Gm', 'Fm', 'Eb'],
@@ -7088,35 +7088,24 @@ window.viewSingleLyrics = function(songId, otherId) {
             const baseNote = match[1];
             const quality = match[2] || '';
 
-            // Chromatic scale using sharps first
-            const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            // Chromatic scale using preferred notation (Eb and Bb as flats, others as sharps)
+            const chromaticScale = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
             
             // Find current position (check both sharp and flat versions)
             let currentIndex = chromaticScale.indexOf(baseNote);
             if (currentIndex === -1) {
-                // Try flat notation (only for Bb and Eb)
-                const flatToSharp = { 'Eb': 'D#', 'Bb': 'A#' };
-                const sharpEquivalent = flatToSharp[baseNote];
-                if (sharpEquivalent) {
-                    currentIndex = chromaticScale.indexOf(sharpEquivalent);
+                // Try sharp notation for legacy compatibility
+                const sharpToFlat = { 'D#': 'Eb', 'A#': 'Bb' };
+                const flatEquivalent = sharpToFlat[baseNote];
+                if (flatEquivalent) {
+                    currentIndex = chromaticScale.indexOf(flatEquivalent);
                 }
             }
             if (currentIndex === -1) return chord;
 
             // Calculate new position
             const newIndex = (currentIndex + steps + 12) % 12;
-            let newBaseNote = chromaticScale[newIndex];
-
-            // Only use flat notation for Bb and Eb specifically
-            const sharpToFlat = { 'D#': 'Eb', 'A#': 'Bb' };
-            const preferFlats = ['Bb', 'Eb']; // Only these two should be flats
-            
-            if (sharpToFlat[newBaseNote]) {
-                const flatVersion = sharpToFlat[newBaseNote];
-                if (preferFlats.includes(flatVersion)) {
-                    newBaseNote = flatVersion;
-                }
-            }
+            const newBaseNote = chromaticScale[newIndex];
 
             // Maintain case
             if (baseNote === baseNote.toLowerCase()) {
