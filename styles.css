@@ -264,14 +264,6 @@
             gap: 2px;
         }
 
-        .song-title {
-            font-weight: 600;
-            flex-grow: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
         .song-item .favorite-btn {
             background: none;
             border: none;
@@ -382,15 +374,6 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 3px;
-        }
-
-        .song-title {
-            font-weight: 500;
-            flex-grow: 1;
-            margin-right: 10px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
         .song-item .favorite-btn {
@@ -901,10 +884,10 @@
         }
 
         .suggested-song-item {
-            padding: 12px;
-            margin-bottom: 10px;
+            padding: 6px;
+            margin-bottom: 5px;
             background: var(--song-item-bg);
-            border-radius: 6px;
+            border-radius: 3px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: all 0.2s;
@@ -1179,6 +1162,11 @@ body.dark-mode #installAppBtn {
             justify-content: space-between;
         }
 
+        .panel-toggle.draggable:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease;
+        }
+
         .panel-toggle::after {
             content: '';
             position: absolute;
@@ -1219,11 +1207,12 @@ body.dark-mode #installAppBtn {
             left: 0;
             height: 100%;
             z-index: 1000;
-            transition: transform 0.3s ease;
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            transform: translateX(0);
         }
 
             .sidebar.hidden {
@@ -2063,8 +2052,8 @@ body.dark-mode #installAppBtn {
         }
 
         .song-category-header {
-            margin-bottom: 15px;
-            padding: 10px;
+            margin-bottom: 5px;
+            padding: 5px;
             background: var(--hover-bg);
             border-radius: 6px;
         }
@@ -2440,11 +2429,12 @@ body.dark-mode #installAppBtn {
             left: var(--sidebar-width);
             height: 100%;
             z-index: 900;
-            transition: transform 0.3s ease;
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             color: var(--text-color);
+            transform: translateX(0);
         }
 
             .songs-section.hidden {
@@ -2651,14 +2641,16 @@ body.dark-mode #installAppBtn {
             display: flex;
             flex-direction: column;
             gap: 3px;
+            min-height: 44px; /* Better touch target */
         }
 
         .song-item:hover {
             background: linear-gradient(135deg, var(--accent-color) 0%, #cfbb76 100%);
             color: var(--sidebar-text-hover);
-            transform: translateY(-1px);
             box-shadow: 0 3px 8px rgba(0,0,0,0.15);
             border-color: var(--accent-color);
+            margin-top: -1px;
+            margin-bottom: 1px;
         }
 
         .song-item:active {
@@ -2666,16 +2658,57 @@ body.dark-mode #installAppBtn {
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
+        /* Safe marquee animation - minimal movement for short titles */
+        @keyframes marqueeTextSafe {
+            0% { 
+                margin-left: 0; 
+            }
+            60% { 
+                margin-left: 0;
+            }
+            80% { 
+                margin-left: -30px; 
+            }
+            100% { 
+                margin-left: 0; 
+            }
+        }
+
+        /* Original animation kept for reference */
+        @keyframes marqueeText {
+            0% { 
+                margin-left: 0; 
+            }
+            40% { 
+                margin-left: 0;
+            }
+            100% { 
+                margin-left: -150px; 
+            }
+        }
+
         .song-title {
             font-size: 1.0rem;
             font-weight: 600;
             margin: 0;
-            line-height: 1.2;
+            line-height: 1.3;
             color: inherit;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            flex: 1;
+            flex-grow: 1;
+            position: relative;
+            display: block;
+            margin-right: 10px;
         }
 
+        /* Only animate on hover - but with safer animation */
         .song-item:hover .song-title {
             color: var(--primary-color);
+            text-overflow: clip;
+            animation: marqueeTextSafe 8s ease-in-out infinite;
         }
 
         .transpose-controls {
@@ -2726,12 +2759,12 @@ body.dark-mode #installAppBtn {
 
         .song-actions {
             display: flex;
-            gap: 4px;
+            gap: 2px;
             flex-wrap: nowrap;
-            justify-content: flex-start;
-            align-items: center;
+            justify-content: space-between;
+            align-items: stretch;
             margin-top: 4px;
-            padding-top: 6px;
+            padding-top: 4px;
             border-top: 1px solid var(--song-item-border);
             width: 100%;
             overflow: hidden;
@@ -2740,22 +2773,12 @@ body.dark-mode #installAppBtn {
         .song-actions .btn {
             flex: 1;
             min-width: 0;
-            max-width: calc(60% / 3); /* Assuming 3 buttons, adjust as needed */
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-
-        /* For 2 buttons */
-        .song-actions .btn:nth-child(1):nth-last-child(2),
-        .song-actions .btn:nth-child(2):nth-last-child(1) {
-            max-width: calc(60% / 2);
-        }
-
-        /* For 4+ buttons */
-        .song-actions .btn:nth-child(n+4) {
-            max-width: calc(60% / 4);
+            padding: 6px 4px;
+            border-radius: 4px;
         }
 
         .song-item:hover .song-actions {
@@ -2985,8 +3008,15 @@ body.dark-mode #installAppBtn {
         .songs-section .tab-content {
             flex: 1;
             overflow-y: auto;
-            padding: 8px 4px;
+            padding: 4px 4px;
             min-height: 0;
+        }
+
+        /* Mobile tab content padding */
+        @media (max-width: 768px) {
+            .songs-section .tab-content {
+                padding: 4px 3px;
+            }
         }
 
         /* Song List Optimization */
@@ -3000,7 +3030,7 @@ body.dark-mode #installAppBtn {
         /* Mobile Responsive Optimizations */
         @media (max-width: 768px) {
             .songs-section {
-                padding: 8px;
+                padding: 4px;
             }
 
             .sticky-header {
@@ -3015,6 +3045,21 @@ body.dark-mode #installAppBtn {
 
             .song-title {
                 font-size: 0.9rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .song-item:hover .song-title {
+                text-overflow: clip;
+                animation: marqueeTextMobileSafe 6s ease-in-out infinite;
+            }
+
+            @keyframes marqueeTextMobileSafe {
+                0% { margin-left: 0; }
+                60% { margin-left: 0; }
+                80% { margin-left: -25px; }
+                100% { margin-left: 0; }
             }
 
             .song-meta {
@@ -3023,76 +3068,142 @@ body.dark-mode #installAppBtn {
             }
 
             .song-meta span {
-                font-size: 0.7rem;
-                padding: 1px 4px;
+                font-size: 0.85rem;
+                padding: 3px 6px;
+                min-height: 24px;
+                display: flex;
+                align-items: center;
             }
 
             .song-actions {
                 gap: 2px;
-                flex-wrap: nowrap !important;
+                flex-wrap: nowrap;
                 overflow: hidden;
             }
 
             .song-actions .btn {
-                padding: 2px 4px;
-                font-size: 0.65rem;
+                padding: 6px 8px;
+                font-size: 0.75rem;
                 min-width: 0;
+                min-height: 36px;
                 flex: 1;
-                max-width: none;
                 white-space: nowrap;
-                overflow: hidden;
+                border-radius: 4px;
                 text-overflow: ellipsis;
+                overflow: hidden;
             }
         }
 
         @media (max-width: 480px) {
             .songs-section {
-                padding: 6px;
+                padding: 4px;
             }
 
             .sticky-header {
-                padding: 8px;
-                gap: 8px;
+                padding: 10px;
+                gap: 10px;
             }
 
             .song-item {
-                padding: 3px 4px;
-                gap: 2px;
+                padding: 10px 12px;
+                gap: 6px;
             }
 
             .song-title {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
+                line-height: 1.4;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .song-item:hover .song-title {
+                text-overflow: clip;
+                animation: marqueeTextSmallSafe 6s ease-in-out infinite;
+            }
+
+            @keyframes marqueeTextSmallSafe {
+                0% { margin-left: 0; }
+                60% { margin-left: 0; }
+                80% { margin-left: -20px; }
+                100% { margin-left: 0; }
             }
 
             .song-meta {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 4px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
             }
 
             .song-meta span {
-                font-size: 0.65rem;
-                padding: 1px 3px;
+                font-size: 0.8rem;
+                padding: 4px 8px;
+                min-height: 28px;
+                display: flex;
+                align-items: center;
             }
 
             .song-actions {
-                gap: 1px !important;
+                gap: 2px;
+                flex-wrap: nowrap;
+                overflow: hidden;
             }
 
-            .song-actions .btn {
-                padding: 1px 2px !important;
-                font-size: 0.6rem !important;
-                border-radius: 2px;
-                min-height: 20px;
+            .song-actions {
+                gap: 2px;
+                justify-content: space-between;
             }
+
         }
 
         /* Extra small screens */
         @media (max-width: 360px) {
+            .song-item {
+                padding: 4px 5px;
+            }
+
+            .song-title {
+                font-size: 0.90rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .song-item:hover .song-title {
+                text-overflow: clip;
+                animation: marqueeTextTinySafe 5s ease-in-out infinite;
+            }
+
+            @keyframes marqueeTextTinySafe {
+                0% { margin-left: 0; }
+                60% { margin-left: 0; }
+                80% { margin-left: -15px; }
+                100% { margin-left: 0; }
+            }
+
+            .song-meta span {
+                font-size: 0.75rem;
+                padding: 3px 6px;
+                min-height: 26px;
+            }
+
+            .song-actions {
+                gap: 1px;
+                flex-wrap: nowrap;
+                overflow: hidden;
+                justify-content: space-between;
+            }
+
             .song-actions .btn {
-                padding: 1px 1px !important;
-                font-size: 0.55rem !important;
-                min-height: 18px;
+                padding: 2px 2px;
+                font-size: 0.7rem;
+                min-height: 28px;
+                min-width: 0;
+                flex: 1;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                border-radius: 2px;
             }
         }
 
@@ -3561,7 +3672,7 @@ body.dark-mode #installAppBtn {
             z-index: 2000;
             align-items: center;
             justify-content: center;
-            animation: fadeIn 0.3s ease;
+            animation: fadeInSimple 0.3s ease;
         }
 
         /* Ensure modal is shown with flex display for centering */
@@ -3585,10 +3696,10 @@ body.dark-mode #installAppBtn {
 
         #forgotPasswordModal.show, #otpVerificationModal.show {
             display: flex !important;
-            animation: fadeIn 0.3s ease;
+            animation: fadeInScale 0.3s ease;
         }
 
-        @keyframes fadeIn {
+        @keyframes fadeInScale {
             from {
                 opacity: 0;
                 transform: scale(0.9);
@@ -3691,7 +3802,7 @@ body.dark-mode #installAppBtn {
             color: white;
         }
 
-        @keyframes fadeIn {
+        @keyframes fadeInSimple {
             from { opacity: 0; }
             to { opacity: 1; }
         }
@@ -4133,7 +4244,7 @@ body.dark-mode .modal-content {
                         height: var(--admin-panel-height);
                     padding: 32px 24px 24px 24px;
                     position: relative;
-                    animation: fadeIn 0.2s;
+                    animation: fadeInScaleSubtle 0.2s;
         /* Theme variables for admin panel popup */
         body.dark-mode {
             --panel-bg: #23272e;
@@ -4245,7 +4356,7 @@ body.dark-mode .modal-content {
                     font-size: 1em;
                     text-align: center;
                 }
-                @keyframes fadeIn {
+                @keyframes fadeInScaleSubtle {
                     from { opacity: 0; transform: scale(0.98); }
                     to { opacity: 1; transform: scale(1); }
                 }
@@ -4305,6 +4416,11 @@ body.dark-mode .modal-content {
     .sidebar {
         width: 50%;
         max-width: none;
+        /* Preserve sliding animation on mobile */
+    }
+
+    .sidebar.hidden {
+        transform: translateX(-100%);
     }
 
     .songs-section {
@@ -4313,6 +4429,11 @@ body.dark-mode .modal-content {
         height: 100%;
         max-width: none;
         left: 0;
+        /* Preserve sliding animation on mobile */
+    }
+
+    .songs-section.hidden {
+        transform: translateX(-100%);
     }
 
     .preview-section {
@@ -4389,18 +4510,71 @@ body.dark-mode .modal-content {
 
 .setlist-main-tab-content {
     display: none;
-    padding: 20px 0;
+    padding: 10px 0;
 }
 
 .setlist-main-tab-content.active {
     display: block;
 }
 
-/* ===============================
-   UTILITY CLASSES
+        /* ===============================
+   SLIDING PANEL ENHANCEMENTS
    =============================== */
 
-/* General utility classes */
+        /* Backdrop overlay for mobile panels */
+        .panel-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 800;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .panel-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Enhanced sliding animations */
+        .sidebar, .songs-section {
+            will-change: transform;
+        }
+
+        /* Bounce effect when panels open */
+        .sidebar:not(.hidden) {
+            animation: slideInLeft 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .songs-section:not(.hidden) {
+            animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        /* ===============================
+   UTILITY CLASSES
+   =============================== *//* General utility classes */
 .hidden {
     display: none !important;
 }
@@ -4421,9 +4595,9 @@ body.dark-mode .modal-content {
 }
 
 .favorites-section {
-    padding: 20px;
+    padding: 4px;
     background: var(--light-bg);
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
 .delete-setlist-form {
