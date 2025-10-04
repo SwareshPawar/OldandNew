@@ -4616,7 +4616,7 @@ body.dark-mode .modal-content {
     #adminPanelModal .admin-tab {
         width: 100% !important;
         padding: 12px 8px !important;
-        font-size: 0.9em !important;
+        font-size: 1.1em !important;
         text-align: center !important;
         border-radius: 6px !important;
         margin-bottom: 2px !important;
@@ -4628,7 +4628,7 @@ body.dark-mode .modal-content {
     }
 
     #adminPanelModal h2 {
-        font-size: 1.3em !important;
+        font-size: 1.5em !important;
         margin-bottom: 10px !important;
         text-align: center !important;
     }
@@ -4641,7 +4641,7 @@ body.dark-mode .modal-content {
 
     /* Mobile Table Optimizations */
     #adminPanelModal #usersTable {
-        font-size: 0.8em !important;
+        font-size: 0.95em !important;
         overflow-x: auto !important;
         display: block !important;
         white-space: nowrap !important;
@@ -4649,9 +4649,9 @@ body.dark-mode .modal-content {
 
     #adminPanelModal #usersTable th,
     #adminPanelModal #usersTable td {
-        padding: 8px 4px !important;
-        font-size: 0.75em !important;
-        min-width: 80px !important;
+        padding: 6px 4px !important;
+        font-size: 0.9em !important;
+        min-width: 90px !important;
     }
 
     /* Mobile Form Optimizations */
@@ -4662,34 +4662,34 @@ body.dark-mode .modal-content {
     }
 
     #adminPanelModal #weightsTable {
-        font-size: 0.85em !important;
+        font-size: 0.95em !important;
         margin-bottom: 10px !important;
     }
 
     #adminPanelModal #weightsTable th,
     #adminPanelModal #weightsTable td {
-        padding: 8px 4px !important;
-        font-size: 0.8em !important;
+        padding: 10px 6px !important;
+        font-size: 0.9em !important;
     }
 
     #adminPanelModal #weightsTable input[type="number"] {
-        width: 50px !important;
-        padding: 6px 4px !important;
-        font-size: 0.85em !important;
+        width: 55px !important;
+        padding: 8px 6px !important;
+        font-size: 0.95em !important;
     }
 
     #adminPanelModal .btn {
         padding: 10px 15px !important;
-        font-size: 0.9em !important;
+        font-size: 1.0em !important;
         margin: 5px 2px !important;
         width: auto !important;
-        min-width: 100px !important;
+        min-width: 110px !important;
     }
 
     #adminPanelModal .notification {
-        font-size: 0.85em !important;
-        padding: 8px !important;
-        margin: 8px 0 !important;
+        font-size: 0.95em !important;
+        padding: 10px !important;
+        margin: 10px 0 !important;
         border-radius: 4px !important;
     }
 
@@ -4744,12 +4744,12 @@ body.dark-mode .modal-content {
     }
 
     #adminPanelModal .admin-tab {
-        padding: 10px 6px !important;
-        font-size: 0.8em !important;
+        padding: 12px 8px !important;
+        font-size: 1.0em !important;
     }
 
     #adminPanelModal h2 {
-        font-size: 1.1em !important;
+        font-size: 1.3em !important;
         margin-bottom: 8px !important;
     }
 
@@ -4766,27 +4766,27 @@ body.dark-mode .modal-content {
 
     #adminPanelModal #weightsTable th,
     #adminPanelModal #weightsTable td {
-        padding: 6px 2px !important;
-        font-size: 0.75em !important;
+        padding: 8px 4px !important;
+        font-size: 0.85em !important;
     }
 
     #adminPanelModal #weightsTable input[type="number"] {
-        width: 45px !important;
-        padding: 4px 2px !important;
-        font-size: 0.8em !important;
+        width: 50px !important;
+        padding: 6px 4px !important;
+        font-size: 0.9em !important;
     }
 
     #adminPanelModal .btn {
-        padding: 8px 12px !important;
-        font-size: 0.8em !important;
-        min-width: 80px !important;
+        padding: 10px 14px !important;
+        font-size: 0.9em !important;
+        min-width: 90px !important;
     }
 
     #adminPanelModal #usersTable th,
     #adminPanelModal #usersTable td {
-        padding: 6px 2px !important;
-        font-size: 0.7em !important;
-        min-width: 60px !important;
+        padding: 6px 4px !important;
+        font-size: 0.8em !important;
+        min-width: 70px !important;
     }
 }
 

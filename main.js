@@ -2458,7 +2458,15 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     function renderUsers(users) {
         const tbody = document.querySelector('#usersTable tbody');
         tbody.innerHTML = '';
-        users.forEach(user => {
+        
+        // Sort users with admin users first
+        const sortedUsers = users.sort((a, b) => {
+            if (a.isAdmin && !b.isAdmin) return -1;
+            if (!a.isAdmin && b.isAdmin) return 1;
+            return a.username.localeCompare(b.username); // Secondary sort by username
+        });
+        
+        sortedUsers.forEach(user => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="max-width:180px;overflow-wrap:break-word;">${user.username}</td>
@@ -5404,7 +5412,15 @@ window.viewSingleLyrics = function(songId, otherId) {
     function renderUsers(users) {
         const tbody = document.querySelector('#usersTable tbody');
         tbody.innerHTML = '';
-        users.forEach(user => {
+        
+        // Sort users with admin users first
+        const sortedUsers = users.sort((a, b) => {
+            if (a.isAdmin && !b.isAdmin) return -1;
+            if (!a.isAdmin && b.isAdmin) return 1;
+            return a.username.localeCompare(b.username); // Secondary sort by username
+        });
+        
+        sortedUsers.forEach(user => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${user.username}</td>
