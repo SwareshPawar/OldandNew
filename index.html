@@ -354,6 +354,9 @@ async function saveRecommendationWeightsToBackend(weights) {
                         <button id="saveSetlistSequenceBtn" class="btn btn-success setlist-action-btn" style="display:none;">
                             <i class="fas fa-save"></i> Save Sequence
                         </button>
+                        <button id="addManualSongBtn" class="btn btn-primary setlist-action-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="setlist-tabs">
@@ -918,6 +921,81 @@ async function saveRecommendationWeightsToBackend(weights) {
                     <button id="confirmDeleteSetlist" class="btn btn-danger">Delete</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Add Manual Song to Setlist Modal -->
+    <div class="modal" id="addManualSongModal">
+        <div class="modal-content">
+            <span class="close-modal" aria-label="Close">×</span>
+            <h3>Add Song to Setlist</h3>
+            <form id="manualSongForm" class="manual-song-form">
+                <div class="manual-song-section">
+                    <label for="manualSongTitle">Song Title:</label>
+                    <input type="text" id="manualSongTitle" required placeholder="Enter song title...">
+                    <div id="existingSongsResults" class="existing-songs-results" style="display: none;">
+                        <div class="existing-songs-header">Existing Songs Found:</div>
+                        <div id="existingSongsList" class="existing-songs-list"></div>
+                    </div>
+                </div>
+                
+                <div class="manual-song-details">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manualSongKey">Key:</label>
+                            <select id="manualSongKey" required>
+                                <option value="">Select Key</option>
+                                <option value="C">C</option>
+                                <option value="C#">C#</option>
+                                <option value="D">D</option>
+                                <option value="D#">D#</option>
+                                <option value="E">E</option>
+                                <option value="F">F</option>
+                                <option value="F#">F#</option>
+                                <option value="G">G</option>
+                                <option value="G#">G#</option>
+                                <option value="A">A</option>
+                                <option value="A#">A#</option>
+                                <option value="B">B</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="manualSongTime">Time Signature:</label>
+                            <select id="manualSongTime" required>
+                                <option value="">Select Time</option>
+                                <option value="4/4">4/4</option>
+                                <option value="3/4">3/4</option>
+                                <option value="2/4">2/4</option>
+                                <option value="6/8">6/8</option>
+                                <option value="12/8">12/8</option>
+                                <option value="7/8">7/8</option>
+                                <option value="5/4">5/4</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manualSongTempo">Tempo (BPM):</label>
+                            <input type="text" id="manualSongTempo" placeholder="e.g., 120 BPM">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="manualSongCategory">Category:</label>
+                            <select id="manualSongCategory" required>
+                                <option value="New">New</option>
+                                <option value="Old">Old</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelManualSong">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add to Setlist</button>
+                </div>
+            </form>
         </div>
     </div>
 

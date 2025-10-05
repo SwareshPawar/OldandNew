@@ -4027,6 +4027,154 @@ body.dark-mode .modal-content {
                 overflow-y: auto;
             }
 
+        /* Manual Song Form Styles */
+        .manual-song-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .manual-song-section {
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .manual-song-section input {
+            border-radius: 6px 6px 0 0;
+            transition: border-color 0.2s ease;
+        }
+
+        .manual-song-section input:focus + .existing-songs-results {
+            border-color: var(--accent-color);
+        }
+
+        .manual-song-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 8px 12px;
+            border: 1px solid var(--song-item-border);
+            border-radius: 4px;
+            background: var(--background-color);
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        .existing-songs-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--background-color);
+            border: 2px solid var(--accent-color);
+            border-top: 1px solid var(--song-item-border);
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 2100;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            backdrop-filter: blur(2px);
+        }
+
+        .existing-songs-header {
+            padding: 8px 12px;
+            background: var(--accent-color);
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #fff;
+            border-bottom: 1px solid var(--song-item-border);
+        }
+
+        .existing-songs-list {
+            padding: 6px;
+            background: var(--background-color);
+        }
+
+        .existing-song-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin: 3px 0;
+            font-size: 0.85rem;
+            background: var(--song-item-text-bg);
+            border: 1px solid var(--song-item-border);
+            transition: all 0.2s ease;
+        }
+
+        .existing-song-item:hover {
+            background: var(--background-secondary);
+            border-left: 4px solid var(--accent-color);
+            border-color: var(--accent-color);
+            transform: translateX(2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .existing-song-item .song-title {
+            font-weight: 600;
+            color: var(--title-color);
+        }
+
+        .existing-song-item .song-details {
+            color: var(--text-color);
+            font-size: 0.8rem;
+            margin-top: 2px;
+            opacity: 0.8;
+        }
+
+        /* Ensure dropdown is visible in both light and dark modes */
+        .existing-songs-results {
+            background-color: var(--background-color) !important;
+        }
+
+        body.dark-mode .existing-songs-results {
+            background-color: var(--background-color) !important;
+        }
+
+        body.dark-mode .existing-song-item {
+            background-color: var(--song-item-text-bg) !important;
+            color: var(--text-color) !important;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .modal-actions {
+                justify-content: center;
+            }
+        }
+
         /* Settings Styles - Force hide all but first settings button */
         #settingsBtn {
             position: static;

@@ -643,15 +643,18 @@ app.delete('/api/my-setlists/:id', authMiddleware, async (req, res) => {
 // Add song to global setlist
 app.post('/api/global-setlists/add-song', authMiddleware, requireAdmin, async (req, res) => {
   try {
-    const { setlistId, songId } = req.body;
+    const { setlistId, songId, manualSong } = req.body;
     if (!setlistId || !songId) {
       return res.status(400).json({ error: 'Setlist ID and song ID are required' });
     }
     
+    // If it's a manual song, store the full song object, otherwise just the ID
+    const songToAdd = manualSong ? manualSong : songId;
+    
     const result = await db.collection('GlobalSetlists').updateOne(
       { _id: new (require('mongodb').ObjectId)(setlistId) },
       { 
-        $addToSet: { songs: songId },  // Store just the song ID
+        $addToSet: { songs: songToAdd },
         $set: { updatedAt: new Date().toISOString() }
       }
     );
@@ -723,12 +726,15 @@ app.post('/api/global-setlists/remove-song', authMiddleware, requireAdmin, async
 // Add song to personal setlist
 app.post('/api/my-setlists/add-song', authMiddleware, async (req, res) => {
   try {
-    const { setlistId, songId } = req.body;
+    const { setlistId, songId, manualSong } = req.body;
     const userId = req.user.id;
     
     if (!setlistId || !songId) {
       return res.status(400).json({ error: 'Setlist ID and song ID are required' });
     }
+    
+    // If it's a manual song, store the full song object, otherwise just the ID
+    const songToAdd = manualSong ? manualSong : songId;
     
     const result = await db.collection('MySetlists').updateOne(
       { 
@@ -736,7 +742,7 @@ app.post('/api/my-setlists/add-song', authMiddleware, async (req, res) => {
         userId 
       },
       { 
-        $addToSet: { songs: songId },  // Store just the song ID
+        $addToSet: { songs: songToAdd },
         $set: { updatedAt: new Date().toISOString() }
       }
     );

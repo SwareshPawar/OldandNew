@@ -4050,9 +4050,14 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
         }
 
-        // Convert setlist songs to format expected by renderSetlist
-        const setlistSongs = setlist.songs.map(songId => {
-            const song = songs.find(s => s.id === songId);
+        // Convert setlist songs to format expected by renderSetlist - handle both IDs and manual song objects
+        const setlistSongs = setlist.songs.map(item => {
+            // If item is an object (manual song), return it directly
+            if (typeof item === 'object' && item !== null) {
+                return item;
+            }
+            // If item is a string/number ID, find it in the songs array
+            const song = songs.find(s => s.id === item || s._id === item);
             return song || null;
         }).filter(Boolean);
 
@@ -4166,9 +4171,14 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
         }
 
-        // Convert setlist songs to format expected by renderSetlist
-        const setlistSongs = setlist.songs.map(songId => {
-            const song = songs.find(s => s.id === songId);
+        // Convert setlist songs to format expected by renderSetlist - handle both IDs and manual song objects
+        const setlistSongs = setlist.songs.map(item => {
+            // If item is an object (manual song), return it directly
+            if (typeof item === 'object' && item !== null) {
+                return item;
+            }
+            // If item is a string/number ID, find it in the songs array
+            const song = songs.find(s => s.id === item || s._id === item);
             return song || null;
         }).filter(Boolean);
 
@@ -4256,13 +4266,13 @@ window.viewSingleLyrics = function(songId, otherId) {
                         <div class="setlist-song-title">${song.title}</div>
                         <div class="setlist-song-meta-row">
                             ${song.key ? `<div class="setlist-song-key"> ${song.key}</div>` : ''}
-                            ${song.time ? `<span class="setlist-song-key-time">${song.time}</span>` : ''}
+                            ${(song.time || song.timeSignature) ? `<span class="setlist-song-key-time">${song.time || song.timeSignature}</span>` : ''}
                             ${song.tempo ? `<span class="setlist-song-key-tempo">${song.tempo} </span>` : ''}
                         </div>
                     </div>
                 </div>
                 <div class="setlist-song-actions">
-                    ${!isResequenceMode && (currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? `<button class="remove-from-setlist-btn" data-song-id="${song.id}" title="Remove from setlist" type="button">×</button>` : ''}
+                    ${!isResequenceMode && (currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? `<button class="remove-from-setlist-btn" data-song-id="${song._id || song.id}" title="Remove from setlist" type="button">×</button>` : ''}
                 </div>`;
 
             // Add click handler for song info (not the remove button)
@@ -4283,7 +4293,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                         showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
                         return;
                     }
-                    await removeSongFromSetlist(song.id);
+                    await removeSongFromSetlist(song._id || song.id);
                 });
             }
             ul.appendChild(li);
@@ -4350,8 +4360,15 @@ window.viewSingleLyrics = function(songId, otherId) {
             return;
         }
 
-        const songIdInt = parseInt(songId);
-        const songIndex = currentViewingSetlist.songs.findIndex(id => parseInt(id) === songIdInt);
+        // Find the song index - handle both regular song IDs and manual song objects
+        const songIndex = currentViewingSetlist.songs.findIndex(item => {
+            // If item is an object (manual song), check its _id
+            if (typeof item === 'object' && item !== null) {
+                return item._id === songId || item.id === songId;
+            }
+            // If item is a regular song ID, compare as numbers
+            return parseInt(item) === parseInt(songId);
+        });
         
         if (songIndex === -1) {
             return;
@@ -4449,34 +4466,18 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Function to refresh the current setlist display
     function refreshSetlistDisplay() {
-        if (!currentViewingSetlist) {
+        if (!currentViewingSetlist || !currentSetlistType) {
             return;
         }
 
-        // Clear all selections before refreshing
-        clearSetlistSelections();
-
-        // Get containers
-        const NewSetlistSongs = document.getElementById('NewSetlistSongs');
-        const OldSetlistSongs = document.getElementById('OldSetlistSongs');
-
-        if (!NewSetlistSongs || !OldSetlistSongs) return;
-
-        // Filter songs by category
-        const newSongs = currentViewingSetlist.songs.map(songId => 
-            songs.find(s => s.id === parseInt(songId))
-        ).filter(song => 
-            song && (!song.category || song.category === 'New')
-        );
-        const oldSongs = currentViewingSetlist.songs.map(songId => 
-            songs.find(s => s.id === parseInt(songId))
-        ).filter(song => 
-            song && song.category === 'Old'
-        );
-
-        // Update displays
-        displaySetlistSongs(newSongs, NewSetlistSongs);
-        displaySetlistSongs(oldSongs, OldSetlistSongs);
+        // Call the appropriate display function based on setlist type
+        const setlistId = currentViewingSetlist._id;
+        
+        if (currentSetlistType === 'global') {
+            showGlobalSetlistInMainSection(setlistId);
+        } else if (currentSetlistType === 'my') {
+            showMySetlistInMainSection(setlistId);
+        }
     }
 
     // Function to clear all song selections in setlist
@@ -4886,6 +4887,198 @@ window.viewSingleLyrics = function(songId, otherId) {
                 showNotification('Failed to delete setlist');
             }
         };
+    }
+
+    // Manual Song Addition Functions
+    function openAddManualSongModal() {
+        const modal = document.getElementById('addManualSongModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.getElementById('manualSongTitle').focus();
+            // Clear existing results
+            document.getElementById('existingSongsResults').style.display = 'none';
+            document.getElementById('manualSongForm').reset();
+        }
+    }
+
+    function closeAddManualSongModal() {
+        const modal = document.getElementById('addManualSongModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.getElementById('existingSongsResults').style.display = 'none';
+        }
+    }
+
+    function handleSongTitleSearch() {
+        const title = document.getElementById('manualSongTitle').value.trim();
+        const resultsContainer = document.getElementById('existingSongsResults');
+        const resultsList = document.getElementById('existingSongsList');
+        
+        if (title.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+
+        // Search for matching songs
+        const matchingSongs = songs.filter(song => 
+            song.title.toLowerCase().includes(title.toLowerCase())
+        ).slice(0, 5); // Limit to 5 results
+
+        if (matchingSongs.length > 0) {
+            resultsList.innerHTML = matchingSongs.map(song => `
+                <div class="existing-song-item" onclick="selectExistingSong('${song._id}')">
+                    <div class="song-title">${song.title}</div>
+                    <div class="song-details">
+                        ${song.key || 'Unknown Key'} • ${song.time || song.timeSignature || 'Unknown Time'} • ${song.tempo || 'Unknown BPM'}
+                    </div>
+                </div>
+            `).join('');
+            resultsContainer.style.display = 'block';
+        } else {
+            resultsContainer.style.display = 'none';
+        }
+    }
+
+    function selectExistingSong(songId) {
+        const song = songs.find(s => s._id === songId);
+        if (song && currentViewingSetlist) {
+            // Add existing song to setlist
+            addSongToCurrentSetlist(song);
+            closeAddManualSongModal();
+        }
+    }
+
+    async function handleManualSongSubmit(e) {
+        e.preventDefault();
+        
+        const title = document.getElementById('manualSongTitle').value.trim();
+        const key = document.getElementById('manualSongKey').value;
+        const timeSignature = document.getElementById('manualSongTime').value;
+        const tempo = document.getElementById('manualSongTempo').value;
+        const category = document.getElementById('manualSongCategory').value;
+
+        if (!title || !key || !timeSignature || !category) {
+            showNotification('Please fill in all required fields');
+            return;
+        }
+
+        // Create manual song object
+        const manualSong = {
+            _id: 'manual_' + Date.now(),
+            title: title,
+            key: key,
+            time: timeSignature,
+            tempo: tempo,
+            category: category,
+            isManualEntry: true,
+            lyrics: '(Manual entry - no lyrics available)'
+        };
+
+        try {
+            // Add to current setlist
+            if (currentViewingSetlist && currentSetlistType) {
+                await addManualSongToSetlist(manualSong);
+                closeAddManualSongModal();
+                showNotification(`"${title}" added to setlist`);
+            }
+        } catch (error) {
+            console.error('Error adding manual song:', error);
+            showNotification('Failed to add song to setlist');
+        }
+    }
+
+    async function addManualSongToSetlist(manualSong) {
+        const setlistId = currentViewingSetlist._id;
+        const isGlobal = currentSetlistType === 'global';
+        
+        try {
+            const endpoint = isGlobal 
+                ? `${API_BASE_URL}/api/global-setlists/add-song`
+                : `${API_BASE_URL}/api/my-setlists/add-song`;
+
+            const res = await authFetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    setlistId: setlistId,
+                    songId: manualSong._id,
+                    manualSong: manualSong
+                })
+            });
+
+            if (res.ok) {
+                // Update local setlist data
+                if (isGlobal) {
+                    const setlist = globalSetlists.find(s => s._id === setlistId);
+                    if (setlist) {
+                        setlist.songs = setlist.songs || [];
+                        setlist.songs.push(manualSong);
+                    }
+                } else {
+                    const setlist = mySetlists.find(s => s._id === setlistId);
+                    if (setlist) {
+                        setlist.songs = setlist.songs || [];
+                        setlist.songs.push(manualSong);
+                    }
+                }
+
+                // Refresh setlist view
+                refreshSetlistDisplay();
+            } else {
+                throw new Error('Failed to add manual song to setlist');
+            }
+        } catch (error) {
+            console.error('Error adding manual song to setlist:', error);
+            throw error;
+        }
+    }
+
+    function addSongToCurrentSetlist(song) {
+        if (!currentViewingSetlist || !currentSetlistType) return;
+
+        const setlistId = currentViewingSetlist._id;
+        const isGlobal = currentSetlistType === 'global';
+        
+        const endpoint = isGlobal 
+            ? `${API_BASE_URL}/api/global-setlists/add-song`
+            : `${API_BASE_URL}/api/my-setlists/add-song`;
+
+        authFetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                setlistId: setlistId,
+                songId: song._id 
+            })
+        }).then(res => {
+            if (res.ok) {
+                // Update local setlist data
+                if (isGlobal) {
+                    const setlist = globalSetlists.find(s => s._id === setlistId);
+                    if (setlist) {
+                        setlist.songs = setlist.songs || [];
+                        setlist.songs.push(song);
+                    }
+                } else {
+                    const setlist = mySetlists.find(s => s._id === setlistId);
+                    if (setlist) {
+                        setlist.songs = setlist.songs || [];
+                        setlist.songs.push(song);
+                    }
+                }
+
+                // Refresh setlist view
+                refreshSetlistDisplay();
+                showNotification(`"${song.title}" added to setlist`);
+            }
+        }).catch(error => {
+            console.error('Error adding song to setlist:', error);
+            showNotification('Failed to add song to setlist');
+        });
     }
 
     // ====================== END SETLIST MANAGEMENT FUNCTIONS ======================
@@ -6174,7 +6367,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                         <i class="fas fa-heart"></i>
                     </button>
                 </div>
-                <div class="song-meta">${song.key} | ${song.tempo} | ${song.time} | ${song.taal || ''} | ${displayGenres}</div>
+                <div class="song-meta">${song.key} | ${song.tempo} | ${song.time || song.timeSignature} | ${song.taal || ''} | ${displayGenres}</div>
                 <div class="song-actions">
                     <button class="btn ${isInSetlist ? 'btn-delete' : 'btn-primary'} toggle-setlist">
                         ${isInSetlist ? 'Remove' : 'Add'}
@@ -6461,12 +6654,14 @@ window.viewSingleLyrics = function(songId, otherId) {
                     }
                 }
 
-                // 3. Time signature matching
-                if (currentSong.time === song.time) {
+                // 3. Time signature matching - handle both .time and .timeSignature properties
+                const currentTime = currentSong.time || currentSong.timeSignature;
+                const songTime = song.time || song.timeSignature;
+                if (currentTime === songTime) {
                     details.timeMatchType = 'exact';
                     score += WEIGHTS.timeSignature;
                 } 
-                else if (TIME_SIGNATURE_COMPATIBILITY[currentSong.time]?.includes(song.time)) {
+                else if (TIME_SIGNATURE_COMPATIBILITY[currentTime]?.includes(songTime)) {
                     details.timeMatchType = 'compatible';
                     score += WEIGHTS.timeSignature * 0.9;
                 }
@@ -6534,7 +6729,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 div.innerHTML = `
                     <div class="suggested-song-title">${song.title}</div>
                     <div class="suggested-song-meta">
-                        Key: ${song.key} | Tempo: ${song.tempo} | Time: ${song.time} | Taal: ${song.taal}
+                        Key: ${song.key} | Tempo: ${song.tempo} | Time: ${song.time || song.timeSignature} | Taal: ${song.taal}
                     </div>
                     <div class="suggested-song-mood">
                         Mood: ${song.mood || 'Not specified'}
@@ -6635,7 +6830,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     div.className = 'song-item';
                     div.innerHTML = `
                         <div class="song-title">${song.title}</div>
-                        <div class="song-meta">${song.key} | ${song.tempo} | ${song.time} | ${song.genre} | ${song.category}</div>
+                        <div class="song-meta">${song.key} | ${song.tempo} | ${song.time || song.timeSignature} | ${song.genre} | ${song.category}</div>
                         <div class="song-actions">
                             <button class="btn btn-delete delete-song">Delete</button>
                         </div>
@@ -6864,10 +7059,10 @@ window.viewSingleLyrics = function(songId, otherId) {
                 <span class="preview-meta-label">Tempo:</span>
                 <span class="preview-meta-value">${song.tempo}</span>
             </div>` : ''}
-            ${song.time ? `
+            ${(song.time || song.timeSignature) ? `
             <div class="preview-meta-row">
                 <span class="preview-meta-label">Time:</span>
-                <span class="preview-meta-value">${song.time}</span>
+                <span class="preview-meta-value">${song.time || song.timeSignature}</span>
             </div>` : ''}
             ${song.taal ? `
             <div class="preview-meta-row">
@@ -7710,7 +7905,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             
             document.getElementById('editSongTempo').value = song.tempo;
-            document.getElementById('editSongTime').value = song.time;
+            document.getElementById('editSongTime').value = song.time || song.timeSignature;
             // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
             updateTaalDropdown('editSongTime', 'editSongTaal', song.taal);
             // Render correct genre options for multiselect
@@ -8548,7 +8743,7 @@ window.viewSingleLyrics = function(songId, otherId) {
     
                     resultItem.innerHTML = `
                         <div class="search-result-title">${highlightedTitle}</div>
-                        <div class="search-result-meta">${song.key} | ${song.tempo} | ${song.time} | ${song.genre || ''}</div>
+                        <div class="search-result-meta">${song.key} | ${song.tempo} | ${song.time || song.timeSignature} | ${song.genre || ''}</div>
                         ${lyricsSnippet ? `<div class="search-result-snippet">${lyricsSnippet}</div>` : ''}
                     `;
     
@@ -8955,6 +9150,43 @@ window.viewSingleLyrics = function(songId, otherId) {
             if (cancelDeleteSetlist) {
                 cancelDeleteSetlist.addEventListener('click', () => {
                     document.getElementById('confirmDeleteSetlistModal').style.display = 'none';
+                });
+            }
+
+            // Add Manual Song button
+            const addManualSongBtn = document.getElementById('addManualSongBtn');
+            if (addManualSongBtn) {
+                addManualSongBtn.addEventListener('click', () => {
+                    if (currentViewingSetlist) {
+                        openAddManualSongModal();
+                    }
+                });
+            }
+
+            // Manual song modal event listeners
+            const manualSongForm = document.getElementById('manualSongForm');
+            const cancelManualSong = document.getElementById('cancelManualSong');
+            const manualSongTitle = document.getElementById('manualSongTitle');
+
+            if (manualSongForm) {
+                manualSongForm.addEventListener('submit', handleManualSongSubmit);
+            }
+
+            if (cancelManualSong) {
+                cancelManualSong.addEventListener('click', closeAddManualSongModal);
+            }
+
+            if (manualSongTitle) {
+                manualSongTitle.addEventListener('input', handleSongTitleSearch);
+            }
+
+            // Close modal when clicking outside
+            const addManualSongModal = document.getElementById('addManualSongModal');
+            if (addManualSongModal) {
+                addManualSongModal.addEventListener('click', (e) => {
+                    if (e.target === addManualSongModal) {
+                        closeAddManualSongModal();
+                    }
                 });
             }
 
