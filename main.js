@@ -206,7 +206,7 @@ const CHORD_TYPES = [
             ? 'http://localhost:3001'
             : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
 
-console.log('API_BASE_URL:', API_BASE_URL);
+            console.log('API_BASE_URL:', API_BASE_URL);
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
@@ -276,16 +276,14 @@ try {
         if (isCacheFresh('songs', storedSongsTimestamp)) {
             window.dataCache.songs = JSON.parse(storedSongs);
             window.dataCache.lastFetch.songs = parseInt(storedSongsTimestamp);
-            console.log('✅ Restored songs from localStorage:', window.dataCache.songs.length, 'songs');
         } else {
             const cacheAge = Date.now() - parseInt(storedSongsTimestamp);
             const expiry = CACHE_EXPIRY.songs;
-            console.log('⏰ Cached songs expired, will fetch fresh data. Cache age:', Math.round(cacheAge / 1000), 'seconds, Max age:', Math.round(expiry / 1000), 'seconds');
             localStorage.removeItem('songs');
             localStorage.removeItem('songsTimestamp');
         }
     } else {
-        console.log('💽 No cached songs found in localStorage - will fetch from API');
+        // No cached songs found, will fetch from API
     }
 } catch (e) {
     console.warn('Error loading songs from localStorage:', e);
@@ -378,7 +376,6 @@ function invalidateCache(cacheKeys) {
     if (typeof cacheKeys === 'string') cacheKeys = [cacheKeys];
     
     cacheKeys.forEach(key => {
-        console.log(`🗑️ Cache invalidated for: ${key}`, new Error().stack.split('\n')[2].trim());
         window.dataCache[key] = null;
         window.dataCache.lastFetch[key] = null;
     });
@@ -391,11 +388,8 @@ function updateSongInCache(song, isNewSong = false) {
         return false;
     }
     
-    console.log(`🔄 Updating song cache - ${isNewSong ? 'Adding new' : 'Updating existing'} song:`, song.title, `(ID: ${song.id})`);
-    
     // Update window.dataCache.songs
     if (!window.dataCache.songs) {
-        console.log(`🔧 Initializing empty cache array`);
         window.dataCache.songs = [];
     }
     
@@ -407,18 +401,15 @@ function updateSongInCache(song, isNewSong = false) {
             window.dataCache.songs[existingIndex] = song;
         } else {
             window.dataCache.songs.push(song);
-            console.log(`✅ Added song to cache. Total songs: ${window.dataCache.songs.length}`);
         }
     } else {
         // Update existing song in cache
         const index = window.dataCache.songs.findIndex(s => s.id === song.id);
         if (index !== -1) {
             window.dataCache.songs[index] = song;
-            console.log(`✅ Updated existing song in cache at index ${index}`);
         } else {
             // Fallback: add as new song if not found
             window.dataCache.songs.push(song);
-            console.log(`⚠️ Song ID ${song.id} not found in cache, added as new song`);
         }
     }
     
@@ -436,7 +427,6 @@ function updateSongInCache(song, isNewSong = false) {
             songs[globalIndex] = song;
         } else {
             songs.push(song);
-            console.log(`⚠️ Song ID ${song.id} not found in global songs array, added as new`);
         }
     }
     
@@ -444,7 +434,6 @@ function updateSongInCache(song, isNewSong = false) {
     try {
         localStorage.setItem('songs', JSON.stringify(window.dataCache.songs));
         localStorage.setItem('songsTimestamp', Date.now().toString());
-        console.log(`💾 Updated localStorage with ${window.dataCache.songs.length} songs`);
         return true;
     } catch (error) {
         console.error(`❌ Failed to update localStorage:`, error);
@@ -524,7 +513,6 @@ function hideLoading() {
 // Debug function to manually hide loader
 window.forceHideLoader = function() {
     hideLoading();
-    console.log('Loader force hidden');
 };
 
 // Global function to get current filter values
@@ -593,11 +581,22 @@ async function loadSongsWithProgress(forceRefresh = false) {
         // Check if songs are already cached
         if (window.dataCache.songs && !forceRefresh) {
             songs = window.dataCache.songs;
-            updateProgress('fetchSongs', 100);
-            updateProgress('processSongs', 100);
-            updateProgress('loadUserData', 100);
-            updateProgress('renderSongs', 100);
-            updateProgress('finalSetup', 100);
+            
+            // Simulate realistic progress for cached data
+            updateProgress('fetchSongs', 50);
+            await new Promise(resolve => setTimeout(resolve, 150));
+            
+            updateProgress('fetchSongs'); // Mark as completed
+            
+            updateProgress('processSongs', 50);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            updateProgress('processSongs'); // Mark as completed
+            
+            updateProgress('loadUserData', 50);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            updateProgress('loadUserData'); // Mark as completed
             
             // Still render the songs even from cache
             if (typeof renderSongs === 'function') {
@@ -608,6 +607,10 @@ async function loadSongsWithProgress(forceRefresh = false) {
                     console.warn('Error rendering cached songs:', err);
                 }
             }
+            
+            updateProgress('renderSongs', 50);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             if (typeof updateSongCount === 'function') {
                 try {
                     updateSongCount();
@@ -616,10 +619,14 @@ async function loadSongsWithProgress(forceRefresh = false) {
                 }
             }
             
-            // Force hide loading for cached data
-            setTimeout(() => {
-                hideLoading();
-            }, 100);
+            updateProgress('renderSongs'); // Mark as completed
+            
+            // Populate dropdowns for cached data
+            updateProgress('populateDropdowns', 50);
+            await new Promise(resolve => setTimeout(resolve, 50));
+            updateProgress('populateDropdowns'); // Mark as completed
+            
+            updateProgress('finalSetup'); // Mark as completed
             
             return songs;
         }
@@ -628,9 +635,14 @@ async function loadSongsWithProgress(forceRefresh = false) {
         try {
             // Real API call - report progress during fetch
             updateProgress('fetchSongs', 10);
+            await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to show progress
+            
             response = await cachedFetch(`${API_BASE_URL}/api/songs`, forceRefresh);
+            
             updateProgress('fetchSongs', 80);
+            await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to show progress
         } catch (err) {
+            console.error('Error fetching songs:', err);
             hideLoading();
             return;
         }
@@ -645,9 +657,14 @@ async function loadSongsWithProgress(forceRefresh = false) {
         let allSongs = [];
         try {
             updateProgress('processSongs', 20);
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
             allSongs = await response.json();
+            
             updateProgress('processSongs', 60);
+            await new Promise(resolve => setTimeout(resolve, 100));
         } catch (e) {
+            console.error('Error processing songs JSON:', e);
             hideLoading();
             return;
         }
@@ -706,6 +723,11 @@ async function loadSongsWithProgress(forceRefresh = false) {
             }
         }
         updateProgress('renderSongs'); // Mark rendering as complete
+        
+        // Populate dropdowns for fresh data
+        updateProgress('populateDropdowns', 50);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        updateProgress('populateDropdowns'); // Mark as completed
         
         // Final setup tasks
         updateProgress('finalSetup');
@@ -771,39 +793,23 @@ document.addEventListener('DOMContentLoaded', () => {
         window.init();
     }
 
-    // Simple progress function for dropdown population (since global loadSongsWithProgress handles main progress)
-    function updateProgress(taskName, percent = null) {
-        // These calls are less critical, just ignore for now
-        return;
-    }
-
-    // Populate dropdowns once - report progress
-    updateProgress('populateDropdowns', 10);
+    // Populate dropdowns once
     populateDropdown('keyFilter', ['Key', ...KEYS]);
-    updateProgress('populateDropdowns', 25);
     populateDropdown('genreFilter', ['Genre', ...GENRES]);
-    updateProgress('populateDropdowns', 40);
     populateDropdown('moodFilter', ['Mood', ...MOODS]);
-    updateProgress('populateDropdowns', 55);
     populateDropdown('artistFilter', ['Artist', ...ARTISTS]);
-    updateProgress('populateDropdowns', 70);
     populateDropdown('songKey', KEYS);
     populateDropdown('editSongKey', KEYS);
-    updateProgress('populateDropdowns', 80);
     populateDropdown('songCategory', CATEGORIES);
     populateDropdown('editSongCategory', CATEGORIES);
-    updateProgress('populateDropdowns', 85);
     populateDropdown('songTime', TIMES);
     populateDropdown('editSongTime', TIMES);
-    updateProgress('populateDropdowns', 90);
     populateDropdown('songTaal', TAALS);
     populateDropdown('editSongTaal', TAALS);
-    updateProgress('populateDropdowns', 95);
     populateDropdown('songArtist', ARTISTS);
     populateDropdown('editSongArtist', ARTISTS);
     populateDropdown('songMood', MOODS);
     populateDropdown('editSongMood', MOODS);
-    updateProgress('populateDropdowns'); // Mark as complete
 
     // Genre multiselect (lazy setup; only once each)
     setupGenreMultiselect('songGenre', 'genreDropdown', 'selectedGenres');
@@ -2129,16 +2135,9 @@ async function performInitialization() {
         setupArtistMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists');
     }
     
-    // Load songs only if not already cached - use unified approach
-    console.log('🔍 Checking cache - window.dataCache.songs exists:', !!window.dataCache.songs);
-    if (!window.dataCache.songs) {
-        console.log('📥 No cached songs, loading from API...');
-        await loadSongsWithProgress();
-    } else {
-        // Songs already cached, just use them
-        console.log('✅ Using cached songs:', window.dataCache.songs.length);
-        songs = window.dataCache.songs;
-    }
+    // Always show loading and load songs - let loadSongsWithProgress handle caching
+    console.log('� Loading songs with progress indication...');
+    await loadSongsWithProgress();
     
     console.log('After song loading - Global songs length:', songs.length);
     
@@ -4939,12 +4938,16 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
     }
 
-    function selectExistingSong(songId) {
+    async function selectExistingSong(songId) {
         const song = songs.find(s => s._id === songId);
         if (song && currentViewingSetlist) {
             // Add existing song to setlist
-            addSongToCurrentSetlist(song);
-            closeAddManualSongModal();
+            const success = await addSongToCurrentSetlist(song);
+            
+            // Only close modal if song was successfully added
+            if (success) {
+                closeAddManualSongModal();
+            }
         }
     }
 
@@ -4977,9 +4980,12 @@ window.viewSingleLyrics = function(songId, otherId) {
         try {
             // Add to current setlist
             if (currentViewingSetlist && currentSetlistType) {
-                await addManualSongToSetlist(manualSong);
-                closeAddManualSongModal();
-                showNotification(`"${title}" added to setlist`);
+                const success = await addManualSongToSetlist(manualSong);
+                if (success) {
+                    closeAddManualSongModal();
+                    showNotification(`"${title}" added to setlist`);
+                }
+                // If not successful, addManualSongToSetlist already showed the error notification
             }
         } catch (error) {
             console.error('Error adding manual song:', error);
@@ -4990,6 +4996,46 @@ window.viewSingleLyrics = function(songId, otherId) {
     async function addManualSongToSetlist(manualSong) {
         const setlistId = currentViewingSetlist._id;
         const isGlobal = currentSetlistType === 'global';
+        
+        // Check for duplicates in current setlist
+        const currentSetlist = isGlobal 
+            ? globalSetlists.find(s => s._id === setlistId)
+            : mySetlists.find(s => s._id === setlistId);
+            
+        if (currentSetlist && currentSetlist.songs) {
+            // Check if song with same title already exists in setlist
+            const isDuplicate = currentSetlist.songs.some(song => {
+                // Handle different song data structures
+                let songTitle = '';
+                
+                if (typeof song === 'object') {
+                    // Direct song object
+                    songTitle = song.title || '';
+                } else if (typeof song === 'string') {
+                    // Song ID - look up in global songs array
+                    const foundSong = songs.find(s => s.id === song || s._id === song);
+                    songTitle = foundSong ? foundSong.title : '';
+                }
+                
+                // Also check for manual song IDs
+                if (typeof song === 'string' && song.startsWith('manual_')) {
+                    // This might be a manual song ID - check existing manual songs in setlist
+                    const manualSongInList = currentSetlist.songs.find(s => 
+                        typeof s === 'object' && s._id === song
+                    );
+                    if (manualSongInList) {
+                        songTitle = manualSongInList.title || '';
+                    }
+                }
+                
+                return songTitle.toLowerCase().trim() === manualSong.title.toLowerCase().trim();
+            });
+            
+            if (isDuplicate) {
+                showNotification(`"${manualSong.title}" is already in this setlist`);
+                return false;
+            }
+        }
         
         try {
             const endpoint = isGlobal 
@@ -5026,35 +5072,64 @@ window.viewSingleLyrics = function(songId, otherId) {
 
                 // Refresh setlist view
                 refreshSetlistDisplay();
+                return true;
             } else {
                 throw new Error('Failed to add manual song to setlist');
             }
         } catch (error) {
             console.error('Error adding manual song to setlist:', error);
-            throw error;
+            return false;
         }
     }
 
-    function addSongToCurrentSetlist(song) {
-        if (!currentViewingSetlist || !currentSetlistType) return;
+    async function addSongToCurrentSetlist(song) {
+        if (!currentViewingSetlist || !currentSetlistType) return false;
 
         const setlistId = currentViewingSetlist._id;
         const isGlobal = currentSetlistType === 'global';
+        
+        // Check for duplicates in current setlist
+        const currentSetlist = isGlobal 
+            ? globalSetlists.find(s => s._id === setlistId)
+            : mySetlists.find(s => s._id === setlistId);
+            
+        if (currentSetlist && currentSetlist.songs) {
+            // Check if song is already in setlist
+            const isDuplicate = currentSetlist.songs.some(existingSong => {
+                // Handle different data structures
+                if (typeof existingSong === 'object') {
+                    // Song object - compare IDs and titles
+                    return (existingSong._id === song._id) || 
+                           (existingSong.id === song._id) ||
+                           (existingSong.title?.toLowerCase().trim() === song.title?.toLowerCase().trim());
+                } else {
+                    // Song ID - compare with song's ID
+                    return existingSong === song._id || existingSong === song.id;
+                }
+            });
+            
+            if (isDuplicate) {
+                showNotification(`"${song.title}" is already in this setlist`);
+                return false;
+            }
+        }
         
         const endpoint = isGlobal 
             ? `${API_BASE_URL}/api/global-setlists/add-song`
             : `${API_BASE_URL}/api/my-setlists/add-song`;
 
-        authFetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                setlistId: setlistId,
-                songId: song._id 
-            })
-        }).then(res => {
+        try {
+            const res = await authFetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    setlistId: setlistId,
+                    songId: song._id 
+                })
+            });
+
             if (res.ok) {
                 // Update local setlist data
                 if (isGlobal) {
@@ -5074,11 +5149,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                 // Refresh setlist view
                 refreshSetlistDisplay();
                 showNotification(`"${song.title}" added to setlist`);
+                return true;
+            } else {
+                showNotification('Failed to add song to setlist');
+                return false;
             }
-        }).catch(error => {
+        } catch (error) {
             console.error('Error adding song to setlist:', error);
             showNotification('Failed to add song to setlist');
-        });
+            return false;
+        }
     }
 
     // ====================== END SETLIST MANAGEMENT FUNCTIONS ======================
@@ -5160,8 +5240,7 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
     }
 
-    // DEPRECATED: Use addToSpecificSetlist instead
-    /*
+
     // Add song to global setlist
     async function addToGlobalSetlist(songId, setlistId) {
         if (!currentUser?.isAdmin) {
@@ -5299,7 +5378,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             showNotification('Failed to remove song from setlist');
         }
     }
-    */
 
         // Show login modal (local/JWT)
         function showLoginModal() {
@@ -5634,14 +5712,6 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
     // Duplicate showAdminPanelModal function removed - using the one defined earlier
         // window.addEventListener('DOMContentLoaded', updateAuthButtons);
-
-        async function authFetch(url, options = {}) {
-            options.headers = options.headers || {};
-            if (jwtToken) {
-                options.headers['Authorization'] = `Bearer ${jwtToken}`;
-            }
-            return fetch(url, options);
-        }
     
         async function toggleScreenWakeLock() {
             if (!('wakeLock' in navigator)) return;
@@ -7460,6 +7530,25 @@ window.viewSingleLyrics = function(songId, otherId) {
             if (!song) {
                 console.error('Song not found:', songId);
                 return;
+            }
+
+            // Check for duplicates in current setlist
+            const isGlobal = setlistId.startsWith('global_');
+            const setlistArray = isGlobal ? globalSetlists : mySetlists;
+            const targetSetlist = setlistArray.find(s => s._id === setlistId);
+            
+            if (targetSetlist && targetSetlist.songs) {
+                // Check if song is already in setlist
+                const isDuplicate = targetSetlist.songs.some(existingSong => {
+                    const existingSongId = typeof existingSong === 'object' ? 
+                        (existingSong.id || existingSong._id) : existingSong;
+                    return existingSongId === songId;
+                });
+                
+                if (isDuplicate) {
+                    showNotification(`"${song.title}" is already in this setlist`);
+                    return;
+                }
             }
 
             // Determine if this is a global setlist or personal setlist

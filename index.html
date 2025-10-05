@@ -1016,9 +1016,16 @@ async function saveRecommendationWeightsToBackend(weights) {
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Show loading immediately on page load
+        if (typeof showLoading === 'function') {
+            showLoading(0);
+        }
         await init();
     } catch (e) {
         console.error('App failed to initialize:', e);
+        if (typeof hideLoading === 'function') {
+            hideLoading();
+        }
     }
 });
 </script>
