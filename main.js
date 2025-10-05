@@ -7110,61 +7110,47 @@ window.viewSingleLyrics = function(songId, otherId) {
         </div>
 
         <div class="song-preview-metadata">
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Key:</span>
-                <span class="preview-meta-value preview-key" id="current-key">${song.key}</span>
-            </div>
-            ${song.artistDetails ? `
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Artist:</span>
-                <span class="preview-meta-value preview-artist">${song.artistDetails}</span>
-            </div>` : ''}
-            ${song.mood ? `
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Mood:</span>
-                <span class="preview-meta-value preview-mood">${song.mood}</span>
-            </div>` : ''}
-            ${song.tempo ? `
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Tempo:</span>
-                <span class="preview-meta-value">${song.tempo}</span>
-            </div>` : ''}
-            ${(song.time || song.timeSignature) ? `
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Time:</span>
-                <span class="preview-meta-value">${song.time || song.timeSignature}</span>
-            </div>` : ''}
-            ${song.taal ? `
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Taal:</span>
-                <span class="preview-meta-value">${song.taal}</span>
-            </div>` : ''}
-            ${song.genres ? `
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Genres:</span>
-                <div class="preview-genre-tags">
-                    ${song.genres.map(genre => `<span class="preview-genre-tag">${genre}</span>`).join('')}
+            <div class="preview-meta-line first-line">
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Key:</span>
+                    <span class="preview-meta-value preview-key" id="current-key">${song.key}</span>
                 </div>
-            </div>` : song.genre ? `
-            <div class="preview-meta-row">
-                <span class="preview-meta-label">Genre:</span>
-                <span class="preview-meta-value">${song.genre}</span>
-            </div>` : ''}
-        </div>
-
-        <div class="song-preview-audit">
-            ${song.updatedAt && song.updatedBy
-                ? `<div class="preview-audit-info">
-                    <i class="fas fa-edit"></i>
-                    <span>Updated by <strong>${getDisplayName(song.updatedBy)}</strong> on ${new Date(song.updatedAt).toLocaleDateString()}</span>
-                   </div>`
-                : (song.createdBy && song.createdAt
-                    ? `<div class="preview-audit-info">
-                        <i class="fas fa-plus"></i>
-                        <span>Added by <strong>${getDisplayName(song.createdBy)}</strong> on ${new Date(song.createdAt).toLocaleDateString()}</span>
-                       </div>`
-                    : '')
-            }
+                ${song.tempo ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Tempo:</span>
+                    <span class="preview-meta-value">${song.tempo}</span>
+                </div>` : ''}
+                ${(song.time || song.timeSignature) ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Time:</span>
+                    <span class="preview-meta-value">${song.time || song.timeSignature}</span>
+                </div>` : ''}
+                ${song.taal ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Taal:</span>
+                    <span class="preview-meta-value">${song.taal}</span>
+                </div>` : ''}
+                ${song.artistDetails ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Artist:</span>
+                    <span class="preview-meta-value">${song.artistDetails}</span>
+                </div>` : ''}
+            </div>
+            <div class="preview-meta-line second-line">
+                ${song.mood ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Mood:</span>
+                    <span class="preview-meta-value">${song.mood}</span>
+                </div>` : ''}
+                ${song.genres ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Genres:</span>
+                    <span class="preview-meta-value">${song.genres.join(', ')}</span>
+                </div>` : song.genre ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Genre:</span>
+                    <span class="preview-meta-value">${song.genre}</span>
+                </div>` : ''}
         </div>
 
         <div class="song-preview-actions">
@@ -7205,6 +7191,21 @@ window.viewSingleLyrics = function(songId, otherId) {
                     <i class="fas fa-heart"></i>
                 </button>
             </div>
+        </div>
+
+        <div class="song-preview-audit">
+            ${song.updatedAt && song.updatedBy
+                ? `<div class="preview-audit-info">
+                    <i class="fas fa-edit"></i>
+                    <span>Updated by <strong>${getDisplayName(song.updatedBy)}</strong> on ${new Date(song.updatedAt).toLocaleDateString()}</span>
+                   </div>`
+                : (song.createdBy && song.createdAt
+                    ? `<div class="preview-audit-info">
+                        <i class="fas fa-plus"></i>
+                        <span>Added by <strong>${getDisplayName(song.createdBy)}</strong> on ${new Date(song.createdAt).toLocaleDateString()}</span>
+                       </div>`
+                    : '')
+            }
         </div>
         
         <div class="song-lyrics" id="preview-lyrics-container">Loading lyrics...</div>
