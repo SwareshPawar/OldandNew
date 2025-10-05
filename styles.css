@@ -319,8 +319,8 @@
 .setlist-song-key-tempo {
     background: var(--accent-color);
     color: var(--song-item-text);
-    padding: 2px 6px;
-    font-size: 0.7em;
+    padding: 2px 3px;
+    font-size: 0.75em;
     font-weight: 600;
     line-height: 1;
     margin-right: 0;
@@ -662,7 +662,7 @@
             gap: 5px;
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-color);
+            color: var(--accent-color);
             flex-shrink: 0;
         }
 
@@ -822,7 +822,7 @@
             }
             
             .preview-transpose-display {
-                min-width: 20px;
+                min-width: 30px;
                 padding: 4px 6px;
                 font-size: 16px;
             }
@@ -990,7 +990,7 @@
     /* Core Theme Colors */
     --primary-color: #3E3F29;
     --secondary-color: #7D8D86;
-    --accent-color: #BCA88D;
+    --accent-color: #88765c;
     --light-bg: #2d2c28;
     --text-color: #7a7c50;
     
@@ -1081,7 +1081,7 @@
                 --secondary-color: #4A4F3A;
                 --accent-color: #BCA88D;
                 --light-bg: #181810;
-                --text-color: #594e32;
+                --text-color: #8a7a51;
                 
                 /* UI State Colors */
                 --delete-color: #BCA88D;
@@ -1773,14 +1773,14 @@ body.dark-mode #installAppBtn {
             .setlist-header-actions {
                 width: 100%;
                 justify-content: flex-start;
-                gap: 6px;
-                flex-wrap: wrap;
+                gap: 4px;
+                flex-wrap: nowrap;
             }
             .setlist-action-btn {
-                flex: 1 1 90px;
-                max-width: 90px;
-                padding: 6px 8px;
-                font-size: 12px;
+                flex: 1 1 auto;
+                min-width: 0;
+                padding: 6px 4px;
+                font-size: 11px;
                 min-height: 32px;
                 border-radius: 6px;
                 justify-content: center;
@@ -4550,7 +4550,7 @@ body.dark-mode .modal-content {
     /* Individual toggle button positioning now handled by JavaScript */
 
     .sidebar {
-        width: 50%;
+        width: var(--sidebar-width);
         max-width: none;
         /* Preserve sliding animation on mobile */
     }
@@ -4560,7 +4560,7 @@ body.dark-mode .modal-content {
     }
 
     .songs-section {
-        width: 50%;
+        width: var(--songs-panel-width);
         overflow-y: auto;
         height: 100%;
         max-width: none;

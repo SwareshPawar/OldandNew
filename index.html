@@ -307,7 +307,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                         <span id="clearSearch" class="clear-search-btn" style="display: none;">×</span>
                         <div id="searchHistoryDropdown" class="search-history-dropdown"></div>
                     </div>
-                    <div class="filter-row-1" style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                    <div class="filter-row-1">
                         <select id="keyFilter" class="compact-select">
   <!-- Options will be populated by JS -->
                         </select>
@@ -639,9 +639,13 @@ async function saveRecommendationWeightsToBackend(weights) {
                     <div class="settings-group">
                         <label for="panelWidthInput">Panel Width (%):</label>
                         <select id="panelWidthInput">
+                            <option value="10">10%</option>
                             <option value="20">20%</option>
+                            <option value="30">30%</option>
                             <option value="40">40%</option>
+                            <option value="50">50%</option>
                             <option value="60">60%</option>
+                            <option value="70">70%</option>
                             <option value="80">80%</option>
                         </select>
                     </div>
