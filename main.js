@@ -4922,7 +4922,7 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Search for matching songs
         const matchingSongs = songs.filter(song => 
             song.title.toLowerCase().includes(title.toLowerCase())
-        ).slice(0, 5); // Limit to 5 results
+        ).slice(0, 10); // Limit to 10 results
 
         if (matchingSongs.length > 0) {
             resultsList.innerHTML = matchingSongs.map(song => `
