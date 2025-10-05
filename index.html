@@ -67,14 +67,14 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Login Modal -->
     <div class="modal" id="loginModal" style="display:none;">
         <div class="modal-content auth-modal-content">
-            <span class="close-modal" id="closeLoginModal" aria-label="Close">×</span>
+            <span class="close-modal" id="closeLoginModal" aria-label="Close" title="Close Login Modal">×</span>
             <h2 style="text-align:center;margin-bottom:18px;">Login</h2>
             <form id="loginForm" class="auth-form">
                 <label for="loginUsername">Username</label>
                 <input type="text" id="loginUsername" required autocomplete="username">
                 <label for="loginPassword">Password</label>
                 <input type="password" id="loginPassword" required autocomplete="current-password">
-                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Login</button>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;" title="Login - Sign in with your credentials" aria-label="Login">Login</button>
                 <div id="loginError" style="color:#c31010;margin-top:10px;display:none;"></div>
                 <p style="text-align:center;margin-top:15px;">
                     <a href="#" id="forgotPasswordLink" style="color:#667eea;text-decoration:none;">Forgot Password?</a>
@@ -86,7 +86,7 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Register Modal -->
     <div class="modal" id="registerModal" style="display:none;">
         <div class="modal-content auth-modal-content">
-            <span class="close-modal" id="closeRegisterModal" aria-label="Close">×</span>
+            <span class="close-modal" id="closeRegisterModal" aria-label="Close" title="Close Registration Modal">×</span>
             <h2 style="text-align:center;margin-bottom:18px;">Register</h2>
             <form id="registerForm" class="auth-form">
                 <label for="registerFirstName">First Name</label>
@@ -101,7 +101,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <input type="tel" id="registerPhone" required autocomplete="tel">
                 <label for="registerPassword">Password</label>
                 <input type="password" id="registerPassword" required autocomplete="new-password">
-                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Register</button>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;" title="Register - Create new account with your details" aria-label="Register">Register</button>
                 <div id="registerError" style="color:#c31010;margin-top:10px;display:none;"></div>
             </form>
         </div>
@@ -110,7 +110,7 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Forgot Password Modal -->
     <div class="modal" id="forgotPasswordModal" style="display:none;">
         <div class="modal-content auth-modal-content">
-            <span class="close-modal" id="closeForgotPasswordModal" aria-label="Close">×</span>
+            <span class="close-modal" id="closeForgotPasswordModal" aria-label="Close" title="Close Password Reset Modal">×</span>
             <h2 style="text-align:center;margin-bottom:18px;">Reset Password</h2>
             <form id="forgotPasswordForm" class="auth-form">
                 <label for="resetIdentifier">Email or Phone Number</label>
@@ -120,7 +120,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                     <option value="email">Email</option>
                     <option value="sms">SMS</option>
                 </select>
-                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Send OTP</button>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;" title="Send OTP - Request verification code for password reset" aria-label="Send OTP">Send OTP</button>
                 <div id="forgotPasswordError" style="color:#c31010;margin-top:10px;display:none;"></div>
                 <div id="forgotPasswordSuccess" style="color:#28a745;margin-top:10px;display:none;"></div>
             </form>
@@ -130,7 +130,7 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- OTP Verification Modal -->
     <div class="modal" id="otpVerificationModal" style="display:none;">
         <div class="modal-content auth-modal-content">
-            <span class="close-modal" id="closeOtpModal" aria-label="Close">×</span>
+            <span class="close-modal" id="closeOtpModal" aria-label="Close" title="Close OTP Verification Modal">×</span>
             <h2 style="text-align:center;margin-bottom:18px;">Verify OTP</h2>
             <div id="otpInstructions" style="text-align:center;margin-bottom:20px;color:#666;"></div>
             <form id="otpVerificationForm" class="auth-form">
@@ -140,23 +140,23 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <input type="password" id="newPassword" required autocomplete="new-password" placeholder="Enter new password (min 6 characters)">
                 <label for="confirmNewPassword">Confirm New Password</label>
                 <input type="password" id="confirmNewPassword" required autocomplete="new-password" placeholder="Confirm new password">
-                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">Reset Password</button>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;" title="Reset Password - Set new password with OTP verification" aria-label="Reset Password">Reset Password</button>
                 <div id="otpError" style="color:#c31010;margin-top:10px;display:none;"></div>
                 <div style="text-align:center;margin-top:15px;">
-                    <button type="button" id="resendOtpBtn" class="btn" style="background:none;border:1px solid #667eea;color:#667eea;padding:8px 16px;">Resend OTP</button>
+                    <button type="button" id="resendOtpBtn" class="btn" style="background:none;border:1px solid #667eea;color:#667eea;padding:8px 16px;" title="Resend OTP - Request a new verification code" aria-label="Resend OTP">Resend OTP</button>
                 </div>
             </form>
         </div>
     </div>
     <!-- Loading spinner removed -->
     <div class="app-container">
-        <button class="panel-toggle draggable" id="toggle-sidebar"><i class="fas fa-home"></i></button>
-        <button class="panel-toggle draggable" id="toggle-songs"><i class="fas fa-list"></i></button>
-        <button class="panel-toggle draggable" id="toggle-all-panels"><i class="fas fa-eye-slash"></i></button>
+        <button class="panel-toggle draggable" id="toggle-sidebar" title="Show/Hide Sidebar Panel - Contains navigation, setlists, and settings" aria-label="Toggle Sidebar Panel"><i class="fas fa-home"></i></button>
+        <button class="panel-toggle draggable" id="toggle-songs" title="Show/Hide Songs List Panel - Browse and filter songs by category" aria-label="Toggle Songs Panel"><i class="fas fa-list"></i></button>
+        <button class="panel-toggle draggable" id="toggle-all-panels" title="Show/Hide All Panels - Toggle both sidebar and songs panels at once" aria-label="Toggle All Panels"><i class="fas fa-eye-slash"></i></button>
 
         <!-- Auto-scroll controls -->
         <div class="auto-scroll-controls">
-            <button class="auto-scroll-btn" id="toggleAutoScroll" title="Auto Scroll"><i class="fas fa-play"></i></button>
+            <button class="auto-scroll-btn" id="toggleAutoScroll" title="Auto Scroll - Automatically scroll through song lyrics at set speed" aria-label="Toggle Auto Scroll"><i class="fas fa-play"></i></button>
         </div>
 
         <!-- Keep screen on button -->
@@ -171,12 +171,12 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <h2>New & Old</h2>
             </div>
             <ul class="sidebar-menu">
-                <button id="loginBtn" class="sidebar-btn btn-login"><i class="fas fa-sign-in-alt"></i> Login</button>
-                <button id="registerBtn" class="sidebar-btn btn-login"><i class="fas fa-user-plus"></i> Register</button>
+                <button id="loginBtn" class="sidebar-btn btn-login" title="Login to access personal setlists and save favorites" aria-label="Login"><i class="fas fa-sign-in-alt"></i> Login</button>
+                <button id="registerBtn" class="sidebar-btn btn-login" title="Create new account to save personal data and setlists" aria-label="Register"><i class="fas fa-user-plus"></i> Register</button>
                 <div id="userGreeting" style="display:none;font-weight:bold;margin-bottom:8px;"></div>
-                <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                <button id="adminPanelBtn" class="sidebar-btn" style="display:none;"><i class="fas fa-cogs"></i> Admin Panel</button>
-                <li><a href="#" class="active" id="showAll">All Songs</a></li>
+                <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;" title="Sign out from your account" aria-label="Logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <button id="adminPanelBtn" class="sidebar-btn" style="display:none;" title="Admin Panel - Manage users, recommendation weights, and detect duplicates" aria-label="Admin Panel"><i class="fas fa-cogs"></i> Admin Panel</button>
+                <li><a href="#" class="active" id="showAll" title="View all songs in the database - Browse New and Old categories">All Songs</a></li>
                 <li>
                     <div class="setlist-selector">
                         <div class="custom-setlist-dropdown" id="customSetlistDropdown">
@@ -203,8 +203,8 @@ async function saveRecommendationWeightsToBackend(weights) {
                     </div>
                 </div>
                 
-                <li><a href="#" id="showFavorites">Favorites</a></li>
-                <li><button id="addSongBelowFavoritesBtn" class="sidebar-btn" style="width:100%;margin-top:10px;"><i class="fa fa-plus"></i> Add New Song</button></li>
+                <li><a href="#" id="showFavorites" title="View your favorite songs - Heart icon to add/remove favorites">Favorites</a></li>
+                <li><button id="addSongBelowFavoritesBtn" class="sidebar-btn" style="width:100%;margin-top:10px;" title="Add New Song - Create a new song entry with lyrics, key, tempo and other details" aria-label="Add New Song"><i class="fa fa-plus"></i> Add New Song</button></li>
 
                 <!-- Global Setlists Section -->
                 <li style="margin-top:15px;">
@@ -213,7 +213,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                             <i class="fas fa-chevron-right folder-icon" id="globalSetlistIcon"></i>
                             <i class="fas fa-globe"></i>
                             <span>Global Setlists</span>
-                            <button id="addGlobalSetlistBtn" class="add-setlist-btn" style="display:none;" title="Add Global Setlist">
+                            <button id="addGlobalSetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Global Setlist - Admin only: Create setlists visible to all users" aria-label="Add Global Setlist">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -237,7 +237,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                             <i class="fas fa-chevron-right folder-icon" id="mySetlistIcon"></i>
                             <i class="fas fa-user"></i>
                             <span>My Setlists</span>
-                            <button id="addMySetlistBtn" class="add-setlist-btn" style="display:none;" title="Add My Setlist">
+                            <button id="addMySetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Personal Setlist - Create your own private setlist collection" aria-label="Add My Setlist">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -264,7 +264,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                         <div>Old: <span id="OldCount">0</span></div>
                     </div>
 
-                    <button class="theme-toggle" id="themeToggle" style="width:100%;margin-top:10px;">
+                    <button class="theme-toggle" id="themeToggle" style="width:100%;margin-top:10px;" title="Switch Theme - Toggle between light and dark mode for better reading" aria-label="Toggle Theme">
                         <i class="fas fa-moon"></i>
                         <span>Dark Mode</span>
                     </button>
@@ -279,13 +279,13 @@ async function saveRecommendationWeightsToBackend(weights) {
                         <i class="fas fa-caret-down folder-caret"></i>
                     </div>
                     <div class="folder-content" id="songToolsContent">
-                        <button class="sidebar-btn" id="openAddSongModal">
+                        <button class="sidebar-btn" id="openAddSongModal" title="Add New Song - Open form to create a new song with complete details" aria-label="Add New Song">
                             <i class="fa fa-plus"></i> Add New Song
                         </button>
-                        <button class="sidebar-btn" id="downloadSongsBtn">
+                        <button class="sidebar-btn" id="downloadSongsBtn" title="Download Songs - Export all songs and favorites as JSON file for backup" aria-label="Download Songs">
                             <i class="fas fa-download"></i> Download Songs
                         </button>
-                        <button class="sidebar-btn btn-delete" id="deleteAllSongsBtn">
+                        <button class="sidebar-btn btn-delete" id="deleteAllSongsBtn" title="Delete All Songs - DANGER: Permanently remove all songs from database" aria-label="Delete All Songs">
                             <i class="fas fa-trash-alt"></i> Delete All Songs
                         </button>
                     </div>
@@ -297,14 +297,14 @@ async function saveRecommendationWeightsToBackend(weights) {
         <div class="songs-section hidden">
             <div class="sticky-header">
                 <div class="tabs">
-                    <div class="setlist-tab active" id="NewTab">New</div>
-                    <div class="setlist-tab" id="OldTab">Old</div>
+                    <div class="setlist-tab active" id="NewTab" title="New Songs - Recently added songs and contemporary music" aria-label="New Songs Tab">New</div>
+                    <div class="setlist-tab" id="OldTab" title="Old Songs - Classic and traditional songs" aria-label="Old Songs Tab">Old</div>
                 </div>
                 <div class="filters-row">
                     <div class="search-container">
                         <input type="text" id="searchInput" class="compact-input" placeholder="Search songs..."
                                style="padding-right: 30px;" autocomplete="off">
-                        <span id="clearSearch" class="clear-search-btn" style="display: none;">×</span>
+                        <span id="clearSearch" class="clear-search-btn" style="display: none;" title="Clear Search - Remove current search query and show all songs" aria-label="Clear Search">×</span>
                         <div id="searchHistoryDropdown" class="search-history-dropdown"></div>
                     </div>
                     <div class="filter-row-1">
@@ -342,26 +342,26 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <div class="setlist-header">
                     <h3 id="setlistViewHeader">Setlist View</h3>
                     <div class="setlist-header-actions" id="setlistSectionActions" style="display: none;">
-                        <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn">
+                        <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist - Modify setlist name, description and song selection" aria-label="Edit Setlist">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button id="deleteSetlistSectionBtn" class="btn btn-danger setlist-action-btn">
+                        <button id="deleteSetlistSectionBtn" class="btn btn-danger setlist-action-btn" title="Delete Setlist - Permanently remove this setlist" aria-label="Delete Setlist">
                             <i class="fas fa-trash"></i>
                         </button>
-                        <button id="resequenceSetlistSectionBtn" class="btn btn-primary setlist-action-btn">
+                        <button id="resequenceSetlistSectionBtn" class="btn btn-primary setlist-action-btn" title="Resequence Songs - Drag and drop to reorder songs in setlist" aria-label="Resequence Setlist">
                             <i class="fas fa-random"></i>
                         </button>
-                        <button id="saveSetlistSequenceBtn" class="btn btn-success setlist-action-btn" style="display:none;">
+                        <button id="saveSetlistSequenceBtn" class="btn btn-success setlist-action-btn" style="display:none;" title="Save New Sequence - Confirm the new song order" aria-label="Save Sequence">
                             <i class="fas fa-save"></i> Save Sequence
                         </button>
-                        <button id="addManualSongBtn" class="btn btn-primary setlist-action-btn">
+                        <button id="addManualSongBtn" class="btn btn-primary setlist-action-btn" title="Add Song - Add existing song or create new manual entry for setlist" aria-label="Add Song to Setlist">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
                 </div>
                 <div class="setlist-tabs">
-                    <div class="setlist-tab active" id="NewSetlistTab">New</div>
-                    <div class="setlist-tab" id="OldSetlistTab">Old</div>
+                    <div class="setlist-tab active" id="NewSetlistTab" title="New Songs in Setlist - View contemporary songs in this setlist" aria-label="New Setlist Songs Tab">New</div>
+                    <div class="setlist-tab" id="OldSetlistTab" title="Old Songs in Setlist - View classic songs in this setlist" aria-label="Old Setlist Songs Tab">Old</div>
                 </div>
                 <div class="setlist-content">
                     <div id="NewSetlistSongs"></div>
@@ -380,7 +380,7 @@ async function saveRecommendationWeightsToBackend(weights) {
 
         <!-- Preview Section -->
         <div class="preview-section" id="songPreview">
-            <button id="installAppBtn" style="display:none;">
+            <button id="installAppBtn" style="display:none;" title="Install App - Add this web app to your home screen for offline access" aria-label="Install App">
             <i class="fas fa-download" style="margin-right:8px;"></i>
             Add to Home Screen
             </button>
@@ -392,12 +392,12 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Modals -->
     <div class="modal" id="adminPanelModal">
         <div class="modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Admin Panel">×</span>
             <h2>Admin Panel</h2>
             <div class="admin-tabs">
-                <button class="admin-tab active" id="userMgmtTab">User Management</button>
-                <button class="admin-tab" id="weightsTab">Recommendation Weights</button>
-                <button class="admin-tab" id="duplicateDetectionTab">Duplicate Detection</button>
+                <button class="admin-tab active" id="userMgmtTab" title="User Management - Manage user accounts and admin privileges" aria-label="User Management Tab">User Management</button>
+                <button class="admin-tab" id="weightsTab" title="Recommendation Weights - Configure song recommendation algorithm parameters" aria-label="Recommendation Weights Tab">Recommendation Weights</button>
+                <button class="admin-tab" id="duplicateDetectionTab" title="Duplicate Detection - Find and manage duplicate songs in database" aria-label="Duplicate Detection Tab">Duplicate Detection</button>
             </div>
             <div class="admin-tab-content" id="userMgmtTabContent">
                 <div class="notification" id="adminNotification"></div>
@@ -459,7 +459,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                             </tr>
                         </tbody>
                     </table>
-                    <button type="submit" class="btn" style="width:100%;margin-top:8px;">Save Weights</button>
+                    <button type="submit" class="btn" style="width:100%;margin-top:8px;" title="Save Weights - Apply new recommendation algorithm parameters" aria-label="Save Weights">Save Weights</button>
                 </form>
                 <div style="text-align:center; color:#888; font-size:0.98em; margin-top:4px;">Total should be 100 for best results.</div>
             </div>
@@ -471,7 +471,7 @@ async function saveRecommendationWeightsToBackend(weights) {
 
     <div class="modal" id="addSongModal">
         <div class="modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Add Song Modal">×</span>
             <h3>Add New Song</h3>
             <form id="newSongForm" class="add-song-form">
                 <label for="songTitle">Title:</label>
@@ -503,7 +503,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <label for="songTempo">Tempo (BPM):</label>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <input type="text" id="songTempo" placeholder="e.g., 80 BPM" >
-                    <button type="button" id="tapTempoBtn" class="tap-tempo-btn">Tap Tempo</button>
+                    <button type="button" id="tapTempoBtn" class="tap-tempo-btn" title="Tap Tempo - Click repeatedly to measure and set tempo in BPM" aria-label="Tap Tempo">Tap Tempo</button>
                 </div>
                 <label for="songTime">Time Signature:</label>
                 <select id="songTime" >
@@ -523,14 +523,14 @@ async function saveRecommendationWeightsToBackend(weights) {
                 </div>
                 <label for="songLyrics">Lyrics:</label>
                 <textarea id="songLyrics" required></textarea>
-                <button type="submit" class="btn btn-primary">Add Song</button>
+                <button type="submit" class="btn btn-primary" title="Add Song - Create new song with all details and lyrics" aria-label="Add Song">Add Song</button>
             </form>
         </div>
     </div>
 
     <div class="modal" id="editSongModal">
         <div class="modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Edit Song Modal">×</span>
             <h3>Edit Song</h3>
             <form id="editSongForm" class="edit-song-form">
                 <input type="hidden" id="editSongId">
@@ -563,7 +563,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <label for="editSongTempo">Tempo (BPM):</label>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <input type="text" id="editSongTempo" placeholder="e.g., 80 BPM">
-                    <button type="button" id="editTapTempoBtn" class="tap-tempo-btn">Tap Tempo</button>
+                    <button type="button" id="editTapTempoBtn" class="tap-tempo-btn" title="Tap Tempo - Click repeatedly to measure and set tempo in BPM" aria-label="Tap Tempo">Tap Tempo</button>
                 </div>
                 <label for="editSongTime">Time Signature:</label>
                 <select id="editSongTime" required>
@@ -583,21 +583,21 @@ async function saveRecommendationWeightsToBackend(weights) {
                 </div>
                 <label for="editSongLyrics">Lyrics:</label>
                 <textarea id="editSongLyrics" required></textarea>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="submit" class="btn btn-primary" title="Save Changes - Update song with modified details" aria-label="Save Changes">Save Changes</button>
             </form>
         </div>
     </div>
 
     <div class="modal" id="deleteSongModal">
         <div class="modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Delete Confirmation Modal">×</span>
             <h3>Confirm Deletion</h3>
             <form id="deleteSongForm" class="delete-song-form">
                 <input type="hidden" id="deleteSongId">
                 <p id="deleteSongMessage">Are you sure you want to delete "<span id="deleteSongTitle"></span>"?</p>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn btn-cancel" id="cancelDeleteSong">Cancel</button>
-                    <button type="submit" class="btn btn-delete">Delete</button>
+                    <button type="button" class="btn btn-cancel" id="cancelDeleteSong" title="Cancel Delete - Keep the song" aria-label="Cancel Delete Song">Cancel</button>
+                    <button type="submit" class="btn btn-delete" title="Confirm Delete - Permanently remove this song" aria-label="Confirm Delete Song">Delete</button>
                 </div>
             </form>
         </div>
@@ -605,13 +605,13 @@ async function saveRecommendationWeightsToBackend(weights) {
 
     <div class="modal" id="confirmDeleteAllModal">
         <div class="modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Delete All Confirmation Modal">×</span>
             <h3>Confirm Delete All Songs</h3>
             <div class="delete-song-form">
                 <p>Are you sure you want to delete ALL songs? This cannot be undone.</p>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-cancel" id="cancelDeleteAll">Cancel</button>
-                    <button class="btn btn-delete" id="confirmDeleteAll">Delete All</button>
+                    <button class="btn btn-cancel" id="cancelDeleteAll" title="Cancel Delete All - Keep all songs safe" aria-label="Cancel Delete All Songs">Cancel</button>
+                    <button class="btn btn-delete" id="confirmDeleteAll" title="Confirm Delete All - DANGER: Permanently remove all songs" aria-label="Confirm Delete All Songs">Delete All</button>
                 </div>
             </div>
         </div>
@@ -619,7 +619,7 @@ async function saveRecommendationWeightsToBackend(weights) {
 
     <div class="modal" id="settingsModal">
         <div class="modal-content">
-            <span class="close-modal" onclick="document.getElementById('settingsModal').style.display='none'">×</span>
+            <span class="close-modal" onclick="document.getElementById('settingsModal').style.display='none'" title="Close Settings Modal" aria-label="Close Settings">×</span>
             <h3>Settings</h3>
             <form id="settingsForm">
                 <div class="settings-grid">
@@ -665,7 +665,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Save Settings</button>
+                <button type="submit" class="btn btn-primary" title="Save Settings - Apply new interface and behavior preferences" aria-label="Save Settings">Save Settings</button>
             </form>
         </div>
     </div>
@@ -673,7 +673,7 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Global Setlist Modal -->
     <div class="modal" id="globalSetlistModal">
         <div class="modal-content setlist-modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Global Setlist Modal">×</span>
             <h3 id="globalSetlistModalTitle">Create Global Setlist</h3>
             <form id="globalSetlistForm" class="setlist-form">
                 <input type="hidden" id="globalSetlistId">
@@ -772,7 +772,7 @@ async function saveRecommendationWeightsToBackend(weights) {
             </div>
             <!-- Submit button now outside tab content -->
             <div class="setlist-submit-container">
-                <button type="submit" class="btn btn-primary" id="globalSetlistSubmit">Create Setlist</button>
+                <button type="submit" class="btn btn-primary" id="globalSetlistSubmit" title="Create Global Setlist - Save new setlist visible to all users" aria-label="Create Global Setlist">Create Setlist</button>
             </div>
         </form>
         </div>
@@ -781,7 +781,7 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- My Setlist Modal -->
     <div class="modal" id="mySetlistModal">
         <div class="modal-content setlist-modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close My Setlist Modal">×</span>
             <h3 id="mySetlistModalTitle">Create My Setlist</h3>
             <form id="mySetlistForm" class="setlist-form">
                 <input type="hidden" id="mySetlistId">
@@ -880,7 +880,7 @@ async function saveRecommendationWeightsToBackend(weights) {
                 </div>
                 <!-- Submit button now outside tab content -->
                 <div class="setlist-submit-container">
-                    <button type="submit" class="btn btn-primary" id="mySetlistSubmit">Create Setlist</button>
+                    <button type="submit" class="btn btn-primary" id="mySetlistSubmit" title="Create Personal Setlist - Save new private setlist" aria-label="Create My Setlist">Create Setlist</button>
                 </div>
             </form>
         </div>
@@ -889,18 +889,18 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Setlist View Modal -->
     <div class="modal" id="setlistViewModal">
         <div class="modal-content setlist-view-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Setlist View Modal">×</span>
             <div class="setlist-view-header">
                 <h3 id="setlistViewTitle">Setlist</h3>
                 <div class="setlist-view-actions">
-                    <button id="editSetlistBtn" class="btn btn-secondary">Edit</button>
-                    <button id="deleteSetlistBtn" class="btn btn-danger">Delete</button>
+                    <button id="editSetlistBtn" class="btn btn-secondary" title="Edit Setlist - Modify setlist details and song selection" aria-label="Edit Setlist">Edit</button>
+                    <button id="deleteSetlistBtn" class="btn btn-danger" title="Delete Setlist - Permanently remove this setlist" aria-label="Delete Setlist">Delete</button>
                 </div>
             </div>
             <p id="setlistViewDescription"></p>
             <div class="setlist-tabs">
-                <div class="setlist-tab active" id="setlistNewTab">New</div>
-                <div class="setlist-tab" id="setlistOldTab">Old</div>
+                <div class="setlist-tab active" id="setlistNewTab" title="New Songs in Setlist - View contemporary songs" aria-label="New Songs Tab">New</div>
+                <div class="setlist-tab" id="setlistOldTab" title="Old Songs in Setlist - View classic songs" aria-label="Old Songs Tab">Old</div>
             </div>
             <div class="setlist-songs-content">
                 <div id="setlistNewSongs" class="setlist-songs-view"></div>
@@ -912,13 +912,13 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Confirm Delete Setlist Modal -->
     <div class="modal" id="confirmDeleteSetlistModal">
         <div class="modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Delete Setlist Confirmation Modal">×</span>
             <h3>Confirm Delete Setlist</h3>
             <div class="delete-setlist-form">
                 <p id="deleteSetlistMessage">Are you sure you want to delete this setlist?</p>
                 <div class="modal-actions">
-                    <button id="cancelDeleteSetlist" class="btn btn-secondary">Cancel</button>
-                    <button id="confirmDeleteSetlist" class="btn btn-danger">Delete</button>
+                    <button id="cancelDeleteSetlist" class="btn btn-secondary" title="Cancel Deletion - Keep the setlist" aria-label="Cancel Delete">Cancel</button>
+                    <button id="confirmDeleteSetlist" class="btn btn-danger" title="Confirm Deletion - Permanently remove this setlist" aria-label="Confirm Delete">Delete</button>
                 </div>
             </div>
         </div>
@@ -927,7 +927,7 @@ async function saveRecommendationWeightsToBackend(weights) {
     <!-- Add Manual Song to Setlist Modal -->
     <div class="modal" id="addManualSongModal">
         <div class="modal-content">
-            <span class="close-modal" aria-label="Close">×</span>
+            <span class="close-modal" aria-label="Close" title="Close Add Manual Song Modal">×</span>
             <h3>Add Song to Setlist</h3>
             <form id="manualSongForm" class="manual-song-form">
                 <div class="manual-song-section">
@@ -992,8 +992,8 @@ async function saveRecommendationWeightsToBackend(weights) {
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelManualSong">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add to Setlist</button>
+                    <button type="button" class="btn btn-secondary" id="cancelManualSong" title="Cancel - Close without adding song" aria-label="Cancel Add Song">Cancel</button>
+                    <button type="submit" class="btn btn-primary" title="Add Song to Setlist - Create and add this song entry" aria-label="Add Song to Setlist">Add to Setlist</button>
                 </div>
             </form>
         </div>
@@ -1004,12 +1004,12 @@ async function saveRecommendationWeightsToBackend(weights) {
 <div class="suggested-songs-drawer" id="suggestedSongsDrawer">
     <div class="suggested-songs-header">
         <h3>Suggested Songs</h3>
-        <button class="close-suggested-songs" id="closeSuggestedSongs">&times;</button>
+        <button class="close-suggested-songs" id="closeSuggestedSongs" title="Close Recommendations - Hide suggested songs panel" aria-label="Close Suggested Songs">&times;</button>
     </div>
     <div id="suggestedSongsContent"></div>
 </div>
 
-<button class="toggle-suggested-songs" id="toggleSuggestedSongs" title="Suggested Songs">
+<button class="toggle-suggested-songs" id="toggleSuggestedSongs" title="Recommended Songs - View AI-powered song recommendations based on current selection" aria-label="Toggle Suggested Songs">
     <i class="fa fa-random"></i>
 </button>
 </body>
