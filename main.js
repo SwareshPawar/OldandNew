@@ -4260,16 +4260,22 @@ window.viewSingleLyrics = function(songId, otherId) {
             
             let transposeLevel = 0;
             
-            // Get transpose level from localStorage cache or userdata
-            try {
-                const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
-                if (song.id && typeof localTranspose[song.id] === 'number') {
-                    transposeLevel = localTranspose[song.id];
-                } else if (window.userData && window.userData.transpose && song.id in window.userData.transpose) {
-                    transposeLevel = window.userData.transpose[song.id] || 0;
+            // Priority: Global setlist transpose > User transpose
+            if (currentSetlistType === 'global' && currentViewingSetlist && currentViewingSetlist.songTransposes && song.id in currentViewingSetlist.songTransposes) {
+                // Use global setlist transpose (admin-set)
+                transposeLevel = currentViewingSetlist.songTransposes[song.id] || 0;
+            } else {
+                // Use user's personal transpose
+                try {
+                    const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                    if (song.id && typeof localTranspose[song.id] === 'number') {
+                        transposeLevel = localTranspose[song.id];
+                    } else if (window.userData && window.userData.transpose && song.id in window.userData.transpose) {
+                        transposeLevel = window.userData.transpose[song.id] || 0;
+                    }
+                } catch (e) {
+                    transposeLevel = 0;
                 }
-            } catch (e) {
-                transposeLevel = 0;
             }
             
             const distinctChords = extractDistinctChords(song.lyrics, transposeLevel, song.manualChords);
@@ -7014,46 +7020,93 @@ window.viewSingleLyrics = function(songId, otherId) {
                         showNotification('Login required to save transpose');
                         return;
                     }
+                    
+                    // Check if we're in a global setlist and user is admin
+                    const isGlobalSetlist = currentSetlistType === 'global';
+                    const isAdmin = currentUser && currentUser.isAdmin;
+                    
+                    if (isGlobalSetlist && !isAdmin) {
+                        showNotification('Only administrators can save transpose for global setlists');
+                        return;
+                    }
+                    
                     // Calculate new key
                     const originalKey = song.key || '';
                     const newKey = transposeSingleChord(originalKey, level);
-                    // Load userData first
-                    let userData = {};
-                    try {
-                        const response = await authFetch(`${API_BASE_URL}/api/userdata`);
-                        if (response.ok) {
-                            userData = await response.json();
-                        }
-                    } catch (e) {}
-                    if (!userData.transpose) userData.transpose = {};
-                    userData.transpose[song.id] = level;
-                    if (!userData.songKeys) userData.songKeys = {};
-                    userData.songKeys[song.id] = newKey;
-                    // Save to backend
+                    
                     let saveSuccess = false;
-                    try {
-                        const putResponse = await authFetch(`${API_BASE_URL}/api/userdata`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(userData)
-                        });
-                        if (putResponse.ok) {
-                            showNotification('Transpose saved!');
-                            song.key = newKey;
-                            saveSuccess = true;
-                        } else {
-                            showNotification('Failed to save transpose');
+                    
+                    if (isGlobalSetlist && isAdmin) {
+                        // Save transpose to global setlist
+                        try {
+                            const setlistId = currentViewingSetlist._id;
+                            const response = await authFetch(`${API_BASE_URL}/api/global-setlists/${setlistId}/transpose`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    songId: song.id,
+                                    transpose: level,
+                                    newKey: newKey
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                showNotification('Global transpose saved for all users!');
+                                song.key = newKey;
+                                
+                                // Update local global setlist cache
+                                if (currentViewingSetlist.songTransposes) {
+                                    currentViewingSetlist.songTransposes[song.id] = level;
+                                } else {
+                                    currentViewingSetlist.songTransposes = { [song.id]: level };
+                                }
+                                
+                                saveSuccess = true;
+                            } else {
+                                showNotification('Failed to save global transpose');
+                            }
+                        } catch (e) {
+                            showNotification('Network error saving global transpose');
                         }
-                    } catch (e) {
-                        showNotification('Network error saving transpose');
+                    } else {
+                        // Save personal transpose to user data
+                        let userData = {};
+                        try {
+                            const response = await authFetch(`${API_BASE_URL}/api/userdata`);
+                            if (response.ok) {
+                                userData = await response.json();
+                            }
+                        } catch (e) {}
+                        if (!userData.transpose) userData.transpose = {};
+                        userData.transpose[song.id] = level;
+                        if (!userData.songKeys) userData.songKeys = {};
+                        userData.songKeys[song.id] = newKey;
+                        // Save to backend
+                        try {
+                            const putResponse = await authFetch(`${API_BASE_URL}/api/userdata`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(userData)
+                            });
+                            if (putResponse.ok) {
+                                showNotification('Transpose saved!');
+                                song.key = newKey;
+                                saveSuccess = true;
+                            } else {
+                                showNotification('Failed to save transpose');
+                            }
+                        } catch (e) {
+                            showNotification('Network error saving transpose');
+                        }
+                        
+                        // Update localStorage cache for personal transpose
+                        let localTranspose = {};
+                        try {
+                            localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                        } catch (e) { localTranspose = {}; }
+                        localTranspose[song.id] = level;
+                        localStorage.setItem('transposeCache', JSON.stringify(localTranspose));
                     }
-                    // Update localStorage cache immediately regardless of backend result
-                    let localTranspose = {};
-                    try {
-                        localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
-                    } catch (e) { localTranspose = {}; }
-                    localTranspose[song.id] = level;
-                    localStorage.setItem('transposeCache', JSON.stringify(localTranspose));
                     
                     // Refresh setlist display to show updated chords
                     if (typeof refreshSetlistDisplay === 'function') {
@@ -7118,35 +7171,43 @@ window.viewSingleLyrics = function(songId, otherId) {
             let transposeLevel = 0;
             let userData = {};
             let localTranspose = {};
-            try {
-                localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
-            } catch (e) { localTranspose = {}; }
             
-            if (song.id && typeof localTranspose[song.id] === 'number') {
-                transposeLevel = localTranspose[song.id];
+            // Priority: Global setlist transpose > User transpose
+            if (currentSetlistType === 'global' && currentViewingSetlist && currentViewingSetlist.songTransposes && song.id in currentViewingSetlist.songTransposes) {
+                // Use global setlist transpose (admin-set)
+                transposeLevel = currentViewingSetlist.songTransposes[song.id] || 0;
             } else {
-                // Use cached userData if available, or fetch if not cached yet
-                if (currentUser && currentUser.id && song.id) {
-                    if (window.userData && window.userData.transpose && song.id in window.userData.transpose && typeof window.userData.transpose[song.id] === 'number') {
-                        // Use cached userData
-                        transposeLevel = window.userData.transpose[song.id];
-                    } else if (!window.userDataFetched && !window.fetchingUserData) {
-                        // Only fetch once per session if not already cached
-                        window.fetchingUserData = true;
-                        try {
-                            const response = await authFetch(`${API_BASE_URL}/api/userdata`);
-                            if (response.ok) {
-                                userData = await response.json();
-                                window.userData = userData;
-                                window.userDataFetched = true;
-                                if (userData.transpose && song.id in userData.transpose && typeof userData.transpose[song.id] === 'number') {
-                                    transposeLevel = userData.transpose[song.id];
+                // Use user's personal transpose
+                try {
+                    localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                } catch (e) { localTranspose = {}; }
+                
+                if (song.id && typeof localTranspose[song.id] === 'number') {
+                    transposeLevel = localTranspose[song.id];
+                } else {
+                    // Use cached userData if available, or fetch if not cached yet
+                    if (currentUser && currentUser.id && song.id) {
+                        if (window.userData && window.userData.transpose && song.id in window.userData.transpose && typeof window.userData.transpose[song.id] === 'number') {
+                            // Use cached userData
+                            transposeLevel = window.userData.transpose[song.id];
+                        } else if (!window.userDataFetched && !window.fetchingUserData) {
+                            // Only fetch once per session if not already cached
+                            window.fetchingUserData = true;
+                            try {
+                                const response = await authFetch(`${API_BASE_URL}/api/userdata`);
+                                if (response.ok) {
+                                    userData = await response.json();
+                                    window.userData = userData;
+                                    window.userDataFetched = true;
+                                    if (userData.transpose && song.id in userData.transpose && typeof userData.transpose[song.id] === 'number') {
+                                        transposeLevel = userData.transpose[song.id];
+                                    }
                                 }
+                            } catch (e) {
+                                // Failed to fetch user data
+                            } finally {
+                                window.fetchingUserData = false;
                             }
-                        } catch (e) {
-                            // Failed to fetch user data
-                        } finally {
-                            window.fetchingUserData = false;
                         }
                     }
                 }
