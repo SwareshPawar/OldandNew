@@ -4272,7 +4272,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 transposeLevel = 0;
             }
             
-            const distinctChords = extractDistinctChords(song.lyrics, transposeLevel);
+            const distinctChords = extractDistinctChords(song.lyrics, transposeLevel, song.manualChords);
             const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
             
             const li = document.createElement('li');
@@ -4988,10 +4988,25 @@ window.viewSingleLyrics = function(songId, otherId) {
         const timeSignature = document.getElementById('manualSongTime').value;
         const tempo = document.getElementById('manualSongTempo').value;
         const category = document.getElementById('manualSongCategory').value;
+        const chords = document.getElementById('manualSongChords').value.trim();
 
         if (!title || !key || !timeSignature || !category) {
             showNotification('Please fill in all required fields');
             return;
+        }
+
+        // Process and clean chords if provided
+        let processedChords = '';
+        if (chords) {
+            // Split by comma, clean up each chord, and apply the same cleaning as extractDistinctChords
+            const chordArray = chords.split(',').map(chord => {
+                let cleanChord = chord.trim();
+                // Remove 'maj' from chord names to make them more compact
+                cleanChord = cleanChord.replace(/maj(?=\d)|maj$/g, '');
+                return cleanChord;
+            }).filter(chord => chord.length > 0);
+            
+            processedChords = chordArray.join(', ');
         }
 
         // Create manual song object
@@ -5003,7 +5018,8 @@ window.viewSingleLyrics = function(songId, otherId) {
             tempo: tempo,
             category: category,
             isManualEntry: true,
-            lyrics: '(Manual entry - no lyrics available)'
+            lyrics: '(Manual entry - no lyrics available)',
+            manualChords: processedChords // Store the manually entered chords
         };
 
         try {
@@ -5802,7 +5818,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     songsPanelWidth = "20";
                 }
             }
-            const previewMargin = localStorage.getItem("previewMargin") || "40";
+            const previewMargin = localStorage.getItem("previewMargin") || "10";
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
 
             document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
@@ -7137,7 +7153,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             
             // Extract distinct chords for display
-            const distinctChords = extractDistinctChords(song.lyrics, transposeLevel);
+            const distinctChords = extractDistinctChords(song.lyrics, transposeLevel, song.manualChords);
             const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
             
             // Build the preview HTML
@@ -7469,7 +7485,10 @@ window.viewSingleLyrics = function(songId, otherId) {
             document.getElementById('current-key').textContent = transposeLevel === 0 ? originalKey : transposeChord(originalKey, transposeLevel);
 
             // Update chords display with transposition
-            const distinctChords = extractDistinctChords(lyrics, transposeLevel);
+            const songId = songPreviewEl.dataset.songId;
+            const currentSong = songs.find(s => s.id == songId || s._id == songId);
+            const manualChords = currentSong ? currentSong.manualChords : '';
+            const distinctChords = extractDistinctChords(lyrics, transposeLevel, manualChords);
             const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
             const previewChordsElement = document.querySelector('.preview-meta-row .preview-meta-value[style*="margin-left"]');
             if (previewChordsElement) {
@@ -7488,9 +7507,7 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
     
         // Function to extract distinct chords from lyrics
-        function extractDistinctChords(lyrics, transposeLevel = 0) {
-            if (!lyrics) return [];
-            
+        function extractDistinctChords(lyrics, transposeLevel = 0, manualChords = '') {
             // Function to clean up chord names for display
             function cleanChordName(chord) {
                 // Remove 'maj' from chord names to make them more compact
@@ -7499,6 +7516,26 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             
             const chordSet = new Set();
+            
+            // If manual chords are provided (for manual entries), use those instead of parsing lyrics
+            if (manualChords && manualChords.trim()) {
+                const chordArray = manualChords.split(',').map(chord => {
+                    let cleanChord = chord.trim();
+                    if (cleanChord) {
+                        // Apply transpose if needed
+                        const finalChord = transposeLevel !== 0 ? transposeChord(cleanChord, transposeLevel) : cleanChord;
+                        // Clean up chord name for display (remove maj)
+                        return cleanChordName(finalChord);
+                    }
+                    return '';
+                }).filter(chord => chord.length > 0);
+                
+                return chordArray; // Return as array, already sorted as entered by user
+            }
+            
+            // Original logic for parsing lyrics
+            if (!lyrics) return [];
+            
             const lines = lyrics.split('\n');
             
             for (const line of lines) {

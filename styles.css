@@ -4173,6 +4173,14 @@ body.dark-mode .modal-content {
             display: block !important;
         }
 
+        .form-help {
+            font-size: 0.8rem;
+            color: var(--song-meta-color);
+            margin-top: 2px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
         .manual-song-details {
             display: flex;
             flex-direction: column;
