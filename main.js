@@ -2180,7 +2180,10 @@ async function performInitialization() {
             navigationHistory = [song.id];
             currentHistoryPosition = 0;
             history.replaceState({ songId: song.id, position: 0 }, '', `#song-${song.id}`);
-            showPreview(song, true);
+            // Determine context based on current view
+            const historyContext = currentSetlistType === 'global' ? 'global-setlist' : 
+                                 currentSetlistType === 'personal' ? 'user-setlist' : 'all-songs';
+            showPreview(song, true, historyContext);
         }
     }
     window.addEventListener('popstate', (event) => {
@@ -2194,7 +2197,10 @@ async function performInitialization() {
             const songId = navigationHistory[currentHistoryPosition];
             const song = songs.find(s => s.id === songId);
             if (song) {
-                showPreview(song, true);
+                // Determine context based on current view
+                const historyContext = currentSetlistType === 'global' ? 'global-setlist' : 
+                                     currentSetlistType === 'personal' ? 'user-setlist' : 'all-songs';
+                showPreview(song, true, historyContext);
             } else {
                 songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
             }
@@ -4083,8 +4089,8 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
 
         // Always populate both tabs (even if one is empty)
-        displaySetlistSongs(newSongs, NewSetlistSongs);
-        displaySetlistSongs(oldSongs, OldSetlistSongs);
+        displaySetlistSongs(newSongs, NewSetlistSongs, 'global-setlist');
+        displaySetlistSongs(oldSongs, OldSetlistSongs, 'global-setlist');
 
         // Add tab switching functionality
         NewSetlistTab.onclick = () => {
@@ -4204,8 +4210,8 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
 
         // Always populate both tabs (even if one is empty)
-        displaySetlistSongs(newSongs, NewSetlistSongs);
-        displaySetlistSongs(oldSongs, OldSetlistSongs);
+        displaySetlistSongs(newSongs, NewSetlistSongs, 'user-setlist');
+        displaySetlistSongs(oldSongs, OldSetlistSongs, 'user-setlist');
 
         // Add tab switching functionality
         NewSetlistTab.onclick = () => {
@@ -4231,7 +4237,7 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 
     // Function to display setlist songs in the new simplified UI
-    function displaySetlistSongs(songs, container) {
+    function displaySetlistSongs(songs, container, context = 'user-setlist') {
         container.innerHTML = '';
 
         // Resequence mode: enable drag-and-drop for all songs, hide remove buttons, show save button after drag
@@ -4314,7 +4320,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             songInfo.addEventListener('click', () => {
                 clearSetlistSelections();
                 li.classList.add('selected');
-                showPreview(song);
+                showPreview(song, false, context);
             });
 
             // Add click handler for remove button (if it exists)
@@ -6555,7 +6561,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 
                 // Main div click listener for preview
                 const divListener = () => {
-                    showPreview(song);
+                    showPreview(song, false, 'all-songs');
                     // Re-render songs to update active highlight
                     const activeTab = document.getElementById('NewTab').classList.contains('active') ? 'New' : 'Old';
                     renderSongs(activeTab, keyFilter.value, genreFilter.value);
@@ -6866,7 +6872,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 //         Genre Match: ${song.genreMatch}%
                 //     </div>
                 div.addEventListener('click', () => {
-                    showPreview(song);
+                    showPreview(song, false, 'all-songs');
                     closeSuggestedSongsDrawer();
                 });
                 suggestedSongsContent.appendChild(div);
@@ -6961,7 +6967,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                         openDeleteSongModal(song.id);
                     });
                     div.addEventListener('click', () => {
-                        showPreview(song);
+                        showPreview(song, false, 'all-songs');
                     });
                     deleteContent.appendChild(div);
                 });
@@ -7021,11 +7027,12 @@ window.viewSingleLyrics = function(songId, otherId) {
                         return;
                     }
                     
-                    // Check if we're in a global setlist and user is admin
-                    const isGlobalSetlist = currentSetlistType === 'global';
+                    // Get the opening context to determine where to save the transpose
+                    const openingContext = songPreviewEl.dataset.openingContext || 'all-songs';
                     const isAdmin = currentUser && currentUser.isAdmin;
                     
-                    if (isGlobalSetlist && !isAdmin) {
+                    // Only allow global setlist transpose saves for admins when song was opened from global setlist
+                    if (openingContext === 'global-setlist' && !isAdmin) {
                         showNotification('Only administrators can save transpose for global setlists');
                         return;
                     }
@@ -7036,7 +7043,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     
                     let saveSuccess = false;
                     
-                    if (isGlobalSetlist && isAdmin) {
+                    if (openingContext === 'global-setlist' && isAdmin) {
                         // Save transpose to global setlist
                         try {
                             const setlistId = currentViewingSetlist._id;
@@ -7118,7 +7125,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             setupAutoScroll();
         }
     
-        async function showPreview(song, fromHistory = false) {
+        async function showPreview(song, fromHistory = false, openingContext = 'all-songs') {
             // Function to get display name for createdBy/updatedBy fields
             function getDisplayName(createdBy) {
                 // If it looks like a user ID (ObjectId format), try to get the firstName from currentUser
@@ -7160,6 +7167,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             songPreviewEl.dataset.songId = song.id;
             songPreviewEl.dataset.originalLyrics = song.lyrics;
             songPreviewEl.dataset.originalKey = song.key;
+            songPreviewEl.dataset.openingContext = openingContext;
 
             // Check if song is in current setlist and favorites
             const setlistDropdown = document.getElementById('setlistDropdown');
@@ -7172,12 +7180,12 @@ window.viewSingleLyrics = function(songId, otherId) {
             let userData = {};
             let localTranspose = {};
             
-            // Priority: Global setlist transpose > User transpose
-            if (currentSetlistType === 'global' && currentViewingSetlist && currentViewingSetlist.songTransposes && song.id in currentViewingSetlist.songTransposes) {
-                // Use global setlist transpose (admin-set)
+            // Context-based transpose logic based on where the song was opened from
+            if (openingContext === 'global-setlist' && currentViewingSetlist && currentViewingSetlist.songTransposes && song.id in currentViewingSetlist.songTransposes) {
+                // Song opened from global setlist - use global setlist transpose
                 transposeLevel = currentViewingSetlist.songTransposes[song.id] || 0;
-            } else {
-                // Use user's personal transpose
+            } else if (openingContext === 'user-setlist' || openingContext === 'all-songs') {
+                // Song opened from user setlist or all songs - use user's personal transpose
                 try {
                     localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
                 } catch (e) { localTranspose = {}; }
@@ -7210,6 +7218,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                             }
                         }
                     }
+                }
+            } else {
+                // Default case - use user's personal transpose
+                try {
+                    localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                    if (song.id && typeof localTranspose[song.id] === 'number') {
+                        transposeLevel = localTranspose[song.id];
+                    }
+                } catch (e) {
+                    transposeLevel = 0;
                 }
             }
             
@@ -8117,8 +8135,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                 try {
                     const currentLevel = parseInt(document.getElementById('transpose-level')?.textContent) || 0;
                     const currentSong = songs.find(song => song.id == songPreviewEl.dataset.songId);
+                    const preservedContext = songPreviewEl.dataset.openingContext || 'all-songs';
                     if (currentSong) {
-                        showPreview(currentSong);
+                        showPreview(currentSong, false, preservedContext);
                         updatePreviewWithTransposition(currentLevel);
                     }
                 } catch (e) {
@@ -8908,7 +8927,8 @@ window.viewSingleLyrics = function(songId, otherId) {
                                 console.log(`⏭️ Skipping render - song category (${updated.category}) doesn't match active tab (${activeTab})`);
                             }
                             if (songPreviewEl.dataset.songId == id) {
-                                showPreview(updated);
+                                const preservedContext = songPreviewEl.dataset.openingContext || 'all-songs';
+                                showPreview(updated, false, preservedContext);
                             }
                         } else if (updated && updated.message) {
                             // Backend returned only a message, not a song object
@@ -9065,7 +9085,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     resultItem.addEventListener('click', () => {
                         const foundSong = songs.find(s => s.id === song.id);
                         if (foundSong) {
-                            showPreview(foundSong);
+                            showPreview(foundSong, false, 'all-songs');
                             if (window.innerWidth <= 768) {
                                 document.querySelector('.songs-section').classList.add('hidden');
                                 document.querySelector('.sidebar').classList.add('hidden');
