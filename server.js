@@ -556,6 +556,45 @@ app.delete('/api/global-setlists/:id', authMiddleware, requireAdmin, async (req,
   }
 });
 
+// Save transpose for a song in global setlist (admin only)
+app.put('/api/global-setlists/:id/transpose', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { songId, transpose, newKey } = req.body;
+    
+    if (!songId || typeof transpose !== 'number') {
+      return res.status(400).json({ error: 'Song ID and transpose value are required' });
+    }
+    
+    // Initialize songTransposes if it doesn't exist, then set the transpose for this song
+    const result = await db.collection('GlobalSetlists').updateOne(
+      { _id: new (require('mongodb').ObjectId)(id) },
+      { 
+        $set: { 
+          [`songTransposes.${songId}`]: transpose,
+          updatedAt: new Date().toISOString(),
+          updatedBy: req.user.firstName || req.user.username
+        }
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Global setlist not found' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Transpose saved for global setlist',
+      songId,
+      transpose,
+      newKey
+    });
+  } catch (err) {
+    console.error('Error saving global setlist transpose:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // My Setlist endpoints (user specific)
 app.get('/api/my-setlists', authMiddleware, async (req, res) => {
   try {
