@@ -4249,13 +4249,39 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         songs.forEach((song, index) => {
             if (!song) return;
+            
+            // Extract chords for this song
+            let currentUserInFunction = null;
+            try {
+                currentUserInFunction = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            } catch (e) {
+                currentUserInFunction = {};
+            }
+            
+            let transposeLevel = 0;
+            
+            // Get transpose level from localStorage cache or userdata
+            try {
+                const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                if (song.id && typeof localTranspose[song.id] === 'number') {
+                    transposeLevel = localTranspose[song.id];
+                } else if (window.userData && window.userData.transpose && song.id in window.userData.transpose) {
+                    transposeLevel = window.userData.transpose[song.id] || 0;
+                }
+            } catch (e) {
+                transposeLevel = 0;
+            }
+            
+            const distinctChords = extractDistinctChords(song.lyrics, transposeLevel);
+            const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
+            
             const li = document.createElement('li');
             li.className = 'setlist-song-item';
             li.dataset.songId = song.id;
             // Enable drag-and-drop for all songs in resequence mode
             if (isResequenceMode) {
                 li.setAttribute('draggable', 'true');
-            } else if (currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) {
+            } else if (currentSetlistType !== 'global' || (currentUserInFunction && currentUserInFunction.isAdmin)) {
                 li.setAttribute('draggable', 'true');
             }
             li.innerHTML = `
@@ -4264,14 +4290,17 @@ window.viewSingleLyrics = function(songId, otherId) {
                     <div class="setlist-song-details">
                         <div class="setlist-song-title">${song.title}</div>
                         <div class="setlist-song-meta-row">
-                            ${song.key ? `<div class="setlist-song-key"> ${song.key}</div>` : ''}
+                            ${song.key ? `<div class="setlist-song-key"> ${transposeLevel !== 0 ? transposeChord(song.key, transposeLevel) : song.key}</div>` : ''}
                             ${(song.time || song.timeSignature) ? `<span class="setlist-song-key-time">${song.time || song.timeSignature}</span>` : ''}
                             ${song.tempo ? `<span class="setlist-song-key-tempo">${song.tempo} </span>` : ''}
                         </div>
+                        ${chordsDisplay ? `<div class="setlist-song-meta-row" style="margin-top: 4px;">
+                            <span class="setlist-song-key-tempo">${chordsDisplay}</span>
+                        </div>` : ''}
                     </div>
                 </div>
                 <div class="setlist-song-actions">
-                    ${!isResequenceMode && (currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? `<button class="remove-from-setlist-btn" data-song-id="${song._id || song.id}" title="Remove from setlist" type="button">×</button>` : ''}
+                    ${!isResequenceMode && (currentSetlistType !== 'global' || (currentUserInFunction && currentUserInFunction.isAdmin)) ? `<button class="remove-from-setlist-btn" data-song-id="${song._id || song.id}" title="Remove from setlist" type="button">×</button>` : ''}
                 </div>`;
 
             // Add click handler for song info (not the remove button)
@@ -7009,6 +7038,11 @@ window.viewSingleLyrics = function(songId, otherId) {
                     } catch (e) { localTranspose = {}; }
                     localTranspose[song.id] = level;
                     localStorage.setItem('transposeCache', JSON.stringify(localTranspose));
+                    
+                    // Refresh setlist display to show updated chords
+                    if (typeof refreshSetlistDisplay === 'function') {
+                        refreshSetlistDisplay();
+                    }
                 });
             }
             // Setup auto-scroll if needed
@@ -7101,6 +7135,11 @@ window.viewSingleLyrics = function(songId, otherId) {
                     }
                 }
             }
+            
+            // Extract distinct chords for display
+            const distinctChords = extractDistinctChords(song.lyrics, transposeLevel);
+            const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
+            
             // Build the preview HTML
             songPreviewEl.innerHTML = `
 <div class="song-preview-container">
@@ -7114,6 +7153,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 <div class="preview-meta-row">
                     <span class="preview-meta-label">Key:</span>
                     <span class="preview-meta-value preview-key" id="current-key">${song.key}</span>
+                    ${chordsDisplay ? `<span class="preview-meta-value" style="margin-left: 8px;">Chords: ${chordsDisplay}</span>` : ''}
                 </div>
                 ${song.tempo ? `
                 <div class="preview-meta-row">
@@ -7428,12 +7468,99 @@ window.viewSingleLyrics = function(songId, otherId) {
             const originalKey = songPreviewEl.dataset.originalKey;
             document.getElementById('current-key').textContent = transposeLevel === 0 ? originalKey : transposeChord(originalKey, transposeLevel);
 
+            // Update chords display with transposition
+            const distinctChords = extractDistinctChords(lyrics, transposeLevel);
+            const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
+            const previewChordsElement = document.querySelector('.preview-meta-row .preview-meta-value[style*="margin-left"]');
+            if (previewChordsElement) {
+                if (chordsDisplay) {
+                    previewChordsElement.innerHTML = `Chords: ${chordsDisplay}`;
+                    previewChordsElement.style.display = 'inline';
+                } else {
+                    previewChordsElement.style.display = 'none';
+                }
+            }
+
             const lyricsContainer = document.querySelector('.song-lyrics');
             if (lyricsContainer) {
                 lyricsContainer.innerHTML = formatLyricsWithChords(lyrics, transposeLevel);
             }
         }
     
+        // Function to extract distinct chords from lyrics
+        function extractDistinctChords(lyrics, transposeLevel = 0) {
+            if (!lyrics) return [];
+            
+            // Function to clean up chord names for display
+            function cleanChordName(chord) {
+                // Remove 'maj' from chord names to make them more compact
+                // Fmaj7 -> F7, Bbmaj7 -> Bb7, Cmaj -> C
+                return chord.replace(/maj(?=\d)|maj$/g, '');
+            }
+            
+            const chordSet = new Set();
+            const lines = lyrics.split('\n');
+            
+            for (const line of lines) {
+                // Check for chord lines (entire line is chords)
+                if (isChordLine(line)) {
+                    const chords = line.match(CHORD_REGEX);
+                    if (chords) {
+                        chords.forEach(chord => {
+                            const cleanChord = chord.trim();
+                            if (cleanChord) {
+                                // Apply transpose if needed
+                                const finalChord = transposeLevel !== 0 ? transposeChord(cleanChord, transposeLevel) : cleanChord;
+                                // Clean up chord name for display
+                                const displayChord = cleanChordName(finalChord);
+                                chordSet.add(displayChord);
+                            }
+                        });
+                    }
+                }
+                
+                // Check for inline chords [chord] or (chord)
+                if (hasInlineChords(line)) {
+                    const inlineChords = line.match(INLINE_CHORD_REGEX);
+                    if (inlineChords) {
+                        inlineChords.forEach(match => {
+                            const chord = match.replace(/[\[\]()]/g, '').trim();
+                            if (chord) {
+                                // Apply transpose if needed
+                                const finalChord = transposeLevel !== 0 ? transposeChord(chord, transposeLevel) : chord;
+                                // Clean up chord name for display
+                                const displayChord = cleanChordName(finalChord);
+                                chordSet.add(displayChord);
+                            }
+                        });
+                    }
+                }
+            }
+            
+            // Convert Set to Array and sort
+            return Array.from(chordSet).sort((a, b) => {
+                // Custom sort to prioritize root notes, then by chord complexity
+                const getRootNote = (chord) => {
+                    const match = chord.match(/^([A-G][#b]?)/);
+                    return match ? match[1] : chord;
+                };
+                
+                const rootA = getRootNote(a);
+                const rootB = getRootNote(b);
+                
+                if (rootA !== rootB) {
+                    // Sort by chromatic order
+                    const chromaticOrder = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
+                    const indexA = chromaticOrder.indexOf(rootA);
+                    const indexB = chromaticOrder.indexOf(rootB);
+                    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+                }
+                
+                // Same root note, sort by chord complexity (simpler first)
+                return a.length - b.length;
+            });
+        }
+
         function setupAutoScroll() {
             isUserScrolling = false;
             songPreviewEl.scrollTop = 0;
