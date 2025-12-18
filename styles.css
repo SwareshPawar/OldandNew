@@ -216,10 +216,7 @@
         overscroll-behavior-y: contain;
         }
 
-        /* Visual feedback during swipe */
-        body:active .song-lyrics {
-        background-color: var(--swipe-feedback);
-        }
+
 
 
 
@@ -1140,7 +1137,7 @@
     --spinner-active: var(--primary-color);
     --loading-text: #ffd700;
     --loading-overlay: rgba(0,0,0,0.4);
-    --swipe-feedback: rgba(0,0,0,0.02);
+
     
     /* Notification & Modal Colors */
     --notification-bg: rgba(62, 63, 41, 0.9);
@@ -1230,7 +1227,7 @@
                 --spinner-active: #BCA88D;
                 --loading-text: #ffd700;
                 --loading-overlay: rgba(0,0,0,0.6);
-                --swipe-feedback: rgba(0,0,0,0.05);
+
                 
                 /* Notification & Modal Colors */
                 --notification-bg: rgba(35, 35, 26, 0.9);

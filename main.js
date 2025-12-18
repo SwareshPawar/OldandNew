@@ -7344,9 +7344,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         </div>
         
         <div class="song-lyrics" id="preview-lyrics-container">Loading lyrics...</div>
-        <!-- Add these new swipe indicators -->
-        <div class="swipe-indicator prev">←</div>
-        <div class="swipe-indicator next">→</div>
     </div>
 </div>
 `;
