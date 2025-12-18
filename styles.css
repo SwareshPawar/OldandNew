@@ -856,6 +856,19 @@
             margin-bottom: -1px;
         }
 
+        /* Song Structure Tags (Verse, Chorus, Bridge, etc.) */
+        .song-structure-tag {
+            border-bottom: 2px solid var(--chord-color);
+            text-align: center;
+        }
+
+        .song-structure-tag strong {
+            color: var(--chord-color);
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         /* Mobile Responsive Adjustments */
         @media (max-width: 480px) {
             .song-preview-title {
@@ -1155,7 +1168,7 @@
     --lyrics-bg-color: #F1F0E4;
     --lyrics-text-color: #3E3F29;
     --title-color: #3E3F29;
-    --chord-color: #7D8D86;
+    --chord-color: #64756e;
     
     /* Input & Form Colors */
     --input-bg: #F1F0E4;
@@ -1281,6 +1294,15 @@
             color: #cbd5e0;
             --song-meta-color: #ECE6D6; /* Light gray-blue for dark mode */
             --chord-color: var(--accent-color);
+        }
+
+        /* Dark mode song structure tags */
+        body.dark-mode .song-structure-tag {
+            border-bottom-color: var(--accent-color);
+        }
+
+        body.dark-mode .song-structure-tag strong {
+            color: var(--accent-color);
         }
 
         /* Dark mode chord styles */

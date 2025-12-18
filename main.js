@@ -7449,11 +7449,20 @@ window.viewSingleLyrics = function(songId, otherId) {
             const lines = lyrics.split('\n');
             let output = [];
     
+            // Regex to detect song structure tags (case insensitive)
+            const STRUCTURE_TAG_REGEX = /^\s*[\[\(]?\s*(verse|chorus|bridge|pre-chorus|prechorus|intro|outro|interlude|solo|refrain|tag|coda|instrumental|break|hook|breakdown|drop|build)\s*[\d\w]*\s*[\]\)]?\s*:?\s*$/i;
+    
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
     
                 if (line.trim() === '') {
                     output.push(`<div class="lyric-line">${line}</div>`);
+                    continue;
+                }
+    
+                // Check for song structure tags first
+                if (STRUCTURE_TAG_REGEX.test(line.trim())) {
+                    output.push(`<div class="lyric-line song-structure-tag"><strong>${line.trim()}</strong></div>`);
                     continue;
                 }
     
