@@ -7686,13 +7686,24 @@ window.viewSingleLyrics = function(songId, otherId) {
         function setupAutoScroll() {
             isUserScrolling = false;
             songPreviewEl.scrollTop = 0;
+            
+            // Preserve auto-scroll state when changing songs
+            const wasAutoScrollActive = autoScrollInterval !== null;
+            
             if (autoScrollInterval) {
                 clearInterval(autoScrollInterval);
                 autoScrollInterval = null;
             }
-            if (toggleAutoScrollBtn) {
+            
+            // Only reset button state if auto-scroll was not previously active
+            if (!wasAutoScrollActive && toggleAutoScrollBtn) {
                 toggleAutoScrollBtn.innerHTML = '<i class="fas fa-play"></i>';
                 toggleAutoScrollBtn.classList.remove('active');
+            } else if (wasAutoScrollActive) {
+                // Restart auto-scroll if it was previously active
+                setTimeout(() => {
+                    startAutoScroll('down');
+                }, 100); // Small delay to allow the new song content to load
             }
         }
     
