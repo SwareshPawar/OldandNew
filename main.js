@@ -7068,6 +7068,28 @@ window.viewSingleLyrics = function(songId, otherId) {
                                     currentViewingSetlist.songTransposes = { [song.id]: level };
                                 }
                                 
+                                // Update the cached global setlists data so other admins see the change
+                                if (window.dataCache['global-setlists'] && Array.isArray(window.dataCache['global-setlists'])) {
+                                    const cachedSetlist = window.dataCache['global-setlists'].find(s => s._id === currentViewingSetlist._id);
+                                    if (cachedSetlist) {
+                                        if (!cachedSetlist.songTransposes) {
+                                            cachedSetlist.songTransposes = {};
+                                        }
+                                        cachedSetlist.songTransposes[song.id] = level;
+                                    }
+                                }
+                                
+                                // Also update the globalSetlists array
+                                if (Array.isArray(globalSetlists)) {
+                                    const setlistInArray = globalSetlists.find(s => s._id === currentViewingSetlist._id);
+                                    if (setlistInArray) {
+                                        if (!setlistInArray.songTransposes) {
+                                            setlistInArray.songTransposes = {};
+                                        }
+                                        setlistInArray.songTransposes[song.id] = level;
+                                    }
+                                }
+                                
                                 saveSuccess = true;
                             } else {
                                 showNotification('Failed to save global transpose');
