@@ -853,6 +853,15 @@
             margin-bottom: -1px;
         }
 
+        /* Lyric Line Styles - Fix for preserving newlines */
+        .lyric-line {
+            white-space: pre-wrap;
+            line-height: 1.4;
+            margin: 0;
+            display: block;
+            min-height: 1.4em; /* Ensures empty lines have proper height */
+        }
+
         /* Song Structure Tags (Verse, Chorus, Bridge, etc.) */
         .song-structure-tag {
             border-bottom: 2px solid var(--chord-color);

@@ -7475,7 +7475,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 const line = lines[i];
     
                 if (line.trim() === '') {
-                    output.push(`<div class="lyric-line">${line}</div>`);
+                    output.push(`<div class="lyric-line">&nbsp;</div>`);
                     continue;
                 }
     
