@@ -6894,7 +6894,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             const previewMargin = localStorage.getItem("previewMargin") || "10";
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
-            const toggleButtonsVisibility = localStorage.getItem("toggleButtonsVisibility") || "show";
+            const toggleButtonsVisibility = localStorage.getItem("toggleButtonsVisibility") || "hide";
 
             document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
@@ -7013,89 +7013,98 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         // Mobile touch navigation enhancements
         function addMobileTouchNavigation() {
-            if (window.innerWidth > 768) return; // Only for mobile
-
             const sidebar = document.querySelector('.sidebar');
             const songsSection = document.querySelector('.songs-section');
             
-            // Touch gesture variables
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let touchEndX = 0;
-            let touchEndY = 0;
-            
-            // Minimum swipe distance and maximum vertical movement for horizontal swipes
-            const minSwipeDistance = 50;
-            const maxVerticalMovement = 100;
-            
-            // Add touch event listeners for swipe gestures
-            document.addEventListener('touchstart', (e) => {
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
-            }, { passive: true });
-            
-            document.addEventListener('touchend', (e) => {
-                touchEndX = e.changedTouches[0].screenX;
-                touchEndY = e.changedTouches[0].screenY;
+            // Only add touch gestures for mobile screens
+            if (window.innerWidth <= 768) {
+                // Touch gesture variables
+                let touchStartX = 0;
+                let touchStartY = 0;
+                let touchEndX = 0;
+                let touchEndY = 0;
                 
-                const deltaX = touchEndX - touchStartX;
-                const deltaY = Math.abs(touchEndY - touchStartY);
+                // Minimum swipe distance and maximum vertical movement for horizontal swipes
+                const minSwipeDistance = 50;
+                const maxVerticalMovement = 100;
                 
-                // Only process horizontal swipes (not vertical scrolls)
-                if (Math.abs(deltaX) >= minSwipeDistance && deltaY <= maxVerticalMovement) {
-                    handleSwipeGesture(deltaX, touchStartX);
-                }
-            }, { passive: true });
-            
-            function handleSwipeGesture(deltaX, startX) {
-                const screenWidth = window.innerWidth;
-                const edgeThreshold = screenWidth * 0.15; // 15% from edge
+                // Add touch event listeners for swipe gestures
+                document.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
                 
-                // Swipe from left edge to right (show sidebar)
-                if (deltaX > 0 && startX <= edgeThreshold) {
-                    sidebar.classList.remove('hidden');
-                    songsSection.classList.add('hidden');
-                    updatePositions();
-                }
-                // Swipe from right edge to left (show songs)
-                else if (deltaX < 0 && startX >= (screenWidth - edgeThreshold)) {
-                    songsSection.classList.remove('hidden');
-                    sidebar.classList.add('hidden');
-                    updatePositions();
-                }
-                // Swipe left anywhere to hide current panel
-                else if (deltaX < 0 && Math.abs(deltaX) > minSwipeDistance) {
-                    if (!sidebar.classList.contains('hidden')) {
-                        sidebar.classList.add('hidden');
-                        updatePositions();
-                    } else if (!songsSection.classList.contains('hidden')) {
+                document.addEventListener('touchend', (e) => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    touchEndY = e.changedTouches[0].screenY;
+                    
+                    const deltaX = touchEndX - touchStartX;
+                    const deltaY = Math.abs(touchEndY - touchStartY);
+                    
+                    // Only process horizontal swipes (not vertical scrolls)
+                    if (Math.abs(deltaX) >= minSwipeDistance && deltaY <= maxVerticalMovement) {
+                        handleSwipeGesture(deltaX, touchStartX);
+                    }
+                }, { passive: true });
+                
+                function handleSwipeGesture(deltaX, startX) {
+                    const screenWidth = window.innerWidth;
+                    const edgeThreshold = screenWidth * 0.15; // 15% from edge
+                    
+                    // Swipe from left edge to right (show sidebar)
+                    if (deltaX > 0 && startX <= edgeThreshold) {
+                        sidebar.classList.remove('hidden');
                         songsSection.classList.add('hidden');
                         updatePositions();
+                    }
+                    // Swipe from right edge to left (show songs)
+                    else if (deltaX < 0 && startX >= (screenWidth - edgeThreshold)) {
+                        songsSection.classList.remove('hidden');
+                        sidebar.classList.add('hidden');
+                        updatePositions();
+                    }
+                    // Swipe left anywhere to hide current panel
+                    else if (deltaX < 0 && Math.abs(deltaX) > minSwipeDistance) {
+                        if (!sidebar.classList.contains('hidden')) {
+                            sidebar.classList.add('hidden');
+                            updatePositions();
+                        } else if (!songsSection.classList.contains('hidden')) {
+                            songsSection.classList.add('hidden');
+                            updatePositions();
+                        }
                     }
                 }
             }
             
-            // Create mobile navigation buttons
+            // Create mobile navigation buttons (now shown on all screen sizes)
             createMobileNavButtons();
         }
         
         function createMobileNavButtons() {
-            // Remove existing mobile nav buttons if they exist
-            document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.remove());
+            // Remove existing mobile nav container if it exists
+            const existingContainer = document.querySelector('.mobile-nav-container');
+            if (existingContainer) {
+                existingContainer.remove();
+            }
             
             // Create mobile navigation container
             const mobileNavContainer = document.createElement('div');
             mobileNavContainer.className = 'mobile-nav-container';
+            
+            // Conditionally include the 'Toggle Both Panels' button based on screen size
+            const isMobile = window.innerWidth <= 768;
+            const bothPanelsButton = isMobile ? '' : `
+                <button class="mobile-nav-btn mobile-nav-both" title="Toggle Both Panels">
+                    <i class="fas fa-eye"></i>
+                </button>`;
+            
             mobileNavContainer.innerHTML = `
                 <button class="mobile-nav-btn mobile-nav-sidebar" title="Toggle Sidebar">
                     <i class="fas fa-home"></i>
                 </button>
                 <button class="mobile-nav-btn mobile-nav-songs" title="Toggle Songs">
                     <i class="fas fa-list"></i>
-                </button>
-                <button class="mobile-nav-btn mobile-nav-both" title="Toggle Both Panels">
-                    <i class="fas fa-eye"></i>
-                </button>
+                </button>${bothPanelsButton}
             `;
             
             document.body.appendChild(mobileNavContainer);
@@ -7122,25 +7131,30 @@ window.viewSingleLyrics = function(songId, otherId) {
                 updatePositions();
             });
             
-            document.querySelector('.mobile-nav-both').addEventListener('click', (e) => {
-                e.stopPropagation();
-                const areBothHidden = sidebar.classList.contains('hidden') && songsSection.classList.contains('hidden');
-                sidebar.classList.toggle('hidden', !areBothHidden);
-                songsSection.classList.toggle('hidden', !areBothHidden);
-                document.querySelector('.mobile-nav-both i').className = areBothHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
-                updatePositions();
-            });
+            // Only add event listener for 'Toggle Both Panels' if the button exists
+            const toggleBothBtn = document.querySelector('.mobile-nav-both');
+            if (toggleBothBtn) {
+                toggleBothBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const areBothHidden = sidebar.classList.contains('hidden') && songsSection.classList.contains('hidden');
+                    sidebar.classList.toggle('hidden', !areBothHidden);
+                    songsSection.classList.toggle('hidden', !areBothHidden);
+                    document.querySelector('.mobile-nav-both i').className = areBothHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+                    updatePositions();
+                });
+            }
         }
         
-        // Handle mobile navigation on resize
+        // Handle mobile navigation on resize - recreate buttons to show/hide toggle-both button
         window.addEventListener('resize', () => {
-            if (window.innerWidth <= 768) {
-                addMobileTouchNavigation();
-            } else {
-                // Remove mobile nav buttons on desktop
-                document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.remove());
+            // Remove existing buttons and recreate them
+            const existingContainer = document.querySelector('.mobile-nav-container');
+            if (existingContainer) {
+                existingContainer.remove();
             }
+            createMobileNavButtons();
         });
+
     
         function updatePositions() {
             if (window.innerWidth > 768) {
