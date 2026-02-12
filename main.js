@@ -2168,6 +2168,12 @@ async function performInitialization() {
     loadSettings();
     addEventListeners();
     addPanelToggles();
+    
+    // Initialize mobile navigation on supported devices
+    if (window.innerWidth <= 768) {
+        addMobileTouchNavigation();
+    }
+    
     renderSongs('New', '', '', '', '');
     applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
     // connectWebSocket(); // Removed - not needed and may cause delays
@@ -4030,6 +4036,29 @@ window.viewSingleLyrics = function(songId, otherId) {
         if (setlistSectionActions) {
             setlistSectionActions.style.display = 'flex';
             
+            // Rebuild actions with back button + original buttons
+            setlistSectionActions.innerHTML = `
+                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist - Modify setlist name, description and song selection" aria-label="Edit Setlist">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button id="deleteSetlistSectionBtn" class="btn btn-danger setlist-action-btn" title="Delete Setlist - Permanently remove this setlist" aria-label="Delete Setlist">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button id="resequenceSetlistSectionBtn" class="btn btn-primary setlist-action-btn" title="Resequence Songs - Drag and drop to reorder songs in setlist" aria-label="Resequence Setlist">
+                    <i class="fas fa-random"></i>
+                </button>
+                <button id="saveSetlistSequenceBtn" class="btn btn-success setlist-action-btn" style="display:none;" title="Save New Sequence - Confirm the new song order" aria-label="Save Sequence">
+                    <i class="fas fa-save"></i> Save Sequence
+                </button>
+            `;
+            
+            // Re-get button references after rebuilding HTML
+            const editSetlistSectionBtn = document.getElementById('editSetlistSectionBtn');
+            const deleteSetlistSectionBtn = document.getElementById('deleteSetlistSectionBtn');
+            
             // Update button appearance based on permissions
             const canEdit = currentUser?.isAdmin;
             if (editSetlistSectionBtn && deleteSetlistSectionBtn) {
@@ -4158,6 +4187,11 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Show action buttons when setlist is loaded
         if (setlistSectionActions) {
             setlistSectionActions.style.display = 'flex';
+            
+            // Add back button to the existing actions
+            const backButtonHtml = `<button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu"><i class="fas fa-arrow-left"></i></button>`;
+            const existingButtons = setlistSectionActions.innerHTML;
+            // Check if back button already exists to prevent duplicates\n            if (!existingButtons.includes('fa-arrow-left')) {\n                setlistSectionActions.innerHTML = backButtonHtml + existingButtons;\n            }
             
             // Users can always edit their own setlists, so show full opacity
             if (editSetlistSectionBtn && deleteSetlistSectionBtn) {
@@ -5922,16 +5956,18 @@ window.viewSingleLyrics = function(songId, otherId) {
             const li = document.createElement('li');
             li.innerHTML = `
                 <div class="setlist-item" data-setlist-id="${smartSetlist.id || smartSetlist._id}" data-type="smart">
-                    <i class="fas fa-brain"></i>
-                    <span>${smartSetlist.name} (${smartSetlist.songs ? smartSetlist.songs.length : 0})</span>
-                    <div class="setlist-actions" style="display: ${isAdmin() ? 'flex' : 'none'};">
+                    <div class="smart-setlist-header">
+                        <i class="fas fa-brain"></i>
+                        <span>${smartSetlist.name}</span>
+                    </div>
+                    <div class="smart-setlist-actions" style="display: ${isAdmin() ? 'flex' : 'none'};">
+                        <button class="setlist-action-btn smart-refresh-btn" title="Update Setlist - Rescan and save with current conditions">
+                            <i class="fas fa-sync"></i>
+                        </button>
                         <button class="setlist-action-btn edit-smart-setlist" title="Edit Smart Setlist">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="setlist-action-btn update-smart-setlist" title="Update Setlist - Rescan and save with current conditions">
-                            <i class="fas fa-sync"></i>
-                        </button>
-                        <button class="setlist-action-btn delete-smart-setlist" title="Delete Smart Setlist">
+                        <button class="setlist-action-btn delete-smart-setlist delete-setlist" title="Delete Smart Setlist">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -5974,7 +6010,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 e.stopPropagation();
                 editSmartSetlist(setlistId);
             });
-            item.querySelector('.update-smart-setlist')?.addEventListener('click', (e) => {
+            item.querySelector('.smart-refresh-btn')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 updateSmartSetlist(setlistId);
             });
@@ -6036,13 +6072,51 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Update setlist header
         const setlistHeader = document.getElementById('setlistViewHeader');
         if (setlistHeader) {
-            setlistHeader.innerHTML = `Smart Setlist: ${smartSetlist.name} <button onclick="restoreNormalView()" style="margin-left:15px;background:#007bff;border:1px solid #007bff;border-radius:4px;padding:4px 8px;color:white;font-size:12px;cursor:pointer;" title="Back to All Songs">← Back to All Songs</button>`;
+            setlistHeader.textContent = `Smart Setlist: ${smartSetlist.name}`;
         }
         
-        // Hide setlist action buttons for smart setlists (they're read-only views)
+        // Show setlist action buttons for Smart setlists
         const setlistSectionActions = document.getElementById('setlistSectionActions');
         if (setlistSectionActions) {
-            setlistSectionActions.style.display = 'none';
+            setlistSectionActions.style.display = 'flex';
+            setlistSectionActions.innerHTML = `
+                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                ${isAdmin() ? `
+                    <button class="btn btn-primary setlist-action-btn smart-refresh-btn-header" title="Update Setlist - Rescan and save with current conditions" aria-label="Update Smart Setlist">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                    <button class="btn btn-secondary setlist-action-btn edit-smart-setlist-header" title="Edit Smart Setlist" aria-label="Edit Smart Setlist">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger setlist-action-btn delete-smart-setlist-header delete-setlist" title="Delete Smart Setlist" aria-label="Delete Smart Setlist">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : ''}
+            `;
+            
+            // Add event listeners for header action buttons
+            if (isAdmin()) {
+                const refreshBtn = setlistSectionActions.querySelector('.smart-refresh-btn-header');
+                const editBtn = setlistSectionActions.querySelector('.edit-smart-setlist-header');
+                const deleteBtn = setlistSectionActions.querySelector('.delete-smart-setlist-header');
+                
+                refreshBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    updateSmartSetlist(smartSetlist.id || smartSetlist._id);
+                });
+                
+                editBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editSmartSetlist(smartSetlist.id || smartSetlist._id);
+                });
+                
+                deleteBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteSmartSetlist(smartSetlist.id || smartSetlist._id);
+                });
+            }
         }
         
         // Render songs by category - get full song data from main songs array by ID
@@ -6123,37 +6197,55 @@ window.viewSingleLyrics = function(songId, otherId) {
         showNotification(`Showing smart setlist: ${smartSetlist.name} (${smartSetlist.songs.length} songs)`);
     }
 
-    // Restore normal view from smart setlist
-    function restoreNormalView() {
-        // Clear smart setlist tracking
+    // Go back to sidebar menu
+    function goBackToSidebar() {
+        // Clear current setlist tracking
         currentViewingSetlist = null;
         currentSetlistType = null;
         
-        // Hide setlist section and show normal content
+        // Hide setlist section
         const setlistSection = document.getElementById('setlistSection');
-        const NewContent = document.getElementById('NewContent');
-        const OldContent = document.getElementById('OldContent');
-        
         if (setlistSection) setlistSection.style.display = 'none';
-        if (NewContent) {
-            NewContent.classList.add('active');
-            NewContent.style.display = 'block';
-        }
-        if (OldContent) {
-            OldContent.classList.remove('active');
-            OldContent.style.display = 'none';
-        }
         
-        // Restore original tab names and activate New tab
-        const newTab = document.getElementById('NewTab');
-        const oldTab = document.getElementById('OldTab');
-        if (newTab) {
-            newTab.innerHTML = '<i class="fas fa-music"></i> New';
-            newTab.classList.add('active');
-        }
-        if (oldTab) {
-            oldTab.innerHTML = '<i class="fas fa-music"></i> Old';
-            oldTab.classList.remove('active');
+        // Show sidebar and hide songs section on mobile
+        if (window.innerWidth <= 768) {
+            const sidebar = document.querySelector('.sidebar');
+            const songsSection = document.querySelector('.songs-section');
+            const previewSection = document.querySelector('.preview-section');
+            
+            if (sidebar) sidebar.classList.remove('hidden');
+            if (songsSection) songsSection.classList.add('hidden');
+            if (previewSection) previewSection.classList.add('full-width');
+        } else {
+            // On desktop, show normal view
+            const NewContent = document.getElementById('NewContent');
+            const OldContent = document.getElementById('OldContent');
+            
+            if (NewContent) {
+                NewContent.classList.add('active');
+                NewContent.style.display = 'block';
+            }
+            if (OldContent) {
+                OldContent.classList.remove('active');
+                OldContent.style.display = 'none';
+            }
+            
+            // Restore original tab names and activate New tab
+            const newTab = document.getElementById('NewTab');
+            const oldTab = document.getElementById('OldTab');
+            if (newTab) {
+                newTab.innerHTML = '<i class="fas fa-music"></i> New';
+                newTab.classList.add('active');
+            }
+            if (oldTab) {
+                oldTab.innerHTML = '<i class="fas fa-music"></i> Old';
+                oldTab.classList.remove('active');
+            }
+            
+            // Re-render normal songs
+            if (typeof renderSongs === 'function') {
+                renderSongs('New', '', '', '', '');
+            }
         }
         
         // Clear active setlist from sidebar
@@ -6161,12 +6253,15 @@ window.viewSingleLyrics = function(songId, otherId) {
         const showAllBtn = document.getElementById('showAll');
         if (showAllBtn) showAllBtn.classList.add('active');
         
-        // Re-render normal songs
-        if (typeof renderSongs === 'function') {
-            renderSongs('New', '', '', '', '');
-        }
-        
-        showNotification('Returned to all songs view');
+        showNotification('Returned to menu');
+    }
+
+    // Make goBackToSidebar globally accessible
+    window.goBackToSidebar = goBackToSidebar;
+
+    // Keep the old function for backwards compatibility
+    function restoreNormalView() {
+        goBackToSidebar();
     }
 
     // Make restoreNormalView globally accessible
@@ -6899,6 +6994,137 @@ window.viewSingleLyrics = function(songId, otherId) {
     
             window.addEventListener('resize', updatePositions);
         }
+
+        // Mobile touch navigation enhancements
+        function addMobileTouchNavigation() {
+            if (window.innerWidth > 768) return; // Only for mobile
+
+            const sidebar = document.querySelector('.sidebar');
+            const songsSection = document.querySelector('.songs-section');
+            
+            // Touch gesture variables
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchEndX = 0;
+            let touchEndY = 0;
+            
+            // Minimum swipe distance and maximum vertical movement for horizontal swipes
+            const minSwipeDistance = 50;
+            const maxVerticalMovement = 100;
+            
+            // Add touch event listeners for swipe gestures
+            document.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+            
+            document.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+                
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = Math.abs(touchEndY - touchStartY);
+                
+                // Only process horizontal swipes (not vertical scrolls)
+                if (Math.abs(deltaX) >= minSwipeDistance && deltaY <= maxVerticalMovement) {
+                    handleSwipeGesture(deltaX, touchStartX);
+                }
+            }, { passive: true });
+            
+            function handleSwipeGesture(deltaX, startX) {
+                const screenWidth = window.innerWidth;
+                const edgeThreshold = screenWidth * 0.15; // 15% from edge
+                
+                // Swipe from left edge to right (show sidebar)
+                if (deltaX > 0 && startX <= edgeThreshold) {
+                    sidebar.classList.remove('hidden');
+                    songsSection.classList.add('hidden');
+                    updatePositions();
+                }
+                // Swipe from right edge to left (show songs)
+                else if (deltaX < 0 && startX >= (screenWidth - edgeThreshold)) {
+                    songsSection.classList.remove('hidden');
+                    sidebar.classList.add('hidden');
+                    updatePositions();
+                }
+                // Swipe left anywhere to hide current panel
+                else if (deltaX < 0 && Math.abs(deltaX) > minSwipeDistance) {
+                    if (!sidebar.classList.contains('hidden')) {
+                        sidebar.classList.add('hidden');
+                        updatePositions();
+                    } else if (!songsSection.classList.contains('hidden')) {
+                        songsSection.classList.add('hidden');
+                        updatePositions();
+                    }
+                }
+            }
+            
+            // Create mobile navigation buttons
+            createMobileNavButtons();
+        }
+        
+        function createMobileNavButtons() {
+            // Remove existing mobile nav buttons if they exist
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.remove());
+            
+            // Create mobile navigation container
+            const mobileNavContainer = document.createElement('div');
+            mobileNavContainer.className = 'mobile-nav-container';
+            mobileNavContainer.innerHTML = `
+                <button class="mobile-nav-btn mobile-nav-sidebar" title="Toggle Sidebar">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button class="mobile-nav-btn mobile-nav-songs" title="Toggle Songs">
+                    <i class="fas fa-list"></i>
+                </button>
+                <button class="mobile-nav-btn mobile-nav-both" title="Toggle Both Panels">
+                    <i class="fas fa-eye"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(mobileNavContainer);
+            
+            // Add event listeners for mobile nav buttons
+            const sidebar = document.querySelector('.sidebar');
+            const songsSection = document.querySelector('.songs-section');
+            
+            document.querySelector('.mobile-nav-sidebar').addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('hidden');
+                if (!sidebar.classList.contains('hidden')) {
+                    songsSection.classList.add('hidden');
+                }
+                updatePositions();
+            });
+            
+            document.querySelector('.mobile-nav-songs').addEventListener('click', (e) => {
+                e.stopPropagation();
+                songsSection.classList.toggle('hidden');
+                if (!songsSection.classList.contains('hidden')) {
+                    sidebar.classList.add('hidden');
+                }
+                updatePositions();
+            });
+            
+            document.querySelector('.mobile-nav-both').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const areBothHidden = sidebar.classList.contains('hidden') && songsSection.classList.contains('hidden');
+                sidebar.classList.toggle('hidden', !areBothHidden);
+                songsSection.classList.toggle('hidden', !areBothHidden);
+                document.querySelector('.mobile-nav-both i').className = areBothHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+                updatePositions();
+            });
+        }
+        
+        // Handle mobile navigation on resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                addMobileTouchNavigation();
+            } else {
+                // Remove mobile nav buttons on desktop
+                document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.remove());
+            }
+        });
     
         function updatePositions() {
             if (window.innerWidth > 768) {

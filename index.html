@@ -326,6 +326,11 @@ async function saveRecommendationWeightsToBackend(weights) {
         <!-- Songs Panel -->
         <div class="songs-section hidden">
             <div class="sticky-header">
+                <div class="back-to-sidebar-container" style="margin-bottom: 10px;">
+                    <button onclick="goBackToSidebar()" class="sidebar-btn" title="Back to Menu" aria-label="Back to Menu">
+                        <i class="fas fa-arrow-left"></i> Back to Menu
+                    </button>
+                </div>
                 <div class="tabs">
                     <div class="setlist-tab active" id="NewTab" title="New Songs - Recently added songs and contemporary music" aria-label="New Songs Tab">New</div>
                     <div class="setlist-tab" id="OldTab" title="Old Songs - Classic and traditional songs" aria-label="Old Songs Tab">Old</div>
