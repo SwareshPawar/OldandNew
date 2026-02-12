@@ -19,6 +19,7 @@ let jwtToken = localStorage.getItem('jwtToken') || '';
 let currentUser = null;
 let isDarkMode = localStorage.getItem('darkMode') === 'true';
 let songs = []; // Global songs array
+let smartSetlists = []; // Global smart setlists array - loaded from server
 
 // Initialize currentUser from localStorage
 try {
@@ -5568,7 +5569,10 @@ window.viewSingleLyrics = function(songId, otherId) {
     
     // Load smart setlists from server
     async function loadSmartSetlistsFromServer() {
+        console.log('📋 Loading Smart Setlists from server...');
+        
         if (!currentUser) {
+            console.log('📋 No user logged in, clearing Smart Setlists');
             smartSetlists = [];
             return;
         }
@@ -5576,10 +5580,12 @@ window.viewSingleLyrics = function(songId, otherId) {
         try {
             const token = localStorage.getItem('jwtToken');
             if (!token) {
+                console.log('📋 No JWT token found, clearing Smart Setlists');
                 smartSetlists = [];
                 return;
             }
             
+            console.log('📋 Making request to /api/smart-setlists...');
             const response = await fetch('/api/smart-setlists', {
                 method: 'GET',
                 headers: {
@@ -5590,12 +5596,13 @@ window.viewSingleLyrics = function(songId, otherId) {
             
             if (response.ok) {
                 smartSetlists = await response.json();
+                console.log(`📋 Loaded ${smartSetlists.length} Smart Setlists from server:`, smartSetlists.map(s => s.name));
             } else {
-                console.warn('Failed to load smart setlists from server');
+                console.warn('📋 Failed to load smart setlists from server - HTTP', response.status);
                 smartSetlists = [];
             }
         } catch (error) {
-            console.error('Error loading smart setlists:', error);
+            console.error('📋 Error loading smart setlists from server:', error);
             smartSetlists = [];
         }
     }
@@ -5878,8 +5885,12 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Render smart setlists in sidebar
     function renderSmartSetlists() {
+        console.log(`📋 Rendering ${smartSetlists.length} Smart Setlists in sidebar`);
         const content = document.getElementById('smartSetlistContent');
-        if (!content) return;
+        if (!content) {
+            console.warn('📋 smartSetlistContent element not found');
+            return;
+        }
         
         content.innerHTML = '';
         
@@ -6130,6 +6141,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             
             if (response.ok) {
                 const newSmartSetlist = await response.json();
+                console.log('📋 Smart Setlist created successfully on server:', newSmartSetlist.name);
                 smartSetlists.push(newSmartSetlist);
                 renderSmartSetlists();
                 showNotification(`Smart setlist "${newSmartSetlist.name}" created with ${smartSetlistScanResults.length} songs`);

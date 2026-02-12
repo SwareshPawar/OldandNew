@@ -1122,9 +1122,29 @@ app.get('/api/smart-setlists', authMiddleware, async (req, res) => {
   try {
     await connectToDatabase();
     const userId = req.user.id;
-    const smartSetlists = await db.collection('SmartSetlists').find({ 
+    const username = req.user.username;
+    console.log(`📋 Loading Smart Setlists for user ID: ${userId} (${username})`);
+    
+    // Try to find by user ID first, then by username as fallback for legacy data
+    let smartSetlists = await db.collection('SmartSetlists').find({ 
       createdBy: userId 
     }).sort({ createdAt: -1 }).toArray();
+    
+    console.log(`📋 Found ${smartSetlists.length} Smart Setlists by user ID`);
+    
+    // If no setlists found by user ID, try by username (for legacy compatibility)
+    if (smartSetlists.length === 0 && username) {
+      console.log(`📋 Trying fallback search by username: ${username}`);
+      smartSetlists = await db.collection('SmartSetlists').find({ 
+        createdBy: username 
+      }).sort({ createdAt: -1 }).toArray();
+      console.log(`📋 Found ${smartSetlists.length} Smart Setlists by username`);
+    }
+    
+    if (smartSetlists.length > 0) {
+      console.log('📋 Smart Setlist names:', smartSetlists.map(s => `"${s.name}" (createdBy: ${s.createdBy})`));
+    }
+    
     res.json(smartSetlists);
   } catch (err) {
     console.error('Error fetching smart setlists:', err);
@@ -1136,6 +1156,10 @@ app.post('/api/smart-setlists', authMiddleware, async (req, res) => {
   try {
     await connectToDatabase();
     const { name, description, conditions, songs } = req.body;
+    const userId = req.user.id;
+    
+    console.log(`📋 Creating Smart Setlist "${name}" for user ID: ${userId} (${req.user.username})`);
+    console.log(`📋 Smart Setlist will have ${songs ? songs.length : 0} songs`);
     
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Smart setlist name is required' });
@@ -1148,13 +1172,15 @@ app.post('/api/smart-setlists', authMiddleware, async (req, res) => {
       conditions: conditions || {},
       songs: songs || [],
       createdAt: new Date().toISOString(),
-      createdBy: req.user.id,
+      createdBy: userId, // Using user ID for consistency
       updatedAt: new Date().toISOString()
     };
 
+    console.log(`📋 Saving Smart Setlist with createdBy: ${smartSetlist.createdBy}`);
     const result = await db.collection('SmartSetlists').insertOne(smartSetlist);
     const insertedSetlist = await db.collection('SmartSetlists').findOne({ _id: result.insertedId });
     
+    console.log(`📋 Smart Setlist "${name}" created successfully with ID: ${insertedSetlist._id}`);
     res.status(201).json(insertedSetlist);
   } catch (err) {
     console.error('Error creating smart setlist:', err);
