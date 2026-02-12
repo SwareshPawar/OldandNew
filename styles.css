@@ -1503,12 +1503,12 @@ body.dark-mode #installAppBtn {
 
         .sidebar-menu {
             list-style: none;
-            padding: 5px;
+            padding: 3px;
             margin: 0;
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 5px;
         }
 
             .sidebar-menu li {
