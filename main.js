@@ -6894,6 +6894,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             const previewMargin = localStorage.getItem("previewMargin") || "10";
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
+            const toggleButtonsVisibility = localStorage.getItem("toggleButtonsVisibility") || "show";
 
             document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
@@ -6903,8 +6904,12 @@ window.viewSingleLyrics = function(songId, otherId) {
             document.getElementById('previewMarginInput').value = previewMargin;
             document.getElementById('autoScrollSpeedInput').value = savedAutoScrollSpeed;
             document.getElementById("sessionResetOption").value = sessionResetOption;
+            document.getElementById("toggleButtonsVisibility").value = toggleButtonsVisibility;
             
             autoScrollSpeed = parseInt(savedAutoScrollSpeed);
+            
+            // Apply toggle buttons visibility
+            applyToggleButtonsVisibility(toggleButtonsVisibility);
         }
     
             
@@ -6913,6 +6918,17 @@ window.viewSingleLyrics = function(songId, otherId) {
             if (!lyricsContainer) return;
             lyricsContainer.classList.remove("lyrics-bg-New", "lyrics-bg-Old");
             lyricsContainer.classList.add(isNew ? "lyrics-bg-New" : "lyrics-bg-Old");
+        }
+        
+        function applyToggleButtonsVisibility(visibility) {
+            const toggleButtons = document.querySelectorAll('.panel-toggle.draggable');
+            toggleButtons.forEach(button => {
+                if (visibility === 'hide') {
+                    button.style.display = 'none';
+                } else {
+                    button.style.display = 'block';
+                }
+            });
         }
     
         function addPanelToggles() {
@@ -9676,6 +9692,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             const previewMargin = document.getElementById("previewMarginInput").value;
             const newAutoScrollSpeed = document.getElementById("autoScrollSpeedInput").value;
             const sessionResetOption = document.getElementById("sessionResetOption").value;
+            const toggleButtonsVisibility = document.getElementById("toggleButtonsVisibility").value;
 
             document.querySelector(".sidebar-header h2").textContent = newHeader;
 
@@ -9690,7 +9707,11 @@ window.viewSingleLyrics = function(songId, otherId) {
             localStorage.setItem("previewMargin", previewMargin);
             localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
             localStorage.setItem("sessionResetOption", sessionResetOption);
+            localStorage.setItem("toggleButtonsVisibility", toggleButtonsVisibility);
             autoScrollSpeed = parseInt(newAutoScrollSpeed);
+            
+            // Apply toggle buttons visibility
+            applyToggleButtonsVisibility(toggleButtonsVisibility);
         }
     
         function addEventListeners() {
