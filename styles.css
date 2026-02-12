@@ -3915,6 +3915,36 @@ body.dark-mode #installAppBtn {
                 right: 3px;
                 font-size: 11px;
             }
+
+            /* Mobile styles for setlist folder content */
+            .setlist-folder-content {
+                max-height: 300px; /* Increase height for mobile */
+                padding: 6px 0 6px 12px;
+                margin: 8px 0 0 12px;
+                border-left: 2px solid var(--accent-color);
+            }
+
+            .setlist-folder-content li {
+                margin: 2px 0;
+            }
+
+            /* Ensure setlist items in folder content are properly sized */
+            .setlist-folder-content .setlist-item {
+                font-size: 0.8rem;
+                padding: 8px 32px 8px 8px;
+                min-height: 38px;
+            }
+
+            .setlist-folder-content .setlist-actions {
+                opacity: 0.9; /* More visible in mobile folders */
+            }
+
+            .setlist-folder-content .setlist-actions .setlist-action-btn {
+                padding: 3px 6px;
+                font-size: 0.7rem;
+                min-width: 16px;
+                height: 20px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -3938,6 +3968,26 @@ body.dark-mode #installAppBtn {
                 width: 16px;
                 height: 16px;
                 opacity: 0.8; /* Always slightly visible on small screens */
+            }
+
+            /* Extra small screens - optimize folder content */
+            .setlist-folder-content {
+                max-height: 250px;
+                padding: 4px 0 4px 10px;
+                margin: 6px 0 0 10px;
+            }
+
+            .setlist-folder-content .setlist-item {
+                font-size: 0.75rem;
+                padding: 6px 28px 6px 6px;
+                min-height: 34px;
+            }
+
+            .setlist-folder-content .setlist-actions .setlist-action-btn {
+                padding: 2px 4px;
+                font-size: 0.6rem;
+                min-width: 14px;
+                height: 18px;
             }
         }
 
@@ -5289,6 +5339,29 @@ body.dark-mode .modal-content {
         background-color: var(--sidebar-item-hover-bg) !important;
         transform: scale(0.98);
         transition: transform 0.1s ease;
+    }
+
+    /* Smart Setlist specific styling */
+    .setlist-item[data-type="smart"] .fa-brain {
+        color: #28a745; /* Green color for Smart Setlists */
+        margin-right: 8px;
+    }
+
+    /* Ensure consistent setlist item layout */
+    .setlist-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 35px 8px 8px; /* Right padding for actions */
+        min-height: 36px;
+    }
+
+    .setlist-item > span {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }
 

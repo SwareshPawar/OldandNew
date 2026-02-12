@@ -5920,20 +5920,21 @@ window.viewSingleLyrics = function(songId, otherId) {
         
         smartSetlists.forEach(smartSetlist => {
             const li = document.createElement('li');
-            li.className = 'setlist-item';
-            li.dataset.setlistId = smartSetlist.id || smartSetlist._id;
             li.innerHTML = `
-                <div class="setlist-name">${smartSetlist.name} (${smartSetlist.songs ? smartSetlist.songs.length : 0})</div>
-                <div class="setlist-actions" style="display: ${isAdmin() ? 'flex' : 'none'};">
-                    <button class="setlist-action-btn edit-smart-setlist" title="Edit Smart Setlist">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="setlist-action-btn update-smart-setlist" title="Update Setlist - Rescan and save with current conditions">
-                        <i class="fas fa-sync"></i>
-                    </button>
-                    <button class="setlist-action-btn delete-smart-setlist" title="Delete Smart Setlist">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div class="setlist-item" data-setlist-id="${smartSetlist.id || smartSetlist._id}" data-type="smart">
+                    <i class="fas fa-brain"></i>
+                    <span>${smartSetlist.name} (${smartSetlist.songs ? smartSetlist.songs.length : 0})</span>
+                    <div class="setlist-actions" style="display: ${isAdmin() ? 'flex' : 'none'};">
+                        <button class="setlist-action-btn edit-smart-setlist" title="Edit Smart Setlist">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="setlist-action-btn update-smart-setlist" title="Update Setlist - Rescan and save with current conditions">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                        <button class="setlist-action-btn delete-smart-setlist" title="Delete Smart Setlist">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `;
             content.appendChild(li);
@@ -6109,6 +6110,13 @@ window.viewSingleLyrics = function(songId, otherId) {
                 OldSetlistSongs.style.display = 'block';
                 NewSetlistSongs.style.display = 'none';
             };
+        }
+        
+        // Mobile view: show songs panel and hide sidebar
+        if (window.innerWidth <= 768) {
+            document.querySelector('.songs-section').classList.remove('hidden');
+            document.querySelector('.sidebar').classList.add('hidden');
+            document.querySelector('.preview-section').classList.remove('full-width');
         }
         
         // Show notification
