@@ -183,106 +183,105 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;" title="Sign out from your account" aria-label="Logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 <button id="adminPanelBtn" class="sidebar-btn" style="display:none;" title="Admin Panel - Manage users, recommendation weights, and detect duplicates" aria-label="Admin Panel"><i class="fas fa-cogs"></i> Admin Panel</button>
                 <li><a href="#" class="active" id="showAll" title="View all songs in the database - Browse New and Old categories">All Songs</a></li>
-                <li>
-                    <div class="setlist-selector">
-                        <div class="custom-setlist-dropdown" id="customSetlistDropdown">
-                            <div class="dropdown-main-area" id="dropdownMainArea">
-                                <span class="dropdown-text" id="dropdownText">Select a Setlist</span>
-                            </div>
-                            <div class="dropdown-arrow" id="dropdownArrow">
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                            <select id="setlistDropdown" style="display: none;">
-                                <option value="">Select a Setlist</option>
-                            </select>
-                            <div class="dropdown-menu" id="dropdownMenu" style="display: none;">
-                                <!-- Options will be populated dynamically -->
-                            </div>
-                        </div>
-                    </div>
-                </li>   
-                
-                <!-- Setlist Description Display -->
-                <div class="setlist-description-container" id="setlistDescriptionContainer" style="display: none;">
-                    <div class="setlist-description-content">
-                        <div class="setlist-description-text" id="setlistDescriptionText"></div>
-                    </div>
-                </div>
-                
                 <li><a href="#" id="showFavorites" title="View your favorite songs - Heart icon to add/remove favorites">Favorites</a></li>
+                
+                <!-- Setlists Section -->
+                <li class="setlists-section">
+                    <div class="setlists-container">
+                        <!-- Setlist Selector -->
+                        <div class="setlist-selector">
+                            <div class="custom-setlist-dropdown" id="customSetlistDropdown">
+                                <div class="dropdown-main-area" id="dropdownMainArea">
+                                    <span class="dropdown-text" id="dropdownText">Select a Setlist</span>
+                                </div>
+                                <div class="dropdown-arrow" id="dropdownArrow">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <select id="setlistDropdown" style="display: none;">
+                                    <option value="">Select a Setlist</option>
+                                </select>
+                                <div class="dropdown-menu" id="dropdownMenu" style="display: none;">
+                                    <!-- Options will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Setlist Description Display -->
+                        <div class="setlist-description-container" id="setlistDescriptionContainer" style="display: none;">
+                            <div class="setlist-description-content">
+                                <div class="setlist-description-text" id="setlistDescriptionText"></div>
+                            </div>
+                        </div>
+
+                        <!-- Global Setlists Section -->
+                        <div class="setlist-folder" style="margin-top:15px;">
+                            <div class="folder-header" id="globalSetlistHeader">
+                                <i class="fas fa-chevron-right folder-icon" id="globalSetlistIcon"></i>
+                                <i class="fas fa-globe"></i>
+                                <span>Global Setlists</span>
+                                <button id="addGlobalSetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Global Setlist - Admin only: Create setlists visible to all users" aria-label="Add Global Setlist">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <ul class="setlist-folder-content" id="globalSetlistContent" style="display:none;">
+                                <!-- Global setlists will be populated here -->
+                            </ul>
+                            
+                            <!-- Global Setlist Description -->
+                            <div class="setlist-description-container" id="globalSetlistDescriptionContainer" style="display: none;">
+                                <div class="setlist-description-content">
+                                    <div class="setlist-description-text" id="globalSetlistDescriptionText"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- My Setlists Section -->
+                        <div class="setlist-folder">
+                            <div class="folder-header" id="mySetlistHeader">
+                                <i class="fas fa-chevron-right folder-icon" id="mySetlistIcon"></i>
+                                <i class="fas fa-user"></i>
+                                <span>My Setlists</span>
+                                <button id="addMySetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Personal Setlist - Create your own private setlist collection" aria-label="Add My Setlist">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <ul class="setlist-folder-content" id="mySetlistContent" style="display:none;">
+                                <!-- My setlists will be populated here -->
+                            </ul>
+                            
+                            <!-- My Setlist Description -->
+                            <div class="setlist-description-container" id="mySetlistDescriptionContainer" style="display: none;">
+                                <div class="setlist-description-content">
+                                    <div class="setlist-description-text" id="mySetlistDescriptionText"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Smart Setlists Section -->
+                        <div class="setlist-folder">
+                            <div class="folder-header" id="smartSetlistHeader">
+                                <i class="fas fa-chevron-right folder-icon" id="smartSetlistIcon"></i>
+                                <i class="fas fa-magic"></i>
+                                <span>Smart Setlists</span>
+                                <button id="addSmartSetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Smart Setlist - Admin only: Create automatic playlists based on song criteria" aria-label="Add Smart Setlist">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <ul class="setlist-folder-content" id="smartSetlistContent" style="display:none;">
+                                <!-- Smart setlists will be populated here -->
+                            </ul>
+                            
+                            <!-- Smart Setlist Description -->
+                            <div class="setlist-description-container" id="smartSetlistDescriptionContainer" style="display: none;">
+                                <div class="setlist-description-content">
+                                    <div class="setlist-description-text" id="smartSetlistDescriptionText"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
                 <li><button id="addSongBelowFavoritesBtn" class="sidebar-btn" style="width:100%;margin-top:10px;" title="Add New Song - Create a new song entry with lyrics, key, tempo and other details" aria-label="Add New Song"><i class="fa fa-plus"></i> Add New Song</button></li>
-
-                <!-- Global Setlists Section -->
-                <li style="margin-top:15px;">
-                    <div class="setlist-folder">
-                        <div class="folder-header" id="globalSetlistHeader">
-                            <i class="fas fa-chevron-right folder-icon" id="globalSetlistIcon"></i>
-                            <i class="fas fa-globe"></i>
-                            <span>Global Setlists</span>
-                            <button id="addGlobalSetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Global Setlist - Admin only: Create setlists visible to all users" aria-label="Add Global Setlist">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <ul class="setlist-folder-content" id="globalSetlistContent" style="display:none;">
-                            <!-- Global setlists will be populated here -->
-                        </ul>
-                        
-                        <!-- Global Setlist Description -->
-                        <div class="setlist-description-container" id="globalSetlistDescriptionContainer" style="display: none;">
-                            <div class="setlist-description-content">
-                                <div class="setlist-description-text" id="globalSetlistDescriptionText"></div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-
-                <!-- My Setlists Section -->
-                <li>
-                    <div class="setlist-folder">
-                        <div class="folder-header" id="mySetlistHeader">
-                            <i class="fas fa-chevron-right folder-icon" id="mySetlistIcon"></i>
-                            <i class="fas fa-user"></i>
-                            <span>My Setlists</span>
-                            <button id="addMySetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Personal Setlist - Create your own private setlist collection" aria-label="Add My Setlist">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <ul class="setlist-folder-content" id="mySetlistContent" style="display:none;">
-                            <!-- My setlists will be populated here -->
-                        </ul>
-                        
-                        <!-- My Setlist Description -->
-                        <div class="setlist-description-container" id="mySetlistDescriptionContainer" style="display: none;">
-                            <div class="setlist-description-content">
-                                <div class="setlist-description-text" id="mySetlistDescriptionText"></div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-
-                <!-- Smart Setlists Section -->
-                <li>
-                    <div class="setlist-folder">
-                        <div class="folder-header" id="smartSetlistHeader">
-                            <i class="fas fa-chevron-right folder-icon" id="smartSetlistIcon"></i>
-                            <i class="fas fa-magic"></i>
-                            <span>Smart Setlists</span>
-                            <button id="addSmartSetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Smart Setlist - Admin only: Create automatic playlists based on song criteria" aria-label="Add Smart Setlist">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <ul class="setlist-folder-content" id="smartSetlistContent" style="display:none;">
-                            <!-- Smart setlists will be populated here -->
-                        </ul>
-                        
-                        <!-- Smart Setlist Description -->
-                        <div class="setlist-description-container" id="smartSetlistDescriptionContainer" style="display: none;">
-                            <div class="setlist-description-content">
-                                <div class="setlist-description-text" id="smartSetlistDescriptionText"></div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
 
             </ul>
             </ul>

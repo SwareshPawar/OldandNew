@@ -1606,6 +1606,45 @@ body.dark-mode #installAppBtn {
             font-weight: 500;
         }
 
+        /* Setlists Section Theme */
+        .setlists-section {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .setlists-container {
+            background: linear-gradient(145deg, var(--sidebar-item-bg), var(--sidebar-item-hover-bg));
+            border: 1px solid var(--song-item-border);
+            border-radius: 1px;
+            padding: 1px;
+            margin: 0 1px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .setlists-container:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+        }
+
+        .setlists-container .setlist-selector {
+            padding: 0 0 1px 0;
+            border-bottom: 1px solid var(--song-item-border);
+            margin-bottom: 1px;
+        }
+
+        .setlists-container .setlist-folder {
+            background: var(--sidebar-bg);
+            border-radius: 3px;
+            margin-bottom: 2px;
+            padding: 2px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .setlists-container .setlist-folder:hover {
+            background: var(--sidebar-item-hover-bg);
+        }
+
         /* Custom Dropdown Styles */
         .custom-setlist-dropdown {
             width: 100%;
