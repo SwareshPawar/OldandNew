@@ -579,8 +579,8 @@
         /* Responsive adjustments for metadata lines */
         @media (max-width: 480px) {
             .song-preview-metadata {
-                padding: 8px;
-                gap: 6px;
+                padding: 1px;
+                gap: 4px;
             }
             
             .preview-meta-line {
@@ -3150,7 +3150,7 @@ body.dark-mode #installAppBtn {
         /* Preview Section Styles */
         .preview-section {
             flex: 1;
-            padding: 15px;
+            padding: 5px;
             overflow-y: auto;
             margin-left: calc(var(--sidebar-width) + var(--songs-panel-width) + var(--preview-margin-left));
             transition: margin-left 0.3s ease;
@@ -4139,7 +4139,7 @@ body.dark-mode #installAppBtn {
             }
             
             .preview-section {
-                padding-bottom: 100px;
+                padding-bottom: 10px;
             }
         }
 
