@@ -5267,6 +5267,29 @@ body.dark-mode .modal-content {
         overflow-y: auto ;
         -webkit-overflow-scrolling: touch ;
     }
+
+    /* Mobile Touch Improvements for Setlist Items */
+    .setlist-item {
+        min-height: 44px !important; /* Apple's recommended minimum touch target size */
+        touch-action: manipulation;
+        -webkit-touch-callout: none; /* Disable callout on iOS */
+        -webkit-user-select: none; /* Disable text selection */
+        user-select: none;
+    }
+
+    /* Improve touch feedback for setlist actions */
+    .setlist-actions button {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        touch-action: manipulation;
+    }
+
+    /* Better touch zones for smart setlist items */
+    .setlist-item:active {
+        background-color: var(--sidebar-item-hover-bg) !important;
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
 }
 
 /* Extra Small Screens (phones in portrait) */

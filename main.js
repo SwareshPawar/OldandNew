@@ -3813,8 +3813,18 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Show setlist description in sidebar
     function showSetlistDescription(setlist, type) {
-        const containerId = type === 'global' ? 'globalSetlistDescriptionContainer' : 'mySetlistDescriptionContainer';
-        const textId = type === 'global' ? 'globalSetlistDescriptionText' : 'mySetlistDescriptionText';
+        let containerId, textId;
+        
+        if (type === 'global') {
+            containerId = 'globalSetlistDescriptionContainer';
+            textId = 'globalSetlistDescriptionText';
+        } else if (type === 'my') {
+            containerId = 'mySetlistDescriptionContainer';
+            textId = 'mySetlistDescriptionText';
+        } else if (type === 'smart') {
+            containerId = 'smartSetlistDescriptionContainer';
+            textId = 'smartSetlistDescriptionText';
+        }
         
         const container = document.getElementById(containerId);
         const textElement = document.getElementById(textId);
@@ -3827,7 +3837,16 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Hide setlist description in sidebar
     function hideSetlistDescription(type) {
-        const containerId = type === 'global' ? 'globalSetlistDescriptionContainer' : 'mySetlistDescriptionContainer';
+        let containerId;
+        
+        if (type === 'global') {
+            containerId = 'globalSetlistDescriptionContainer';
+        } else if (type === 'my') {
+            containerId = 'mySetlistDescriptionContainer';
+        } else if (type === 'smart') {
+            containerId = 'smartSetlistDescriptionContainer';
+        }
+        
         const container = document.getElementById(containerId);
         
         if (container) {
@@ -5923,11 +5942,33 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Add event listeners
         content.querySelectorAll('.setlist-item').forEach(item => {
             const setlistId = item.dataset.setlistId;
-            item.addEventListener('click', (e) => {
+            
+            // Enhanced mobile support - handle both click and touch events
+            const handleSetlistClick = (e) => {
                 if (!e.target.closest('.setlist-actions')) {
+                    console.log('📋 Smart Setlist clicked:', setlistId);
                     showSmartSetlistInMainSection(setlistId);
+                    
+                    // Add setlist description similar to global setlists
+                    const smartSetlist = smartSetlists.find(s => s.id === setlistId || s._id === setlistId);
+                    if (smartSetlist) {
+                        hideSetlistDescription('my');
+                        hideSetlistDescription('global');
+                        showSetlistDescription(smartSetlist, 'smart');
+                    }
                 }
-            });
+            };
+            
+            // Add both click and touchstart for better mobile support
+            item.addEventListener('click', handleSetlistClick);
+            item.addEventListener('touchstart', (e) => {
+                // Add touch feedback
+                item.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    item.style.transform = '';
+                }, 100);
+            }, { passive: true });
+            
             item.querySelector('.edit-smart-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 editSmartSetlist(setlistId);
