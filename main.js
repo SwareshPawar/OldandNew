@@ -205,7 +205,7 @@ const CHORD_TYPES = [
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
             ? 'http://localhost:3001'
-            : 'https://oldand-new.vercel.app'; // 'https://oldandnew.onrender.com'; || 'https://oldand-new.vercel.app';
+            : 'https://oldandnew.onrender.com'; // Backend server on Render
 
             console.log('API_BASE_URL:', API_BASE_URL);
         
@@ -5586,7 +5586,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             
             console.log('📋 Making request to /api/smart-setlists...');
-            const response = await fetch('/api/smart-setlists', {
+            const response = await fetch(`${API_BASE_URL}/api/smart-setlists`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -6130,7 +6130,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 songs: smartSetlistScanResults
             };
             
-            const response = await fetch('/api/smart-setlists', {
+            const response = await fetch(`${API_BASE_URL}/api/smart-setlists`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -6290,7 +6290,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 return;
             }
             
-            const response = await fetch(`/api/smart-setlists/${setlistId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/smart-setlists/${setlistId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -6351,7 +6351,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 songs: updatedSongs || []
             };
             
-            const response = await fetch(`/api/smart-setlists/${setlistId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/smart-setlists/${setlistId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -6413,7 +6413,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 return;
             }
             
-            const response = await fetch(`/api/smart-setlists/${setlistId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/smart-setlists/${setlistId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
