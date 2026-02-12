@@ -6044,9 +6044,23 @@ window.viewSingleLyrics = function(songId, otherId) {
             setlistSectionActions.style.display = 'none';
         }
         
-        // Render songs by category using the same function as global setlists
-        const newSongs = smartSetlist.songs.filter(s => s.category === 'New');
-        const oldSongs = smartSetlist.songs.filter(s => s.category === 'Old');
+        // Render songs by category - get full song data from main songs array by ID
+        
+        // Map Smart Setlist songs to full song data from the main songs array
+        const fullSongData = smartSetlist.songs.map(smartSong => {
+            // Smart Setlist might store limited data, so get full data by ID
+            const fullSong = songs.find(s => s.id === smartSong.id || s.id === smartSong._id || s._id === smartSong.id || s._id === smartSong._id);
+            if (fullSong) {
+                return fullSong;
+            } else {
+                // Fallback: if full song not found in main array, use what we have from Smart Setlist
+                console.warn(`Full song data not found for Smart Setlist song ID: ${smartSong.id || smartSong._id}`, smartSong);
+                return smartSong;
+            }
+        }).filter(song => song); // Remove any undefined entries
+        
+        const newSongs = fullSongData.filter(s => s.category === 'New');
+        const oldSongs = fullSongData.filter(s => s.category === 'Old');
         
         const NewSetlistTab = document.getElementById('NewSetlistTab');
         const OldSetlistTab = document.getElementById('OldSetlistTab');
@@ -8095,9 +8109,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         async function showPreview(song, fromHistory = false, openingContext = 'all-songs') {
             // Debug log to track the data source for preview display
             console.log(`🎵 Preview Display - Song ${song.id} "${song.title}" mood data: "${song.mood}"`);
-            console.log(`🎵 Song object keys:`, Object.keys(song));
-            console.log(`🎵 Song lyrics field:`, song.lyrics);
-            console.log(`🎵 Song editSongLyrics field:`, song.editSongLyrics);
             
             // Function to get display name for createdBy/updatedBy fields
             function getDisplayName(createdBy) {
