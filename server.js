@@ -27,7 +27,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'], // <-- Add 'Authorization' if not present
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit for Smart Setlists
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Also increase URL-encoded limit
 app.use(express.static('.'));
 
 // Initialize connection for serverless
@@ -622,6 +623,25 @@ app.post('/api/songs/scan', async (req, res) => {
         songs = await songsCollection.aggregate(fallbackPipeline).toArray();
       }
       
+      // Only return essential fields to reduce payload size for Smart Setlists
+      songs = songs.map(song => ({
+        id: song.id || song._id,
+        _id: song._id,
+        title: song.title,
+        songNumber: song.songNumber,
+        key: song.key,
+        mood: song.mood,
+        tempo: song.tempo,
+        artistDetails: song.artistDetails,
+        artist: song.artist,
+        category: song.category,
+        genre: song.genre,
+        genres: song.genres,
+        taal: song.taal,
+        time: song.time,
+        timeSignature: song.timeSignature
+      }));
+      
       // Sort by song number
       songs.sort((a, b) => {
         const aNum = parseInt(a.songNumber) || 0;
@@ -638,7 +658,26 @@ app.post('/api/songs/scan', async (req, res) => {
     console.log('Scan query:', JSON.stringify(query));
     
     // Execute query
-    const songs = await songsCollection.find(query).toArray();
+    let songs = await songsCollection.find(query).toArray();
+    
+    // Only return essential fields to reduce payload size for Smart Setlists
+    songs = songs.map(song => ({
+      id: song.id || song._id,
+      _id: song._id,
+      title: song.title,
+      songNumber: song.songNumber,
+      key: song.key,
+      mood: song.mood,
+      tempo: song.tempo,
+      artistDetails: song.artistDetails,
+      artist: song.artist,
+      category: song.category,
+      genre: song.genre,
+      genres: song.genres,
+      taal: song.taal,
+      time: song.time,
+      timeSignature: song.timeSignature
+    }));
     
     // Sort by song number
     songs.sort((a, b) => {
@@ -1074,6 +1113,109 @@ app.post('/api/my-setlists/remove-song', authMiddleware, async (req, res) => {
     res.json({ success: true, message: 'Song removed from personal setlist' });
   } catch (err) {
     console.error('Error removing song from personal setlist:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Smart Setlists endpoints
+app.get('/api/smart-setlists', authMiddleware, async (req, res) => {
+  try {
+    await connectToDatabase();
+    const userId = req.user.id;
+    const smartSetlists = await db.collection('SmartSetlists').find({ 
+      createdBy: userId 
+    }).sort({ createdAt: -1 }).toArray();
+    res.json(smartSetlists);
+  } catch (err) {
+    console.error('Error fetching smart setlists:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/smart-setlists', authMiddleware, async (req, res) => {
+  try {
+    await connectToDatabase();
+    const { name, description, conditions, songs } = req.body;
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Smart setlist name is required' });
+    }
+
+    const smartSetlist = {
+      _id: `smart_${Date.now()}`,
+      name: name.trim(),
+      description: description || '',
+      conditions: conditions || {},
+      songs: songs || [],
+      createdAt: new Date().toISOString(),
+      createdBy: req.user.id,
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await db.collection('SmartSetlists').insertOne(smartSetlist);
+    const insertedSetlist = await db.collection('SmartSetlists').findOne({ _id: result.insertedId });
+    
+    res.status(201).json(insertedSetlist);
+  } catch (err) {
+    console.error('Error creating smart setlist:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/smart-setlists/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectToDatabase();
+    const setlistId = req.params.id;
+    const { name, description, conditions, songs } = req.body;
+    const userId = req.user.id;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Smart setlist name is required' });
+    }
+
+    const updateData = {
+      name: name.trim(),
+      description: description || '',
+      conditions: conditions || {},
+      songs: songs || [],
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await db.collection('SmartSetlists').updateOne(
+      { _id: setlistId, createdBy: userId },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Smart setlist not found' });
+    }
+
+    const updatedSetlist = await db.collection('SmartSetlists').findOne({ _id: setlistId });
+    res.json(updatedSetlist);
+  } catch (err) {
+    console.error('Error updating smart setlist:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/smart-setlists/:id', authMiddleware, async (req, res) => {
+  try {
+    await connectToDatabase();
+    const setlistId = req.params.id;
+    const userId = req.user.id;
+
+    const result = await db.collection('SmartSetlists').deleteOne({
+      _id: setlistId,
+      createdBy: userId
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Smart setlist not found' });
+    }
+
+    res.json({ success: true, message: 'Smart setlist deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting smart setlist:', err);
     res.status(500).json({ error: err.message });
   }
 });

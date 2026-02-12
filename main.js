@@ -969,7 +969,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateAuthButtons();
                     await loadUserData();
                     await loadMySetlists();
+                    await loadSmartSetlistsFromServer();
                     renderMySetlists();
+                    renderSmartSetlists();
                     
                     // Close login modal
                     document.getElementById('loginModal').style.display = 'none';
@@ -2145,6 +2147,7 @@ async function performInitialization() {
     await loadGlobalSetlists();
     if (jwtToken && isJwtValid(jwtToken)) {
         await loadMySetlists();
+        await loadSmartSetlistsFromServer(); // Load smart setlists if authenticated
     }
     
     // Ensure setlist folders have initial content
@@ -5513,6 +5516,9 @@ window.viewSingleLyrics = function(songId, otherId) {
                         updateAuthButtons();
                         await loadUserData();
                         await loadMySetlists(); // Load user's setlists after login
+                        await loadSmartSetlistsFromServer(); // Load smart setlists after login
+                        renderMySetlists();
+                        renderSmartSetlists();
                     }
                 } else {
                     showNotification(data.error || 'Login failed');
@@ -5548,6 +5554,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             localStorage.removeItem('jwtToken');
             currentUser = null;
             localStorage.removeItem('currentUser');
+            smartSetlists = []; // Clear smart setlists on logout
             showNotification('Logged out');
             updateAuthButtons();
             // Reload page after logout to ensure all admin UI is removed
@@ -5556,8 +5563,42 @@ window.viewSingleLyrics = function(songId, otherId) {
     // Auth0 NAMESPACE removed
 
     // Smart Setlist Functions
-    let smartSetlists = JSON.parse(localStorage.getItem('smartSetlists')) || [];
+    // Smart setlists are now loaded from server, initialized as empty array
     let smartSetlistScanResults = []; // Store current scan results
+    
+    // Load smart setlists from server
+    async function loadSmartSetlistsFromServer() {
+        if (!currentUser) {
+            smartSetlists = [];
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                smartSetlists = [];
+                return;
+            }
+            
+            const response = await fetch('/api/smart-setlists', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                smartSetlists = await response.json();
+            } else {
+                console.warn('Failed to load smart setlists from server');
+                smartSetlists = [];
+            }
+        } catch (error) {
+            console.error('Error loading smart setlists:', error);
+            smartSetlists = [];
+        }
+    }
 
     // Initialize multiselect for smart setlist conditions
     function initializeSmartSetlistMultiselects() {
@@ -6059,20 +6100,57 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Create smart setlist with scanned songs
     async function createSmartSetlistWithSongs(formData) {
-        const smartSetlist = {
-            _id: `smart_${Date.now()}`,
-            name: formData.name,
-            description: formData.description,
-            conditions: formData.conditions,
-            songs: smartSetlistScanResults, // Include the scanned songs
-            createdAt: new Date().toISOString(),
-            createdBy: currentUser?.username || 'admin'
-        };
+        if (!currentUser) {
+            showNotification('Please log in to create smart setlists', 'error');
+            return;
+        }
         
-        smartSetlists.push(smartSetlist);
-        localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
-        renderSmartSetlists();
-        showNotification(`Smart setlist "${smartSetlist.name}" created with ${smartSetlistScanResults.length} songs`);
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                showNotification('Authentication required', 'error');
+                return;
+            }
+            
+            const smartSetlistData = {
+                name: formData.name,
+                description: formData.description,
+                conditions: formData.conditions,
+                songs: smartSetlistScanResults
+            };
+            
+            const response = await fetch('/api/smart-setlists', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(smartSetlistData)
+            });
+            
+            if (response.ok) {
+                const newSmartSetlist = await response.json();
+                smartSetlists.push(newSmartSetlist);
+                renderSmartSetlists();
+                showNotification(`Smart setlist "${newSmartSetlist.name}" created with ${smartSetlistScanResults.length} songs`);
+            } else {
+                let errorMessage = 'Unknown error';
+                if (response.status === 413) {
+                    errorMessage = 'Smart setlist data is too large. Try reducing the number of songs or conditions.';
+                } else {
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
+                    } catch (jsonError) {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                }
+                showNotification(`Failed to create smart setlist: ${errorMessage}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error creating smart setlist:', error);
+            showNotification('Failed to create smart setlist', 'error');
+        }
     }
 
     // Edit smart setlist
@@ -6183,12 +6261,48 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 
     // Delete smart setlist
-    function deleteSmartSetlist(setlistId) {
-        if (confirm('Are you sure you want to delete this smart setlist?')) {
-            smartSetlists = smartSetlists.filter(s => (s.id !== setlistId && s._id !== setlistId));
-            localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
-            renderSmartSetlists();
-            showNotification('Smart setlist deleted');
+    async function deleteSmartSetlist(setlistId) {
+        if (!confirm('Are you sure you want to delete this smart setlist?')) {
+            return;
+        }
+        
+        if (!currentUser) {
+            showNotification('Authentication required', 'error');
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                showNotification('Authentication required', 'error');
+                return;
+            }
+            
+            const response = await fetch(`/api/smart-setlists/${setlistId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                smartSetlists = smartSetlists.filter(s => (s.id !== setlistId && s._id !== setlistId));
+                renderSmartSetlists();
+                showNotification('Smart setlist deleted');
+            } else {
+                let errorMessage = 'Unknown error';
+                try {
+                    const error = await response.json();
+                    errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
+                } catch (jsonError) {
+                    errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                }
+                showNotification(`Failed to delete smart setlist: ${errorMessage}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting smart setlist:', error);
+            showNotification('Failed to delete smart setlist', 'error');
         }
     }
 
@@ -6200,34 +6314,129 @@ window.viewSingleLyrics = function(songId, otherId) {
             return;
         }
         
+        if (!currentUser) {
+            showNotification('Authentication required', 'error');
+            return;
+        }
+        
         try {
             showNotification(`🔄 Updating "${smartSetlist.name}"...`);
             
             // Rescan with the saved conditions
             const updatedSongs = await scanSongsWithConditions(smartSetlist.conditions);
             
-            // Update the smart setlist with new results
-            smartSetlist.songs = updatedSongs || [];
-            smartSetlist.lastUpdated = new Date().toISOString();
-            
-            // Save to localStorage
-            localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
-            
-            // Re-render the smart setlists to show updated count
-            renderSmartSetlists();
-            
-            // If this smart setlist is currently being viewed, refresh the main view
-            if (currentViewingSetlist && currentSetlistType === 'smart' && 
-                (currentViewingSetlist.id === setlistId || currentViewingSetlist._id === setlistId)) {
-                console.log('Re-rendering currently viewed smart setlist with updated songs');
-                showSmartSetlistInMainSection(setlistId);
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                showNotification('Authentication required', 'error');
+                return;
             }
             
-            showNotification(`✅ Updated "${smartSetlist.name}" - Found ${updatedSongs ? updatedSongs.length : 0} songs`);
+            // Update on server
+            const updateData = {
+                name: smartSetlist.name,
+                description: smartSetlist.description,
+                conditions: smartSetlist.conditions,
+                songs: updatedSongs || []
+            };
             
-        } catch (err) {
-            console.error('Failed to update smart setlist:', err);
-            showNotification('❌ Error updating smart setlist', 'error');
+            const response = await fetch(`/api/smart-setlists/${setlistId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            if (response.ok) {
+                const updatedSmartSetlist = await response.json();
+                // Update local array
+                const index = smartSetlists.findIndex(s => (s.id === setlistId || s._id === setlistId));
+                if (index !== -1) {
+                    smartSetlists[index] = updatedSmartSetlist;
+                }
+                
+                // Re-render the smart setlists to show updated count
+                renderSmartSetlists();
+                
+                // If this smart setlist is currently being viewed, refresh the main view
+                if (currentViewingSetlist && currentSetlistType === 'smart' && 
+                    (currentViewingSetlist.id === setlistId || currentViewingSetlist._id === setlistId)) {
+                    console.log('Re-rendering currently viewed smart setlist with updated songs');
+                    showSmartSetlistInMainSection(setlistId);
+                }
+                
+                showNotification(`✅ Smart setlist "${updatedSmartSetlist.name}" updated with ${updatedSongs.length} songs`);
+            } else {
+                let errorMessage = 'Unknown error';
+                if (response.status === 413) {
+                    errorMessage = 'Smart setlist data is too large. Try reducing the number of songs or conditions.';
+                } else {
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
+                    } catch (jsonError) {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                }
+                showNotification(`Failed to update smart setlist: ${errorMessage}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error updating smart setlist:', error);
+            showNotification('Failed to update smart setlist', 'error');
+        }
+    }
+
+    // Update smart setlist from form (used by form submission)
+    async function updateSmartSetlistForm(setlistId, formData) {
+        if (!currentUser) {
+            showNotification('Authentication required', 'error');
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                showNotification('Authentication required', 'error');
+                return;
+            }
+            
+            const response = await fetch(`/api/smart-setlists/${setlistId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            if (response.ok) {
+                const updatedSmartSetlist = await response.json();
+                // Update local array
+                const index = smartSetlists.findIndex(s => (s.id === setlistId || s._id === setlistId));
+                if (index !== -1) {
+                    smartSetlists[index] = updatedSmartSetlist;
+                }
+                
+                renderSmartSetlists();
+                showNotification('Smart setlist updated successfully');
+            } else {
+                let errorMessage = 'Unknown error';
+                if (response.status === 413) {
+                    errorMessage = 'Smart setlist data is too large. Try reducing the number of songs or conditions.';
+                } else {
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
+                    } catch (jsonError) {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                }
+                showNotification(`Failed to update smart setlist: ${errorMessage}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error updating smart setlist:', error);
+            showNotification('Failed to update smart setlist', 'error');
         }
     }
 
@@ -10357,34 +10566,22 @@ window.viewSingleLyrics = function(songId, otherId) {
                     };
 
                     try {
-                        let smartSetlists = JSON.parse(localStorage.getItem('smartSetlists') || '[]');
-                        
-                        const smartSetlist = {
-                            id: setlistId || 'smart_' + Date.now(),
+                        const formData = {
                             name,
                             description,
                             conditions,
-                            songs: smartSetlistScanResults,
-                            lastScanned: new Date().toISOString()
+                            songs: smartSetlistScanResults
                         };
                         
                         if (setlistId) {
                             // Update existing smart setlist
-                            const index = smartSetlists.findIndex(s => s.id === setlistId);
-                            if (index !== -1) {
-                                smartSetlists[index] = smartSetlist;
-                            } else {
-                                smartSetlists.push(smartSetlist);
-                            }
+                            await updateSmartSetlistForm(setlistId, formData);
                         } else {
-                            smartSetlists.push(smartSetlist);
+                            // Create new smart setlist
+                            await createSmartSetlistWithSongs(formData);
                         }
                         
-                        localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
-                        renderSmartSetlists();
-                        
                         document.getElementById('smartSetlistModal').style.display = 'none';
-                        showNotification(setlistId ? 'Smart setlist updated successfully' : 'Smart setlist created successfully');
                         
                     } catch (err) {
                         console.error('Error saving smart setlist:', err);
