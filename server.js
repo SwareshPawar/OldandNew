@@ -455,6 +455,226 @@ app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
+// Scan songs based on multiple filter conditions
+app.post('/api/songs/scan', async (req, res) => {
+  try {
+    const { keys, tempoMin, tempoMax, times, taals, moods, genres, categories } = req.body;
+    
+    let query = {};
+    
+    // Debug: First let's see what some tempo values look like in the database
+    const sampleSongs = await songsCollection.find({}).limit(5).toArray();
+    console.log('Sample tempo values from database:');
+    sampleSongs.forEach((song, index) => {
+      console.log(`Song ${index + 1}: tempo = "${song.tempo}" (type: ${typeof song.tempo})`);
+    });
+    
+    // Handle array conditions (use $in for matching any)
+    if (keys && keys.length > 0) {
+      query.key = { $in: keys };
+    }
+    
+    // Use 'time' field (not 'timeSignature')
+    if (times && times.length > 0) {
+      query.time = { $in: times };  
+    }
+    
+    if (taals && taals.length > 0) {
+      query.taal = { $in: taals };
+    }
+    
+    // Mood is stored as comma-separated string, so use regex to match any of the selected moods
+    if (moods && moods.length > 0) {
+      const moodRegex = moods.map(mood => mood.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+      query.mood = { $regex: `(${moodRegex})`, $options: 'i' };
+    }
+    
+    // Genres is stored as array, so use $in
+    if (genres && genres.length > 0) {
+      query.genres = { $in: genres };
+    }
+    
+    if (categories && categories.length > 0) {
+      query.category = { $in: categories };
+    }
+    
+    // Handle tempo range - convert strings to numbers
+    console.log('Tempo values received:', { tempoMin, tempoMax, tempoMinType: typeof tempoMin, tempoMaxType: typeof tempoMax });
+    
+    if (tempoMin !== null || tempoMax !== null) {
+      // Use aggregation pipeline to handle string-to-number conversion
+      const pipeline = [];
+      
+      // First, add all the regular match conditions
+      if (Object.keys(query).length > 0) {
+        pipeline.push({ $match: query });
+      }
+      
+      // Add tempo filtering with proper type conversion
+      const tempoMatch = {};
+      if (tempoMin !== null) {
+        const minTempo = parseInt(tempoMin);
+        if (!isNaN(minTempo)) {
+          console.log(`Setting tempo >= ${minTempo}`);
+        }
+      }
+      if (tempoMax !== null) {
+        const maxTempo = parseInt(tempoMax);
+        if (!isNaN(maxTempo)) {
+          console.log(`Setting tempo <= ${maxTempo}`);
+        }
+      }
+      
+      // Add stage to convert tempo to number and filter
+      if (tempoMin !== null || tempoMax !== null) {
+        const tempoConditions = [];
+        
+        if (tempoMin !== null && tempoMax !== null) {
+          const minTempo = parseInt(tempoMin);
+          const maxTempo = parseInt(tempoMax);
+          if (!isNaN(minTempo) && !isNaN(maxTempo)) {
+            tempoConditions.push({
+              $and: [
+                { $gte: [{ $toDouble: { $cond: { if: { $or: [{ $eq: ['$tempo', ''] }, { $eq: ['$tempo', null] }] }, then: '0', else: '$tempo' } } }, minTempo] },
+                { $lte: [{ $toDouble: { $cond: { if: { $or: [{ $eq: ['$tempo', ''] }, { $eq: ['$tempo', null] }] }, then: '0', else: '$tempo' } } }, maxTempo] }
+              ]
+            });
+          }
+        } else if (tempoMin !== null) {
+          const minTempo = parseInt(tempoMin);
+          if (!isNaN(minTempo)) {
+            tempoConditions.push({ $gte: [{ $toDouble: { $cond: { if: { $or: [{ $eq: ['$tempo', ''] }, { $eq: ['$tempo', null] }] }, then: '0', else: '$tempo' } } }, minTempo] });
+          }
+        } else if (tempoMax !== null) {
+          const maxTempo = parseInt(tempoMax);
+          if (!isNaN(maxTempo)) {
+            tempoConditions.push({ $lte: [{ $toDouble: { $cond: { if: { $or: [{ $eq: ['$tempo', ''] }, { $eq: ['$tempo', null] }] }, then: '0', else: '$tempo' } } }, maxTempo] });
+          }
+        }
+        
+        if (tempoConditions.length > 0) {
+          pipeline.push({
+            $match: {
+              $expr: tempoConditions.length === 1 ? tempoConditions[0] : { $and: tempoConditions }
+            }
+          });
+        }
+      }
+      
+      console.log('Aggregation pipeline:', JSON.stringify(pipeline));
+      
+      // Execute aggregation pipeline
+      let songs;
+      try {
+        songs = await songsCollection.aggregate(pipeline).toArray();
+      } catch (aggregationError) {
+        console.log('Aggregation error, falling back to simpler approach:', aggregationError.message);
+        
+        // Fallback: Filter out documents with invalid tempo first, then apply range filter
+        const fallbackPipeline = [];
+        
+        // First add regular filters
+        if (Object.keys(query).length > 0) {
+          fallbackPipeline.push({ $match: query });
+        }
+        
+        // Filter out invalid tempo values
+        fallbackPipeline.push({
+          $match: {
+            tempo: { $exists: true, $ne: '', $ne: null, $regex: /^[0-9]+$/ }
+          }
+        });
+        
+        // Add tempo range filter using simpler string comparison
+        if (tempoMin !== null && tempoMax !== null) {
+          const minTempo = parseInt(tempoMin);
+          const maxTempo = parseInt(tempoMax);
+          if (!isNaN(minTempo) && !isNaN(maxTempo)) {
+            // Use a combination of string length and string comparison for numerical range
+            fallbackPipeline.push({
+              $match: {
+                $expr: {
+                  $and: [
+                    { $gte: [{ $toInt: '$tempo' }, minTempo] },
+                    { $lte: [{ $toInt: '$tempo' }, maxTempo] }
+                  ]
+                }
+              }
+            });
+          }
+        } else if (tempoMin !== null) {
+          const minTempo = parseInt(tempoMin);
+          if (!isNaN(minTempo)) {
+            fallbackPipeline.push({
+              $match: { $expr: { $gte: [{ $toInt: '$tempo' }, minTempo] } }
+            });
+          }
+        } else if (tempoMax !== null) {
+          const maxTempo = parseInt(tempoMax);
+          if (!isNaN(maxTempo)) {
+            fallbackPipeline.push({
+              $match: { $expr: { $lte: [{ $toInt: '$tempo' }, maxTempo] } }
+            });
+          }
+        }
+        
+        console.log('Fallback pipeline:', JSON.stringify(fallbackPipeline));
+        songs = await songsCollection.aggregate(fallbackPipeline).toArray();
+      }
+      
+      // Sort by song number
+      songs.sort((a, b) => {
+        const aNum = parseInt(a.songNumber) || 0;
+        const bNum = parseInt(b.songNumber) || 0;
+        return aNum - bNum;
+      });
+      
+      console.log(`Found ${songs.length} songs matching criteria`);
+      
+      res.json(songs);
+      return;
+    }
+    
+    console.log('Scan query:', JSON.stringify(query));
+    
+    // Execute query
+    const songs = await songsCollection.find(query).toArray();
+    
+    // Sort by song number
+    songs.sort((a, b) => {
+      const aNum = parseInt(a.songNumber) || 0;
+      const bNum = parseInt(b.songNumber) || 0;
+      return aNum - bNum;
+    });
+    
+    console.log(`Found ${songs.length} songs matching criteria`);
+    
+    // Add debug info about first few songs if none found
+    if (songs.length === 0) {
+      const sampleSongs = await songsCollection.find({}).limit(2).toArray();
+      console.log('Sample songs for debugging:');
+      sampleSongs.forEach((song, index) => {
+        console.log(`Song ${index + 1}:`, {
+          title: song.title,
+          key: song.key,
+          time: song.time,
+          timeSignature: song.timeSignature,
+          taal: song.taal,
+          mood: song.mood,
+          genres: song.genres,
+          genre: song.genre,
+          category: song.category
+        });
+      });
+    }
+    
+    res.json(songs);
+  } catch (err) {
+    console.error('Scan error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const doc = await db.collection('UserData').findOne({ _id: userId });

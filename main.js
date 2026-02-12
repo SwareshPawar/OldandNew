@@ -2150,6 +2150,7 @@ async function performInitialization() {
     // Ensure setlist folders have initial content
     renderGlobalSetlists();
     renderMySetlists();
+    renderSmartSetlists();
     
     // Populate setlist dropdown after setlists are loaded
     populateSetlistDropdown();
@@ -2171,6 +2172,7 @@ async function performInitialization() {
     setupModalClosing();
     setupSuggestedSongsClosing();
     setupModals();
+    setupSongStructureTags();
     setupWindowCloseConfirmation();
     // Handle initial page load with hash
     if (window.location.hash) {
@@ -5553,6 +5555,682 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
     // Auth0 NAMESPACE removed
 
+    // Smart Setlist Functions
+    let smartSetlists = JSON.parse(localStorage.getItem('smartSetlists')) || [];
+    let smartSetlistScanResults = []; // Store current scan results
+
+    // Initialize multiselect for smart setlist conditions
+    function initializeSmartSetlistMultiselects() {
+        // Setup multiselect for each condition type
+        setupMultiselect('smartConditionKey', 'smartKeyDropdown', 'smartSelectedKeys');
+        setupMultiselect('smartConditionTime', 'smartTimeDropdown', 'smartSelectedTimes');
+        setupMultiselect('smartConditionTaal', 'smartTaalDropdown', 'smartSelectedTaals');
+        setupMultiselect('smartConditionMood', 'smartMoodDropdown', 'smartSelectedMoods');
+        setupMultiselect('smartConditionGenre', 'smartGenreDropdown', 'smartSelectedGenres');
+        setupMultiselect('smartConditionCategory', 'smartCategoryDropdown', 'smartSelectedCategories');
+    }
+
+    // Generic multiselect setup function
+    function setupMultiselect(inputId, dropdownId, selectedId) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        const selected = document.getElementById(selectedId);
+        
+        if (!input || !dropdown || !selected) {
+            console.error('Missing multiselect elements:', { input: !!input, dropdown: !!dropdown, selected: !!selected });
+            return;
+        }
+        
+        const selections = new Set();
+        
+        // Remove any existing event handlers to avoid duplicates
+        input.replaceWith(input.cloneNode(true));
+        dropdown.replaceWith(dropdown.cloneNode(true));
+        
+        // Get fresh references after cloning
+        const freshInput = document.getElementById(inputId);
+        const freshDropdown = document.getElementById(dropdownId);
+        
+        // Toggle dropdown on input click
+        freshInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close other dropdowns
+            document.querySelectorAll('.multiselect-dropdown.show').forEach(d => {
+                if (d !== freshDropdown) d.classList.remove('show');
+            });
+            freshDropdown.classList.toggle('show');
+        });
+        
+        // Handle option selection
+        freshDropdown.addEventListener('click', (e) => {
+            if (e.target.classList.contains('multiselect-option')) {
+                const value = e.target.getAttribute('data-value');
+                const text = e.target.textContent;
+                
+                if (value === '') {
+                    // Clear all selections for "Any" option
+                    selections.clear();
+                } else {
+                    if (selections.has(value)) {
+                        selections.delete(value);
+                    } else {
+                        selections.add(value);
+                        // Remove "Any" if present
+                        selections.delete('');
+                    }
+                }
+                updateSelectedDisplay(inputId, selectedId, selections);
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest(`#${inputId}`) && !e.target.closest(`#${dropdownId}`)) {
+                freshDropdown.classList.remove('show');
+            }
+        });
+        
+        // Store selections reference for easy access
+        freshDropdown._selections = selections;
+    }
+    
+    // Update selected display for multiselect
+    function updateSelectedDisplay(inputId, selectedId, selections) {
+        const input = document.getElementById(inputId);
+        const selected = document.getElementById(selectedId);
+        
+        if (selections.size === 0) {
+            input.value = '';
+            selected.innerHTML = '';
+        } else {
+            const values = Array.from(selections);
+            input.value = values.join(', ');
+            
+            selected.innerHTML = values.map(value => `
+                <div class="selected-item">
+                    ${value}
+                    <span class="remove-selected" data-value="${value}" data-input="${inputId}">×</span>
+                </div>
+            `).join('');
+        }
+        
+        // Add remove listeners
+        selected.querySelectorAll('.remove-selected').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const value = e.target.getAttribute('data-value');
+                const inputId = e.target.getAttribute('data-input');
+                
+                // Find the correct dropdown by mapping inputId to dropdownId
+                let dropdownElement = null;
+                if (inputId === 'smartConditionKey') dropdownElement = document.getElementById('smartKeyDropdown');
+                else if (inputId === 'smartConditionTime') dropdownElement = document.getElementById('smartTimeDropdown');
+                else if (inputId === 'smartConditionTaal') dropdownElement = document.getElementById('smartTaalDropdown');
+                else if (inputId === 'smartConditionMood') dropdownElement = document.getElementById('smartMoodDropdown');
+                else if (inputId === 'smartConditionGenre') dropdownElement = document.getElementById('smartGenreDropdown');
+                else if (inputId === 'smartConditionCategory') dropdownElement = document.getElementById('smartCategoryDropdown');
+                
+                if (dropdownElement && dropdownElement._selections) {
+                    dropdownElement._selections.delete(value);
+                    updateSelectedDisplay(inputId, selectedId, dropdownElement._selections);
+                }
+            });
+        });
+    }
+
+    // Scan songs based on conditions
+    async function scanSongsWithConditions(conditions) {
+        try {
+            const scanBtn = document.getElementById('scanSongsBtn');
+            if (scanBtn) {
+                scanBtn.disabled = true;
+                scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+            }
+            
+            const response = await fetch(`${API_BASE_URL}/api/songs/scan`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(conditions)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const results = await response.json();
+            return results;
+            
+        } catch (error) {
+            console.error('Error scanning songs:', error);
+            showNotification(`Failed to scan songs: ${error.message}`);
+            throw new Error('Failed to scan songs');
+        } finally {
+            const scanBtn = document.getElementById('scanSongsBtn');
+            if (scanBtn) {
+                scanBtn.disabled = false;
+                scanBtn.innerHTML = '<i class="fas fa-search"></i> Scan Songs';
+            }
+        }
+    }
+
+    // Get current smart setlist conditions from form
+    function getSmartSetlistConditions() {
+        const getSelections = (dropdownId) => {
+            const dropdown = document.getElementById(dropdownId);
+            return dropdown && dropdown._selections ? Array.from(dropdown._selections).filter(v => v !== '') : [];
+        };
+        
+        return {
+            keys: getSelections('smartKeyDropdown'),
+            tempoMin: parseInt(document.getElementById('smartTempoMin').value) || null,
+            tempoMax: parseInt(document.getElementById('smartTempoMax').value) || null,
+            times: getSelections('smartTimeDropdown'),
+            taals: getSelections('smartTaalDropdown'),
+            moods: getSelections('smartMoodDropdown'),
+            genres: getSelections('smartGenreDropdown'),
+            categories: getSelections('smartCategoryDropdown')
+        };
+    }
+
+    // Display scan results in tabs
+    function displayScanResults(songs) {
+        const resultsDiv = document.getElementById('smartSongsResults');
+        const newSongsDiv = document.getElementById('smartNewSongs');
+        const oldSongsDiv = document.getElementById('smartOldSongs');
+        
+        if (!resultsDiv || !newSongsDiv || !oldSongsDiv) {
+            console.log('Scan results elements not ready yet, retrying...');
+            // Retry after a short delay if elements aren't ready
+            setTimeout(() => displayScanResults(songs), 100);
+            return;
+        }
+        
+        if (!songs || !Array.isArray(songs)) {
+            console.error('Invalid songs data for display:', songs);
+            songs = [];
+        }
+        
+        const newSongs = songs.filter(song => song && song.category === 'New');
+        const oldSongs = songs.filter(song => song && song.category === 'Old');
+        
+        console.log('Displaying scan results:', { total: songs.length, newSongs: newSongs.length, oldSongs: oldSongs.length });
+        
+        // Update counts
+        const newCountEl = document.getElementById('smartNewCount');
+        const oldCountEl = document.getElementById('smartOldCount');
+        const totalCountEl = document.getElementById('scanResultCount');
+        
+        if (newCountEl) newCountEl.textContent = newSongs.length;
+        if (oldCountEl) oldCountEl.textContent = oldSongs.length;
+        if (totalCountEl) totalCountEl.textContent = songs.length;
+        
+        // Render song lists
+        newSongsDiv.innerHTML = renderSmartSongsList(newSongs);
+        oldSongsDiv.innerHTML = renderSmartSongsList(oldSongs);
+        
+        // Add click event listeners to smart scan songs
+        document.querySelectorAll('.smart-scan-song').forEach(songDiv => {
+            songDiv.addEventListener('click', () => {
+                const songId = parseInt(songDiv.dataset.songId);
+                const song = songs.find(s => s.id === songId || s._id === songId);
+                if (song) {
+                    showPreview(song, false, 'smart-scan');
+                }
+            });
+        });
+        
+        // Show results
+        resultsDiv.style.display = 'block';
+        document.getElementById('scanResults').style.display = 'block';
+        
+        // Setup tab switching
+        setupSmartSongTabs();
+    }
+
+    // Render songs list for smart setlist
+    function renderSmartSongsList(songs) {
+        if (!songs || songs.length === 0) {
+            return '<div class="no-songs">No songs found</div>';
+        }
+        
+        return songs.map(song => {
+            return `
+                <div class="song-item smart-scan-song" data-song-id="${song.id}">
+                    <div class="song-title">${song.title}</div>
+                    <div class="song-metadata">
+                        <span class="song-number">#${song.songNumber || song.id}</span>
+                        ${song.key ? `<span class="song-key">${song.key}</span>` : ''}
+                        ${song.mood ? `<span class="song-mood">${song.mood}</span>` : ''}
+                        ${song.tempo ? `<span class="song-tempo">${song.tempo} BPM</span>` : ''}
+                        ${song.artistDetails ? `<span class="song-artist">by ${song.artistDetails}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Setup smart song tabs
+    function setupSmartSongTabs() {
+        const newTab = document.getElementById('smartNewTab');
+        const oldTab = document.getElementById('smartOldTab');
+        const newSongs = document.getElementById('smartNewSongs');
+        const oldSongs = document.getElementById('smartOldSongs');
+        
+        if (!newTab || !oldTab || !newSongs || !oldSongs) return;
+        
+        newTab.addEventListener('click', () => {
+            newTab.classList.add('active');
+            oldTab.classList.remove('active');
+            newSongs.classList.add('active');
+            oldSongs.classList.remove('active');
+        });
+        
+        oldTab.addEventListener('click', () => {
+            oldTab.classList.add('active');
+            newTab.classList.remove('active');
+            oldSongs.classList.add('active');
+            newSongs.classList.remove('active');
+        });
+    }
+
+    // Render smart setlists in sidebar
+    function renderSmartSetlists() {
+        const content = document.getElementById('smartSetlistContent');
+        if (!content) return;
+        
+        content.innerHTML = '';
+        
+        if (smartSetlists.length === 0) {
+            content.innerHTML = '<li style="padding:8px;color:var(--secondary-text-color);font-style:italic;">No smart setlists yet</li>';
+            return;
+        }
+        
+        smartSetlists.forEach(smartSetlist => {
+            const li = document.createElement('li');
+            li.className = 'setlist-item';
+            li.dataset.setlistId = smartSetlist.id || smartSetlist._id;
+            li.innerHTML = `
+                <div class="setlist-name">${smartSetlist.name} (${smartSetlist.songs ? smartSetlist.songs.length : 0})</div>
+                <div class="setlist-actions" style="display: ${isAdmin() ? 'flex' : 'none'};">
+                    <button class="setlist-action-btn edit-smart-setlist" title="Edit Smart Setlist">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="setlist-action-btn update-smart-setlist" title="Update Setlist - Rescan and save with current conditions">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                    <button class="setlist-action-btn delete-smart-setlist" title="Delete Smart Setlist">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            content.appendChild(li);
+        });
+        
+        // Add event listeners
+        content.querySelectorAll('.setlist-item').forEach(item => {
+            const setlistId = item.dataset.setlistId;
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('.setlist-actions')) {
+                    showSmartSetlistInMainSection(setlistId);
+                }
+            });
+            item.querySelector('.edit-smart-setlist')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                editSmartSetlist(setlistId);
+            });
+            item.querySelector('.update-smart-setlist')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                updateSmartSetlist(setlistId);
+            });
+            item.querySelector('.delete-smart-setlist')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteSmartSetlist(setlistId);
+            });
+        });
+    }
+
+    // Create song item HTML (similar to renderSongs function)
+    function createSongItem(song) {
+        const isFavorite = Array.isArray(favorites) && favorites.includes(song.id);
+        const displayGenres = song.genres ? song.genres.join(', ') : song.genre || '';
+        
+        return `
+            <div class="song-item create-song-item" data-song-id="${song.id}">
+                <div class="song-header">
+                    <span class="song-title">${song.title}</span>
+                    <button class="favorite-btn ${isFavorite ? 'favorited' : ''}" data-song-id="${song.id}" onclick="event.stopPropagation(); toggleFavorite(${song.id});">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+                <div class="song-meta">${song.key || 'No key'} | ${song.tempo || 'No tempo'} | ${song.time || song.timeSignature || 'No time'} | ${song.taal || 'No taal'} | ${displayGenres}</div>
+                <div class="song-actions">
+                    <button class="btn btn-edit" onclick="event.stopPropagation(); editSong(${song.id});">Edit</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Show smart setlist songs in main section
+    function showSmartSetlistInMainSection(setlistId) {
+        const smartSetlist = smartSetlists.find(s => s.id === setlistId || s._id === setlistId);
+        if (!smartSetlist || !smartSetlist.songs) {
+            console.error('Smart setlist not found or has no songs:', setlistId);
+            return;
+        }
+        
+        console.log('Showing smart setlist:', smartSetlist.name, 'with', smartSetlist.songs.length, 'songs');
+        
+        // Set global variables for tracking current smart setlist
+        currentViewingSetlist = smartSetlist;
+        currentSetlistType = 'smart';
+        
+        // Hide other sections and show setlist section
+        const NewContent = document.getElementById('NewContent');
+        const OldContent = document.getElementById('OldContent');
+        const setlistSection = document.getElementById('setlistSection');
+        const deleteSection = document.getElementById('deleteSection');
+        const favoritesSection = document.getElementById('favoritesSection');
+
+        if (NewContent) NewContent.classList.remove('active');
+        if (OldContent) OldContent.classList.remove('active');
+        if (setlistSection) setlistSection.style.display = 'block';
+        if (deleteSection) deleteSection.style.display = 'none';
+        if (favoritesSection) favoritesSection.style.display = 'none';
+        
+        // Update setlist header
+        const setlistHeader = document.getElementById('setlistViewHeader');
+        if (setlistHeader) {
+            setlistHeader.innerHTML = `Smart Setlist: ${smartSetlist.name} <button onclick="restoreNormalView()" style="margin-left:15px;background:#007bff;border:1px solid #007bff;border-radius:4px;padding:4px 8px;color:white;font-size:12px;cursor:pointer;" title="Back to All Songs">← Back to All Songs</button>`;
+        }
+        
+        // Hide setlist action buttons for smart setlists (they're read-only views)
+        const setlistSectionActions = document.getElementById('setlistSectionActions');
+        if (setlistSectionActions) {
+            setlistSectionActions.style.display = 'none';
+        }
+        
+        // Render songs by category using the same function as global setlists
+        const newSongs = smartSetlist.songs.filter(s => s.category === 'New');
+        const oldSongs = smartSetlist.songs.filter(s => s.category === 'Old');
+        
+        const NewSetlistTab = document.getElementById('NewSetlistTab');
+        const OldSetlistTab = document.getElementById('OldSetlistTab');
+        const NewSetlistSongs = document.getElementById('NewSetlistSongs');
+        const OldSetlistSongs = document.getElementById('OldSetlistSongs');
+        
+        // Use displaySetlistSongs for consistent formatting and functionality
+        if (NewSetlistSongs) {
+            displaySetlistSongs(newSongs, NewSetlistSongs, 'smart-setlist');
+        }
+        if (OldSetlistSongs) {
+            displaySetlistSongs(oldSongs, OldSetlistSongs, 'smart-setlist');
+        }
+        
+        // Update tab counts
+        if (NewSetlistTab) NewSetlistTab.textContent = `New (${newSongs.length})`;
+        if (OldSetlistTab) OldSetlistTab.textContent = `Old (${oldSongs.length})`;
+        
+        // Activate the tab with more songs, or New by default
+        if (NewSetlistTab && OldSetlistTab && NewSetlistSongs && OldSetlistSongs) {
+            if (oldSongs.length > newSongs.length && newSongs.length === 0) {
+                // Show Old tab if it has songs and New is empty
+                NewSetlistTab.classList.remove('active');
+                OldSetlistTab.classList.add('active');
+                NewSetlistSongs.style.display = 'none';
+                OldSetlistSongs.style.display = 'block';
+            } else {
+                // Show New tab by default
+                NewSetlistTab.classList.add('active');
+                OldSetlistTab.classList.remove('active');
+                NewSetlistSongs.style.display = 'block';
+                OldSetlistSongs.style.display = 'none';
+            }
+            
+            // Add click handlers for tab switching
+            NewSetlistTab.onclick = function() {
+                NewSetlistTab.classList.add('active');
+                OldSetlistTab.classList.remove('active');
+                NewSetlistSongs.style.display = 'block';
+                OldSetlistSongs.style.display = 'none';
+            };
+            
+            OldSetlistTab.onclick = function() {
+                OldSetlistTab.classList.add('active');
+                NewSetlistTab.classList.remove('active');
+                OldSetlistSongs.style.display = 'block';
+                NewSetlistSongs.style.display = 'none';
+            };
+        }
+        
+        // Show notification
+        showNotification(`Showing smart setlist: ${smartSetlist.name} (${smartSetlist.songs.length} songs)`);
+    }
+
+    // Restore normal view from smart setlist
+    function restoreNormalView() {
+        // Clear smart setlist tracking
+        currentViewingSetlist = null;
+        currentSetlistType = null;
+        
+        // Hide setlist section and show normal content
+        const setlistSection = document.getElementById('setlistSection');
+        const NewContent = document.getElementById('NewContent');
+        const OldContent = document.getElementById('OldContent');
+        
+        if (setlistSection) setlistSection.style.display = 'none';
+        if (NewContent) {
+            NewContent.classList.add('active');
+            NewContent.style.display = 'block';
+        }
+        if (OldContent) {
+            OldContent.classList.remove('active');
+            OldContent.style.display = 'none';
+        }
+        
+        // Restore original tab names and activate New tab
+        const newTab = document.getElementById('NewTab');
+        const oldTab = document.getElementById('OldTab');
+        if (newTab) {
+            newTab.innerHTML = '<i class="fas fa-music"></i> New';
+            newTab.classList.add('active');
+        }
+        if (oldTab) {
+            oldTab.innerHTML = '<i class="fas fa-music"></i> Old';
+            oldTab.classList.remove('active');
+        }
+        
+        // Clear active setlist from sidebar
+        document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+        const showAllBtn = document.getElementById('showAll');
+        if (showAllBtn) showAllBtn.classList.add('active');
+        
+        // Re-render normal songs
+        if (typeof renderSongs === 'function') {
+            renderSongs('New', '', '', '', '');
+        }
+        
+        showNotification('Returned to all songs view');
+    }
+
+    // Make restoreNormalView globally accessible
+    window.restoreNormalView = restoreNormalView;
+
+    // Create smart setlist with scanned songs
+    async function createSmartSetlistWithSongs(formData) {
+        const smartSetlist = {
+            _id: `smart_${Date.now()}`,
+            name: formData.name,
+            description: formData.description,
+            conditions: formData.conditions,
+            songs: smartSetlistScanResults, // Include the scanned songs
+            createdAt: new Date().toISOString(),
+            createdBy: currentUser?.username || 'admin'
+        };
+        
+        smartSetlists.push(smartSetlist);
+        localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
+        renderSmartSetlists();
+        showNotification(`Smart setlist "${smartSetlist.name}" created with ${smartSetlistScanResults.length} songs`);
+    }
+
+    // Edit smart setlist
+    function editSmartSetlist(setlistId) {
+        const smartSetlist = smartSetlists.find(s => s.id === setlistId || s._id === setlistId);
+        if (!smartSetlist) {
+            console.error('Smart setlist not found for editing:', setlistId);
+            return;
+        }
+        
+        console.log('Editing smart setlist:', smartSetlist.name);
+        
+        // Reset form and populate basic info
+        document.getElementById('smartSetlistId').value = smartSetlist.id || smartSetlist._id;
+        document.getElementById('smartSetlistName').value = smartSetlist.name;
+        document.getElementById('smartSetlistDescription').value = smartSetlist.description || '';
+        
+        // Helper function to populate multiselect
+        function populateMultiselect(dropdownId, inputId, selectedId, values) {
+            const dropdown = document.getElementById(dropdownId);
+            const input = document.getElementById(inputId);
+            const selected = document.getElementById(selectedId);
+            
+            if (dropdown && input && selected && values && values.length > 0) {
+                // Ensure _selections exists
+                if (!dropdown._selections) {
+                    dropdown._selections = new Set();
+                }
+                dropdown._selections.clear();
+                values.forEach(value => dropdown._selections.add(value));
+                updateSelectedDisplay(inputId, selectedId, dropdown._selections);
+            } else if (dropdown && input && selected) {
+                // Clear if no values
+                if (!dropdown._selections) {
+                    dropdown._selections = new Set();
+                }
+                dropdown._selections.clear();
+                updateSelectedDisplay(inputId, selectedId, dropdown._selections);
+            }
+        }
+        
+        // Populate conditions if they exist
+        if (smartSetlist.conditions) {
+            const conditions = smartSetlist.conditions;
+            
+            // Set tempo values
+            if (conditions.tempoMin) document.getElementById('smartTempoMin').value = conditions.tempoMin;
+            if (conditions.tempoMax) document.getElementById('smartTempoMax').value = conditions.tempoMax;
+            
+            // Populate multiselect dropdowns with saved conditions
+            populateMultiselect('smartKeyDropdown', 'smartConditionKey', 'smartSelectedKeys', conditions.keys);
+            populateMultiselect('smartTimeDropdown', 'smartConditionTime', 'smartSelectedTimes', conditions.times);
+            populateMultiselect('smartTaalDropdown', 'smartConditionTaal', 'smartSelectedTaals', conditions.taals);
+            populateMultiselect('smartMoodDropdown', 'smartConditionMood', 'smartSelectedMoods', conditions.moods);
+            populateMultiselect('smartGenreDropdown', 'smartConditionGenre', 'smartSelectedGenres', conditions.genres);
+            populateMultiselect('smartCategoryDropdown', 'smartConditionCategory', 'smartSelectedCategories', conditions.categories);
+        } else {
+            // Clear all multiselects and inputs if no conditions exist
+            setTimeout(() => {
+                populateMultiselect('smartKeyDropdown', 'smartConditionKey', 'smartSelectedKeys', []);
+                populateMultiselect('smartTimeDropdown', 'smartConditionTime', 'smartSelectedTimes', []); 
+                populateMultiselect('smartTaalDropdown', 'smartConditionTaal', 'smartSelectedTaals', []);
+                populateMultiselect('smartMoodDropdown', 'smartConditionMood', 'smartSelectedMoods', []);
+                populateMultiselect('smartGenreDropdown', 'smartConditionGenre', 'smartSelectedGenres', []);
+                populateMultiselect('smartCategoryDropdown', 'smartConditionCategory', 'smartSelectedCategories', []);
+                
+                // Clear tempo values
+                document.getElementById('smartTempoMin').value = '';
+                document.getElementById('smartTempoMax').value = '';
+            }, 50);
+        }
+        
+        document.getElementById('smartSetlistModalTitle').textContent = 'Edit Smart Setlist';
+        document.getElementById('smartSetlistSubmit').textContent = 'Update Smart Setlist';
+        
+        // Reset scan results if available
+        if (smartSetlist.songs) {
+            smartSetlistScanResults = smartSetlist.songs;
+            displayScanResults(smartSetlistScanResults);
+        }
+        
+        // Open modal first, then reinitialize multiselects and populate
+        openModal('smartSetlistModal');
+        
+        // Reinitialize multiselects after modal is open to ensure DOM elements are available
+        setTimeout(() => {
+            initializeSmartSetlistMultiselects();
+            
+            // Populate conditions after multiselects are initialized
+            if (smartSetlist.conditions) {
+                const conditions = smartSetlist.conditions;
+                
+                // Set tempo values
+                if (conditions.tempoMin) document.getElementById('smartTempoMin').value = conditions.tempoMin;
+                if (conditions.tempoMax) document.getElementById('smartTempoMax').value = conditions.tempoMax;
+                
+                // Populate multiselect dropdowns with saved conditions
+                setTimeout(() => {
+                    populateMultiselect('smartKeyDropdown', 'smartConditionKey', 'smartSelectedKeys', conditions.keys);
+                    populateMultiselect('smartTimeDropdown', 'smartConditionTime', 'smartSelectedTimes', conditions.times);
+                    populateMultiselect('smartTaalDropdown', 'smartConditionTaal', 'smartSelectedTaals', conditions.taals);
+                    populateMultiselect('smartMoodDropdown', 'smartConditionMood', 'smartSelectedMoods', conditions.moods);
+                    populateMultiselect('smartGenreDropdown', 'smartConditionGenre', 'smartSelectedGenres', conditions.genres);
+                    populateMultiselect('smartCategoryDropdown', 'smartConditionCategory', 'smartSelectedCategories', conditions.categories);
+                }, 50);
+            }
+        }, 100);
+    }
+
+    // Delete smart setlist
+    function deleteSmartSetlist(setlistId) {
+        if (confirm('Are you sure you want to delete this smart setlist?')) {
+            smartSetlists = smartSetlists.filter(s => (s.id !== setlistId && s._id !== setlistId));
+            localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
+            renderSmartSetlists();
+            showNotification('Smart setlist deleted');
+        }
+    }
+
+    // Update smart setlist with fresh scan results
+    async function updateSmartSetlist(setlistId) {
+        const smartSetlist = smartSetlists.find(s => s.id === setlistId || s._id === setlistId);
+        if (!smartSetlist || !smartSetlist.conditions) {
+            showNotification('❌ Cannot update: Smart setlist or conditions not found', 'error');
+            return;
+        }
+        
+        try {
+            showNotification(`🔄 Updating "${smartSetlist.name}"...`);
+            
+            // Rescan with the saved conditions
+            const updatedSongs = await scanSongsWithConditions(smartSetlist.conditions);
+            
+            // Update the smart setlist with new results
+            smartSetlist.songs = updatedSongs || [];
+            smartSetlist.lastUpdated = new Date().toISOString();
+            
+            // Save to localStorage
+            localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
+            
+            // Re-render the smart setlists to show updated count
+            renderSmartSetlists();
+            
+            // If this smart setlist is currently being viewed, refresh the main view
+            if (currentViewingSetlist && currentSetlistType === 'smart' && 
+                (currentViewingSetlist.id === setlistId || currentViewingSetlist._id === setlistId)) {
+                console.log('Re-rendering currently viewed smart setlist with updated songs');
+                showSmartSetlistInMainSection(setlistId);
+            }
+            
+            showNotification(`✅ Updated "${smartSetlist.name}" - Found ${updatedSongs ? updatedSongs.length : 0} songs`);
+            
+        } catch (err) {
+            console.error('Failed to update smart setlist:', err);
+            showNotification('❌ Error updating smart setlist', 'error');
+        }
+    }
+
     
         // Auto-scroll and chord variables
     let autoScrollInterval = null;
@@ -5694,6 +6372,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Update setlist add button visibility
             const addGlobalSetlistBtn = document.getElementById('addGlobalSetlistBtn');
             const addMySetlistBtn = document.getElementById('addMySetlistBtn');
+            const addSmartSetlistBtn = document.getElementById('addSmartSetlistBtn');
             
             if (addGlobalSetlistBtn) {
                 addGlobalSetlistBtn.style.display = (isAdminUser && document.getElementById('globalSetlistContent')?.style.display === 'block') ? 'block' : 'none';
@@ -5701,6 +6380,10 @@ window.viewSingleLyrics = function(songId, otherId) {
             
             if (addMySetlistBtn) {
                 addMySetlistBtn.style.display = (isLoggedIn && document.getElementById('mySetlistContent')?.style.display === 'block') ? 'block' : 'none';
+            }
+            
+            if (addSmartSetlistBtn) {
+                addSmartSetlistBtn.style.display = (isAdminUser && document.getElementById('smartSetlistContent')?.style.display === 'block') ? 'block' : 'none';
             }
         }
 
@@ -7148,6 +7831,9 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
     
         async function showPreview(song, fromHistory = false, openingContext = 'all-songs') {
+            // Debug log to track the data source for preview display
+            console.log(`🎵 Preview Display - Song ${song.id} "${song.title}" mood data: "${song.mood}"`);
+            
             // Function to get display name for createdBy/updatedBy fields
             function getDisplayName(createdBy) {
                 // If it looks like a user ID (ObjectId format), try to get the firstName from currentUser
@@ -8191,8 +8877,16 @@ window.viewSingleLyrics = function(songId, otherId) {
                 closeModal(currentModal);
             }
             
-            modal.style.display = 'flex';
-            currentModal = modal;
+            // Handle both string ID and DOM element
+            const modalElement = typeof modal === 'string' ? document.getElementById(modal) : modal;
+            
+            if (!modalElement) {
+                console.error('Modal not found:', modal);
+                return;
+            }
+            
+            modalElement.style.display = 'flex';
+            currentModal = modalElement;
             document.body.style.overflow = 'hidden';
             
             // Add to history to handle back button
@@ -8248,10 +8942,91 @@ window.viewSingleLyrics = function(songId, otherId) {
                 }
             });
         }
+
+        // Setup song structure tag buttons functionality
+        function setupSongStructureTags() {
+            // Function to insert text at cursor position in textarea
+            function insertTextAtCursor(textarea, text) {
+                const startPos = textarea.selectionStart;
+                const endPos = textarea.selectionEnd;
+                const currentValue = textarea.value;
+                
+                // Save the current scroll position
+                const scrollTop = textarea.scrollTop;
+                
+                // Insert text at cursor position with proper newlines
+                const beforeText = currentValue.substring(0, startPos);
+                const afterText = currentValue.substring(endPos);
+                
+                // Add newlines if needed for proper spacing
+                let insertText = text;
+                if (beforeText && !beforeText.endsWith('\n')) {
+                    insertText = '\n' + insertText;
+                }
+                
+                textarea.value = beforeText + insertText + afterText;
+                
+                // Move cursor to end of inserted text
+                const newPos = startPos + insertText.length;
+                textarea.focus();
+                textarea.setSelectionRange(newPos, newPos);
+                
+                // Restore the scroll position to prevent unwanted scrolling
+                textarea.scrollTop = scrollTop;
+            }
+            
+            // Add event listeners to all structure tag buttons
+            document.querySelectorAll('.structure-tag-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tag = button.getAttribute('data-tag');
+                    const targetId = button.getAttribute('data-target');
+                    const textarea = document.getElementById(targetId);
+                    
+                    if (textarea && tag) {
+                        insertTextAtCursor(textarea, tag);
+                    }
+                });
+            });
+        }
     
         function editSong(id) {
-            const song = songs.find(s => s.id === id || s.id === id);
-            if (!song) return;
+            // Enhanced song lookup with proper ID matching and multiple data source fallback
+            function findSongById(searchId) {
+                // Convert searchId to both string and number for comparison
+                const numId = typeof searchId === 'string' ? parseInt(searchId) : searchId;
+                const strId = String(searchId);
+                
+                // Try global songs array first (most current data)
+                if (songs && songs.length > 0) {
+                    const found = songs.find(s => s.id === numId || s.id === strId || String(s.id) === strId);
+                    if (found) return found;
+                }
+                
+                // Try cache as fallback
+                if (window.dataCache.songs) {
+                    const found = window.dataCache.songs.find(s => s.id === numId || s.id === strId || String(s.id) === strId);
+                    if (found) return found;
+                }
+                
+                // Try window.songs if it exists
+                if (window.songs) {
+                    const found = window.songs.find(s => s.id === numId || s.id === strId || String(s.id) === strId);
+                    if (found) return found;
+                }
+                
+                return null;
+            }
+            
+            const song = findSongById(id);
+            if (!song) {
+                console.error(`❌ Edit Song: Song with ID ${id} not found in any data source`);
+                return;
+            }
+            
+            // Debug log for consistency tracking
+            console.log(`🎵 Edit Song: Editing song ${song.id} "${song.title}" - mood: "${song.mood}"`);
+            
             document.getElementById('editSongId').value = Number(song.id);
             document.getElementById('editSongTitle').value = song.title;
             document.getElementById('editSongCategory').value = song.category;
@@ -8260,22 +9035,39 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Handle multiselect artist field
             const artists = song.artistDetails ? song.artistDetails.split(',').map(a => a.trim()).filter(a => a) : [];
             setupArtistMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists');
-            // Initialize the Set with existing artists
-            const editArtistDropdown = document.getElementById('editArtistDropdown');
-            if (editArtistDropdown) {
-                editArtistDropdown._artistSelections = new Set(artists);
-                updateSelectedArtists('editSelectedArtists', 'editArtistDropdown');
-            }
+            // Initialize the Set with existing artists after setup is complete
+            setTimeout(() => {
+                const editArtistDropdown = document.getElementById('editArtistDropdown');
+                if (editArtistDropdown) {
+                    editArtistDropdown._artistSelections = new Set(artists);
+                    updateSelectedArtists('editSelectedArtists', 'editArtistDropdown');
+                    // Update input to show current selection
+                    const artistInput = document.getElementById('editSongArtist');
+                    if (artistInput && artists.length > 0) {
+                        artistInput.value = artists.join(', ');
+                    }
+                }
+            }, 100); // Increased timeout for better reliability
             
-            // Handle multiselect mood field
+            // Handle multiselect mood field with enhanced debugging
             const moods = song.mood ? song.mood.split(',').map(m => m.trim()).filter(m => m) : [];
+            console.log(`🎵 Edit Song - Raw mood: "${song.mood}" → Split moods: [${moods.join(', ')}]`);
+            
             setupMoodMultiselect('editSongMood', 'editMoodDropdown', 'editSelectedMoods');
-            // Initialize the Set with existing moods
-            const editMoodDropdown = document.getElementById('editMoodDropdown');
-            if (editMoodDropdown) {
-                editMoodDropdown._moodSelections = new Set(moods);
-                updateSelectedMoods('editSelectedMoods', 'editMoodDropdown');
-            }
+            // Initialize the Set with existing moods after setup is complete
+            setTimeout(() => {
+                const editMoodDropdown = document.getElementById('editMoodDropdown');
+                if (editMoodDropdown) {
+                    editMoodDropdown._moodSelections = new Set(moods);
+                    updateSelectedMoods('editSelectedMoods', 'editMoodDropdown');
+                    // Update input to show current selection
+                    const moodInput = document.getElementById('editSongMood');
+                    if (moodInput && moods.length > 0) {
+                        moodInput.value = moods.join(', ');
+                    }
+                    console.log(`🎵 Edit Song - Mood multiselect initialized with: [${Array.from(editMoodDropdown._moodSelections).join(', ')}]`);
+                }
+            }, 100); // Increased timeout for better reliability
             
             document.getElementById('editSongTempo').value = song.tempo;
             document.getElementById('editSongTime').value = song.time || song.timeSignature;
@@ -8285,21 +9077,31 @@ window.viewSingleLyrics = function(songId, otherId) {
             renderGenreOptions('editGenreDropdown');
             setupGenreMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres');
             
-            // Set selected genres using the Set-based approach
+            // Set selected genres using the Set-based approach after setup is complete
             const genres = song.genres || (song.genre ? [song.genre] : []);
-            const editGenreDropdown = document.getElementById('editGenreDropdown');
-            if (editGenreDropdown && editGenreDropdown._genreSelections) {
-                // Clear existing selections
-                editGenreDropdown._genreSelections.clear();
-                // Add current song's genres to the Set
-                genres.forEach(genre => {
-                    editGenreDropdown._genreSelections.add(genre);
-                });
-                // Update the display
-                updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
-                // Re-render the options with current selections
-                renderGenreOptionsWithSelections('editGenreDropdown', GENRES, editGenreDropdown._genreSelections);
-            }
+            console.log(`🎵 Edit Song - Raw genre: "${song.genre}" → Split genres: [${genres.join(', ')}]`);
+            
+            setTimeout(() => {
+                const editGenreDropdown = document.getElementById('editGenreDropdown');
+                if (editGenreDropdown && editGenreDropdown._genreSelections) {
+                    // Clear existing selections
+                    editGenreDropdown._genreSelections.clear();
+                    // Add current song's genres to the Set
+                    genres.forEach(genre => {
+                        editGenreDropdown._genreSelections.add(genre);
+                    });
+                    // Update the display
+                    updateSelectedGenres('editSelectedGenres', 'editGenreDropdown');
+                    // Re-render the options with current selections
+                    renderGenreOptionsWithSelections('editGenreDropdown', GENRES, editGenreDropdown._genreSelections);
+                    // Update input to show current selection
+                    const genreInput = document.getElementById('editSongGenre');
+                    if (genreInput && genres.length > 0) {
+                        genreInput.value = genres.join(', ');
+                    }
+                    console.log(`🎵 Edit Song - Genre multiselect initialized with: [${Array.from(editGenreDropdown._genreSelections).join(', ')}]`);
+                }
+            }, 100); // Increased timeout for better reliability
             document.getElementById('editSongLyrics').value = song.lyrics;
             editSongModal.style.display = 'flex';
         }
@@ -9332,6 +10134,92 @@ window.viewSingleLyrics = function(songId, otherId) {
                         createMySetlist();
                     });
                 }
+            
+                // Smart Setlist Event Listeners
+                const smartHeader = document.getElementById('smartSetlistHeader');
+                const addSmartBtn = document.getElementById('addSmartSetlistBtn');
+                
+                if (smartHeader && !smartHeader._setlistListenerAttached) {
+                    smartHeader._setlistListenerAttached = true;
+                    smartHeader.addEventListener('click', function(e) {
+                        if (e.target.closest('.add-setlist-btn')) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const smartSetlistContent = document.getElementById('smartSetlistContent');
+                        const smartSetlistIcon = document.getElementById('smartSetlistIcon');
+                        const addSmartSetlistBtn = document.getElementById('addSmartSetlistBtn');
+                        
+                        if (smartSetlistContent && smartSetlistIcon) {
+                            const isExpanded = smartSetlistContent.style.display === 'block';
+                            smartSetlistContent.style.display = isExpanded ? 'none' : 'block';
+                            smartSetlistIcon.classList.toggle('expanded', !isExpanded);
+                            
+                            if (addSmartSetlistBtn) {
+                                const shouldShow = (!isExpanded && currentUser?.isAdmin);
+                                addSmartSetlistBtn.style.display = shouldShow ? 'block' : 'none';
+                            }
+                        }
+                    });
+                }
+                
+                if (addSmartBtn && !addSmartBtn._setlistListenerAttached) {
+                    addSmartBtn._setlistListenerAttached = true;
+                    addSmartBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        createSmartSetlist();
+                    });
+                }
+            }
+            
+            function createSmartSetlist() {
+                // Reset form
+                document.getElementById('smartSetlistId').value = '';
+                document.getElementById('smartSetlistName').value = '';
+                document.getElementById('smartSetlistDescription').value = '';
+                
+                // Clear all multiselect selections
+                ['smartKeyDropdown', 'smartTimeDropdown', 'smartTaalDropdown', 
+                 'smartMoodDropdown', 'smartGenreDropdown', 'smartCategoryDropdown'].forEach(dropdownId => {
+                    const dropdown = document.getElementById(dropdownId);
+                    if (dropdown && dropdown._selections) {
+                        dropdown._selections.clear();
+                    }
+                });
+                
+                // Clear tempo inputs
+                document.getElementById('smartTempoMin').value = '';
+                document.getElementById('smartTempoMax').value = '';
+                
+                // Reset displays
+                document.getElementById('smartConditionKey').value = '';
+                document.getElementById('smartConditionTime').value = '';
+                document.getElementById('smartConditionTaal').value = '';
+                document.getElementById('smartConditionMood').value = '';
+                document.getElementById('smartConditionGenre').value = '';
+                document.getElementById('smartConditionCategory').value = '';
+                
+                ['smartSelectedKeys', 'smartSelectedTimes', 'smartSelectedTaals',
+                 'smartSelectedMoods', 'smartSelectedGenres', 'smartSelectedCategories'].forEach(selectedId => {
+                    const selected = document.getElementById(selectedId);
+                    if (selected) selected.innerHTML = '';
+                });
+                
+                // Reset scan results
+                document.getElementById('scanResults').style.display = 'none';
+                document.getElementById('smartSongsResults').style.display = 'none';
+                smartSetlistScanResults = [];
+                
+                document.getElementById('smartSetlistModalTitle').textContent = 'Create Smart Setlist';
+                document.getElementById('smartSetlistSubmit').textContent = 'Create Smart Setlist';
+                
+                // Initialize multiselects
+                setTimeout(() => {
+                    initializeSmartSetlistMultiselects();
+                }, 100);
+                
+                openModal('smartSetlistModal');
             }
             
             attachSetlistEventListeners();
@@ -9431,6 +10319,136 @@ window.viewSingleLyrics = function(songId, otherId) {
                         console.error('Error saving setlist:', err);
                         showNotification('Failed to save setlist');
                     }
+                });
+            }
+
+            // Smart setlist form submission
+            const smartSetlistForm = document.getElementById('smartSetlistForm');
+            if (smartSetlistForm && !smartSetlistForm._submitListenerAttached) {
+                smartSetlistForm._submitListenerAttached = true;
+                smartSetlistForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const setlistId = document.getElementById('smartSetlistId').value;
+                    const name = document.getElementById('smartSetlistName').value.trim();
+                    const description = document.getElementById('smartSetlistDescription').value.trim();
+                    
+                    if (!name) {
+                        showNotification('Please enter a name for the smart setlist');
+                        return;
+                    }
+                    
+                    // Check if we have scan results
+                    if (!smartSetlistScanResults || smartSetlistScanResults.length === 0) {
+                        showNotification('Please scan for songs before saving the smart setlist');
+                        return;
+                    }
+                    
+                    // Collect conditions from multiselects
+                    const conditions = {
+                        keys: Array.from(document.getElementById('smartKeyDropdown')._selections || []),
+                        tempoMin: parseInt(document.getElementById('smartTempoMin').value) || null,
+                        tempoMax: parseInt(document.getElementById('smartTempoMax').value) || null,
+                        times: Array.from(document.getElementById('smartTimeDropdown')._selections || []),
+                        taals: Array.from(document.getElementById('smartTaalDropdown')._selections || []),
+                        moods: Array.from(document.getElementById('smartMoodDropdown')._selections || []),
+                        genres: Array.from(document.getElementById('smartGenreDropdown')._selections || []),
+                        categories: Array.from(document.getElementById('smartCategoryDropdown')._selections || [])
+                    };
+
+                    try {
+                        let smartSetlists = JSON.parse(localStorage.getItem('smartSetlists') || '[]');
+                        
+                        const smartSetlist = {
+                            id: setlistId || 'smart_' + Date.now(),
+                            name,
+                            description,
+                            conditions,
+                            songs: smartSetlistScanResults,
+                            lastScanned: new Date().toISOString()
+                        };
+                        
+                        if (setlistId) {
+                            // Update existing smart setlist
+                            const index = smartSetlists.findIndex(s => s.id === setlistId);
+                            if (index !== -1) {
+                                smartSetlists[index] = smartSetlist;
+                            } else {
+                                smartSetlists.push(smartSetlist);
+                            }
+                        } else {
+                            smartSetlists.push(smartSetlist);
+                        }
+                        
+                        localStorage.setItem('smartSetlists', JSON.stringify(smartSetlists));
+                        renderSmartSetlists();
+                        
+                        document.getElementById('smartSetlistModal').style.display = 'none';
+                        showNotification(setlistId ? 'Smart setlist updated successfully' : 'Smart setlist created successfully');
+                        
+                    } catch (err) {
+                        console.error('Error saving smart setlist:', err);
+                        showNotification('Failed to save smart setlist');
+                    }
+                });
+            }
+            
+            // Scan Songs functionality
+            const scanSongsBtn = document.getElementById('scanSongsBtn');
+            if (scanSongsBtn && !scanSongsBtn._scanListenerAttached) {
+                scanSongsBtn._scanListenerAttached = true;
+                scanSongsBtn.addEventListener('click', async function() {
+                    try {
+                        console.log('Scan button clicked - gathering conditions...');
+                        
+                        const tempoMinValue = document.getElementById('smartTempoMin').value;
+                        const tempoMaxValue = document.getElementById('smartTempoMax').value;
+                        
+                        const conditions = {
+                            keys: Array.from(document.getElementById('smartKeyDropdown')?._selections || []).filter(v => v !== ''),
+                            tempoMin: tempoMinValue ? parseInt(tempoMinValue) : null,
+                            tempoMax: tempoMaxValue ? parseInt(tempoMaxValue) : null,
+                            times: Array.from(document.getElementById('smartTimeDropdown')?._selections || []).filter(v => v !== ''),
+                            taals: Array.from(document.getElementById('smartTaalDropdown')?._selections || []).filter(v => v !== ''),
+                            moods: Array.from(document.getElementById('smartMoodDropdown')?._selections || []).filter(v => v !== ''),
+                            genres: Array.from(document.getElementById('smartGenreDropdown')?._selections || []).filter(v => v !== ''),
+                            categories: Array.from(document.getElementById('smartCategoryDropdown')?._selections || []).filter(v => v !== '')
+                        };
+                        
+                        console.log('Scan conditions:', conditions);
+                        
+                        const results = await scanSongsWithConditions(conditions);
+                        smartSetlistScanResults = results;
+                        
+                        console.log('Scan results received:', results ? results.length : 0, 'songs');
+                        displayScanResults(results);
+                        
+                    } catch (error) {
+                        console.error('Error scanning songs:', error);
+                        showNotification('Error scanning songs. Please try again.');
+                    }
+                });
+            }
+            
+            // Tab functionality for scan results
+            const scanNewTab = document.getElementById('scanNewTab');
+            const scanOldTab = document.getElementById('scanOldTab');
+            if (scanNewTab && scanOldTab && !scanNewTab._tabListenerAttached) {
+                scanNewTab._tabListenerAttached = true;
+                scanOldTab._tabListenerAttached = true;
+                
+                scanNewTab.addEventListener('click', () => {
+                    scanNewTab.classList.add('active');
+                    scanOldTab.classList.remove('active');
+                    document.getElementById('smartNewResults').style.display = 'block';
+                    document.getElementById('smartOldResults').style.display = 'none';
+                });
+                
+                scanOldTab.addEventListener('click', () => {
+                    scanOldTab.classList.add('active');
+                    scanNewTab.classList.remove('active');
+                    document.getElementById('smartOldResults').style.display = 'block';
+                    document.getElementById('smartNewResults').style.display = 'none';
                 });
             }
 

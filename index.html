@@ -260,6 +260,30 @@ async function saveRecommendationWeightsToBackend(weights) {
                     </div>
                 </li>
 
+                <!-- Smart Setlists Section -->
+                <li>
+                    <div class="setlist-folder">
+                        <div class="folder-header" id="smartSetlistHeader">
+                            <i class="fas fa-chevron-right folder-icon" id="smartSetlistIcon"></i>
+                            <i class="fas fa-magic"></i>
+                            <span>Smart Setlists</span>
+                            <button id="addSmartSetlistBtn" class="add-setlist-btn" style="display:none;" title="Create Smart Setlist - Admin only: Create automatic playlists based on song criteria" aria-label="Add Smart Setlist">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <ul class="setlist-folder-content" id="smartSetlistContent" style="display:none;">
+                            <!-- Smart setlists will be populated here -->
+                        </ul>
+                        
+                        <!-- Smart Setlist Description -->
+                        <div class="setlist-description-container" id="smartSetlistDescriptionContainer" style="display: none;">
+                            <div class="setlist-description-content">
+                                <div class="setlist-description-text" id="smartSetlistDescriptionText"></div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
             </ul>
             </ul>
             <div class="sidebar-footer">
@@ -528,6 +552,19 @@ async function saveRecommendationWeightsToBackend(weights) {
                     <div class="multiselect-selected" id="selectedGenres"></div>
                 </div>
                 <label for="songLyrics">Lyrics:</label>
+                <div class="song-structure-tags">
+                    <div class="structure-tags-header">Quick Tags:</div>
+                    <div class="structure-tags-buttons">
+                        <button type="button" class="structure-tag-btn" data-tag="[Verse 1]" data-target="songLyrics">Verse 1</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Verse 2]" data-target="songLyrics">Verse 2</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Chorus]" data-target="songLyrics">Chorus</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Bridge]" data-target="songLyrics">Bridge</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Pre-Chorus]" data-target="songLyrics">Pre-Chorus</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Intro]" data-target="songLyrics">Intro</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Outro]" data-target="songLyrics">Outro</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Instrumental]" data-target="songLyrics">Instrumental</button>
+                    </div>
+                </div>
                 <textarea id="songLyrics" required></textarea>
                 <button type="submit" class="btn btn-primary" title="Add Song - Create new song with all details and lyrics" aria-label="Add Song">Add Song</button>
             </form>
@@ -588,6 +625,19 @@ async function saveRecommendationWeightsToBackend(weights) {
                     <div class="multiselect-selected" id="editSelectedGenres"></div>
                 </div>
                 <label for="editSongLyrics">Lyrics:</label>
+                <div class="song-structure-tags">
+                    <div class="structure-tags-header">Quick Tags:</div>
+                    <div class="structure-tags-buttons">
+                        <button type="button" class="structure-tag-btn" data-tag="[Verse 1]" data-target="editSongLyrics">Verse 1</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Verse 2]" data-target="editSongLyrics">Verse 2</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Chorus]" data-target="editSongLyrics">Chorus</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Bridge]" data-target="editSongLyrics">Bridge</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Pre-Chorus]" data-target="editSongLyrics">Pre-Chorus</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Intro]" data-target="editSongLyrics">Intro</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Outro]" data-target="editSongLyrics">Outro</button>
+                        <button type="button" class="structure-tag-btn" data-tag="[Instrumental]" data-target="editSongLyrics">Instrumental</button>
+                    </div>
+                </div>
                 <textarea id="editSongLyrics" required></textarea>
                 <button type="submit" class="btn btn-primary" title="Save Changes - Update song with modified details" aria-label="Save Changes">Save Changes</button>
             </form>
@@ -887,6 +937,213 @@ async function saveRecommendationWeightsToBackend(weights) {
                 <!-- Submit button now outside tab content -->
                 <div class="setlist-submit-container">
                     <button type="submit" class="btn btn-primary" id="mySetlistSubmit" title="Create Personal Setlist - Save new private setlist" aria-label="Create My Setlist">Create Setlist</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Smart Setlist Modal -->
+    <div class="modal" id="smartSetlistModal">
+        <div class="modal-content setlist-modal-content">
+            <span class="close-modal" aria-label="Close" title="Close Smart Setlist Modal">×</span>
+            <h3 id="smartSetlistModalTitle">Create Smart Setlist</h3>
+            <form id="smartSetlistForm" class="setlist-form">
+                <input type="hidden" id="smartSetlistId">
+                <label for="smartSetlistName">Smart Setlist Name:</label>
+                <input type="text" id="smartSetlistName" required placeholder="Enter smart setlist name">
+                <label for="smartSetlistDescription">Description (optional):</label>
+                <textarea id="smartSetlistDescription" placeholder="Describe what songs this playlist automatically includes"></textarea>
+                
+                <div class="smart-setlist-conditions">
+                    <h4>Song Search Conditions:</h4>
+                    
+                    <div class="condition-group">
+                        <label for="smartConditionKey">Key/Scale (multiple allowed):</label>
+                        <div class="multiselect-container">
+                            <input type="text" id="smartConditionKey" class="compact-input" placeholder="Select keys..." readonly>
+                            <div class="multiselect-dropdown" id="smartKeyDropdown">
+                                <div class="multiselect-option" data-value="">Any Key</div>
+                                <div class="multiselect-group">Major Keys</div>
+                                <div class="multiselect-option" data-value="C">C Major</div>
+                                <div class="multiselect-option" data-value="C#">C# Major</div>
+                                <div class="multiselect-option" data-value="D">D Major</div>
+                                <div class="multiselect-option" data-value="Eb">Eb Major</div>
+                                <div class="multiselect-option" data-value="E">E Major</div>
+                                <div class="multiselect-option" data-value="F">F Major</div>
+                                <div class="multiselect-option" data-value="F#">F# Major</div>
+                                <div class="multiselect-option" data-value="G">G Major</div>
+                                <div class="multiselect-option" data-value="G#">G# Major</div>
+                                <div class="multiselect-option" data-value="A">A Major</div>
+                                <div class="multiselect-option" data-value="Bb">Bb Major</div>
+                                <div class="multiselect-option" data-value="B">B Major</div>
+                                <div class="multiselect-group">Minor Keys</div>
+                                <div class="multiselect-option" data-value="Cm">C Minor</div>
+                                <div class="multiselect-option" data-value="C#m">C# Minor</div>
+                                <div class="multiselect-option" data-value="Dm">D Minor</div>
+                                <div class="multiselect-option" data-value="Ebm">Eb Minor</div>
+                                <div class="multiselect-option" data-value="Em">E Minor</div>
+                                <div class="multiselect-option" data-value="Fm">F Minor</div>
+                                <div class="multiselect-option" data-value="F#m">F# Minor</div>
+                                <div class="multiselect-option" data-value="Gm">G Minor</div>
+                                <div class="multiselect-option" data-value="G#m">G# Minor</div>
+                                <div class="multiselect-option" data-value="Am">A Minor</div>
+                                <div class="multiselect-option" data-value="Bbm">Bb Minor</div>
+                                <div class="multiselect-option" data-value="Bm">B Minor</div>
+                            </div>
+                            <div class="multiselect-selected" id="smartSelectedKeys"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-group">
+                        <label for="smartConditionTempo">Tempo Range (BPM):</label>
+                        <div class="tempo-range-inputs">
+                            <input type="number" id="smartTempoMin" placeholder="Min" min="50" max="200" class="tempo-input">
+                            <span>to</span>
+                            <input type="number" id="smartTempoMax" placeholder="Max" min="50" max="200" class="tempo-input">
+                            <span class="tempo-helper">Leave empty for any tempo</span>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-group">
+                        <label for="smartConditionTime">Time Signature (multiple allowed):</label>
+                        <div class="multiselect-container">
+                            <input type="text" id="smartConditionTime" class="compact-input" placeholder="Select time signatures..." readonly>
+                            <div class="multiselect-dropdown" id="smartTimeDropdown">
+                                <div class="multiselect-option" data-value="">Any Time</div>
+                                <div class="multiselect-option" data-value="4/4">4/4</div>
+                                <div class="multiselect-option" data-value="3/4">3/4 (Waltz)</div>
+                                <div class="multiselect-option" data-value="2/4">2/4</div>
+                                <div class="multiselect-option" data-value="6/8">6/8</div>
+                                <div class="multiselect-option" data-value="5/4">5/4</div>
+                                <div class="multiselect-option" data-value="7/8">7/8</div>
+                                <div class="multiselect-option" data-value="12/8">12/8</div>
+                                <div class="multiselect-option" data-value="14/8">14/8</div>
+                            </div>
+                            <div class="multiselect-selected" id="smartSelectedTimes"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-group">
+                        <label for="smartConditionTaal">Taal (multiple allowed):</label>
+                        <div class="multiselect-container">
+                            <input type="text" id="smartConditionTaal" class="compact-input" placeholder="Select taals..." readonly>
+                            <div class="multiselect-dropdown" id="smartTaalDropdown">
+                                <div class="multiselect-option" data-value="">Any Taal</div>
+                                <div class="multiselect-option" data-value="Keherwa">Keherwa</div>
+                                <div class="multiselect-option" data-value="Keherwa Slow">Keherwa Slow</div>
+                                <div class="multiselect-option" data-value="Dadra">Dadra</div>
+                                <div class="multiselect-option" data-value="Dadra Slow">Dadra Slow</div>
+                                <div class="multiselect-option" data-value="EkTaal">EkTaal</div>
+                                <div class="multiselect-option" data-value="JhapTaal">JhapTaal</div>
+                                <div class="multiselect-option" data-value="TeenTaal">TeenTaal</div>
+                                <div class="multiselect-option" data-value="Rupak">Rupak</div>
+                                <div class="multiselect-option" data-value="Deepchandi">Deepchandi</div>
+                                <div class="multiselect-option" data-value="Garba">Garba</div>
+                                <div class="multiselect-option" data-value="RD Pattern">RD Pattern</div>
+                                <div class="multiselect-option" data-value="Desi Drum">Desi Drum</div>
+                                <div class="multiselect-option" data-value="Western">Western</div>
+                                <div class="multiselect-option" data-value="Waltz">Waltz</div>
+                                <div class="multiselect-option" data-value="Rock">Rock</div>
+                                <div class="multiselect-option" data-value="Jazz">Jazz</div>
+                                <div class="multiselect-option" data-value="March Rhythm">March Rhythm</div>
+                            </div>
+                            <div class="multiselect-selected" id="smartSelectedTaals"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-group">
+                        <label for="smartConditionMood">Mood (multiple allowed):</label>
+                        <div class="multiselect-container">
+                            <input type="text" id="smartConditionMood" class="compact-input" placeholder="Select moods..." readonly>
+                            <div class="multiselect-dropdown" id="smartMoodDropdown">
+                                <div class="multiselect-option" data-value="">Any Mood</div>
+                                <div class="multiselect-option" data-value="Happy">Happy</div>
+                                <div class="multiselect-option" data-value="Sad">Sad</div>
+                                <div class="multiselect-option" data-value="Romantic">Romantic</div>
+                                <div class="multiselect-option" data-value="Powerful">Powerful</div>
+                                <div class="multiselect-option" data-value="Soothing">Soothing</div>
+                                <div class="multiselect-option" data-value="Motivational">Motivational</div>
+                                <div class="multiselect-option" data-value="Joyful">Joyful</div>
+                                <div class="multiselect-option" data-value="Nostalgic">Nostalgic</div>
+                                <div class="multiselect-option" data-value="Celebratory">Celebratory</div>
+                                <div class="multiselect-option" data-value="Passionate">Passionate</div>
+                                <div class="multiselect-option" data-value="Festive">Festive</div>
+                                <div class="multiselect-option" data-value="Sorrowful">Sorrowful</div>
+                                <div class="multiselect-option" data-value="Love">Love</div>
+                                <div class="multiselect-option" data-value="Evergreen">Evergreen</div>
+                                <div class="multiselect-option" data-value="Dance">Dance</div>
+                                <div class="multiselect-option" data-value="Patriotic">Patriotic</div>
+                            </div>
+                            <div class="multiselect-selected" id="smartSelectedMoods"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-group">
+                        <label for="smartConditionGenre">Genre (multiple allowed):</label>
+                        <div class="multiselect-container">
+                            <input type="text" id="smartConditionGenre" class="compact-input" placeholder="Select genres..." readonly>
+                            <div class="multiselect-dropdown" id="smartGenreDropdown">
+                                <div class="multiselect-option" data-value="">Any Genre</div>
+                                <div class="multiselect-option" data-value="New">New</div>
+                                <div class="multiselect-option" data-value="Old">Old</div>
+                                <div class="multiselect-option" data-value="Mid">Mid</div>
+                                <div class="multiselect-option" data-value="Hindi">Hindi</div>
+                                <div class="multiselect-option" data-value="Marathi">Marathi</div>
+                                <div class="multiselect-option" data-value="English">English</div>
+                                <div class="multiselect-option" data-value="RD Pattern">RD Pattern</div>
+                                <div class="multiselect-option" data-value="Acoustic">Acoustic</div>
+                                <div class="multiselect-option" data-value="Qawalli">Qawalli</div>
+                                <div class="multiselect-option" data-value="Classical">Classical</div>
+                                <div class="multiselect-option" data-value="Ghazal">Ghazal</div>
+                                <div class="multiselect-option" data-value="Sufi">Sufi</div>
+                                <div class="multiselect-option" data-value="Rock">Rock</div>
+                                <div class="multiselect-option" data-value="Blues">Blues</div>
+                                <div class="multiselect-option" data-value="Female">Female</div>
+                                <div class="multiselect-option" data-value="Male">Male</div>
+                                <div class="multiselect-option" data-value="Duet">Duet</div>
+                            </div>
+                            <div class="multiselect-selected" id="smartSelectedGenres"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-group">
+                        <label for="smartConditionCategory">Category (multiple allowed):</label>
+                        <div class="multiselect-container">
+                            <input type="text" id="smartConditionCategory" class="compact-input" placeholder="Select categories..." readonly>
+                            <div class="multiselect-dropdown" id="smartCategoryDropdown">
+                                <div class="multiselect-option" data-value="">Any Category</div>
+                                <div class="multiselect-option" data-value="New">New Songs</div>
+                                <div class="multiselect-option" data-value="Old">Old Songs</div>
+                            </div>
+                            <div class="multiselect-selected" id="smartSelectedCategories"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="smart-scan-section">
+                        <button type="button" class="btn btn-primary" id="scanSongsBtn" title="Scan Database - Search for songs matching your conditions">
+                            <i class="fas fa-search"></i> Scan Songs
+                        </button>
+                        <div id="scanResults" class="scan-results-info" style="display: none;">
+                            Found <span id="scanResultCount">0</span> songs matching your conditions
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Song Results Section -->
+                <div class="smart-songs-results" id="smartSongsResults" style="display: none;">
+                    <h4>Matching Songs:</h4>
+                    <div class="smart-songs-tabs">
+                        <div class="smart-tab active" id="smartNewTab">New Songs (<span id="smartNewCount">0</span>)</div>
+                        <div class="smart-tab" id="smartOldTab">Old Songs (<span id="smartOldCount">0</span>)</div>
+                    </div>
+                    <div class="smart-songs-content">
+                        <div id="smartNewSongs" class="smart-songs-list active"></div>
+                        <div id="smartOldSongs" class="smart-songs-list"></div>
+                    </div>
+                </div>
+                
+                <div class="setlist-submit-container">
+                    <button type="submit" class="btn btn-primary" id="smartSetlistSubmit" title="Create Smart Setlist - Save automatic playlist with conditions" aria-label="Create Smart Setlist">Create Smart Setlist</button>
                 </div>
             </form>
         </div>

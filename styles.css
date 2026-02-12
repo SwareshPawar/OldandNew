@@ -3113,6 +3113,237 @@ body.dark-mode #installAppBtn {
             transition: all 0.3s;
         }
 
+        /* Song Structure Tags Styles */
+        .song-structure-tags {
+            margin: 10px 0;
+            padding: 12px;
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .structure-tags-header {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 8px;
+        }
+
+        .structure-tags-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .structure-tag-btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .structure-tag-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        .structure-tag-btn:active {
+            transform: translateY(0);
+            background: var(--primary-color);
+        }
+
+        /* Smart Setlist Styles */
+        .smart-setlist-conditions {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .smart-setlist-conditions h4 {
+            margin: 0 0 15px 0;
+            color: var(--text-color);
+            font-size: 1.1rem;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 5px;
+        }
+
+        .condition-group {
+            margin: 12px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .condition-group label {
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        .tempo-range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tempo-input {
+            width: 80px;
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .tempo-helper {
+            font-size: 0.8rem;
+            color: var(--secondary-text-color);
+            font-style: italic;
+        }
+
+        .condition-preview {
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--secondary-bg);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .condition-preview h5 {
+            margin: 0 0 5px 0;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+
+        .condition-preview-text {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            margin-bottom: 3px;
+        }
+
+        .condition-count-text {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Smart Setlist Scan Section */
+        .smart-scan-section {
+            margin: 20px 0;
+            text-align: center;
+            padding: 15px;
+            background: var(--secondary-bg);
+            border-radius: 8px;
+        }
+
+        .scan-results-info {
+            margin-top: 10px;
+            padding: 8px;
+            background: var(--light-bg);
+            border-left: 4px solid var(--accent-color);
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        /* Smart Songs Results */
+        .smart-songs-results {
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            background: var(--light-bg);
+        }
+
+        .smart-songs-results h4 {
+            margin: 0 0 15px 0;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 5px;
+        }
+
+        .smart-songs-tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .smart-tab {
+            padding: 8px 16px;
+            background: var(--secondary-bg);
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+            transition: all 0.2s;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+        }
+
+        .smart-tab.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .smart-tab:hover:not(.active) {
+            background: var(--light-bg);
+            color: var(--text-color);
+        }
+
+        .smart-songs-content {
+            position: relative;
+        }
+
+        .smart-songs-list {
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .smart-songs-list.active {
+            display: block;
+        }
+
+        .smart-song-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: var(--song-item-bg);
+            border: 1px solid var(--song-item-border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .smart-song-item:hover {
+            background: var(--song-item-hover-bg);
+            border-color: var(--accent-color);
+        }
+
+        .smart-song-info {
+            flex: 1;
+        }
+
+        .smart-song-title {
+            font-weight: 600;
+            color: var(--song-item-text);
+            margin-bottom: 2px;
+        }
+
+        .smart-song-details {
+            font-size: 0.8rem;
+            color: var(--secondary-text-color);
+        }
+
 
 
         /* Button Styles */
