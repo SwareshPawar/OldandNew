@@ -8095,6 +8095,9 @@ window.viewSingleLyrics = function(songId, otherId) {
         async function showPreview(song, fromHistory = false, openingContext = 'all-songs') {
             // Debug log to track the data source for preview display
             console.log(`🎵 Preview Display - Song ${song.id} "${song.title}" mood data: "${song.mood}"`);
+            console.log(`🎵 Song object keys:`, Object.keys(song));
+            console.log(`🎵 Song lyrics field:`, song.lyrics);
+            console.log(`🎵 Song editSongLyrics field:`, song.editSongLyrics);
             
             // Function to get display name for createdBy/updatedBy fields
             function getDisplayName(createdBy) {
@@ -8135,7 +8138,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Clear the preview and reset state
             songPreviewEl.innerHTML = '';
             songPreviewEl.dataset.songId = song.id;
-            songPreviewEl.dataset.originalLyrics = song.lyrics;
+            songPreviewEl.dataset.originalLyrics = song.lyrics || song.editSongLyrics || song.content || song.text || '';
             songPreviewEl.dataset.originalKey = song.key;
             songPreviewEl.dataset.openingContext = openingContext;
 
@@ -8332,7 +8335,9 @@ window.viewSingleLyrics = function(songId, otherId) {
             setTimeout(() => {
                 const lyricsContainer = document.getElementById('preview-lyrics-container');
                 if (lyricsContainer) {
-                    lyricsContainer.innerHTML = formatLyricsWithChords(song.lyrics, transposeLevel);
+                    // Handle case where lyrics might be undefined or stored in different fields
+                    const lyricsText = song.lyrics || song.editSongLyrics || song.content || song.text || 'No lyrics available';
+                    lyricsContainer.innerHTML = formatLyricsWithChords(lyricsText, transposeLevel);
                 }
             }, 10);
             
@@ -8413,6 +8418,11 @@ window.viewSingleLyrics = function(songId, otherId) {
     
     
         function formatLyricsWithChords(lyrics, transposeLevel) {
+            // Handle undefined, null, or empty lyrics
+            if (!lyrics || typeof lyrics !== 'string') {
+                return '<div class="lyric-line">No lyrics available</div>';
+            }
+            
             const lines = lyrics.split('\n');
             let output = [];
     
@@ -9975,7 +9985,6 @@ window.viewSingleLyrics = function(songId, otherId) {
 
                 // Find the original song for missing fields
                 const original = songs.find(s => s.id == id) || {};
-                const editSongLyrics = document.getElementById('editSongLyrics').value;
                 const updatedSong = {
                     id: Number(id),
                     title: title,
@@ -9988,7 +9997,6 @@ window.viewSingleLyrics = function(songId, otherId) {
                     taal: document.getElementById('editSongTaal').value,
                     genres: selectedGenres,
                     lyrics: lyrics,
-                    editSongLyrics: editSongLyrics,
                     createdBy: original.createdBy || (currentUser && currentUser.username) || undefined,
                     createdAt: original.createdAt || new Date().toISOString()
                 };
