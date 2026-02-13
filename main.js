@@ -1694,9 +1694,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 
     // Initialize songs and setlists
     // Remove duplicate isDarkMode initialization; handled in DOMContentLoaded
-        let socket = null;
         // songs is now global - don't redeclare it here
-        let lastSongsFetch = null; // ISO string of last fetch
         let favorites = [];
         let keepScreenOn = false;
         let autoScrollSpeed = localStorage.getItem('autoScrollSpeed') || 1500;
@@ -1758,12 +1756,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             // If no cached data, fallback to empty array
             songs = [];
             return songs;
-        }
-    
-        function connectWebSocket() {
-            if (!window.WebSocket) {
-                return;
-            }
         }
     
         function updateSongCount() {
@@ -6061,7 +6053,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         let navigationHistory = [];
         let currentHistoryPosition = -1;
         let isNavigatingHistory = false;
-        let isAnyModalOpen = false;
         let currentModal = null;
         let userDataSaveQueue = Promise.resolve();
 
@@ -6630,12 +6621,6 @@ window.viewSingleLyrics = function(songId, otherId) {
                     };
                 } catch (err) {
                     // Error saving to file
-                }
-                if (socket && socket.readyState === WebSocket.OPEN) {
-                    socket.send(JSON.stringify({
-                        type: 'update',
-                        songs: songs
-                    }));
                 }
             }
     
