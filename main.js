@@ -685,8 +685,13 @@ async function loadSongsWithProgress(forceRefresh = false) {
         // Update both cache and localStorage
         window.dataCache.songs = unique;
         window.dataCache.lastFetch.songs = Date.now();
-        localStorage.setItem('songs', JSON.stringify(unique));
-        localStorage.setItem('songsTimestamp', Date.now().toString());
+        try {
+            localStorage.setItem('songs', JSON.stringify(unique));
+            localStorage.setItem('songsTimestamp', Date.now().toString());
+        } catch (e) {
+            console.warn('Failed to cache songs to localStorage:', e);
+            // Continue without caching - app still works
+        }
         updateProgress('processSongs'); // Mark processing as complete
         
         // Load user data if authenticated
@@ -823,7 +828,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
 
     // Theme
-     isDarkMode = localStorage.getItem('darkMode') === 'true';
+    try {
+        isDarkMode = localStorage.getItem('darkMode') === 'true';
+    } catch (e) {
+        // Failed to access localStorage - use default theme
+        isDarkMode = false;
+    }
     applyTheme(isDarkMode);
     const themeToggleBtn = document.getElementById('themeToggle');
     function updateThemeToggleBtn() {
@@ -837,7 +847,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
             isDarkMode = !isDarkMode;
-            localStorage.setItem('darkMode', isDarkMode);
+            try {
+                localStorage.setItem('darkMode', isDarkMode);
+            } catch (e) {
+                // Failed to save theme preference - continue anyway
+                console.warn('Failed to save theme preference:', e);
+            }
             applyTheme(isDarkMode);
             updateThemeToggleBtn();
         });
@@ -961,8 +976,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await res.json().catch(() => ({}));
                 if (res.ok && data.token) {
-                    localStorage.setItem('jwtToken', data.token);
-                    if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    try {
+                        localStorage.setItem('jwtToken', data.token);
+                        if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    } catch (e) {
+                        console.warn('Failed to save authentication data:', e);
+                        // Continue anyway - authentication still works for this session
+                    }
                     jwtToken = data.token;
                     currentUser = data.user;
                     
@@ -1697,7 +1717,13 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         // songs is now global - don't redeclare it here
         let favorites = [];
         let keepScreenOn = false;
-        let autoScrollSpeed = localStorage.getItem('autoScrollSpeed') || 1500;
+        let autoScrollSpeed;
+        try {
+            autoScrollSpeed = localStorage.getItem('autoScrollSpeed') || 1500;
+        } catch (e) {
+            // Failed to read from localStorage - use default
+            autoScrollSpeed = 1500;
+        }
         let suggestedSongsDrawerOpen = false;
         let isScrolling = false;
 
@@ -1793,7 +1819,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         const editSongModal = document.getElementById('editSongModal');
         const editSongForm = document.getElementById('editSongForm');
         const deleteSongModal = document.getElementById('deleteSongModal');
-        const deleteSongForm = document.getElementById('deleteSongForm');
         const cancelDeleteSong = document.getElementById('cancelDeleteSong');
         const downloadBtn = document.getElementById('downloadSongsBtn');
         const deleteAllSongsBtn = document.getElementById('deleteAllSongsBtn');
@@ -5100,9 +5125,17 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         function logout() {
             jwtToken = '';
-            localStorage.removeItem('jwtToken');
+            try {
+                localStorage.removeItem('jwtToken');
+            } catch (e) {
+                console.warn('Failed to clear jwtToken:', e);
+            }
             currentUser = null;
-            localStorage.removeItem('currentUser');
+            try {
+                localStorage.removeItem('currentUser');
+            } catch (e) {
+                console.warn('Failed to clear currentUser:', e);
+            }
             smartSetlists = []; // Clear smart setlists on logout
             showNotification('Logged out');
             updateAuthButtons();
@@ -5866,48 +5899,62 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Delete smart setlist
     async function deleteSmartSetlist(setlistId) {
-        if (!confirm('Are you sure you want to delete this smart setlist?')) {
-            return;
-        }
+        const setlist = smartSetlists.find(s => s.id === setlistId || s._id === setlistId);
+        if (!setlist) return;
+
+        const modal = document.getElementById('confirmDeleteSetlistModal');
+        const message = document.getElementById('deleteSetlistMessage');
         
-        if (!currentUser) {
-            showNotification('Authentication required', 'error');
-            return;
-        }
-        
-        try {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
+        message.textContent = `Are you sure you want to delete the smart setlist "${setlist.name}"?`;
+        modal.style.display = 'flex';
+
+        document.getElementById('confirmDeleteSetlist').onclick = async () => {
+            modal.style.display = 'none';
+            
+            if (!currentUser) {
                 showNotification('Authentication required', 'error');
                 return;
             }
             
-            const response = await fetch(`${API_BASE_URL}/api/smart-setlists/${setlistId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+            try {
+                const token = localStorage.getItem('jwtToken');
+                if (!token) {
+                    showNotification('Authentication required', 'error');
+                    return;
                 }
-            });
             
-            if (response.ok) {
-                smartSetlists = smartSetlists.filter(s => (s.id !== setlistId && s._id !== setlistId));
-                renderSmartSetlists();
-                showNotification('Smart setlist deleted');
-            } else {
-                let errorMessage = 'Unknown error';
-                try {
-                    const error = await response.json();
-                    errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
-                } catch (jsonError) {
-                    errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                const response = await fetch(`${API_BASE_URL}/api/smart-setlists/${setlistId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    smartSetlists = smartSetlists.filter(s => (s.id !== setlistId && s._id !== setlistId));
+                    renderSmartSetlists();
+                    showNotification('Smart setlist deleted');
+                } else {
+                    let errorMessage = 'Unknown error';
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
+                    } catch (jsonError) {
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    showNotification(`Failed to delete smart setlist: ${errorMessage}`, 'error');
                 }
-                showNotification(`Failed to delete smart setlist: ${errorMessage}`, 'error');
+            } catch (error) {
+                console.error('Error deleting smart setlist:', error);
+                showNotification('Failed to delete smart setlist', 'error');
             }
-        } catch (error) {
-            console.error('Error deleting smart setlist:', error);
-            showNotification('Failed to delete smart setlist', 'error');
-        }
+        };
+        
+        // Cancel delete setlist button
+        document.getElementById('cancelDeleteSetlist').onclick = () => {
+            modal.style.display = 'none';
+        };
     }
 
     // Update smart setlist with fresh scan results
@@ -6057,7 +6104,13 @@ window.viewSingleLyrics = function(songId, otherId) {
         let userDataSaveQueue = Promise.resolve();
 
         // Search history
-        let searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
+        let searchHistory = [];
+        try {
+            searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+        } catch (e) {
+            // Failed to parse search history - use empty array
+            searchHistory = [];
+        }
     
         // Initialize the application
 
@@ -9157,12 +9210,17 @@ window.viewSingleLyrics = function(songId, otherId) {
 
             localStorage.setItem("sidebarHeader", newHeader);
             localStorage.setItem("setlistText", newSetlist);
-            localStorage.setItem("sidebarWidth", sidebarWidth);
-            localStorage.setItem("songsPanelWidth", songsPanelWidth);
-            localStorage.setItem("previewMargin", previewMargin);
-            localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
-            localStorage.setItem("sessionResetOption", sessionResetOption);
-            localStorage.setItem("toggleButtonsVisibility", toggleButtonsVisibility);
+            try {
+                localStorage.setItem("sidebarWidth", sidebarWidth);
+                localStorage.setItem("songsPanelWidth", songsPanelWidth);
+                localStorage.setItem("previewMargin", previewMargin);
+                localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
+                localStorage.setItem("sessionResetOption", sessionResetOption);
+                localStorage.setItem("toggleButtonsVisibility", toggleButtonsVisibility);
+            } catch (e) {
+                console.warn('Failed to save settings to localStorage:', e);
+                // Continue without saving settings
+            }
             autoScrollSpeed = parseInt(newAutoScrollSpeed);
             
             // Apply toggle buttons visibility
@@ -9778,28 +9836,27 @@ window.viewSingleLyrics = function(songId, otherId) {
                 deleteSongModal.style.display = 'none';
             });
     
-            deleteSongForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const id = Number(document.getElementById('deleteSongId').value);
-                const deleteBtn = deleteSongForm.querySelector('button[type="submit"]');
-                if (deleteBtn) deleteBtn.disabled = true;
-                await deleteSongById(id, () => {
-                    deleteSongModal.style.display = 'none';
-                    // Only render if we're on the correct tab
-                    const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
-                    debouncedRenderSongs(activeTab, keyFilter.value, genreFilter.value);
-                    if (deleteBtn) deleteBtn.disabled = false;
-                });
+        document.getElementById('confirmDeleteSong').addEventListener('click', async () => {
+            const id = Number(document.getElementById('deleteSongId').value);
+            const deleteBtn = document.getElementById('confirmDeleteSong');
+            if (deleteBtn) deleteBtn.disabled = true;
+            await deleteSongById(id, () => {
+                deleteSongModal.style.display = 'none';
+                // Only render if we're on the correct tab
+                const activeTab = document.getElementById('NewTab')?.classList.contains('active') ? 'New' : 'Old';
+                debouncedRenderSongs(activeTab, keyFilter.value, genreFilter.value);
+                if (deleteBtn) deleteBtn.disabled = false;
             });
-    
-            // Preview scrolling
-            songPreviewEl.addEventListener('wheel', handleUserScroll, { passive: true });
-            songPreviewEl.addEventListener('touchmove', handleUserScroll, { passive: true });
+        });
+
+        // Preview scrolling
+        songPreviewEl.addEventListener('wheel', handleUserScroll, { passive: true });
+        songPreviewEl.addEventListener('touchmove', handleUserScroll, { passive: true });
+        
+        // Auto-scroll controls
+        toggleAutoScrollBtn.addEventListener('click', toggleAutoScroll);
             
-            // Auto-scroll controls
-            toggleAutoScrollBtn.addEventListener('click', toggleAutoScroll);
-            
-            // Keep screen on button
+        // Keep screen on button
             //keepScreenOnBtn.addEventListener('click', toggleScreenWakeLock);
     
             // Bulk operations
@@ -10581,7 +10638,13 @@ window.viewSingleLyrics = function(songId, otherId) {
             const idx = allIds.indexOf(id);
 
             if (saved) {
-                const pos = JSON.parse(saved);
+                let pos;
+                try {
+                    pos = JSON.parse(saved);
+                } catch (e) {
+                    // Failed to parse saved position - continue without restoring
+                    return;
+                }
                 // Clamp to viewport
                 let top = parseInt(pos.top) || minPadding;
                 let left = parseInt(pos.left) || '';
@@ -10778,33 +10841,43 @@ window.viewSingleLyrics = function(songId, otherId) {
         }, { passive: true });
 
         async function removeAdminRole(userId) {
-    // Confirm action with user
-    if (!confirm('Are you sure you want to remove admin role from this user?')) {
-        return;
-    }
-    
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/users/${userId}/remove-admin`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${jwtToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        let msg;
-        if (res.ok) {
-            msg = 'Admin role removed successfully';
-            // Refresh the users list to update the UI
-            loadUsers();
-        } else {
-            const data = await res.json().catch(() => ({}));
-            msg = data.error ? `Failed: ${data.error}` : 'Failed to remove admin role';
+            const modal = document.getElementById('confirmRemoveAdminModal');
+            const message = document.getElementById('removeAdminMessage');
+            
+            message.textContent = 'Are you sure you want to remove admin role from this user?';
+            modal.style.display = 'flex';
+
+            document.getElementById('confirmRemoveAdmin').onclick = async () => {
+                modal.style.display = 'none';
+                
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/users/${userId}/remove-admin`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    let msg;
+                    if (res.ok) {
+                        msg = 'Admin role removed successfully';
+                        // Refresh the users list to update the UI
+                        loadUsers();
+                    } else {
+                        const data = await res.json().catch(() => ({}));
+                        msg = data.error ? `Failed: ${data.error}` : 'Failed to remove admin role';
+                    }
+                    showAdminNotification(msg);
+                } catch (err) {
+                    showAdminNotification('Network error during admin role removal');
+                }
+            };
+            
+            // Cancel remove admin button
+            document.getElementById('cancelRemoveAdmin').onclick = () => {
+                modal.style.display = 'none';
+            };
         }
-        showAdminNotification(msg);
-    } catch (err) {
-        showAdminNotification('Network error during admin role removal');
-    }
-}
 window.removeAdminRole = removeAdminRole;
 
 // =========================

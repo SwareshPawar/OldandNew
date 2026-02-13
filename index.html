@@ -500,6 +500,21 @@ async function saveRecommendationWeightsToBackend(weights) {
         </div>
     </div>
 
+    <!-- Confirm Remove Admin Role Modal -->
+    <div class="modal" id="confirmRemoveAdminModal">
+        <div class="modal-content">
+            <span class="close-modal" aria-label="Close" title="Close Remove Admin Confirmation Modal">×</span>
+            <h3>Confirm Remove Admin Role</h3>
+            <div class="remove-admin-form">
+                <p id="removeAdminMessage">Are you sure you want to remove admin role from this user?</p>
+                <div class="modal-actions">
+                    <button id="cancelRemoveAdmin" class="btn btn-secondary" title="Cancel - Keep admin role" aria-label="Cancel Remove Admin">Cancel</button>
+                    <button id="confirmRemoveAdmin" class="btn btn-danger" title="Confirm - Remove admin role" aria-label="Confirm Remove Admin">Remove Admin</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="addSongModal">
         <div class="modal-content">
             <span class="close-modal" aria-label="Close" title="Close Add Song Modal">×</span>
@@ -648,15 +663,15 @@ async function saveRecommendationWeightsToBackend(weights) {
     <div class="modal" id="deleteSongModal">
         <div class="modal-content">
             <span class="close-modal" aria-label="Close" title="Close Delete Confirmation Modal">×</span>
-            <h3>Confirm Deletion</h3>
-            <form id="deleteSongForm" class="delete-song-form">
+            <h3>Confirm Delete Song</h3>
+            <div class="delete-song-form">
                 <input type="hidden" id="deleteSongId">
                 <p id="deleteSongMessage">Are you sure you want to delete "<span id="deleteSongTitle"></span>"?</p>
-                <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn btn-cancel" id="cancelDeleteSong" title="Cancel Delete - Keep the song" aria-label="Cancel Delete Song">Cancel</button>
-                    <button type="submit" class="btn btn-delete" title="Confirm Delete - Permanently remove this song" aria-label="Confirm Delete Song">Delete</button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelDeleteSong" title="Cancel Delete - Keep the song" aria-label="Cancel Delete Song">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteSong" title="Confirm Delete - Permanently remove this song" aria-label="Confirm Delete Song">Delete</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -667,8 +682,8 @@ async function saveRecommendationWeightsToBackend(weights) {
             <div class="delete-song-form">
                 <p>Are you sure you want to delete ALL songs? This cannot be undone.</p>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-cancel" id="cancelDeleteAll" title="Cancel Delete All - Keep all songs safe" aria-label="Cancel Delete All Songs">Cancel</button>
-                    <button class="btn btn-delete" id="confirmDeleteAll" title="Confirm Delete All - DANGER: Permanently remove all songs" aria-label="Confirm Delete All Songs">Delete All</button>
+                    <button class="btn btn-secondary" id="cancelDeleteAll" title="Cancel Delete All - Keep all songs safe" aria-label="Cancel Delete All Songs">Cancel</button>
+                    <button class="btn btn-danger" id="confirmDeleteAll" title="Confirm Delete All - DANGER: Permanently remove all songs" aria-label="Confirm Delete All Songs">Delete All</button>
                 </div>
             </div>
         </div>
