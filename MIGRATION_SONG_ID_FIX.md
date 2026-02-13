@@ -11,8 +11,9 @@
 2. [Issue #2: Multiselect Code Consolidation](#issue-2-multiselect-code-consolidation) - ✅ COMPLETED
 3. [Issue #3: Duplicate Variable Declarations](#issue-3-duplicate-variable-declarations) - ✅ COMPLETED
 4. [Issue #4: Setlist Rendering Consolidation](#issue-4-setlist-rendering-consolidation) - ✅ COMPLETED
-5. [UI Fixes: Toggle Buttons](#ui-fixes-toggle-buttons) - ✅ COMPLETED
-6. [Future Issues](#future-issues)
+5. [Issue #5: Backend Song ID Validation & Duplicate Cleanup](#issue-5-backend-song-id-validation--duplicate-cleanup) - ✅ COMPLETED
+6. [UI Fixes: Toggle Buttons](#ui-fixes-toggle-buttons) - ✅ COMPLETED
+7. [Future Issues](#future-issues)
 
 ---
 
@@ -1021,6 +1022,156 @@ window.addEventListener('resize', () => {
 
 ---
 
+## Issue #5: Backend Song ID Validation & Duplicate Cleanup
+
+**Problem Summary:**
+After migrating frontend to use numeric song IDs (Issue #1), needed to validate backend database integrity. Discovered 19 duplicate song IDs - songs with identical IDs but different or identical content.
+
+**Solution:**
+Created comprehensive validation and cleanup scripts to ensure database integrity and eliminate duplicates.
+
+### Changes Made
+
+#### 1. Created `validate-song-ids.js` - Backend Validation Script
+
+**Purpose:** Comprehensive validation of all songs in MongoDB database
+
+**Validations Performed:**
+- ✅ ID field exists on all songs
+- ✅ ID is numeric type (not string or ObjectId)
+- ✅ ID is an integer (not float)
+- ✅ ID is positive (> 0)
+- ✅ No duplicate IDs exist
+- ✅ MongoDB _id field exists
+
+**Report Includes:**
+- Total song count and validity percentage
+- Detailed issue listing with song titles
+- ID statistics (min, max, range, gaps)
+- Sample valid songs
+- Exit code (0=pass, 1=fail)
+
+**Usage:**
+```bash
+node validate-song-ids.js
+```
+
+#### 2. Created `fix-duplicate-song-ids.js` - Automatic Duplicate Resolution
+
+**Purpose:** Intelligently fix duplicate song IDs
+
+**Resolution Strategy:**
+- **Exact Duplicates:** Delete duplicate (keep first occurrence)
+  - Criteria: Same title, artist, key, lyrics, and chords
+  - Action: Remove duplicate document from database
+  
+- **Different Songs:** Reassign new ID to duplicate
+  - Criteria: Same ID but different content (e.g., different key)
+  - Action: Assign next available ID (max+1)
+
+**Results from Initial Run:**
+```
+🗑️  Deleted exact duplicates: 15 songs
+🔄 Reassigned new IDs: 4 songs
+✅ Total fixed: 19 duplicates
+📊 Songs before: 798
+📊 Songs after: 783
+```
+
+#### 3. Duplicates Fixed
+
+**Deleted Exact Duplicates (15):**
+- ID 349: "Aap ki aankhon mein kuchh"
+- ID 418: "Khamoshiyan Title"
+- ID 419: "Saiyaara - Tum Ho Toh"
+- ID 421: "Jab Tak Hai Jaan - Challa"
+- ID 426: "Rockstar - Jo Bhi Main"
+- ID 427: "Ye Laal Ishq"
+- ID 428: "Aayat - Bajirao Mastani"
+- ID 431: "Tere Bina Beswaadi - Guru"
+- ID 432: "Challa"
+- ID 435: "Khwaja mere khwaja"
+- ID 436: "O Nadaan Parindey"
+- ID 439: "Vande Maataram"
+- ID 440: "Khaare Raste"
+- ID 442: "Gela Gela Gela"
+- ID 450: "Aankhon mein teri"
+
+**Reassigned New IDs (4):**
+- 417 → 852: "Ek Villain - Galliyan" (different lyrics)
+- 429 → 853: "Tera Yakeen Kyon - Awarapan" (Dm vs Em)
+- 430 → 854: "Maahi Ve - Highway" (Dm vs C)
+- 441 → 855: "Aye udi udi" (G vs C)
+
+### Verification Results
+
+**Final Validation:**
+```
+✅ Total songs: 783
+✅ Valid songs: 783 / 783 (100%)
+✅ All IDs are numeric integers
+✅ No duplicate IDs
+✅ ID range: 1 - 855
+✅ No validation errors
+```
+
+**Backend Compatibility Verified:**
+- ✅ server.js already uses numeric IDs correctly
+- ✅ All CRUD operations use `{ id: parseInt(id) }`
+- ✅ Auto-generates numeric IDs for new songs
+- ✅ Validates IDs are positive integers
+- ✅ Backward compatible with old setlist formats
+
+### Testing Checklist
+
+**Backend Validation:**
+- [x] Run validation script on database
+- [x] All songs have numeric ID field
+- [x] No duplicate IDs exist
+- [x] All IDs are positive integers
+- [x] MongoDB _id fields present
+
+**Duplicate Resolution:**
+- [x] Identify exact duplicates vs different songs
+- [x] Delete exact duplicates
+- [x] Reassign IDs to different songs
+- [x] Verify no duplicates remain
+- [x] Confirm song count is correct (783)
+
+**Server Compatibility:**
+- [x] GET /api/songs returns numeric IDs
+- [x] POST /api/songs auto-generates numeric IDs
+- [x] PUT /api/songs/:id uses parseInt(id)
+- [x] DELETE /api/songs/:id uses parseInt(id)
+- [x] Setlist operations handle numeric IDs
+
+### Files Modified
+
+**New Files:**
+- `validate-song-ids.js` - Database validation script (358 lines)
+- `fix-duplicate-song-ids.js` - Duplicate resolution script (213 lines)
+
+**Database Changes:**
+- Deleted 15 duplicate song documents
+- Reassigned 4 song IDs (852-855)
+- Final count: 783 unique songs with 783 unique IDs
+
+### Impact & Benefits
+
+**Database Integrity:**
+- ✅ Eliminated all duplicate IDs
+- ✅ Ensured all songs have valid numeric IDs
+- ✅ Cleaned up 15 exact duplicate songs
+- ✅ Prevented future ID conflicts
+
+**Code Quality:**
+- Database size reduced by ~1.9% (798 → 783 songs)
+- Duplicate storage eliminated
+- Reusable validation script for future checks
+- Automated duplicate detection and resolution
+
+---
+
 # Future Issues
 
 These issues remain to be addressed in future sessions:
@@ -1064,12 +1215,15 @@ These issues remain to be addressed in future sessions:
 | #2: Multiselect Consolidation | ✅ COMPLETED | -732 | High - Eliminated duplication |
 | #3: Duplicate Variables | ✅ COMPLETED | -4 | Medium - Fixed auth bugs |
 | #4: Setlist Rendering | ✅ COMPLETED | -167 | Medium - Better maintainability |
+| #5: Backend Validation | ✅ COMPLETED | +571 (2 scripts) | High - Database integrity |
 | UI: Toggle Buttons | ✅ COMPLETED | ~40 modified | High - User experience |
 
-**Total Code Reduction:** ~903 lines removed  
+**Total Code Reduction:** ~903 lines removed from main.js  
+**Scripts Added:** 2 validation/fix scripts (+571 lines)  
+**Database Cleaned:** 15 duplicate songs removed (798 → 783 songs)  
 **File Size Impact:** ~8% reduction in main.js  
-**Issues Completed:** 5 major issues resolved  
-**Quality Improvement:** Significant reduction in code duplication and bugs
+**Issues Completed:** 6 major issues resolved  
+**Quality Improvement:** Significant reduction in code duplication, bugs, and data inconsistency
 
 ---
 
@@ -1157,7 +1311,7 @@ Migration is successful when:
 
 ---
 
-**Overall Status as of February 14, 2026:** 5 of 5 issues completed  
+**Overall Status as of February 14, 2026:** 6 of 6 issues completed  
 **Next Milestone:** Address remaining pending issues from Future Issues section  
 **Confidence:** High - All changes tested and verified  
-**Code Quality:** Significant improvement - ~903 lines of duplicate code removed
+**Code Quality:** Significant improvement - ~903 lines of duplicate code removed, database cleaned
