@@ -4115,8 +4115,9 @@ window.viewSingleLyrics = function(songId, otherId) {
             if (typeof item === 'object' && item !== null) {
                 return item;
             }
-            // If item is a string/number ID, find it in the songs array
-            const song = songs.find(s => s.id === item || s._id === item);
+            // If item is a string/number ID, find it in the songs array using numeric id
+            const itemId = typeof item === 'string' ? parseInt(item) : item;
+            const song = songs.find(s => s.id === itemId);
             return song || null;
         }).filter(Boolean);
 
@@ -4245,8 +4246,9 @@ window.viewSingleLyrics = function(songId, otherId) {
             if (typeof item === 'object' && item !== null) {
                 return item;
             }
-            // If item is a string/number ID, find it in the songs array
-            const song = songs.find(s => s.id === item || s._id === item);
+            // If item is a string/number ID, find it in the songs array using numeric id
+            const itemId = typeof item === 'string' ? parseInt(item) : item;
+            const song = songs.find(s => s.id === itemId);
             return song || null;
         }).filter(Boolean);
 
@@ -4379,7 +4381,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     </div>
                 </div>
                 <div class="setlist-song-actions">
-                    ${!isResequenceMode && (currentSetlistType !== 'global' || (currentUserInFunction && currentUserInFunction.isAdmin)) ? `<button class="remove-from-setlist-btn" data-song-id="${song._id || song.id}" title="Remove from setlist" type="button">×</button>` : ''}
+                    ${!isResequenceMode && (currentSetlistType !== 'global' || (currentUserInFunction && currentUserInFunction.isAdmin)) ? `<button class="remove-from-setlist-btn" data-song-id="${song.id}" title="Remove from setlist" type="button">×</button>` : ''}
                 </div>`;
 
             // Add click handler for song info (not the remove button)
@@ -4400,7 +4402,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                         showNotification('❌ Access denied: Only administrators can modify global setlists', 'error');
                         return;
                     }
-                    await removeSongFromSetlist(song._id || song.id);
+                    await removeSongFromSetlist(song.id);
                 });
             }
             ul.appendChild(li);
@@ -5033,7 +5035,7 @@ window.viewSingleLyrics = function(songId, otherId) {
 
         if (matchingSongs.length > 0) {
             resultsList.innerHTML = matchingSongs.map(song => `
-                <div class="existing-song-item" onclick="selectExistingSong('${song._id}')">
+                <div class="existing-song-item" onclick="selectExistingSong('${song.id}')">
                     <div class="song-title">${song.title}</div>
                     <div class="song-details">
                         ${song.key || 'Unknown Key'} • ${song.time || song.timeSignature || 'Unknown Time'} • ${song.tempo || 'Unknown BPM'}
@@ -5047,7 +5049,7 @@ window.viewSingleLyrics = function(songId, otherId) {
     }
 
     async function selectExistingSong(songId) {
-        const song = songs.find(s => s._id === songId);
+        const song = songs.find(s => s.id === parseInt(songId));
         if (song && currentViewingSetlist) {
             // Add existing song to setlist
             const success = await addSongToCurrentSetlist(song);
@@ -5137,7 +5139,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                     songTitle = song.title || '';
                 } else if (typeof song === 'string') {
                     // Song ID - look up in global songs array
-                    const foundSong = songs.find(s => s.id === song || s._id === song);
+                    const foundSong = songs.find(s => s.id === parseInt(song));
                     songTitle = foundSong ? foundSong.title : '';
                 }
                 
@@ -5145,7 +5147,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 if (typeof song === 'string' && song.startsWith('manual_')) {
                     // This might be a manual song ID - check existing manual songs in setlist
                     const manualSongInList = currentSetlist.songs.find(s => 
-                        typeof s === 'object' && s._id === song
+                        typeof s === 'object' && s.id === song
                     );
                     if (manualSongInList) {
                         songTitle = manualSongInList.title || '';
@@ -5173,7 +5175,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 },
                 body: JSON.stringify({
                     setlistId: setlistId,
-                    songId: manualSong._id,
+                    songId: manualSong.id,
                     manualSong: manualSong
                 })
             });
@@ -6138,12 +6140,12 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Map Smart Setlist songs to full song data from the main songs array
         const fullSongData = smartSetlist.songs.map(smartSong => {
             // Smart Setlist might store limited data, so get full data by ID
-            const fullSong = songs.find(s => s.id === smartSong.id || s.id === smartSong._id || s._id === smartSong.id || s._id === smartSong._id);
+            const fullSong = songs.find(s => s.id === smartSong.id);
             if (fullSong) {
                 return fullSong;
             } else {
                 // Fallback: if full song not found in main array, use what we have from Smart Setlist
-                console.warn(`Full song data not found for Smart Setlist song ID: ${smartSong.id || smartSong._id}`, smartSong);
+                console.warn(`Full song data not found for Smart Setlist song ID: ${smartSong.id}`, smartSong);
                 return smartSong;
             }
         }).filter(song => song); // Remove any undefined entries

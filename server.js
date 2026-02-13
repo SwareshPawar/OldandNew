@@ -360,6 +360,14 @@ app.get('/api/songs', async (req, res) => {
       };
     }
     const songs = await songsCollection.find(query).toArray();
+    
+    // Validate all songs have numeric IDs (log warning if not)
+    const songsWithoutId = songs.filter(s => typeof s.id !== 'number');
+    if (songsWithoutId.length > 0) {
+      console.warn(`⚠️  Found ${songsWithoutId.length} songs without numeric ID:`, 
+        songsWithoutId.map(s => ({ title: s.title, _id: s._id })));
+    }
+    
     res.json(songs);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -371,10 +379,24 @@ app.post('/api/songs', authMiddleware, async (req, res) => {
   try {
     console.log('DEBUG /api/songs POST req.user:', req.user);
     console.log('DEBUG /api/songs POST req.body:', req.body);
+    
+    // Ensure song has a numeric ID
     if (typeof req.body.id !== 'number') {
       const last = await songsCollection.find().sort({ id: -1 }).limit(1).toArray();
       req.body.id = last.length ? last[0].id + 1 : 1;
     }
+    
+    // Validate ID is a positive integer
+    if (!Number.isInteger(req.body.id) || req.body.id <= 0) {
+      return res.status(400).json({ error: 'Song ID must be a positive integer' });
+    }
+    
+    // Check for duplicate ID
+    const existingSong = await songsCollection.findOne({ id: req.body.id });
+    if (existingSong) {
+      return res.status(409).json({ error: `Song with ID ${req.body.id} already exists` });
+    }
+    
     // Add createdBy and createdAt if not present
     // Always use createdBy and createdAt from request if present, else fallback to user/date
     if (!req.body.createdBy && req.user) {
@@ -625,8 +647,7 @@ app.post('/api/songs/scan', async (req, res) => {
       
       // Only return essential fields to reduce payload size for Smart Setlists
       songs = songs.map(song => ({
-        id: song.id || song._id,
-        _id: song._id,
+        id: song.id,
         title: song.title,
         songNumber: song.songNumber,
         key: song.key,
@@ -662,8 +683,7 @@ app.post('/api/songs/scan', async (req, res) => {
     
     // Only return essential fields to reduce payload size for Smart Setlists
     songs = songs.map(song => ({
-      id: song.id || song._id,
-      _id: song._id,
+      id: song.id,
       title: song.title,
       songNumber: song.songNumber,
       key: song.key,
