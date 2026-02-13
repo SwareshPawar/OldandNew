@@ -1588,7 +1588,10 @@ async function performInitialization() {
     addEventListeners();
     addPanelToggles();
     
-    // Initialize mobile navigation on supported devices
+    // Create mobile navigation buttons on all screen sizes
+    createMobileNavButtons();
+    
+    // Initialize mobile touch navigation on mobile devices only
     if (window.innerWidth <= 768) {
         addMobileTouchNavigation();
     }
@@ -3308,33 +3311,93 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
     }
 
-    // Render global setlists in sidebar
-    async function renderGlobalSetlists() {
-        const content = document.getElementById('globalSetlistContent');
-        if (!content) return;
+    // Generic setlist renderer - handles global, my, and smart setlists
+    async function renderSetlists(config) {
+        const {
+            contentElementId,      // 'globalSetlistContent', 'mySetlistContent', 'smartSetlistContent'
+            dataArray,             // globalSetlists, mySetlists, smartSetlists
+            dataType,              // 'global', 'my', 'smart'
+            loadFunction,          // loadGlobalSetlists, loadMySetlists, null
+            emptyMessage,          // Message or function returning message
+            icon,                  // 'fa-list', 'fa-brain'
+            showHandler,           // showGlobalSetlistInMainSection, etc.
+            editHandler,           // editGlobalSetlist, etc.
+            deleteHandler,         // deleteGlobalSetlist, etc.
+            refreshHandler,        // For smart setlists only
+            descriptionHideTypes,  // ['my'], ['global'], ['my', 'global']
+            checkPermissions,      // For smart setlists - function to check edit permissions
+            enableMobileTouch,     // For smart setlists - enable touch feedback
+            logPrefix              // For debugging (optional)
+        } = config;
 
-        // Fetch latest global setlists from backend
-        await loadGlobalSetlists(true);
+        const content = document.getElementById(contentElementId);
+        if (!content) {
+            if (logPrefix) console.warn(`${logPrefix} ${contentElementId} element not found`);
+            return;
+        }
+
+        // Load data if load function provided
+        if (loadFunction) {
+            await loadFunction(true);
+        }
+
+        if (logPrefix) console.log(`${logPrefix} Rendering ${dataArray.length} setlists in sidebar`);
 
         content.innerHTML = '';
-        if (globalSetlists.length === 0) {
+
+        // Handle empty state
+        if (dataArray.length === 0) {
+            const message = typeof emptyMessage === 'function' ? emptyMessage() : emptyMessage;
             const testMsg = document.createElement('li');
-            testMsg.innerHTML = '<div style="padding: 10px; color: #888; font-style: italic;">No global setlists available</div>';
+            testMsg.innerHTML = `<div style="padding: 10px; color: #888; font-style: italic;">${message}</div>`;
             content.appendChild(testMsg);
+            return;
         }
-        globalSetlists.forEach(setlist => {
+
+        // Render each setlist
+        dataArray.forEach(setlist => {
             const li = document.createElement('li');
+            const setlistId = setlist.id || setlist._id;
+
+            // Check permissions if function provided (for smart setlists)
+            let canEdit = true;
+            let showActions = true;
+            if (checkPermissions) {
+                const permissions = checkPermissions(setlist);
+                canEdit = permissions.canEdit;
+                showActions = permissions.showActions;
+            }
+
+            // Build action buttons HTML
+            let actionsHTML = '';
+            if (refreshHandler) {
+                actionsHTML += `
+                    <button class="setlist-action-btn smart-refresh-btn" title="Update Setlist - Rescan and save with current conditions">
+                        <i class="fas fa-sync"></i>
+                    </button>`;
+            }
+            actionsHTML += `
+                <button class="setlist-action-btn edit-setlist" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="setlist-action-btn delete-setlist" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>`;
+
+            // Build setlist item HTML
+            const itemClass = dataType === 'smart' ? 'smart-setlist-header' : '';
+            const wrapperStart = itemClass ? `<div class="${itemClass}">` : '';
+            const wrapperEnd = itemClass ? '</div>' : '';
+            const actionsClass = dataType === 'smart' ? 'smart-setlist-actions' : 'setlist-actions';
+
             li.innerHTML = `
-                <div class="setlist-item" data-setlist-id="${setlist._id}" data-type="global">
-                    <i class="fas fa-list"></i>
-                    <span>${setlist.name}</span>
-                    <div class="setlist-actions">
-                        <button class="setlist-action-btn edit-setlist" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="setlist-action-btn delete-setlist" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                <div class="setlist-item" data-setlist-id="${setlistId}" data-type="${dataType}">
+                    ${wrapperStart}
+                        <i class="fas ${icon}"></i>
+                        <span>${setlist.name}</span>
+                    ${wrapperEnd}
+                    <div class="${actionsClass}" style="display: ${showActions ? 'flex' : 'none'};">
+                        ${actionsHTML}
                     </div>
                 </div>
             `;
@@ -3344,95 +3407,91 @@ window.viewSingleLyrics = function(songId, otherId) {
         // Add event listeners
         content.querySelectorAll('.setlist-item').forEach(item => {
             const setlistId = item.dataset.setlistId;
-            item.addEventListener('click', (e) => {
-                if (!e.target.closest('.setlist-actions')) {
-                    showGlobalSetlistInMainSection(setlistId);
-                    const setlist = globalSetlists.find(s => s._id === setlistId);
+
+            // Main click handler
+            const handleSetlistClick = (e) => {
+                if (!e.target.closest('.setlist-actions') && !e.target.closest('.smart-setlist-actions')) {
+                    if (logPrefix) console.log(`${logPrefix} Setlist clicked:`, setlistId);
+                    
+                    showHandler(setlistId);
+                    
+                    const setlist = dataArray.find(s => (s.id || s._id) === setlistId);
                     if (setlist) {
-                        hideSetlistDescription('my');
-                        showSetlistDescription(setlist, 'global');
+                        // Hide other setlist descriptions
+                        descriptionHideTypes.forEach(type => hideSetlistDescription(type));
+                        showSetlistDescription(setlist, dataType);
                     }
                 }
-            });
+            };
+
+            item.addEventListener('click', handleSetlistClick);
+
+            // Mobile touch support if enabled
+            if (enableMobileTouch) {
+                item.addEventListener('touchstart', (e) => {
+                    item.style.transform = 'scale(0.98)';
+                    setTimeout(() => { item.style.transform = ''; }, 100);
+                }, { passive: true });
+            }
+
+            // Edit button
             item.querySelector('.edit-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
-                editGlobalSetlist(setlistId);
+                editHandler(setlistId);
             });
+
+            // Delete button
             item.querySelector('.delete-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
-                deleteGlobalSetlist(setlistId);
+                deleteHandler(setlistId);
             });
+
+            // Refresh button (smart setlists only)
+            if (refreshHandler) {
+                item.querySelector('.smart-refresh-btn')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    refreshHandler(setlistId);
+                });
+            }
+
+            // Resequence button (if present)
             item.querySelector('.resequence-setlist')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 window.setlistResequenceMode = true;
-                showGlobalSetlistInMainSection(setlistId);
+                showHandler(setlistId);
             });
+        });
+    }
+
+    // Render global setlists in sidebar
+    async function renderGlobalSetlists() {
+        await renderSetlists({
+            contentElementId: 'globalSetlistContent',
+            dataArray: globalSetlists,
+            dataType: 'global',
+            loadFunction: loadGlobalSetlists,
+            emptyMessage: 'No global setlists available',
+            icon: 'fa-list',
+            showHandler: showGlobalSetlistInMainSection,
+            editHandler: editGlobalSetlist,
+            deleteHandler: deleteGlobalSetlist,
+            descriptionHideTypes: ['my']
         });
     }
 
     // Render my setlists in sidebar
     async function renderMySetlists() {
-        const content = document.getElementById('mySetlistContent');
-        if (!content) return;
-
-        // Fetch latest my setlists from backend
-        await loadMySetlists(true);
-
-        content.innerHTML = '';
-        if (mySetlists.length === 0) {
-            const testMsg = document.createElement('li');
-            if (jwtToken) {
-                testMsg.innerHTML = '<div style="padding: 10px; color: #888; font-style: italic;">No personal setlists created</div>';
-            } else {
-                testMsg.innerHTML = '<div style="padding: 10px; color: #888; font-style: italic;">Login to create your setlists</div>';
-            }
-            content.appendChild(testMsg);
-        }
-        mySetlists.forEach(setlist => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <div class="setlist-item" data-setlist-id="${setlist._id}" data-type="my">
-                    <i class="fas fa-list"></i>
-                    <span>${setlist.name}</span>
-                    <div class="setlist-actions">
-                        <button class="setlist-action-btn edit-setlist" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="setlist-action-btn delete-setlist" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            content.appendChild(li);
-        });
-
-        // Add event listeners
-        content.querySelectorAll('.setlist-item').forEach(item => {
-            const setlistId = item.dataset.setlistId;
-            item.addEventListener('click', (e) => {
-                if (!e.target.closest('.setlist-actions')) {
-                    showMySetlistInMainSection(setlistId);
-                    const setlist = mySetlists.find(s => s._id === setlistId);
-                    if (setlist) {
-                        hideSetlistDescription('global');
-                        showSetlistDescription(setlist, 'my');
-                    }
-                }
-            });
-            item.querySelector('.edit-setlist')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                editMySetlist(setlistId);
-            });
-            item.querySelector('.delete-setlist')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                deleteMySetlist(setlistId);
-            });
-            item.querySelector('.resequence-setlist')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.setlistResequenceMode = true;
-                showMySetlistInMainSection(setlistId);
-            });
+        await renderSetlists({
+            contentElementId: 'mySetlistContent',
+            dataArray: mySetlists,
+            dataType: 'my',
+            loadFunction: loadMySetlists,
+            emptyMessage: () => jwtToken ? 'No personal setlists created' : 'Login to create your setlists',
+            icon: 'fa-list',
+            showHandler: showMySetlistInMainSection,
+            editHandler: editMySetlist,
+            deleteHandler: deleteMySetlist,
+            descriptionHideTypes: ['global']
         });
     }
 
@@ -5367,92 +5426,25 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Render smart setlists in sidebar
     function renderSmartSetlists() {
-        console.log(`📋 Rendering ${smartSetlists.length} Smart Setlists in sidebar`);
-        const content = document.getElementById('smartSetlistContent');
-        if (!content) {
-            console.warn('📋 smartSetlistContent element not found');
-            return;
-        }
-        
-        content.innerHTML = '';
-        
-        if (smartSetlists.length === 0) {
-            content.innerHTML = '<li style="padding:8px;color:var(--secondary-text-color);font-style:italic;">No smart setlists yet</li>';
-            return;
-        }
-        
-        smartSetlists.forEach(smartSetlist => {
-            const li = document.createElement('li');
-            
-            // Check if user can edit this smart setlist
-            // User can edit if: they created it OR (they're admin AND it was created by admin)
-            const isCreator = currentUser && smartSetlist.createdBy === currentUser.id;
-            const canEdit = isCreator || (isAdmin() && smartSetlist.isAdminCreated);
-            
-            li.innerHTML = `
-                <div class="setlist-item" data-setlist-id="${smartSetlist.id || smartSetlist._id}" data-type="smart">
-                    <div class="smart-setlist-header">
-                        <i class="fas fa-brain"></i>
-                        <span>${smartSetlist.name}</span>
-                    </div>
-                    <div class="smart-setlist-actions" style="display: ${canEdit ? 'flex' : 'none'};">
-                        <button class="setlist-action-btn smart-refresh-btn" title="Update Setlist - Rescan and save with current conditions">
-                            <i class="fas fa-sync"></i>
-                        </button>
-                        <button class="setlist-action-btn edit-smart-setlist" title="Edit Smart Setlist">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="setlist-action-btn delete-smart-setlist delete-setlist" title="Delete Smart Setlist">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            content.appendChild(li);
-        });
-        
-        // Add event listeners
-        content.querySelectorAll('.setlist-item').forEach(item => {
-            const setlistId = item.dataset.setlistId;
-            
-            // Enhanced mobile support - handle both click and touch events
-            const handleSetlistClick = (e) => {
-                if (!e.target.closest('.setlist-actions')) {
-                    console.log('📋 Smart Setlist clicked:', setlistId);
-                    showSmartSetlistInMainSection(setlistId);
-                    
-                    // Add setlist description similar to global setlists
-                    const smartSetlist = smartSetlists.find(s => s.id === setlistId || s._id === setlistId);
-                    if (smartSetlist) {
-                        hideSetlistDescription('my');
-                        hideSetlistDescription('global');
-                        showSetlistDescription(smartSetlist, 'smart');
-                    }
-                }
-            };
-            
-            // Add both click and touchstart for better mobile support
-            item.addEventListener('click', handleSetlistClick);
-            item.addEventListener('touchstart', (e) => {
-                // Add touch feedback
-                item.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                    item.style.transform = '';
-                }, 100);
-            }, { passive: true });
-            
-            item.querySelector('.edit-smart-setlist')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                editSmartSetlist(setlistId);
-            });
-            item.querySelector('.smart-refresh-btn')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                updateSmartSetlist(setlistId);
-            });
-            item.querySelector('.delete-smart-setlist')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                deleteSmartSetlist(setlistId);
-            });
+        renderSetlists({
+            contentElementId: 'smartSetlistContent',
+            dataArray: smartSetlists,
+            dataType: 'smart',
+            loadFunction: null,
+            emptyMessage: 'No smart setlists yet',
+            icon: 'fa-brain',
+            showHandler: showSmartSetlistInMainSection,
+            editHandler: editSmartSetlist,
+            deleteHandler: deleteSmartSetlist,
+            refreshHandler: updateSmartSetlist,
+            descriptionHideTypes: ['my', 'global'],
+            checkPermissions: (setlist) => {
+                const isCreator = currentUser && setlist.createdBy === currentUser.id;
+                const canEdit = isCreator || (isAdmin() && setlist.isAdminCreated);
+                return { canEdit, showActions: canEdit };
+            },
+            enableMobileTouch: true,
+            logPrefix: '📋'
         });
     }
 
@@ -6204,7 +6196,6 @@ window.viewSingleLyrics = function(songId, otherId) {
     // --- Admin Panel Logic ---
     //const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://oldandnew.onrender.com';
     async function fetchUsers() {
-        const jwtToken = localStorage.getItem('jwtToken');
         const res = await fetch(`${API_BASE_URL}/api/users`, {
             headers: { 'Authorization': `Bearer ${jwtToken}` }
         });
@@ -6212,7 +6203,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         return res.json();
     }
     async function markAdmin(userId) {
-        const jwtToken = localStorage.getItem('jwtToken');
         const res = await fetch(`${API_BASE_URL}/api/users/${userId}/admin`, {
             method: 'PATCH',
             headers: {
@@ -6356,12 +6346,13 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
         
         function applyToggleButtonsVisibility(visibility) {
-            const toggleButtons = document.querySelectorAll('.panel-toggle.draggable');
+            const toggleButtons = document.querySelectorAll('.panel-toggle.draggable, .toggle-suggested-songs');
+            
             toggleButtons.forEach(button => {
                 if (visibility === 'hide') {
                     button.style.display = 'none';
                 } else {
-                    button.style.display = 'block';
+                    button.style.display = '';  // Use CSS default (flex/block)
                 }
             });
         }
@@ -6511,8 +6502,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 }
             }
             
-            // Create mobile navigation buttons (now shown on all screen sizes)
-            createMobileNavButtons();
+            // Note: createMobileNavButtons is now called in init() for all screen sizes
         }
         
         function createMobileNavButtons() {
@@ -6588,6 +6578,10 @@ window.viewSingleLyrics = function(songId, otherId) {
                 existingContainer.remove();
             }
             createMobileNavButtons();
+            
+            // Reapply toggle buttons visibility based on screen size
+            const toggleButtonsVisibility = localStorage.getItem("toggleButtonsVisibility") || "hide";
+            applyToggleButtonsVisibility(toggleButtonsVisibility);
         });
 
     
@@ -9609,7 +9603,6 @@ window.viewSingleLyrics = function(songId, otherId) {
                     };
                     try {
                         console.log(`🔄 Adding song to backend: ${newSong.title}`);
-                        const jwtToken = localStorage.getItem('jwtToken') || '';
                         const response = await fetch(`${API_BASE_URL}/api/songs`, {
                             method: 'POST',
                             headers: {
@@ -10584,7 +10577,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             const saved = localStorage.getItem(id + '-pos');
             const minPadding = 20;
             const btnSize = 36;
-            const spacing = window.innerWidth <= 768 ? 60 : 50;
+            const spacing = 60; // Consistent spacing on all devices
             const allIds = ['toggle-sidebar', 'toggle-songs', 'toggle-all-panels'];
             const idx = allIds.indexOf(id);
 
@@ -10606,7 +10599,9 @@ window.viewSingleLyrics = function(songId, otherId) {
             } else {
                 // Default: position vertically on right edge, centered
                 const centerY = Math.floor(window.innerHeight / 2);
-                const startY = centerY - Math.floor(allIds.length * (btnSize + spacing) / 2);
+                // Calculate total height of all buttons with spacing
+                const totalHeight = allIds.length * btnSize + (allIds.length - 1) * spacing;
+                const startY = centerY - Math.floor(totalHeight / 2);
                 
                 el.style.top = Math.max(minPadding, startY + idx * (btnSize + spacing)) + 'px';
                 el.style.left = '';
@@ -10784,8 +10779,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         }, { passive: true });
 
         async function removeAdminRole(userId) {
-    const jwtToken = localStorage.getItem('jwtToken');
-    
     // Confirm action with user
     if (!confirm('Are you sure you want to remove admin role from this user?')) {
         return;

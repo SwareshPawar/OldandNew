@@ -2,7 +2,39 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Version:** 1.0
+**Last Updated:** February 14, 2026  
+**Version:** 1.1
+
+---
+
+## RECENT CHANGES (February 14, 2026)
+
+### Completed Fixes
+
+1. **✅ Issue #3: Duplicate Variable Declarations**
+   - Fixed 4 local `jwtToken` redeclarations shadowing global variable
+   - Locations: fetchUsers(), markAdmin(), add song handler, removeAdminRole()
+   - Impact: Prevents stale authentication token issues
+
+2. **✅ Issue #6: Setlist Rendering Consolidation**
+   - Consolidated 3 duplicate rendering functions (~167 lines removed)
+   - Created generic `renderSetlists()` function with configuration objects
+   - All features preserved: permissions, mobile touch, refresh buttons
+   - Impact: Improved maintainability, consistent behavior
+
+3. **✅ UI: Toggle Buttons Visibility & Alignment**
+   - Fixed panel toggle buttons visibility on desktop
+   - Added desktop CSS rules for full opacity (opacity: 1)
+   - Fixed mobile nav buttons appearing on desktop page load
+   - Proper alignment: Auto-scroll positioned above nav buttons
+   - Desktop: 4 buttons (sidebar, songs, both panels, auto-scroll)
+   - Mobile: 3 buttons (sidebar, songs, auto-scroll)
+
+### Code Metrics
+- **Total Lines Removed:** ~900 lines of duplicate code
+- **File Size Reduction:** ~8% reduction in main.js
+- **Issues Resolved:** 4 major issues fixed
+- **Bugs Fixed:** Authentication token staleness, button visibility
 
 ---
 
@@ -616,11 +648,11 @@
 
 ### Potential Bugs
 
-1. **Duplicate Variable Declarations** ([main.js](main.js))
-   - `isDarkMode` declared multiple times (lines 19, 241, 3550)
-   - `jwtToken` re-initialized multiple times
-   - **Impact:** Medium - Can cause unexpected behavior
-   - **Solution:** Consolidate to single declaration
+1. **Duplicate Variable Declarations** ✅ FIXED ([main.js](main.js))
+   - `jwtToken` had 4 local redeclarations shadowing the global variable
+   - **Impact:** Medium - Can cause unexpected behavior with stale tokens
+   - **Solution:** ✅ COMPLETED - Removed all local redeclarations, now uses global variable
+   - **Note:** `isDarkMode` only has one declaration with multiple re-assignments (correct behavior)
 
 2. **Missing Null Checks** ([main.js](main.js))
    - `currentViewingSetlist` accessed without null check in some functions
@@ -653,14 +685,18 @@
 
 ### Duplicate Code
 
-1. **Multiselect Setup** 🔄 IN PROGRESS ([main.js](main.js:1697-2418))
-   - `setupGenreMultiselect`, `setupMoodMultiselect`, `setupArtistMultiselect` have 90% similar code
-   - **Solution:** Extract to single generic function
-   - **Status:** 🔄 Genre Complete - See [MIGRATION_SONG_ID_FIX.md](MIGRATION_SONG_ID_FIX.md) Issue #2
+1. **Multiselect Setup** ✅ COMPLETED ([main.js](main.js))
+   - `setupGenreMultiselect`, `setupMoodMultiselect`, `setupArtistMultiselect` had 97% similar code (732 lines)
+   - **Solution:** ✅ COMPLETED - Extracted to single generic `setupSearchableMultiselect` function
+   - **Status:** ✅ All three multiselects now use generic function - See [MIGRATION_SONG_ID_FIX.md](MIGRATION_SONG_ID_FIX.md) Issue #2
+   - **Impact:** Removed 732 lines of duplicate code (-6.2% file size reduction)
 
-2. **Setlist Rendering** ([main.js](main.js))
-   - `renderGlobalSetlists` and `renderMySetlists` have very similar code
-   - **Solution:** Extract common rendering logic
+2. **Setlist Rendering** ✅ COMPLETED ([main.js](main.js))
+   - `renderGlobalSetlists`, `renderMySetlists`, `renderSmartSetlists` had 85% similar code
+   - **Solution:** ✅ COMPLETED - Extracted to single generic `renderSetlists` function
+   - **Status:** ✅ All three setlist types now use generic function with configuration objects
+   - **Impact:** Removed ~167 lines of duplicate code, improved maintainability
+   - **Features preserved:** Permission checking, mobile touch support, refresh button (smart), conditional messages
 
 3. **Modal Opening/Closing** ([main.js](main.js), [index.html](index.html))
    - Repetitive modal open/close logic

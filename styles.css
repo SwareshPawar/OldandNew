@@ -689,6 +689,11 @@
                 margin-left: auto;
                 margin-right: auto;
             }
+            
+            /* Desktop: Position auto-scroll above 4 mobile nav buttons */
+            .auto-scroll-controls {
+                bottom: 252px; /* Desktop: above 4 nav buttons (4*48 + 3*10 + margin) */
+            }
         }
 
         .preview-action-btn {
@@ -1110,6 +1115,13 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
+        /* Desktop: Always show stationary toggle button at full opacity */
+        @media (min-width: 769px) {
+            .toggle-suggested-songs {
+                opacity: 1 !important;
+            }
+        }
+
 
         :root {
     /* Layout Variables */
@@ -1344,6 +1356,29 @@
             opacity: 0.9;
             transform: scale(1);
             border: none;
+        }
+
+        /* Default positioning for panel toggles - before JavaScript repositions them */
+        #toggle-sidebar {
+            top: calc(50% - 70px);
+            right: 20px;
+        }
+
+        #toggle-songs {
+            top: calc(50% - 10px);
+            right: 20px;
+        }
+
+        #toggle-all-panels {
+            top: calc(50% + 50px);
+            right: 20px;
+        }
+
+        /* Desktop: Always show panel toggles at full opacity */
+        @media (min-width: 769px) {
+            .panel-toggle.draggable {
+                opacity: 1 !important;
+            }
         }
 
 #installAppBtn {
@@ -4884,7 +4919,7 @@ body.dark-mode .modal-content {
         /* Auto-scroll controls */
         .auto-scroll-controls {
             position: fixed;
-            bottom: 180px;
+            bottom: 194px; /* Default for mobile: above 3 nav buttons (3*48 + 2*10 + margin) */
             right: 20px;
             display: flex;
             gap: 10px;
@@ -5421,7 +5456,7 @@ body.dark-mode .modal-content {
     }
     
     .auto-scroll-controls {
-        bottom: 180px;
+        bottom: 194px; /* Mobile: above 3 nav buttons */
         right: 20px;
     }
     

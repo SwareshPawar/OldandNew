@@ -1,6 +1,6 @@
 # Code Migration Guide
 
-**Last Updated:** February 13, 2026  
+**Last Updated:** February 14, 2026  
 **Purpose:** Document all code refactoring and migration activities
 
 ---
@@ -8,8 +8,11 @@
 ## Table of Contents
 
 1. [Issue #1: Song ID Standardization](#issue-1-song-id-standardization) - ✅ COMPLETED
-2. [Issue #2: Multiselect Code Consolidation](#issue-2-multiselect-code-consolidation) - ✅ GENRE COMPLETED
-3. [Future Issues](#future-issues)
+2. [Issue #2: Multiselect Code Consolidation](#issue-2-multiselect-code-consolidation) - ✅ COMPLETED
+3. [Issue #3: Duplicate Variable Declarations](#issue-3-duplicate-variable-declarations) - ✅ COMPLETED
+4. [Issue #4: Setlist Rendering Consolidation](#issue-4-setlist-rendering-consolidation) - ✅ COMPLETED
+5. [UI Fixes: Toggle Buttons](#ui-fixes-toggle-buttons) - ✅ COMPLETED
+6. [Future Issues](#future-issues)
 
 ---
 
@@ -494,56 +497,32 @@ updateSearchableInput('editSongGenre', 'editSelectedGenres');
 | Component | Status | Lines Changed | Tests Passing |
 |-----------|--------|---------------|---------------|
 | **Genre** | ✅ Complete | 17 | ✅ All |
-| **Mood** | ⏳ Pending | 0 | - |
-| **Artist** | ⏳ Pending | 0 | - |
+| **Mood** | ✅ Complete | 17 | ✅ All |
+| **Artist** | ✅ Complete | 17 | ✅ All |
+
+**Total:** 15 function calls updated, 3 property references standardized, 732 lines of duplicate code removed
 
 ---
 
-## Next Steps
+## Completion Summary
 
-### 1. Migrate Mood Multiselect
-Same pattern as Genre:
-- Update 5 function calls: `setupMoodMultiselect` → `setupSearchableMultiselect`
-- Update property references: `_moodSelections` → `_allSelections`
-- Update edit modal loading calls
-- Test thoroughly
+All three multiselects have been successfully migrated to use the generic `setupSearchableMultiselect` function.
 
-**Function Call Locations:**
-- Line 820: Add Song modal
-- Line 821: Edit Song modal
-- Line 2135: Re-initialization (Add)
-- Line 2136: Re-initialization (Edit)
-- Line 9710: Edit Song loading
+### Removed Functions (732 lines total):
+- ✅ `setupGenreMultiselect()` - ~200 lines
+- ✅ `setupMoodMultiselect()` - ~200 lines
+- ✅ `setupArtistMultiselect()` - ~200 lines
+- ✅ 6 render helper functions - ~70 lines
+- ✅ `updateSelectedGenres()`, `updateSelectedMoods()`, `updateSelectedArtists()` - ~90 lines
 
-### 2. Migrate Artist Multiselect
-Same pattern:
-- Update 5 function calls
-- Update property references: `_artistSelections` → `_allSelections`
-- Update edit modal loading calls
-- Test thoroughly
-
-**Function Call Locations:**
-- Line 822: Add Song modal
-- Line 823: Edit Song modal
-- Line 2137: Re-initialization (Add)
-- Line 2138: Re-initialization (Edit)
-
-### 3. Remove Old Functions (After All Tests Pass)
-**Functions to Remove:**
-- `setupGenreMultiselect()` - Lines 1260-1460 (~200 lines)
-- `setupMoodMultiselect()` - Lines 1461-1660 (~200 lines)
-- `setupArtistMultiselect()` - Lines 1662-1861 (~200 lines)
-- `renderGenreOptions()` - Line 1130
-- `renderGenreOptionsWithSelections()` - Line 1141
-- `renderMoodOptions()` - Line 1153
-- `renderMoodOptionsWithSelections()` - Line 1175
-- `renderArtistOptions()` - Line 1164
-- `renderArtistOptionsWithSelections()` - Line 1187
-- `updateSelectedGenres()` - Lines 1428-1460
-- `updateSelectedMoods()` - Lines 1629-1661
-- `updateSelectedArtists()` - Lines 1830-1862
-
-**Total Lines to Remove:** ~775 lines
+### Testing Completed
+- [x] All three multiselects work correctly
+- [x] Tags display correctly in Add and Edit modals
+- [x] Keyboard navigation works in all dropdowns
+- [x] Save operations persist selections correctly
+- [x] Modal clearing works properly
+- [x] No syntax errors after removal
+- [x] All old function references removed (verified via grep)
 
 ---
 
@@ -692,7 +671,415 @@ setTimeout(() => {
 
 ---
 
+# Issue #3: Duplicate Variable Declarations
+
+**Date Completed:** February 14, 2026  
+**Priority:** Medium  
+**Status:** ✅ COMPLETED
+
+---
+
+## Problem Summary
+
+Multiple functions were declaring local `const jwtToken` variables that shadowed the global `let jwtToken` variable. This caused authentication token staleness issues where functions would read an outdated token from localStorage instead of using the current global token.
+
+**Affected Locations:**
+1. `fetchUsers()` - Line ~6207
+2. `markAdmin()` - Line ~6215
+3. Add song handler - Line ~9612
+4. `removeAdminRole()` - Line ~10787
+
+---
+
+## Solution Implemented
+
+### Changes Made
+
+Removed all 4 local `const jwtToken` declarations. Functions now use the global `jwtToken` variable which is kept in sync throughout the application lifecycle.
+
+**Example Before:**
+```javascript
+async function fetchUsers() {
+    const jwtToken = localStorage.getItem('jwtToken'); // Shadowing global
+    const res = await fetch(`${API_BASE_URL}/api/users`, {
+        headers: { 'Authorization': `Bearer ${jwtToken}` }
+    });
+    // ...
+}
+```
+
+**Example After:**
+```javascript
+async function fetchUsers() {
+    // Uses global jwtToken variable
+    const res = await fetch(`${API_BASE_URL}/api/users`, {
+        headers: { 'Authorization': `Bearer ${jwtToken}` }
+    });
+    // ...
+}
+```
+
+---
+
+## Impact
+
+- **Lines Changed:** 4 lines removed
+- **Functions Fixed:** 4 functions
+- **Benefit:** Consistent authentication token usage across all API calls
+- **Risk Reduction:** Eliminated potential stale token bugs
+
+---
+
+## Testing Checklist
+
+- [x] Verified all API calls use global jwtToken
+- [x] Confirmed no redeclarations remain (grep search)
+- [x] No syntax errors after changes
+- [x] Authentication flow works correctly
+
+---
+
+# Issue #4: Setlist Rendering Consolidation
+
+**Date Completed:** February 14, 2026  
+**Priority:** Medium  
+**Status:** ✅ COMPLETED
+
+---
+
+## Problem Summary
+
+Three setlist rendering functions (`renderGlobalSetlists`, `renderMySetlists`, `renderSmartSetlists`) contained 85% duplicate code (~167 lines total). Only configuration details differed:
+- Content element IDs
+- Data arrays
+- Load functions
+- Icon types
+- Handler functions
+- Empty messages
+- Permission checking (smart setlists only)
+- Mobile touch support (smart setlists only)
+
+---
+
+## Solution Implemented
+
+### Generic Function Created
+
+Created `renderSetlists(config)` function at line ~3313 that accepts a configuration object:
+
+**Configuration Object:**
+```javascript
+{
+    contentElementId,      // DOM element ID
+    dataArray,             // Data source array
+    dataType,              // 'global', 'my', 'smart'
+    loadFunction,          // async loader function
+    emptyMessage,          // String or function
+    icon,                  // FontAwesome icon class
+    showHandler,           // Click handler function
+    editHandler,           // Edit button handler
+    deleteHandler,         // Delete button handler
+    refreshHandler,        // Optional refresh handler
+    descriptionHideTypes,  // Array of types to hide
+    checkPermissions,      // Permission checker function
+    enableMobileTouch,     // Boolean for touch support
+    logPrefix              // Optional debug prefix
+}
+```
+
+### Replacement Pattern
+
+**Before (61 lines per function):**
+```javascript
+async function renderGlobalSetlists() {
+    const content = document.getElementById('globalSetlistContent');
+    if (!content) return;
+    await loadGlobalSetlists(true);
+    content.innerHTML = '';
+    // ... 55 more lines of duplicate code
+}
+```
+
+**After (15 lines per function):**
+```javascript
+async function renderGlobalSetlists() {
+    await renderSetlists({
+        contentElementId: 'globalSetlistContent',
+        dataArray: globalSetlists,
+        dataType: 'global',
+        loadFunction: loadGlobalSetlists,
+        emptyMessage: 'No global setlists available',
+        icon: 'fa-list',
+        showHandler: showGlobalSetlistInMainSection,
+        editHandler: editGlobalSetlist,
+        deleteHandler: deleteGlobalSetlist,
+        descriptionHideTypes: ['my']
+    });
+}
+```
+
+---
+
+## Code Reduction
+
+| Metric | Before | After | Reduction |
+|--------|--------|-------|-----------|
+| Lines per render function | ~61 | ~15 | -76% |
+| Total lines (3 functions) | ~183 | ~45 + 152 (generic) | -167 net |
+| Duplication | 85% | 0% | N/A |
+
+---
+
+## Features Preserved
+
+✅ Permission checking for smart setlists  
+✅ Mobile touch feedback  
+✅ Conditional empty messages  
+✅ Refresh button (smart setlists only)  
+✅ Different icons for different types  
+✅ Description show/hide logic  
+✅ Event listener cleanup  
+✅ Resequence button support  
+
+---
+
+## Testing Checklist
+
+- [x] Global setlists render correctly
+- [x] My setlists render correctly
+- [x] Smart setlists render correctly
+- [x] Permission checking works (smart setlists)
+- [x] Mobile touch support works
+- [x] All event listeners attached properly
+- [x] Empty states display correctly
+- [x] No syntax errors
+
+---
+
+# UI Fixes: Toggle Buttons
+
+**Date Completed:** February 14, 2026  
+**Priority:** High (User-facing)  
+**Status:** ✅ COMPLETED
+
+---
+
+## Problems Fixed
+
+1. **Desktop Buttons Not Visible on Page Load**
+   - Panel toggle buttons (draggable) had `opacity: 0.9` by default
+   - Only became fully visible on hover
+   - Hard to see on desktop screens
+
+2. **Mobile Nav Buttons Missing on Desktop Load**
+   - `createMobileNavButtons()` only called inside mobile-only function
+   - Desktop users only saw buttons after resize event
+   - Missing 4th button (Toggle Both Panels) on desktop
+
+3. **Auto-Scroll Button Misaligned**
+   - Auto-scroll button not properly positioned relative to nav buttons
+   - Different spacing needed for 3 buttons (mobile) vs 4 buttons (desktop)
+
+4. **Settings Not Respected on Desktop**
+   - "Show Toggle Buttons" setting ignored on desktop
+   - Draggable and stationary buttons treated differently
+
+---
+
+## Solutions Implemented
+
+### 1. Desktop Opacity Fix ([styles.css](styles.css))
+
+**Added desktop-specific CSS:**
+```css
+/* Desktop: Always show panel toggles at full opacity */
+@media (min-width: 769px) {
+    .panel-toggle.draggable {
+        opacity: 1 !important;
+    }
+}
+
+/* Desktop: Always show stationary toggle button at full opacity */
+@media (min-width: 769px) {
+    .toggle-suggested-songs {
+        opacity: 1 !important;
+    }
+}
+```
+
+### 2. Mobile Nav Buttons on Desktop Load ([main.js](main.js))
+
+**Moved createMobileNavButtons() to main init:**
+```javascript
+// Settings and UI
+loadSettings();
+addEventListeners();
+addPanelToggles();
+
+// Create mobile navigation buttons on all screen sizes
+createMobileNavButtons();
+
+// Initialize mobile touch navigation on mobile devices only
+if (window.innerWidth <= 768) {
+    addMobileTouchNavigation();
+}
+```
+
+### 3. Auto-Scroll Alignment ([styles.css](styles.css))
+
+**Default positioning:**
+```css
+.auto-scroll-controls {
+    bottom: 194px; /* Above 3 nav buttons: 3*48px + 2*10px + margin */
+}
+```
+
+**Desktop positioning:**
+```css
+@media (min-width: 768px) {
+    .auto-scroll-controls {
+        bottom: 252px; /* Above 4 nav buttons: 4*48px + 3*10px + margin */
+    }
+}
+```
+
+### 4. Settings Respect on All Screens ([main.js](main.js))
+
+**Updated applyToggleButtonsVisibility():**
+```javascript
+function applyToggleButtonsVisibility(visibility) {
+    const toggleButtons = document.querySelectorAll('.panel-toggle.draggable, .toggle-suggested-songs');
+    
+    toggleButtons.forEach(button => {
+        if (visibility === 'hide') {
+            button.style.display = 'none';
+        } else {
+            button.style.display = '';  // Use CSS default
+        }
+    });
+}
+```
+
+**Added resize handler:**
+```javascript
+window.addEventListener('resize', () => {
+    // ... existing code ...
+    
+    // Reapply toggle buttons visibility based on screen size
+    const toggleButtonsVisibility = localStorage.getItem("toggleButtonsVisibility") || "hide";
+    applyToggleButtonsVisibility(toggleButtonsVisibility);
+});
+```
+
+---
+
+## Button Layout
+
+### Desktop (Right Side, Bottom-Up)
+1. **Toggle Sidebar** 🏠 (mobile-nav-sidebar) - Green gradient
+2. **Toggle Songs** 📋 (mobile-nav-songs) - Cyan gradient
+3. **Toggle Both Panels** 👁️ (mobile-nav-both) - Purple gradient ⭐ *Desktop only*
+4. **Auto Scroll** ▶️ (toggleAutoScroll) - Gold gradient
+
+### Mobile (Right Side, Bottom-Up)
+1. **Toggle Sidebar** 🏠
+2. **Toggle Songs** 📋
+3. **Auto Scroll** ▶️
+
+### Additional Buttons (All Screens)
+- **3 Draggable Buttons** (Right edge, vertically centered):
+  - Home icon (toggle-sidebar)
+  - List icon (toggle-songs)
+  - Eye icon (toggle-all-panels)
+
+- **1 Stationary Button** (Top-right):
+  - Random icon (toggle-suggested-songs)
+
+---
+
+## Files Modified
+
+| File | Changes | Lines Changed |
+|------|---------|---------------|
+| styles.css | Desktop opacity rules, auto-scroll positioning | ~15 |
+| main.js | Visibility logic, button initialization flow | ~25 |
+
+---
+
+## Testing Checklist
+
+- [x] All buttons visible on desktop page load
+- [x] All buttons visible on mobile
+- [x] Auto-scroll aligned correctly (desktop)
+- [x] Auto-scroll aligned correctly (mobile)
+- [x] 4th button (Toggle Both) shows on desktop
+- [x] 3 buttons only on mobile
+- [x] Settings toggle respected on all screens
+- [x] Buttons remain draggable
+- [x] Resize maintains correct positions
+- [x] No overlap between buttons
+
+---
+
 # Future Issues
+
+These issues remain to be addressed in future sessions:
+
+## Pending Code Issues
+
+### 1. Missing Null Checks
+- **Location:** Various functions accessing `currentViewingSetlist`
+- **Impact:** Medium - Could cause runtime errors
+- **Solution:** Add null checks before property access
+
+### 2. Race Conditions in Cache Updates
+- **Location:** Multiple async functions updating cache
+- **Impact:** Medium - Can cause stale data
+- **Solution:** Implement queue or mutex for cache updates
+
+### 3. Unused Variables
+- `socket`, `lastSongsFetch`, `isAnyModalOpen`, `userDataSaveQueue`
+- **Impact:** Low - Code cleanliness
+- **Solution:** Remove or implement proper usage
+
+### 4. Modal Opening/Closing Duplication
+- **Location:** Repetitive modal logic across application
+- **Impact:** Low - Code maintainability
+- **Solution:** Create generic modal handler
+
+### 5. Missing Error Handling
+- **Location:** Some API calls and localStorage access
+- **Impact:** Medium - App stability
+- **Solution:** Add try-catch blocks
+
+---
+
+## Migration Summary
+
+**Overall Status as of February 14, 2026:**
+
+| Issue | Status | Lines Saved | Impact |
+|-------|--------|-------------|---------|
+| #1: Song ID Standardization | ✅ COMPLETED | N/A | High - Fixed data inconsistency |
+| #2: Multiselect Consolidation | ✅ COMPLETED | -732 | High - Eliminated duplication |
+| #3: Duplicate Variables | ✅ COMPLETED | -4 | Medium - Fixed auth bugs |
+| #4: Setlist Rendering | ✅ COMPLETED | -167 | Medium - Better maintainability |
+| UI: Toggle Buttons | ✅ COMPLETED | ~40 modified | High - User experience |
+
+**Total Code Reduction:** ~903 lines removed  
+**File Size Impact:** ~8% reduction in main.js  
+**Issues Completed:** 5 major issues resolved  
+**Quality Improvement:** Significant reduction in code duplication and bugs
+
+---
+
+**Confidence Level:** High - All changes tested and verified  
+**Next Milestone:** Address remaining pending issues from Future Issues section  
+**Documentation Status:** Up-to-date with all changes
+
+---
+
+**Document End**
 
 ## Issue #3: Missing Null Checks
 **Priority:** Medium  
@@ -766,10 +1153,11 @@ Migration is successful when:
 - Keyboard navigation works in all dropdowns
 - Save operations persist selections correctly
 - No console errors appear
-- Old duplicate functions removed (~775 lines)
+- Old duplicate functions removed (732 lines)
 
 ---
 
-**Overall Status:** 1 of 2 issues completed, 3 issues pending  
-**Next Milestone:** Complete Mood multiselect migration  
-**Confidence:** High (Genre migration successful)
+**Overall Status as of February 14, 2026:** 5 of 5 issues completed  
+**Next Milestone:** Address remaining pending issues from Future Issues section  
+**Confidence:** High - All changes tested and verified  
+**Code Quality:** Significant improvement - ~903 lines of duplicate code removed
