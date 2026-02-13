@@ -1819,6 +1819,10 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     const resequenceSetlistSectionBtn = document.getElementById('resequenceSetlistSectionBtn');
     if (resequenceSetlistSectionBtn) {
         resequenceSetlistSectionBtn.onclick = async function() {
+            if (!currentViewingSetlist) {
+                showNotification('No setlist is currently loaded', 'error');
+                return;
+            }
             if (!window.setlistResequenceMode) {
                 window.setlistResequenceMode = true;
                 resequenceSetlistSectionBtn.textContent = 'Save Sequence';
@@ -2062,6 +2066,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         const titleMap = new Map();
         const lyricsMap = new Map();
         limitedSongs.forEach(song => {
+            if (!song.title || !song.lyrics) return; // Skip songs missing essential fields
             const t = song.title.trim().toLowerCase();
             const l = song.lyrics.trim().toLowerCase();
             if (titleMap.has(t)) {
@@ -2090,6 +2095,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         // Group songs by first letter and similar length
         const groups = {};
         limitedSongs.forEach(song => {
+            if (!song.title || song.title.length === 0) return; // Skip songs without title
             const key = song.title[0].toLowerCase() + '_' + song.title.length;
             if (!groups[key]) groups[key] = [];
             groups[key].push(song);
@@ -2169,6 +2175,10 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 // Show lyrics for a single song in duplicate pair
 window.viewSingleLyrics = function(songId, otherId) {
     const song = songs.find(s => s.id == songId);
+    if (!song) {
+        showNotification('Song not found', 'error');
+        return;
+    }
     const lyricsDiv = document.getElementById(`lyricsSingle${songId}_${otherId}`);
     if (!lyricsDiv) return;
     lyricsDiv.style.display = lyricsDiv.style.display === 'none' ? 'block' : 'none';
@@ -2195,6 +2205,10 @@ window.viewSingleLyrics = function(songId, otherId) {
     window.viewLyrics = function(id1, id2) {
         const song1 = songs.find(s => s.id === id1);
         const song2 = songs.find(s => s.id === id2);
+        if (!song1 || !song2) {
+            showNotification('Song not found', 'error');
+            return;
+        }
         const lyricsDiv = document.getElementById(`lyricsCompare${id1}_${id2}`);
         if (!lyricsDiv) return;
         lyricsDiv.style.display = lyricsDiv.style.display === 'none' ? 'block' : 'none';
@@ -3917,6 +3931,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                 e.preventDefault();
                 const li = e.target.closest('.setlist-song-item');
                 if (!li || !dragSrcEl || li === dragSrcEl) return;
+                if (!currentViewingSetlist || !currentViewingSetlist.songs) return;
                 li.classList.remove('drag-over');
                 // Update setlist order in memory only
                 const draggedId = dragSrcEl.dataset.songId;
@@ -9065,8 +9080,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             document.getElementById('editSongTime').value = song.time || song.timeSignature;
             // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
             updateTaalDropdown('editSongTime', 'editSongTaal', song.taal);
-            // Render correct genre options for multiselect
-            renderGenreOptions('editGenreDropdown');
+            // Initialize genre multiselect (options rendered later in setTimeout)
             setupSearchableMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres', GENRES, true);
             
             // Set selected genres using the Set-based approach after setup is complete

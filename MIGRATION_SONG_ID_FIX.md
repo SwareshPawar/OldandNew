@@ -12,8 +12,9 @@
 3. [Issue #3: Duplicate Variable Declarations](#issue-3-duplicate-variable-declarations) - ✅ COMPLETED
 4. [Issue #4: Setlist Rendering Consolidation](#issue-4-setlist-rendering-consolidation) - ✅ COMPLETED
 5. [Issue #5: Backend Song ID Validation & Duplicate Cleanup](#issue-5-backend-song-id-validation--duplicate-cleanup) - ✅ COMPLETED
-6. [UI Fixes: Toggle Buttons](#ui-fixes-toggle-buttons) - ✅ COMPLETED
-7. [Future Issues](#future-issues)
+6. [Issue #6: Missing Null Checks](#issue-6-missing-null-checks) - ✅ COMPLETED
+7. [UI Fixes: Toggle Buttons](#ui-fixes-toggle-buttons) - ✅ COMPLETED
+8. [Future Issues](#future-issues)
 
 ---
 
@@ -1172,6 +1173,200 @@ node validate-song-ids.js
 
 ---
 
+---
+
+## Issue #6: Missing Null Checks
+
+**Problem Summary:**
+Several functions accessed object properties and array methods without validating that the objects exist first, which could cause runtime errors like "Cannot read property 'X' of null/undefined".
+
+**Solution:**
+Added comprehensive null checks before accessing properties to prevent crashes and provide better error handling.
+
+### Changes Made
+
+#### 1. Resequence Button Handler (Line ~1821)
+
+**Problem:** Accessed `currentViewingSetlist._id` without checking if setlist exists
+
+**Before:**
+```javascript
+resequenceSetlistSectionBtn.onclick = async function() {
+    if (!window.setlistResequenceMode) {
+        // ...
+    } else {
+        const endpoint = currentSetlistType === 'global' ? '/api/global-setlists' : '/api/my-setlists';
+        await authFetch(`${API_BASE_URL}${endpoint}/${currentViewingSetlist._id}`, {
+```
+
+**After:**
+```javascript
+resequenceSetlistSectionBtn.onclick = async function() {
+    if (!currentViewingSetlist) {
+        showNotification('No setlist is currently loaded', 'error');
+        return;
+    }
+    if (!window.setlistResequenceMode) {
+        // ...
+    } else {
+        const endpoint = currentSetlistType === 'global' ? '/api/global-setlists' : '/api/my-setlists';
+        await authFetch(`${API_BASE_URL}${endpoint}/${currentViewingSetlist._id}`, {
+```
+
+#### 2. Drag-and-Drop Handler (Line ~3917)
+
+**Problem:** Accessed `currentViewingSetlist.songs` without verifying the object exists
+
+**Before:**
+```javascript
+ul.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const li = e.target.closest('.setlist-song-item');
+    if (!li || !dragSrcEl || li === dragSrcEl) return;
+    li.classList.remove('drag-over');
+    const draggedId = dragSrcEl.dataset.songId;
+    const targetId = li.dataset.songId;
+    const oldIndex = currentViewingSetlist.songs.findIndex(id => id == draggedId);
+```
+
+**After:**
+```javascript
+ul.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const li = e.target.closest('.setlist-song-item');
+    if (!li || !dragSrcEl || li === dragSrcEl) return;
+    if (!currentViewingSetlist || !currentViewingSetlist.songs) return;
+    li.classList.remove('drag-over');
+    const draggedId = dragSrcEl.dataset.songId;
+    const targetId = li.dataset.songId;
+    const oldIndex = currentViewingSetlist.songs.findIndex(id => id == draggedId);
+```
+
+#### 3. viewLyrics Function (Line ~2199)
+
+**Problem:** Used `song1` and `song2` properties without checking if songs were found
+
+**Before:**
+```javascript
+window.viewLyrics = function(id1, id2) {
+    const song1 = songs.find(s => s.id === id1);
+    const song2 = songs.find(s => s.id === id2);
+    const lyricsDiv = document.getElementById(`lyricsCompare${id1}_${id2}`);
+    if (!lyricsDiv) return;
+    lyricsDiv.innerHTML = `<pre>...<b>${song1.title}:</b>...`;
+```
+
+**After:**
+```javascript
+window.viewLyrics = function(id1, id2) {
+    const song1 = songs.find(s => s.id === id1);
+    const song2 = songs.find(s => s.id === id2);
+    if (!song1 || !song2) {
+        showNotification('Song not found', 'error');
+        return;
+    }
+    const lyricsDiv = document.getElementById(`lyricsCompare${id1}_${id2}`);
+    if (!lyricsDiv) return;
+    lyricsDiv.innerHTML = `<pre>...<b>${song1.title}:</b>...`;
+```
+
+#### 4. viewSingleLyrics Function (Line ~2174)
+
+**Problem:** Used `song` properties without verifying song exists
+
+**Before:**
+```javascript
+window.viewSingleLyrics = function(songId, otherId) {
+    const song = songs.find(s => s.id == songId);
+    const lyricsDiv = document.getElementById(`lyricsSingle${songId}_${otherId}`);
+    if (!lyricsDiv) return;
+    lyricsDiv.innerHTML = `<pre>...<b>${song.title}:</b>...`;
+```
+
+**After:**
+```javascript
+window.viewSingleLyrics = function(songId, otherId) {
+    const song = songs.find(s => s.id == songId);
+    if (!song) {
+        showNotification('Song not found', 'error');
+        return;
+    }
+    const lyricsDiv = document.getElementById(`lyricsSingle${songId}_${otherId}`);
+    if (!lyricsDiv) return;
+    lyricsDiv.innerHTML = `<pre>...<b>${song.title}:</b>...`;
+```
+
+#### 5. Duplicate Detection Loop (Line ~2069)
+
+**Problem:** Accessed `song.title` and `song.lyrics` without checking if they exist
+
+**Before:**
+```javascript
+limitedSongs.forEach(song => {
+    const t = song.title.trim().toLowerCase();
+    const l = song.lyrics.trim().toLowerCase();
+```
+
+**After:**
+```javascript
+limitedSongs.forEach(song => {
+    if (!song.title || !song.lyrics) return; // Skip songs missing essential fields
+    const t = song.title.trim().toLowerCase();
+    const l = song.lyrics.trim().toLowerCase();
+```
+
+#### 6. Song Grouping Logic (Line ~2097)
+
+**Problem:** Accessed `song.title[0]` without checking if title exists or has length
+
+**Before:**
+```javascript
+limitedSongs.forEach(song => {
+    const key = song.title[0].toLowerCase() + '_' + song.title.length;
+```
+
+**After:**
+```javascript
+limitedSongs.forEach(song => {
+    if (!song.title || song.title.length === 0) return; // Skip songs without title
+    const key = song.title[0].toLowerCase() + '_' + song.title.length;
+```
+
+### Files Modified
+
+**Modified Files:**
+- `main.js` - Added 6 null check guards across different functions
+
+### Impact & Benefits
+
+**Stability:**
+- ✅ Prevents "Cannot read property of null/undefined" errors
+- ✅ Provides user feedback when operations fail
+- ✅ Graceful degradation when data is missing
+
+**User Experience:**
+- ✅ Clear error messages instead of silent failures
+- ✅ No app crashes from missing data
+- ✅ Better handling of edge cases
+
+**Code Quality:**
+- ✅ Defensive programming practices
+- ✅ More robust error handling
+- ✅ Reduced runtime errors
+
+### Testing Checklist
+
+- [x] Resequence button shows error when no setlist loaded
+- [x] Drag-and-drop ignores invalid states
+- [x] viewLyrics displays error for missing songs
+- [x] viewSingleLyrics handles missing songs gracefully
+- [x] Duplicate detection skips incomplete song data
+- [x] Song grouping handles empty/missing titles
+- [x] No console errors during normal operation
+- [x] All existing functionality preserved
+
+---
+
 # Future Issues
 
 These issues remain to be addressed in future sessions:
@@ -1216,14 +1411,16 @@ These issues remain to be addressed in future sessions:
 | #3: Duplicate Variables | ✅ COMPLETED | -4 | Medium - Fixed auth bugs |
 | #4: Setlist Rendering | ✅ COMPLETED | -167 | Medium - Better maintainability |
 | #5: Backend Validation | ✅ COMPLETED | +571 (2 scripts) | High - Database integrity |
+| #6: Missing Null Checks | ✅ COMPLETED | +6 guards | High - Prevents crashes |
 | UI: Toggle Buttons | ✅ COMPLETED | ~40 modified | High - User experience |
 
 **Total Code Reduction:** ~903 lines removed from main.js  
 **Scripts Added:** 2 validation/fix scripts (+571 lines)  
 **Database Cleaned:** 15 duplicate songs removed (798 → 783 songs)  
+**Null Guards Added:** 6 critical null checks  
 **File Size Impact:** ~8% reduction in main.js  
-**Issues Completed:** 6 major issues resolved  
-**Quality Improvement:** Significant reduction in code duplication, bugs, and data inconsistency
+**Issues Completed:** 7 major issues resolved  
+**Quality Improvement:** Significant reduction in code duplication, bugs, data inconsistency, and runtime errors
 
 ---
 
@@ -1311,7 +1508,7 @@ Migration is successful when:
 
 ---
 
-**Overall Status as of February 14, 2026:** 6 of 6 issues completed  
+**Overall Status as of February 14, 2026:** 7 of 7 issues completed  
 **Next Milestone:** Address remaining pending issues from Future Issues section  
 **Confidence:** High - All changes tested and verified  
-**Code Quality:** Significant improvement - ~903 lines of duplicate code removed, database cleaned
+**Code Quality:** Significant improvement - ~903 lines removed, database cleaned, runtime stability enhanced

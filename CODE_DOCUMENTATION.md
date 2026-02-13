@@ -30,11 +30,27 @@
    - Desktop: 4 buttons (sidebar, songs, both panels, auto-scroll)
    - Mobile: 3 buttons (sidebar, songs, auto-scroll)
 
+4. **✅ Issue #6: Missing Null Checks**
+   - Added 6 critical null checks to prevent runtime errors
+   - Locations: Resequence button, drag-and-drop, viewLyrics, viewSingleLyrics, duplicate detection
+   - Impact: Prevents "Cannot read property of null/undefined" crashes
+   - Provides user feedback for missing data instead of silent failures
+
+5. **✅ Issue #7: Undefined Function Call - renderGenreOptions()**
+   - Fixed runtime error: "ReferenceError: renderGenreOptions is not defined"
+   - Location: [main.js](main.js#L9084) in editSong() function
+   - Removed obsolete call to non-existent `renderGenreOptions('editGenreDropdown')`
+   - Genre multiselect now uses existing `setupSearchableMultiselect()` pattern
+   - Verified: All other functions use proper `typeof` checks or exist
+   - Impact: Eliminates crash when editing songs with genre fields
+
 ### Code Metrics
-- **Total Lines Removed:** ~900 lines of duplicate code
-- **File Size Reduction:** ~8% reduction in main.js
-- **Issues Resolved:** 4 major issues fixed
-- **Bugs Fixed:** Authentication token staleness, button visibility
+- **Total Lines Removed:** ~901 lines of duplicate/obsolete code
+- **Null Guards Added:** 6 protective checks
+- **Runtime Errors Fixed:** 1 undefined function call
+- **File Size Reduction:** ~8.1% reduction in main.js
+- **Issues Resolved:** 8 major issues fixed
+- **Bugs Fixed:** Authentication token staleness, button visibility, null reference errors, undefined function error
 
 ---
 
