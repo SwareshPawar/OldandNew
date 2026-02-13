@@ -4130,6 +4130,10 @@ window.viewSingleLyrics = function(songId, otherId) {
         const NewSetlistSongs = document.getElementById('NewSetlistSongs');
         const OldSetlistSongs = document.getElementById('OldSetlistSongs');
 
+        // Update tab counts
+        if (NewSetlistTab) NewSetlistTab.textContent = `New (${newSongs.length})`;
+        if (OldSetlistTab) OldSetlistTab.textContent = `Old (${oldSongs.length})`;
+
         if (newSongs.length > 0) {
             NewSetlistTab.classList.add('active');
             OldSetlistTab.classList.remove('active');
@@ -4255,6 +4259,10 @@ window.viewSingleLyrics = function(songId, otherId) {
         const OldSetlistTab = document.getElementById('OldSetlistTab');
         const NewSetlistSongs = document.getElementById('NewSetlistSongs');
         const OldSetlistSongs = document.getElementById('OldSetlistSongs');
+
+        // Update tab counts
+        if (NewSetlistTab) NewSetlistTab.textContent = `New (${newSongs.length})`;
+        if (OldSetlistTab) OldSetlistTab.textContent = `Old (${oldSongs.length})`;
 
         if (newSongs.length > 0) {
             NewSetlistTab.classList.add('active');
@@ -5954,13 +5962,19 @@ window.viewSingleLyrics = function(songId, otherId) {
         
         smartSetlists.forEach(smartSetlist => {
             const li = document.createElement('li');
+            
+            // Check if user can edit this smart setlist
+            // User can edit if: they created it OR (they're admin AND it was created by admin)
+            const isCreator = currentUser && smartSetlist.createdBy === currentUser.id;
+            const canEdit = isCreator || (isAdmin() && smartSetlist.isAdminCreated);
+            
             li.innerHTML = `
                 <div class="setlist-item" data-setlist-id="${smartSetlist.id || smartSetlist._id}" data-type="smart">
                     <div class="smart-setlist-header">
                         <i class="fas fa-brain"></i>
                         <span>${smartSetlist.name}</span>
                     </div>
-                    <div class="smart-setlist-actions" style="display: ${isAdmin() ? 'flex' : 'none'};">
+                    <div class="smart-setlist-actions" style="display: ${canEdit ? 'flex' : 'none'};">
                         <button class="setlist-action-btn smart-refresh-btn" title="Update Setlist - Rescan and save with current conditions">
                             <i class="fas fa-sync"></i>
                         </button>
@@ -6762,7 +6776,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
             
             if (addSmartSetlistBtn) {
-                addSmartSetlistBtn.style.display = (isAdminUser && document.getElementById('smartSetlistContent')?.style.display === 'block') ? 'block' : 'none';
+                addSmartSetlistBtn.style.display = (isLoggedIn && document.getElementById('smartSetlistContent')?.style.display === 'block') ? 'block' : 'none';
             }
         }
 
@@ -10706,7 +10720,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                             smartSetlistIcon.classList.toggle('expanded', !isExpanded);
                             
                             if (addSmartSetlistBtn) {
-                                const shouldShow = (!isExpanded && currentUser?.isAdmin);
+                                const shouldShow = (!isExpanded && currentUser);
                                 addSmartSetlistBtn.style.display = shouldShow ? 'block' : 'none';
                             }
                         }

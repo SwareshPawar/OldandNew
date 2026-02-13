@@ -1123,26 +1123,22 @@ app.get('/api/smart-setlists', authMiddleware, async (req, res) => {
     await connectToDatabase();
     const userId = req.user.id;
     const username = req.user.username;
-    console.log(`📋 Loading Smart Setlists for user ID: ${userId} (${username})`);
+    console.log(`📋 Loading Smart Setlists for user: ${userId} (${username})`);
     
-    // Try to find by user ID first, then by username as fallback for legacy data
-    let smartSetlists = await db.collection('SmartSetlists').find({ 
-      createdBy: userId 
+    // Return:
+    // 1. All admin-created smart setlists (visible to everyone)
+    // 2. User's own smart setlists (visible only to creator)
+    let smartSetlists = await db.collection('SmartSetlists').find({
+      $or: [
+        { isAdminCreated: true },        // All admin-created setlists
+        { createdBy: userId }             // User's own setlists
+      ]
     }).sort({ createdAt: -1 }).toArray();
     
-    console.log(`📋 Found ${smartSetlists.length} Smart Setlists by user ID`);
-    
-    // If no setlists found by user ID, try by username (for legacy compatibility)
-    if (smartSetlists.length === 0 && username) {
-      console.log(`📋 Trying fallback search by username: ${username}`);
-      smartSetlists = await db.collection('SmartSetlists').find({ 
-        createdBy: username 
-      }).sort({ createdAt: -1 }).toArray();
-      console.log(`📋 Found ${smartSetlists.length} Smart Setlists by username`);
-    }
+    console.log(`📋 Found ${smartSetlists.length} Smart Setlists (admin-created + user's own)`);
     
     if (smartSetlists.length > 0) {
-      console.log('📋 Smart Setlist names:', smartSetlists.map(s => `"${s.name}" (createdBy: ${s.createdBy})`));
+      console.log('📋 Smart Setlist names:', smartSetlists.map(s => `"${s.name}" (createdBy: ${s.createdBy}, isAdminCreated: ${s.isAdminCreated})`));
     }
     
     res.json(smartSetlists);
@@ -1157,8 +1153,9 @@ app.post('/api/smart-setlists', authMiddleware, async (req, res) => {
     await connectToDatabase();
     const { name, description, conditions, songs } = req.body;
     const userId = req.user.id;
+    const isAdmin = req.user.isAdmin || false;
     
-    console.log(`📋 Creating Smart Setlist "${name}" for user ID: ${userId} (${req.user.username})`);
+    console.log(`📋 Creating Smart Setlist "${name}" for user ID: ${userId} (${req.user.username}), isAdmin: ${isAdmin}`);
     console.log(`📋 Smart Setlist will have ${songs ? songs.length : 0} songs`);
     
     if (!name || !name.trim()) {
@@ -1173,10 +1170,12 @@ app.post('/api/smart-setlists', authMiddleware, async (req, res) => {
       songs: songs || [],
       createdAt: new Date().toISOString(),
       createdBy: userId, // Using user ID for consistency
+      createdByUsername: req.user.username,
+      isAdminCreated: isAdmin, // Track if created by admin
       updatedAt: new Date().toISOString()
     };
 
-    console.log(`📋 Saving Smart Setlist with createdBy: ${smartSetlist.createdBy}`);
+    console.log(`📋 Saving Smart Setlist with createdBy: ${smartSetlist.createdBy}, isAdminCreated: ${smartSetlist.isAdminCreated}`);
     const result = await db.collection('SmartSetlists').insertOne(smartSetlist);
     const insertedSetlist = await db.collection('SmartSetlists').findOne({ _id: result.insertedId });
     
@@ -1194,9 +1193,22 @@ app.put('/api/smart-setlists/:id', authMiddleware, async (req, res) => {
     const setlistId = req.params.id;
     const { name, description, conditions, songs } = req.body;
     const userId = req.user.id;
+    const isAdmin = req.user.isAdmin || false;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Smart setlist name is required' });
+    }
+
+    // Get the existing setlist to check permissions
+    const existingSetlist = await db.collection('SmartSetlists').findOne({ _id: setlistId });
+    if (!existingSetlist) {
+      return res.status(404).json({ error: 'Smart setlist not found' });
+    }
+
+    // Allow edit if: user is creator OR (user is admin AND setlist was created by admin)
+    const canEdit = existingSetlist.createdBy === userId || (isAdmin && existingSetlist.isAdminCreated);
+    if (!canEdit) {
+      return res.status(403).json({ error: 'You do not have permission to edit this smart setlist' });
     }
 
     const updateData = {
@@ -1208,13 +1220,9 @@ app.put('/api/smart-setlists/:id', authMiddleware, async (req, res) => {
     };
 
     const result = await db.collection('SmartSetlists').updateOne(
-      { _id: setlistId, createdBy: userId },
+      { _id: setlistId },
       { $set: updateData }
     );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Smart setlist not found' });
-    }
 
     const updatedSetlist = await db.collection('SmartSetlists').findOne({ _id: setlistId });
     res.json(updatedSetlist);
@@ -1229,15 +1237,23 @@ app.delete('/api/smart-setlists/:id', authMiddleware, async (req, res) => {
     await connectToDatabase();
     const setlistId = req.params.id;
     const userId = req.user.id;
+    const isAdmin = req.user.isAdmin || false;
 
-    const result = await db.collection('SmartSetlists').deleteOne({
-      _id: setlistId,
-      createdBy: userId
-    });
-
-    if (result.deletedCount === 0) {
+    // Get the existing setlist to check permissions
+    const existingSetlist = await db.collection('SmartSetlists').findOne({ _id: setlistId });
+    if (!existingSetlist) {
       return res.status(404).json({ error: 'Smart setlist not found' });
     }
+
+    // Allow delete if: user is creator OR (user is admin AND setlist was created by admin)
+    const canDelete = existingSetlist.createdBy === userId || (isAdmin && existingSetlist.isAdminCreated);
+    if (!canDelete) {
+      return res.status(403).json({ error: 'You do not have permission to delete this smart setlist' });
+    }
+
+    const result = await db.collection('SmartSetlists').deleteOne({
+      _id: setlistId
+    });
 
     res.json({ success: true, message: 'Smart setlist deleted successfully' });
   } catch (err) {
