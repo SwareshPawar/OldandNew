@@ -627,11 +627,12 @@
    - **Impact:** Medium - Could cause runtime errors
    - **Solution:** Add null checks before accessing properties
 
-3. **Inconsistent Song ID Format** ([server.js](server.js), [main.js](main.js))
+3. **Inconsistent Song ID Format** ✅ FIXED ([server.js](server.js), [main.js](main.js))
    - Songs sometimes use `id` (Number), sometimes `_id` (String)
    - Setlists store both formats
    - **Impact:** High - Can cause songs not to match
    - **Solution:** Standardize on single ID format
+   - **Status:** ✅ COMPLETED - See [MIGRATION_SONG_ID_FIX.md](MIGRATION_SONG_ID_FIX.md) Issue #1
 
 4. **Race Conditions in Cache Updates** ([main.js](main.js))
    - Multiple async functions updating cache simultaneously
@@ -652,9 +653,10 @@
 
 ### Duplicate Code
 
-1. **Multiselect Setup** ([main.js](main.js:1697-2418))
+1. **Multiselect Setup** 🔄 IN PROGRESS ([main.js](main.js:1697-2418))
    - `setupGenreMultiselect`, `setupMoodMultiselect`, `setupArtistMultiselect` have 90% similar code
    - **Solution:** Extract to single generic function
+   - **Status:** 🔄 Genre Complete - See [MIGRATION_SONG_ID_FIX.md](MIGRATION_SONG_ID_FIX.md) Issue #2
 
 2. **Setlist Rendering** ([main.js](main.js))
    - `renderGlobalSetlists` and `renderMySetlists` have very similar code
