@@ -347,7 +347,7 @@ let initializationState = {
     initPromise: null
 };
 
-// Global authFetch function with timeout
+// Global authFetch function with timeout and auto-logout on 401
 async function authFetch(url, options = {}) {
     const headers = options.headers || {};
     if (jwtToken) headers.Authorization = `Bearer ${jwtToken}`;
@@ -363,6 +363,32 @@ async function authFetch(url, options = {}) {
             signal: controller.signal 
         });
         clearTimeout(timeoutId);
+        
+        // Handle 401 Unauthorized - invalid/expired token
+        if (response.status === 401 && jwtToken) {
+            console.warn('Token invalid or expired - clearing authentication');
+            jwtToken = '';
+            localStorage.removeItem('jwtToken');
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            
+            // Show re-login notification
+            showNotification('Session expired. Please log in again.', 'error');
+            
+            // Update UI to show login
+            if (typeof updateAuthButtons === 'function') {
+                updateAuthButtons();
+            }
+            
+            // Redirect to login after brief delay
+            setTimeout(() => {
+                const loginModal = document.getElementById('loginModal');
+                if (loginModal) {
+                    loginModal.style.display = 'flex';
+                }
+            }, 1000);
+        }
+        
         return response;
     } catch (error) {
         clearTimeout(timeoutId);

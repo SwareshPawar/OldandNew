@@ -2,8 +2,268 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 15, 2026 - 12:00 AM  
-**Version:** 1.4
+**Last Updated:** February 15, 2026 - 01:00 AM  
+**Version:** 1.5
+
+---
+
+## SECURITY VULNERABILITIES & REMEDIATION PLAN
+
+**Audit Date:** February 15, 2026  
+**Status:** Identified, Documented, Pending Fixes  
+**Priority:** CRITICAL items should be fixed immediately
+
+### CRITICAL SEVERITY
+
+#### 1. ✅ Weak JWT Secret Default Value - FIXED
+- **Location**: `utils/auth.js` line 21
+- **Issue**: JWT_SECRET defaults to 'changeme' if environment variable not set
+- **Risk**: Attackers can forge authentication tokens if default is used in production
+- **Impact**: Complete authentication bypass, unauthorized admin access
+- **Fix Applied** (February 15, 2026):
+  - ✅ Removed dangerous default value
+  - ✅ Added validation on server startup - throws error if JWT_SECRET not set
+  - ✅ Added minimum length validation (32 characters required)
+  - ✅ Added check to prevent 'changeme' value
+  - ✅ Generated strong 128-character cryptographically random secret in .env
+  - ✅ Added comments in .env with instructions for regenerating secret
+- **Testing**: Server now fails to start if JWT_SECRET is missing or weak
+- **Code**:
+  ```javascript
+  // OLD (VULNERABLE):
+  const JWT_SECRET = process.env.JWT_SECRET || 'changeme'; // ⚠️ CRITICAL VULNERABILITY
+  
+  // NEW (SECURE):
+  if (!process.env.JWT_SECRET) {
+    throw new Error('SECURITY ERROR: JWT_SECRET environment variable is not set. Server cannot start.');
+  }
+  if (process.env.JWT_SECRET === 'changeme' || process.env.JWT_SECRET.length < 32) {
+    throw new Error('SECURITY ERROR: JWT_SECRET is too weak. Must be at least 32 characters and cryptographically random.');
+  }
+  const JWT_SECRET = process.env.JWT_SECRET;
+  ```
+
+### HIGH SEVERITY
+
+#### 2. 🟠 No Rate Limiting on Authentication Endpoints
+- **Locations**: `/api/login`, `/api/register`, `/api/forgot-password`, `/api/reset-password`
+- **Issue**: No rate limiting middleware implemented
+- **Risk**: Brute force attacks on passwords, credential stuffing, OTP brute forcing
+- **Impact**: Account compromise, DDoS, resource exhaustion
+- **Fix Required**:
+  - Install `express-rate-limit` package
+  - Add rate limiting: 5 attempts per 15 minutes for login
+  - Add rate limiting: 3 attempts per hour for forgot-password
+  - Add rate limiting: 3 attempts per 10 minutes for OTP verification
+  - Log suspicious activity (multiple failed attempts)
+
+#### 3. 🟠 Cross-Site Scripting (XSS) Vulnerabilities
+- **Locations**: Multiple locations in `main.js`
+- **Issue**: User-controlled data inserted into DOM via innerHTML without sanitization
+- **Risk**: XSS attacks can steal JWT tokens, session hijacking, malicious script injection
+- **Vulnerable Code Examples**:
+  - `main.js:2279` - Setlist name in innerHTML: `${setlist.name}`
+  - `main.js:2299` - Global setlist name in innerHTML: `${setlist.name}`
+  - `main.js:2545` - Song title/artist in innerHTML: `${song.title}`, `${song.artist}`
+  - `main.js:1475` - Tag value in innerHTML: `${value}`
+- **Impact**: Token theft, account takeover, malicious actions on behalf of user
+- **Fix Required**:
+  - Use `textContent` instead of `innerHTML` for user data
+  - Implement DOMPurify library for sanitization when HTML is needed
+  - Create helper function `escapeHtml()` for safe rendering
+  - Audit all innerHTML usage in codebase
+
+#### 4. 🟠 NoSQL Injection Vulnerabilities
+- **Locations**: Multiple database query locations in `server.js`
+- **Issue**: Insufficient input validation/sanitization for MongoDB queries
+- **Risk**: Database manipulation, unauthorized data access, privilege escalation
+- **Vulnerable Endpoints**:
+  - `/api/songs/:id` - ID parameter not validated as string/number
+  - User input directly used in `$or` queries for login
+  - Scan songs endpoint with complex query conditions
+- **Impact**: Data breach, data corruption, authentication bypass
+- **Fix Required**:
+  - Validate and sanitize all req.params, req.query, req.body
+  - Use parameterized queries (already doing this, but add validation)
+  - Whitelist allowed characters for string inputs
+  - Type check all inputs before database operations
+  - Reject objects in query parameters (only allow primitives)
+
+### MEDIUM SEVERITY
+
+#### 5. 🟡 JWT Tokens Stored in localStorage
+- **Locations**: `main.js:1026`, `main.js:5030`
+- **Issue**: JWT stored in localStorage instead of httpOnly cookies
+- **Risk**: Vulnerable to XSS attacks (JavaScript can access localStorage)
+- **Impact**: Token theft if XSS vulnerability is exploited
+- **Fix Required**:
+  - Migrate to httpOnly cookies for JWT storage
+  - Set Secure flag (HTTPS only)
+  - Set SameSite=Strict to prevent CSRF
+  - Update server.js to send tokens via Set-Cookie header
+  - Update frontend to remove localStorage usage
+- **Alternative**: If localStorage is kept, fix all XSS vulnerabilities first (Item #3)
+
+#### 6. 🟡 Missing Security Headers
+- **Location**: `server.js` - No helmet middleware
+- **Issue**: Security headers not configured (CSP, X-Frame-Options, etc.)
+- **Risk**: Clickjacking, MIME sniffing attacks, missing HTTPS enforcement
+- **Impact**: Various attack vectors remain open
+- **Fix Required**:
+  - Install `helmet` package: `npm install helmet`
+  - Add middleware: `app.use(helmet())`
+  - Configure Content Security Policy (CSP)
+  - Enable HSTS (HTTP Strict Transport Security)
+  - Set X-Content-Type-Options: nosniff
+
+#### 7. 🟡 Weak OTP Implementation
+- **Location**: `utils/auth.js` line 123-125
+- **Issue**: 6-digit numeric OTP (only 1 million combinations)
+- **Risk**: OTP can be brute-forced in ~5 minutes without rate limiting
+- **Impact**: Unauthorized password resets, account takeover
+- **Fix Required**:
+  - Increase OTP length to 8 digits
+  - Add rate limiting (3 attempts per hour per identifier)
+  - Implement account lockout after 5 failed attempts
+  - Add exponential backoff for repeated failures
+  - Consider alphanumeric OTPs for higher entropy
+
+#### 8. 🟡 CORS Configuration Too Permissive
+- **Location**: `server.js` lines 18-28
+- **Issue**: Multiple origins allowed without strict validation
+- **Risk**: Potential CSRF attacks if cookie-based auth is added
+- **Impact**: Unauthorized cross-origin requests
+- **Fix Required**:
+  - Review and minimize allowed origins
+  - Remove localhost origins in production
+  - Implement dynamic origin validation function
+  - Add CORS preflight caching
+  - Document why each origin is needed
+
+#### 9. 🟡 Sensitive Data in JWT Payload
+- **Location**: `utils/auth.js` lines 90-98
+- **Issue**: Email and phone number stored in JWT token
+- **Risk**: JWT visible in logs, browser storage, network traffic (if not HTTPS)
+- **Impact**: Privacy violation, PII exposure
+- **Fix Required**:
+  - Remove email and phone from JWT payload
+  - Only store: id, username, isAdmin
+  - Fetch additional user data from database when needed
+  - Update frontend to not rely on token for email/phone
+
+#### 10. 🟡 No Request Size Validation
+- **Location**: `server.js` - Global limit set but no per-endpoint validation
+- **Issue**: 50MB payload limit applies to all endpoints
+- **Risk**: Memory exhaustion, DoS attacks
+- **Impact**: Server crashes, service disruption
+- **Fix Required**:
+  - Set stricter limits per endpoint
+  - Login/register: 1KB limit
+  - Songs: 1MB limit
+  - Smart setlists: Keep 50MB (already documented need)
+  - Add validation to reject oversized requests early
+
+### LOW SEVERITY
+
+#### 11. 🟢 Missing HTTPS Enforcement
+- **Location**: Server configuration
+- **Issue**: No redirect from HTTP to HTTPS
+- **Risk**: Man-in-the-middle attacks, credential interception
+- **Impact**: Data exposure in transit
+- **Fix Required**:
+  - Add middleware to redirect HTTP → HTTPS
+  - Set HSTS header (via helmet)
+  - Update deployment configuration
+  - Note: May already be handled by hosting platform (Vercel/Render)
+
+#### 12. 🟢 Password Reset OTP Expiry Too Short
+- **Location**: `utils/auth.js` line 131 (5 minutes)
+- **Issue**: 5-minute OTP expiry may be too short for slow email delivery
+- **Risk**: Legitimate users locked out, poor UX
+- **Impact**: User frustration, support tickets
+- **Fix Required**:
+  - Extend to 15 minutes
+  - Allow regenerating OTP without penalty
+  - Add email delivery delay warning in UI
+
+#### 13. 🟢 No Audit Logging
+- **Location**: All sensitive operations
+- **Issue**: No logging for authentication events, admin actions, data changes
+- **Risk**: Cannot detect or investigate security incidents
+- **Impact**: Compliance issues, inability to trace breaches
+- **Fix Required**:
+  - Log all login attempts (success/failure) with IP/timestamp
+  - Log admin privilege grants/revocations
+  - Log password changes and resets
+  - Log song/setlist deletions (admin actions)
+  - Store logs in separate collection with retention policy
+
+### INFORMATIONAL
+
+#### 14. ℹ️ No Password Complexity Requirements
+- **Location**: `server.js:225`, `utils/auth.js:53`
+- **Issue**: Only minimum 6 characters required
+- **Risk**: Weak passwords chosen by users
+- **Impact**: Easier brute force attacks
+- **Recommendation**:
+  - Require 8+ characters
+  - Enforce at least: 1 uppercase, 1 lowercase, 1 number
+  - Consider special character requirement
+  - Add password strength indicator in UI
+
+#### 15. ℹ️ No Account Lockout Mechanism
+- **Location**: Login endpoint
+- **Issue**: No account lockout after repeated failed logins
+- **Risk**: Unlimited brute force attempts per account
+- **Impact**: Account compromise over time
+- **Recommendation**:
+  - Lock account after 10 failed attempts
+  - Require OTP verification to unlock
+  - Notify user via email of lockout
+  - Auto-unlock after 1 hour
+
+#### 16. ℹ️ MongoDB Connection String in Logs
+- **Location**: Error handling in `server.js`
+- **Issue**: Connection errors may leak connection string
+- **Risk**: Database credentials exposure in logs
+- **Impact**: Database compromise
+- **Recommendation**:
+  - Sanitize error messages before logging
+  - Never log full connection strings
+  - Use environment-specific error details (verbose in dev, minimal in prod)
+
+### REMEDIATION PRIORITY
+
+**Phase 1 (Immediate - This Week):**
+- Fix #1: Strong JWT secret enforcement
+- Fix #2: Add rate limiting (login, OTP endpoints)
+- Fix #6: Add helmet security headers
+
+**Phase 2 (High Priority - Next Week):**
+- Fix #3: Remediate XSS vulnerabilities
+- Fix #4: Add input validation/sanitization
+- Fix #7: Strengthen OTP implementation
+
+**Phase 3 (Medium Priority - Next Sprint):**
+- Fix #5: Migrate to httpOnly cookies
+- Fix #8: Tighten CORS policy
+- Fix #9: Remove sensitive data from JWT
+- Fix #10: Per-endpoint request limits
+
+**Phase 4 (Enhancement - Future):**
+- Fix #11-16: Audit logging, HTTPS enforcement, password policies
+
+### TESTING CHECKLIST
+
+Before marking vulnerabilities as fixed:
+- [ ] Manual penetration testing performed
+- [ ] Rate limiting tested with automated tools
+- [ ] XSS payloads tested in all input fields
+- [ ] NoSQL injection payloads tested
+- [ ] JWT secret strength validated
+- [ ] Security headers verified with securityheaders.com
+- [ ] OWASP ZAP scan completed
+- [ ] Code review by second developer
 
 ---
 

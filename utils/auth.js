@@ -18,7 +18,16 @@ try {
   console.log('Twilio not installed - SMS functionality disabled');
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+// JWT Secret validation - SECURITY CRITICAL
+if (!process.env.JWT_SECRET) {
+  throw new Error('SECURITY ERROR: JWT_SECRET environment variable is not set. Server cannot start.');
+}
+
+if (process.env.JWT_SECRET === 'changeme' || process.env.JWT_SECRET.length < 32) {
+  throw new Error('SECURITY ERROR: JWT_SECRET is too weak. Must be at least 32 characters and cryptographically random.');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Email configuration - create transporter only when needed to avoid startup errors
 let emailTransporter = null;
