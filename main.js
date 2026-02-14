@@ -4212,12 +4212,33 @@ window.viewSingleLyrics = function(songId, otherId) {
 
     // Create setlist song element
     function createSetlistSongElement(song) {
+        // Calculate transpose for display consistency
+        let transposeLevel = 0;
+        if (currentSetlistType === 'global-setlist' && currentSetlistId && song.id) {
+            // Admin's global setlist transpose
+            if (globalSetlistTranspose && globalSetlistTranspose[song.id] && typeof globalSetlistTranspose[song.id] === 'number') {
+                transposeLevel = globalSetlistTranspose[song.id];
+            }
+        } else {
+            // User's personal transpose
+            try {
+                const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                if (song.id && typeof localTranspose[song.id] === 'number') {
+                    transposeLevel = localTranspose[song.id];
+                }
+            } catch (e) {
+                transposeLevel = 0;
+            }
+        }
+        
+        const displayKey = transposeLevel !== 0 ? transposeChord(song.key, transposeLevel) : song.key;
+        
         const div = document.createElement('div');
         div.className = 'setlist-song-item';
         div.innerHTML = `
             <div class="setlist-song-info">
                 <div class="setlist-song-title">${song.title}</div>
-                <div class="setlist-song-meta">${song.key} | ${song.artistDetails || 'Unknown'}</div>
+                <div class="setlist-song-meta">${displayKey} | ${song.artistDetails || 'Unknown'}</div>
             </div>
             ${(currentSetlistType !== 'global' || (currentUser && currentUser.isAdmin)) ? 
                 `<button class="remove-from-setlist" onclick="removeFromSetlist(${song.id})" title="Remove from setlist">
@@ -6405,7 +6426,7 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
         
         function applyToggleButtonsVisibility(visibility) {
-            const toggleButtons = document.querySelectorAll('.panel-toggle.draggable, .toggle-suggested-songs');
+            const toggleButtons = document.querySelectorAll('.panel-toggle.draggable');
             
             toggleButtons.forEach(button => {
                 if (visibility === 'hide') {
@@ -7192,6 +7213,28 @@ window.viewSingleLyrics = function(songId, otherId) {
                 
                 const isFavorite = Array.isArray(favorites) && favorites.includes(song.id);
                 const displayGenres = song.genres ? song.genres.join(', ') : song.genre || '';
+                
+                // Calculate transposed key for display - using same logic as showPreview
+                let transposeLevel = 0;
+                if (currentSetlistType === 'global-setlist' && currentSetlistId && song.id) {
+                    // Admin's global setlist transpose
+                    if (globalSetlistTranspose && globalSetlistTranspose[song.id] && typeof globalSetlistTranspose[song.id] === 'number') {
+                        transposeLevel = globalSetlistTranspose[song.id];
+                    }
+                } else {
+                    // User's personal transpose
+                    try {
+                        const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                        if (song.id && typeof localTranspose[song.id] === 'number') {
+                            transposeLevel = localTranspose[song.id];
+                        }
+                    } catch (e) {
+                        transposeLevel = 0;
+                    }
+                }
+                
+                const displayKey = transposeLevel !== 0 ? transposeChord(song.key, transposeLevel) : song.key;
+                
                 div.innerHTML = `
                 <div class="song-header">
                     <span class="song-title">${song.title}</span>
@@ -7199,7 +7242,7 @@ window.viewSingleLyrics = function(songId, otherId) {
                         <i class="fas fa-heart"></i>
                     </button>
                 </div>
-                <div class="song-meta">${song.key} | ${song.tempo} | ${song.time || song.timeSignature} | ${song.taal || ''} | ${displayGenres}</div>
+                <div class="song-meta">${displayKey} | ${song.tempo} | ${song.time || song.timeSignature} | ${song.taal || ''} | ${displayGenres}</div>
                 <div class="song-actions">
                     <button class="btn ${isInSetlist ? 'btn-delete' : 'btn-primary'} toggle-setlist">
                         ${isInSetlist ? 'Remove' : 'Add'}
@@ -7544,10 +7587,18 @@ window.viewSingleLyrics = function(songId, otherId) {
     
         function showSuggestedSongs() {
             const currentSongId = songPreviewEl.dataset.songId;
-            if (!currentSongId) return;
+            
+            if (!currentSongId) {
+                return;
+            }
 
             const suggestedSongs = getSuggestedSongs(currentSongId);
+            
             const suggestedSongsContent = document.getElementById('suggestedSongsContent');
+            if (!suggestedSongsContent) {
+                return;
+            }
+            
             suggestedSongsContent.innerHTML = '';
 
             if (suggestedSongs.length === 0) {
@@ -7556,12 +7607,33 @@ window.viewSingleLyrics = function(songId, otherId) {
             }
 
             suggestedSongs.forEach(song => {
+                // Calculate transpose for suggested song display consistency
+                let transposeLevel = 0;
+                if (currentSetlistType === 'global-setlist' && currentSetlistId && song.id) {
+                    // Admin's global setlist transpose
+                    if (globalSetlistTranspose && globalSetlistTranspose[song.id] && typeof globalSetlistTranspose[song.id] === 'number') {
+                        transposeLevel = globalSetlistTranspose[song.id];
+                    }
+                } else {
+                    // User's personal transpose
+                    try {
+                        const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                        if (song.id && typeof localTranspose[song.id] === 'number') {
+                            transposeLevel = localTranspose[song.id];
+                        }
+                    } catch (e) {
+                        transposeLevel = 0;
+                    }
+                }
+                
+                const displayKey = transposeLevel !== 0 ? transposeChord(song.key, transposeLevel) : song.key;
+                
                 const div = document.createElement('div');
                 div.className = 'suggested-song-item';
                 div.innerHTML = `
                     <div class="suggested-song-title">${song.title}</div>
                     <div class="suggested-song-meta">
-                        Key: ${song.key} | Tempo: ${song.tempo} | Time: ${song.time || song.timeSignature} | Taal: ${song.taal}
+                        Key: ${displayKey} | Tempo: ${song.tempo} | Time: ${song.time || song.timeSignature} | Taal: ${song.taal}
                     </div>
                     <div class="suggested-song-mood">
                         Mood: ${song.mood || 'Not specified'}
@@ -7627,6 +7699,10 @@ window.viewSingleLyrics = function(songId, otherId) {
         function toggleSuggestedSongsDrawer() {
             const drawer = document.getElementById('suggestedSongsDrawer');
             const toggleBtn = document.getElementById('toggleSuggestedSongs');
+            
+            if (!drawer || !toggleBtn) {
+                return;
+            }
             
             if (suggestedSongsDrawerOpen) {
                 drawer.classList.remove('open');
@@ -7853,9 +7929,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         }
     
         async function showPreview(song, fromHistory = false, openingContext = 'all-songs') {
-            // Debug log to track the data source for preview display
-            console.log(`🎵 Preview Display - Song ${song.id} "${song.title}" mood data: "${song.mood}"`);
-            
             // Function to get display name for createdBy/updatedBy fields
             function getDisplayName(createdBy) {
                 // If it looks like a user ID (ObjectId format), try to get the firstName from currentUser
@@ -7965,6 +8038,9 @@ window.viewSingleLyrics = function(songId, otherId) {
             const distinctChords = extractDistinctChords(song.lyrics, transposeLevel, song.manualChords);
             const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
             
+            // Calculate transposed key for display
+            const displayKey = transposeLevel !== 0 ? transposeChord(song.key, transposeLevel) : song.key;
+            
             // Build the preview HTML
             songPreviewEl.innerHTML = `
 <div class="song-preview-container">
@@ -7977,7 +8053,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             <div class="preview-meta-line first-line">
                 <div class="preview-meta-row">
                     <span class="preview-meta-label">Key:</span>
-                    <span class="preview-meta-value preview-key" id="current-key">${song.key}</span>
+                    <span class="preview-meta-value preview-key" id="current-key">${displayKey}</span>
                     ${chordsDisplay ? `<span class="preview-meta-value" style="margin-left: 8px;">Chords: ${chordsDisplay}</span>` : ''}
                 </div>
                 ${song.tempo ? `
@@ -9939,12 +10015,33 @@ window.viewSingleLyrics = function(songId, otherId) {
                 searchResultsContent.innerHTML = '';
     
                 filtered.forEach(song => {
+                    // Calculate transpose for search result display consistency
+                    let transposeLevel = 0;
+                    if (currentSetlistType === 'global-setlist' && currentSetlistId && song.id) {
+                        // Admin's global setlist transpose
+                        if (globalSetlistTranspose && globalSetlistTranspose[song.id] && typeof globalSetlistTranspose[song.id] === 'number') {
+                            transposeLevel = globalSetlistTranspose[song.id];
+                        }
+                    } else {
+                        // User's personal transpose
+                        try {
+                            const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+                            if (song.id && typeof localTranspose[song.id] === 'number') {
+                                transposeLevel = localTranspose[song.id];
+                            }
+                        } catch (e) {
+                            transposeLevel = 0;
+                        }
+                    }
+                    
+                    const displayKey = transposeLevel !== 0 ? transposeChord(song.key, transposeLevel) : song.key;
+                    
                     const resultItem = document.createElement('div');
                     resultItem.className = 'search-result-item';
                     resultItem.dataset.songId = song.id;
-    
+
                     const highlightedTitle = highlightText(song.title, query);
-    
+
                     let lyricsSnippet = '';
                     if (song.lyrics && song.lyrics.toLowerCase().includes(query)) {
                         const lyricsLower = song.lyrics.toLowerCase();
@@ -9956,10 +10053,10 @@ window.viewSingleLyrics = function(songId, otherId) {
                         if (endPos < song.lyrics.length) lyricsSnippet = lyricsSnippet + '...';
                         lyricsSnippet = highlightText(lyricsSnippet, query);
                     }
-    
+
                     resultItem.innerHTML = `
                         <div class="search-result-title">${highlightedTitle}</div>
-                        <div class="search-result-meta">${song.key} | ${song.tempo} | ${song.time || song.timeSignature} | ${song.genre || ''}</div>
+                        <div class="search-result-meta">${displayKey} | ${song.tempo} | ${song.time || song.timeSignature} | ${song.genre || ''}</div>
                         ${lyricsSnippet ? `<div class="search-result-snippet">${lyricsSnippet}</div>` : ''}
                     `;
     
@@ -10074,8 +10171,16 @@ window.viewSingleLyrics = function(songId, otherId) {
             });
     
             // Suggested songs
-            document.getElementById('toggleSuggestedSongs').addEventListener('click', toggleSuggestedSongsDrawer);
-            document.getElementById('closeSuggestedSongs').addEventListener('click', closeSuggestedSongsDrawer);
+            const suggestedSongsBtn = document.getElementById('toggleSuggestedSongs');
+            const suggestedSongsCloseBtn = document.getElementById('closeSuggestedSongs');
+            
+            if (suggestedSongsBtn) {
+                suggestedSongsBtn.addEventListener('click', toggleSuggestedSongsDrawer);
+            }
+            
+            if (suggestedSongsCloseBtn) {
+                suggestedSongsCloseBtn.addEventListener('click', closeSuggestedSongsDrawer);
+            }
             document.addEventListener('click', (e) => {
                 const drawer = document.getElementById('suggestedSongsDrawer');
                 const toggleBtn = document.getElementById('toggleSuggestedSongs');

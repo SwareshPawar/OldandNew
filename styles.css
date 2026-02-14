@@ -984,7 +984,7 @@
             height: 100%;
             background: var(--light-bg);
             box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-            z-index: 950;
+            z-index: 1240;
             transition: right 0.3s ease;
             overflow-y: auto;
             padding: 12px;
@@ -1105,7 +1105,7 @@
         justify-content: center;
         cursor: pointer;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        z-index: 900;
+        z-index: 1250;
         transition: all 0.3s;
         border: none;
     }
