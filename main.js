@@ -305,6 +305,12 @@ window.dataCache = {
         userdata: null,
         'global-setlists': null,
         'my-setlists': null
+    },
+    lastSyncTimestamp: {
+        songs: null, // For delta sync - tracks when we last synced songs
+        userdata: null,
+        'global-setlists': null,
+        'my-setlists': null
     }
 };
 
@@ -314,6 +320,7 @@ window.dataCache = {
 try {
     const storedSongs = localStorage.getItem('songs');
     const storedSongsTimestamp = localStorage.getItem('songsTimestamp');
+    const storedSyncTimestamp = localStorage.getItem('songsSyncTimestamp');
 
     function isCacheFresh(type, timestamp) {
         if (!timestamp) return false;
@@ -326,11 +333,16 @@ try {
         if (isCacheFresh('songs', storedSongsTimestamp)) {
             window.dataCache.songs = JSON.parse(storedSongs);
             window.dataCache.lastFetch.songs = parseInt(storedSongsTimestamp);
+            // Load last sync timestamp for delta sync
+            if (storedSyncTimestamp) {
+                window.dataCache.lastSyncTimestamp.songs = storedSyncTimestamp;
+            }
         } else {
             const cacheAge = Date.now() - parseInt(storedSongsTimestamp);
             const expiry = CACHE_EXPIRY.songs;
             localStorage.removeItem('songs');
             localStorage.removeItem('songsTimestamp');
+            localStorage.removeItem('songsSyncTimestamp');
         }
     } else {
         // No cached songs found, will fetch from API
@@ -505,10 +517,22 @@ function updateSongInCache(song, isNewSong = false) {
         }
     }
     
+    // Update lastSyncTimestamp to prevent re-downloading our own changes
+    // Use the song's updatedAt or createdAt timestamp, or current time
+    const songTimestamp = song.updatedAt || song.createdAt || new Date().toISOString();
+    const currentSyncTime = window.dataCache.lastSyncTimestamp.songs;
+    
+    // Only update if the new song timestamp is more recent
+    if (!currentSyncTime || songTimestamp > currentSyncTime) {
+        window.dataCache.lastSyncTimestamp.songs = songTimestamp;
+        console.log(`🔄 Updated lastSyncTimestamp to ${songTimestamp} (${isNewSong ? 'new' : 'edited'} song)`);
+    }
+    
     // Update localStorage with validation
     try {
         localStorage.setItem('songs', JSON.stringify(window.dataCache.songs));
         localStorage.setItem('songsTimestamp', Date.now().toString());
+        localStorage.setItem('songsSyncTimestamp', window.dataCache.lastSyncTimestamp.songs);
         return true;
     } catch (error) {
         console.error(`❌ Failed to update localStorage:`, error);
@@ -652,119 +676,160 @@ async function loadSongsWithProgress(forceRefresh = false) {
 
         updateProgress('spinnerInit');
         
-        // Check if songs are already cached
-        if (window.dataCache.songs && !forceRefresh) {
+        // Determine if we should do delta sync or full fetch
+        const hasCachedSongs = window.dataCache.songs && window.dataCache.songs.length > 0;
+        const lastSyncTime = window.dataCache.lastSyncTimestamp.songs;
+        const shouldDeltaSync = hasCachedSongs && lastSyncTime && !forceRefresh;
+        
+        console.log(`🔄 Sync strategy: ${shouldDeltaSync ? 'DELTA' : 'FULL'} (cached: ${hasCachedSongs}, lastSync: ${lastSyncTime}, force: ${forceRefresh})`);
+        
+        if (shouldDeltaSync) {
+            // ==================== DELTA SYNC ====================
+            console.log(`📊 Delta sync since: ${lastSyncTime}`);
+            
+            // Use cached songs immediately for faster rendering
             songs = window.dataCache.songs;
             
-            // Simulate realistic progress for cached data
-            updateProgress('fetchSongs', 50);
-            await new Promise(resolve => setTimeout(resolve, 150));
+            updateProgress('fetchSongs', 20);
             
-            updateProgress('fetchSongs'); // Mark as completed
+            try {
+                // Fetch delta: new/updated songs + deleted song IDs in parallel
+                const [deltaSongsResponse, deletedIdsResponse] = await Promise.all([
+                    authFetch(`${API_BASE_URL}/api/songs?since=${encodeURIComponent(lastSyncTime)}`),
+                    authFetch(`${API_BASE_URL}/api/songs/deleted?since=${encodeURIComponent(lastSyncTime)}`)
+                ]);
+                
+                updateProgress('fetchSongs', 60);
+                
+                if (!deltaSongsResponse.ok || !deletedIdsResponse.ok) {
+                    console.warn('Delta sync failed, falling back to cached songs');
+                    updateProgress('fetchSongs');
+                    updateProgress('processSongs');
+                } else {
+                    const deltaSongs = await deltaSongsResponse.json();
+                    const deletedIds = await deletedIdsResponse.json();
+                    
+                    console.log(`✨ Delta sync: ${deltaSongs.length} updated, ${deletedIds.length} deleted`);
+                    
+                    updateProgress('fetchSongs');
+                    updateProgress('processSongs', 30);
+                    
+                    // Merge delta songs into cache
+                    if (deltaSongs.length > 0) {
+                        // Create a map of existing songs by ID for fast lookup
+                        const songMap = new Map(songs.map(s => [s.id, s]));
+                        
+                        // Update or add delta songs
+                        deltaSongs.forEach(song => {
+                            songMap.set(song.id, song);
+                        });
+                        
+                        songs = Array.from(songMap.values());
+                        console.log(`📝 Merged ${deltaSongs.length} songs into cache`);
+                    }
+                    
+                    updateProgress('processSongs', 60);
+                    
+                    // Remove deleted songs from cache
+                    if (deletedIds.length > 0) {
+                        const deletedSet = new Set(deletedIds);
+                        const beforeCount = songs.length;
+                        songs = songs.filter(s => !deletedSet.has(s.id));
+                        console.log(`🗑️ Removed ${beforeCount - songs.length} deleted songs`);
+                    }
+                    
+                    updateProgress('processSongs', 90);
+                    
+                    // Update cache and localStorage with merged data
+                    window.dataCache.songs = songs;
+                    window.dataCache.lastFetch.songs = Date.now();
+                    window.dataCache.lastSyncTimestamp.songs = new Date().toISOString();
+                    
+                    try {
+                        localStorage.setItem('songs', JSON.stringify(songs));
+                        localStorage.setItem('songsTimestamp', Date.now().toString());
+                        localStorage.setItem('songsSyncTimestamp', window.dataCache.lastSyncTimestamp.songs);
+                    } catch (e) {
+                        console.warn('Failed to update localStorage after delta sync:', e);
+                    }
+                    
+                    updateProgress('processSongs');
+                }
+            } catch (err) {
+                console.error('Delta sync error, using cached songs:', err);
+                updateProgress('fetchSongs');
+                updateProgress('processSongs');
+            }
             
-            updateProgress('processSongs', 50);
-            await new Promise(resolve => setTimeout(resolve, 100));
+        } else {
+            // ==================== FULL SYNC ====================
+            console.log('📥 Full sync: downloading all songs');
             
-            updateProgress('processSongs'); // Mark as completed
+            let response;
+            try {
+                updateProgress('fetchSongs', 10);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                response = await cachedFetch(`${API_BASE_URL}/api/songs`, true); // Force fresh fetch
+                
+                updateProgress('fetchSongs', 80);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            } catch (err) {
+                console.error('Error fetching songs:', err);
+                hideLoading();
+                return;
+            }
             
-            updateProgress('loadUserData', 50);
-            await new Promise(resolve => setTimeout(resolve, 100));
+            if (!response.ok) {
+                hideLoading();
+                return;
+            }
             
-            updateProgress('loadUserData'); // Mark as completed
+            updateProgress('fetchSongs');
             
-            // Still render the songs even from cache
-            if (typeof renderSongs === 'function') {
-                try {
-                    const filters = getCurrentFilterValues();
-                    renderSongs('New', filters.key, filters.genre, filters.mood, filters.artist);
-                } catch (err) {
-                    console.warn('Error rendering cached songs:', err);
+            let allSongs = [];
+            try {
+                updateProgress('processSongs', 20);
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                allSongs = await response.json();
+                
+                updateProgress('processSongs', 60);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (e) {
+                console.error('Error processing songs JSON:', e);
+                hideLoading();
+                return;
+            }
+            
+            // Deduplicate
+            const seen = new Set();
+            const unique = [];
+            for (const s of allSongs) {
+                if (!seen.has(s.id)) {
+                    seen.add(s.id);
+                    unique.push(s);
                 }
             }
+            window.songs = unique;
+            songs = unique;
             
-            updateProgress('renderSongs', 50);
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Update cache with full dataset and current timestamp
+            window.dataCache.songs = unique;
+            window.dataCache.lastFetch.songs = Date.now();
+            window.dataCache.lastSyncTimestamp.songs = new Date().toISOString();
             
-            if (typeof updateSongCount === 'function') {
-                try {
-                    updateSongCount();
-                } catch (err) {
-                    console.warn('Error updating song count:', err);
-                }
+            try {
+                localStorage.setItem('songs', JSON.stringify(unique));
+                localStorage.setItem('songsTimestamp', Date.now().toString());
+                localStorage.setItem('songsSyncTimestamp', window.dataCache.lastSyncTimestamp.songs);
+            } catch (e) {
+                console.warn('Failed to cache songs to localStorage:', e);
             }
-            
-            updateProgress('renderSongs'); // Mark as completed
-            
-            // Populate dropdowns for cached data
-            updateProgress('populateDropdowns', 50);
-            await new Promise(resolve => setTimeout(resolve, 50));
-            updateProgress('populateDropdowns'); // Mark as completed
-            
-            updateProgress('finalSetup'); // Mark as completed
-            
-            return songs;
+            updateProgress('processSongs');
         }
         
-        let response;
-        try {
-            // Real API call - report progress during fetch
-            updateProgress('fetchSongs', 10);
-            await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to show progress
-            
-            response = await cachedFetch(`${API_BASE_URL}/api/songs`, forceRefresh);
-            
-            updateProgress('fetchSongs', 80);
-            await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to show progress
-        } catch (err) {
-            console.error('Error fetching songs:', err);
-            hideLoading();
-            return;
-        }
-        
-        if (!response.ok) {
-            hideLoading();
-            return;
-        }
-        
-        updateProgress('fetchSongs'); // Mark fetch as complete
-        
-        let allSongs = [];
-        try {
-            updateProgress('processSongs', 20);
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-            allSongs = await response.json();
-            
-            updateProgress('processSongs', 60);
-            await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (e) {
-            console.error('Error processing songs JSON:', e);
-            hideLoading();
-            return;
-        }
-        
-        // Deduplicate
-        const seen = new Set();
-        const unique = [];
-        for (const s of allSongs) {
-            if (!seen.has(s.id)) {
-                seen.add(s.id);
-                unique.push(s);
-            }
-        }
-        window.songs = unique;
-        songs = unique; // Also set the global variable
-        // Update both cache and localStorage
-        window.dataCache.songs = unique;
-        window.dataCache.lastFetch.songs = Date.now();
-        try {
-            localStorage.setItem('songs', JSON.stringify(unique));
-            localStorage.setItem('songsTimestamp', Date.now().toString());
-        } catch (e) {
-            console.warn('Failed to cache songs to localStorage:', e);
-            // Continue without caching - app still works
-        }
-        updateProgress('processSongs'); // Mark processing as complete
+        // ==================== COMMON POST-SYNC LOGIC ====================
         
         // Load user data if authenticated
         if (currentUser && currentUser.id) {
@@ -780,7 +845,7 @@ async function loadSongsWithProgress(forceRefresh = false) {
                 // Error loading user data - continue without it
             }
         }
-        updateProgress('loadUserData'); // Mark user data loading as complete
+        updateProgress('loadUserData');
         
         // Render songs
         updateProgress('renderSongs', 30);
@@ -800,26 +865,27 @@ async function loadSongsWithProgress(forceRefresh = false) {
                 console.warn('Error updating song count:', err);
             }
         }
-        updateProgress('renderSongs'); // Mark rendering as complete
+        updateProgress('renderSongs');
         
-        // Populate dropdowns for fresh data
+        // Populate dropdowns
         updateProgress('populateDropdowns', 50);
         await new Promise(resolve => setTimeout(resolve, 50));
-        updateProgress('populateDropdowns'); // Mark as completed
+        updateProgress('populateDropdowns');
         
         // Final setup tasks
         updateProgress('finalSetup');
+        
+        console.log(`✅ Sync complete: ${songs.length} songs in cache`);
         
         // Ensure loading is hidden when complete
         setTimeout(() => {
             hideLoading();
         }, 200);
         
-        return unique;
+        return songs;
         
     } catch (error) {
         console.error('Error in loadSongsWithProgress:', error);
-        // Always hide loading on error
         hideLoading();
         return [];
     }
@@ -2109,8 +2175,22 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 method: 'DELETE'
             });
             if (resp.ok) {
+                // Remove from global songs array
                 songs = songs.filter(s => s.id !== songId);
+                
+                // Remove from cache
+                if (window.dataCache.songs) {
+                    window.dataCache.songs = window.dataCache.songs.filter(s => s.id !== songId);
+                }
+                
+                // Update localStorage
                 localStorage.setItem('songs', JSON.stringify(songs));
+                
+                // Update lastSyncTimestamp to prevent re-syncing deleted song
+                window.dataCache.lastSyncTimestamp.songs = new Date().toISOString();
+                localStorage.setItem('songsSyncTimestamp', window.dataCache.lastSyncTimestamp.songs);
+                
+                console.log(`🗑️ Deleted song ${songId} from cache and backend`);
                 showNotification('Song deleted successfully');
                 if (typeof postDeleteCallback === 'function') postDeleteCallback();
             } else if (resp.status === 404) {
@@ -9949,8 +10029,16 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             confirmDeleteAll.addEventListener('click', () => {
                 songs = [];
                 favorites = [];
+                
+                // Clear cache as well
+                window.dataCache.songs = [];
+                window.dataCache.lastSyncTimestamp.songs = new Date().toISOString();
+                
                 saveSongs();
                 queueSaveUserData();
+                
+                // Update sync timestamp in localStorage
+                localStorage.setItem('songsSyncTimestamp', window.dataCache.lastSyncTimestamp.songs);
                 
                 if (NewTab.classList.contains('active')) {
                     renderSongs('New', keyFilter.value, genreFilter.value);

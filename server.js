@@ -6,6 +6,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 let db;
 let songsCollection;
+let deletedSongsCollection;
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -48,6 +49,7 @@ async function connectToDatabase() {
     await client.connect();
     db = client.db('OldNewSongs');
     songsCollection = db.collection('OldNewSongs');
+    deletedSongsCollection = db.collection('DeletedSongs');
     isConnected = true;
   } catch (err) {
     console.error('Failed to connect to MongoDB:', err);
@@ -338,6 +340,27 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
+// Get list of deleted song IDs since a timestamp (for delta sync)
+app.get('/api/songs/deleted', authMiddleware, async (req, res) => {
+  try {
+    const { since } = req.query;
+    if (!since) {
+      return res.json([]); // No timestamp provided, return empty array
+    }
+    
+    // Find all deleted songs with deletedAt > since
+    const deletedSongs = await deletedSongsCollection.find({
+      deletedAt: { $gt: since }
+    }).toArray();
+    
+    // Return just the song IDs
+    const deletedIds = deletedSongs.map(doc => doc.songId);
+    res.json(deletedIds);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/songs', authMiddleware, async (req, res) => {
   try {
     // Support delta fetching: if ?since=TIMESTAMP is provided, only return songs updated after that
@@ -450,10 +473,19 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
 app.delete('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await songsCollection.deleteOne({ id: parseInt(id) });
+    const songId = parseInt(id);
+    const result = await songsCollection.deleteOne({ id: songId });
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Song not found' });
     }
+    
+    // Track deletion for delta sync
+    await deletedSongsCollection.insertOne({
+      songId: songId,
+      deletedAt: new Date().toISOString(),
+      deletedBy: req.user.email || req.user.username
+    });
+    
     res.json({ message: 'Song deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -462,7 +494,23 @@ app.delete('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
 
 app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   try {
+    // Get all song IDs before deleting
+    const allSongs = await songsCollection.find({}, { projection: { id: 1 } }).toArray();
+    const deletionTimestamp = new Date().toISOString();
+    
+    // Delete all songs
     await songsCollection.deleteMany({});
+    
+    // Track all deletions for delta sync
+    if (allSongs.length > 0) {
+      const deletionRecords = allSongs.map(song => ({
+        songId: song.id,
+        deletedAt: deletionTimestamp,
+        deletedBy: req.user.email || req.user.username
+      }));
+      await deletedSongsCollection.insertMany(deletionRecords);
+    }
+    
     res.json({ message: 'All songs deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
