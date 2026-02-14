@@ -1,9 +1,11 @@
 {
   "name": "songs-app",
-  "version": "1.0.0",
+  "version": "1.7.0",
+  "description": "Song management app with enforced documentation standards",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "postinstall": "node setup-git-hooks.js || echo ⚠️ Please run: node setup-git-hooks.js",
     "migrate-genres-to-moods:preview": "node migrate-genres-to-moods.js --preview",
     "migrate-genres-to-moods": "node migrate-genres-to-moods.js"
   },

@@ -584,11 +584,13 @@ document.addEventListener('scroll', schedulePrefetch);
 // Disable Live Server WebSocket if it's causing delays
 
 // Global loading functions
-function showLoading(percent) {
+function showLoading(percent, message = null) {
     const overlay = document.getElementById('loadingOverlay');
     const percentEl = document.getElementById('loadingPercent');
+    const messageEl = document.getElementById('loadingMessage');
     if (overlay) overlay.style.display = 'flex';
     if (percentEl && typeof percent === 'number') percentEl.textContent = percent + '%';
+    if (messageEl && message) messageEl.textContent = message;
     
     // Safety timeout - hide loading after 30 seconds max
     clearTimeout(window.loadingTimeout);
@@ -628,52 +630,69 @@ function getCurrentFilterValues() {
     };
 }
 
+// Global progress tracking system for entire app initialization
+const loadingTasks = {
+    // Song loading phase: 0-70%
+    spinnerInit: { weight: 3, completed: false },
+    fetchSongs: { weight: 30, completed: false },
+    processSongs: { weight: 12, completed: false },
+    populateDropdowns: { weight: 7, completed: false },
+    loadUserData: { weight: 10, completed: false },
+    renderSongs: { weight: 8, completed: false },
+    // Setlist loading phase: 70-80%
+    loadSetlists: { weight: 10, completed: false },
+    // UI setup phase: 80-95%
+    setupUI: { weight: 15, completed: false },
+    // Final phase: 95-100%
+    finalSetup: { weight: 5, completed: false }
+};
+
+let currentProgress = 0;
+
+// Global progress update function - callable from any initialization phase
+function updateProgress(taskName, customPercent = null) {
+    if (customPercent !== null) {
+        // For tasks that want to report custom progress
+        const task = loadingTasks[taskName];
+        if (task) {
+            const taskProgress = (customPercent / 100) * task.weight;
+            currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
+                if (key === taskName) return total + taskProgress;
+                return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
+            }, 0);
+        }
+    } else {
+        // Mark task as completed
+        if (loadingTasks[taskName]) {
+            loadingTasks[taskName].completed = true;
+            currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
+                return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
+            }, 0);
+        }
+    }
+    
+    const roundedProgress = Math.min(100, Math.round(currentProgress));
+    
+    // Determine message based on progress
+    let message = 'Initializing...';
+    if (roundedProgress < 70) {
+        message = 'Loading songs...';
+    } else if (roundedProgress < 80) {
+        message = 'Loading setlists...';
+    } else if (roundedProgress < 95) {
+        message = 'Setting up UI...';
+    } else if (roundedProgress < 100) {
+        message = 'Finalizing...';
+    } else {
+        message = 'Ready!';
+    }
+    
+    showLoading(roundedProgress, message);
+}
+
 // Global songs loading function with progress tracking
 async function loadSongsWithProgress(forceRefresh = false) {
     try {
-        // Enhanced progress tracking system
-        const loadingTasks = {
-            spinnerInit: { weight: 5, completed: false },
-            fetchSongs: { weight: 40, completed: false },
-            processSongs: { weight: 15, completed: false },
-            populateDropdowns: { weight: 10, completed: false },
-            loadUserData: { weight: 15, completed: false },
-            renderSongs: { weight: 10, completed: false },
-            finalSetup: { weight: 5, completed: false }
-        };
-
-        let currentProgress = 0;
-
-        function updateProgress(taskName, customPercent = null) {
-            if (customPercent !== null) {
-                // For tasks that want to report custom progress
-                const task = loadingTasks[taskName];
-                if (task) {
-                    const taskProgress = (customPercent / 100) * task.weight;
-                    currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
-                        if (key === taskName) return total + taskProgress;
-                        return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
-                    }, 0);
-                }
-            } else {
-                // Mark task as completed
-                if (loadingTasks[taskName]) {
-                    loadingTasks[taskName].completed = true;
-                    currentProgress = Object.keys(loadingTasks).reduce((total, key) => {
-                        return total + (loadingTasks[key].completed ? loadingTasks[key].weight : 0);
-                    }, 0);
-                }
-            }
-            
-            const roundedProgress = Math.min(100, Math.round(currentProgress));
-            showLoading(roundedProgress);
-            
-            // Only hide loading when all tasks are truly complete
-            if (roundedProgress >= 100) {
-                setTimeout(hideLoading, 500);
-            }
-        }
-
         updateProgress('spinnerInit');
         
         // Determine if we should do delta sync or full fetch
@@ -776,13 +795,11 @@ async function loadSongsWithProgress(forceRefresh = false) {
                 await new Promise(resolve => setTimeout(resolve, 50));
             } catch (err) {
                 console.error('Error fetching songs:', err);
-                hideLoading();
-                return;
+                throw err; // Propagate error to be handled by initialization
             }
             
             if (!response.ok) {
-                hideLoading();
-                return;
+                throw new Error('Failed to fetch songs from API');
             }
             
             updateProgress('fetchSongs');
@@ -798,8 +815,7 @@ async function loadSongsWithProgress(forceRefresh = false) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             } catch (e) {
                 console.error('Error processing songs JSON:', e);
-                hideLoading();
-                return;
+                throw e; // Propagate error
             }
             
             // Deduplicate
@@ -872,22 +888,16 @@ async function loadSongsWithProgress(forceRefresh = false) {
         await new Promise(resolve => setTimeout(resolve, 50));
         updateProgress('populateDropdowns');
         
-        // Final setup tasks
-        updateProgress('finalSetup');
-        
         console.log(`✅ Sync complete: ${songs.length} songs in cache`);
         
-        // Ensure loading is hidden when complete
-        setTimeout(() => {
-            hideLoading();
-        }, 200);
+        // Don't hide loading here - let performInitialization() handle it
+        // after all initialization steps are complete
         
         return songs;
         
     } catch (error) {
         console.error('Error in loadSongsWithProgress:', error);
-        hideLoading();
-        return [];
+        throw error; // Propagate to initialization
     }
 }
 
@@ -922,20 +932,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateLocalTransposeCache();
 
-    // Inject spinner overlay if absent
-    if (!document.getElementById('loadingOverlay')) {
-        fetch('spinner.html')
-            .then(r => r.text())
-            .then(html => document.body.insertAdjacentHTML('beforeend', html))
-            .catch(() => {});
-    }
+    // Inject spinner overlay and start initialization
+    (async () => {
+        // Inject spinner overlay if absent
+        if (!document.getElementById('loadingOverlay')) {
+            await fetch('spinner.html')
+                .then(r => r.text())
+                .then(html => document.body.insertAdjacentHTML('beforeend', html))
+                .catch(() => {});
+        }
 
-    // Use window.init() for all initialization - no direct song loading here
-    if (!initializationState.isInitialized && !initializationState.isInitializing) {
-        // Show loading immediately
-        showLoading(0);
-        window.init();
-    }
+        // Use window.init() for all initialization - no direct song loading here
+        if (!initializationState.isInitialized && !initializationState.isInitializing) {
+            // Show loading immediately
+            showLoading(0, 'Initializing...');
+            window.init();
+        }
+    })();
 
     // Populate dropdowns once
     populateDropdown('keyFilter', ['Key', ...KEYS]);
@@ -1674,6 +1687,14 @@ window.init = async function init() {
     try {
         await initializationState.initPromise;
         initializationState.isInitialized = true;
+    } catch (error) {
+        console.error('❌ Initialization failed:', error);
+        // Hide loader on error
+        hideLoading();
+        // Show error notification
+        if (typeof showNotification === 'function') {
+            showNotification('Failed to load app. Please refresh the page.', 'error');
+        }
     } finally {
         initializationState.isInitializing = false;
     }
@@ -1682,6 +1703,10 @@ window.init = async function init() {
 };
 
 async function performInitialization() {
+    // Show loader immediately at 0%
+    showLoading(0, 'Initializing...');
+    console.log('🚀 Starting app initialization...');
+    
     // Restore JWT and user state
     jwtToken = localStorage.getItem('jwtToken') || '';
     if (jwtToken && isJwtValid(jwtToken)) {
@@ -1712,14 +1737,19 @@ async function performInitialization() {
     console.log('� Loading songs with progress indication...');
     await loadSongsWithProgress();
     
-    console.log('After song loading - Global songs length:', songs.length);
+    console.log('📊 Songs loaded:', songs.length, '- Loading setlists...');
     
-    // Load setlists efficiently
+    // Load setlists efficiently (70-80%)
+    updateProgress('loadSetlists', 20);
     await loadGlobalSetlists();
+    updateProgress('loadSetlists', 50);
     if (jwtToken && isJwtValid(jwtToken)) {
         await loadMySetlists();
         await loadSmartSetlistsFromServer(); // Load smart setlists if authenticated
     }
+    updateProgress('loadSetlists', 90);
+    
+    console.log('✅ Setlists loaded - Setting up UI components...');
     
     // Ensure setlist folders have initial content
     renderGlobalSetlists();
@@ -1728,16 +1758,19 @@ async function performInitialization() {
     
     // Populate setlist dropdown after setlists are loaded
     populateSetlistDropdown();
+    updateProgress('loadSetlists');
     
     // Update button states after loading setlist data
     setTimeout(() => {
         updateAllSetlistButtonStates();
     }, 500); // Small delay to ensure dropdown is populated
     
-    // Settings and UI
+    // Settings and UI setup (80-95%)
+    updateProgress('setupUI', 10);
     loadSettings();
     addEventListeners();
     addPanelToggles();
+    updateProgress('setupUI', 30);
     
     // Create mobile navigation buttons on all screen sizes
     createMobileNavButtons();
@@ -1746,17 +1779,20 @@ async function performInitialization() {
     if (window.innerWidth <= 768) {
         addMobileTouchNavigation();
     }
+    updateProgress('setupUI', 50);
     
     renderSongs('New', '', '', '', '');
     applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
     // connectWebSocket(); // Removed - not needed and may cause delays
     updateSongCount();
+    updateProgress('setupUI', 70);
     initScreenWakeLock();
     setupModalClosing();
     setupSuggestedSongsClosing();
     setupModals();
     setupSongStructureTags();
     setupWindowCloseConfirmation();
+    updateProgress('setupUI', 90);
     // Handle initial page load with hash
     if (window.location.hash) {
         const songId = parseInt(window.location.hash.replace('#song-', ''));
@@ -1791,8 +1827,22 @@ async function performInitialization() {
             }
         }
     });
+    updateProgress('setupUI');
+    
     // Admin panel button
     if (typeof updateAdminPanelBtn === 'function') updateAdminPanelBtn();
+    
+    console.log('🎨 UI components ready - Finalizing...');
+    
+    // Final setup (95-100%)
+    updateProgress('finalSetup', 50);
+    updateProgress('finalSetup'); // Mark as complete -> 100%
+    
+    // All initialization complete - hide loader
+    console.log('✅ App initialization complete - hiding loader');
+    setTimeout(() => {
+        hideLoading();
+    }, 300); // Small delay to ensure UI has rendered
 }
 
 // --- JWT expiry helpers: must be at the very top ---
