@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Back Button Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background: var(--light-bg);
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .setlist-header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        h2 {
+            color: #333;
+        }
+        p {
+            color: #666;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>Back Button Styling Test</h2>
+        
+        <div class="test-section">
+            <h3>Test 1: Back Button (Should be ~40px wide)</h3>
+            <div class="setlist-header-actions">
+                <button onclick="alert('Back clicked')" class="btn btn-secondary setlist-action-btn back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="btn btn-secondary setlist-action-btn">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-danger setlist-action-btn">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <p>✓ Back button should be slim (40px)</p>
+            <p>✓ Other buttons should be normal width (~110px)</p>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: Without back-btn class (Should be ~110px)</h3>
+            <div class="setlist-header-actions">
+                <button class="btn btn-secondary setlist-action-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="btn btn-secondary setlist-action-btn">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+            <p>✓ All buttons should be same width</p>
+        </div>
+
+        <div class="test-section">
+            <h3>Inspect the Back Button:</h3>
+            <p>Right-click the back button above and select "Inspect"</p>
+            <p>Check if these styles are applied:</p>
+            <ul style="color: #666; margin-top: 10px;">
+                <li><code>max-width: 40px !important</code></li>
+                <li><code>min-width: 40px !important</code></li>
+                <li><code>width: 40px !important</code></li>
+                <li><code>background: var(--accent-color) !important</code></li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>Current CSS Variables:</h3>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <div style="width: 50px; height: 50px; background: var(--accent-color); border: 2px solid #333; border-radius: 4px;"></div>
+                <div>
+                    <p style="margin: 0; font-weight: bold;">--accent-color</p>
+                    <p style="margin: 0; font-size: 0.85em;">#c5b194</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <div style="width: 50px; height: 50px; background: var(--primary-color); border: 2px solid #333; border-radius: 4px;"></div>
+                <div>
+                    <p style="margin: 0; font-weight: bold;">--primary-color</p>
+                    <p style="margin: 0; font-size: 0.85em;">#3E3F29</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section" style="background: #f0f0f0;">
+            <h3>Instructions:</h3>
+            <ol style="color: #666;">
+                <li>If you see the back button is slim (~40px), styles are working ✓</li>
+                <li>If you see all buttons are same width, do a hard refresh: <code>Ctrl+Shift+R</code></li>
+                <li>Check browser console for any CSS errors</li>
+                <li>Verify styles.css is loading correctly</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Log computed styles for debugging
+        window.addEventListener('load', () => {
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn) {
+                const styles = window.getComputedStyle(backBtn);
+                console.log('=== Back Button Computed Styles ===');
+                console.log('Width:', styles.width);
+                console.log('Min-width:', styles.minWidth);
+                console.log('Max-width:', styles.maxWidth);
+                console.log('Background:', styles.backgroundColor);
+                console.log('Color:', styles.color);
+                console.log('Flex:', styles.flex);
+                console.log('===================================');
+            }
+        });
+    </script>
+</body>
+</html>

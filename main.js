@@ -3411,7 +3411,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             
             // Rebuild actions with back button + original buttons
             setlistSectionActions.innerHTML = `
-                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
+                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn back-btn" title="Back to Menu" aria-label="Back to Menu">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist - Modify setlist name, description and song selection" aria-label="Edit Setlist">
@@ -3604,7 +3604,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             
             // Rebuild actions with back button + my setlist buttons
             setlistSectionActions.innerHTML = `
-                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
+                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn back-btn" title="Back to Menu" aria-label="Back to Menu">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist - Modify setlist name, description and song selection" aria-label="Edit Setlist">
@@ -5521,7 +5521,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         if (setlistSectionActions) {
             setlistSectionActions.style.display = 'flex';
             setlistSectionActions.innerHTML = `
-                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
+                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn back-btn" title="Back to Menu" aria-label="Back to Menu">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 ${isAdmin() ? `
