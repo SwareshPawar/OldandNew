@@ -2,14 +2,68 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 14, 2026 - 10:00 PM  
-**Version:** 1.2
+**Last Updated:** February 14, 2026 - 11:30 PM  
+**Version:** 1.3
 
 ---
 
 ## RECENT CHANGES (February 14, 2026)
 
-### Completed Fixes - Session 1
+### Completed Fixes - Session 4 (February 14, 2026 - Night)
+
+13. **✅ Setlist Header Buttons: Fixed Incorrect Display When Switching Types**
+   - **Problem**: When switching from smart setlist → my setlist, smart setlist buttons remained visible
+   - **Root Cause**: `showMySetlistInMainSection()` only appended back button instead of rebuilding entire button set
+   - **Fix**: Changed to completely rebuild all buttons (matching behavior of other setlist functions)
+   - **Locations**: [main.js](main.js#L3582-L3620) `showMySetlistInMainSection()`
+   - **Added**: Event listeners for edit, delete, and resequence buttons after HTML rebuild in both global and my setlist functions
+   - **Impact**: Clean state transitions between setlist types (global ↔ my ↔ smart), proper button functionality
+   
+14. **✅ Code Cleanup: Removed Excessive console.log Statements**
+   - **Removed from main.js**: ~50+ debug/info console.log statements
+     - Service Worker registration success log
+     - API_BASE_URL display log
+     - Song ID duplicate warning logs
+     - Loading progress messages
+     - setupSearchableMultiselect debugging (🔧 emojis)
+     - Multiselect option click logs (🖱️, ✅, ❌ emojis)
+     - Smart Setlists loading logs (📋 emojis)
+     - Song editing verbose logs (🎵 emojis)
+     - Scan and render operation logs
+   - **Removed from server.js**: ~25+ debug/info console.log statements
+     - Database connection status logs
+     - MongoDB URI availability logs
+     - DB Middleware logging
+     - Login attempt logs
+     - DEBUG POST/PUT request logs
+   - **Kept**: console.error, console.warn, and critical error logs
+   - **Impact**: Cleaner console output, easier debugging, improved performance
+
+### Completed Fixes - Session 3 (February 14, 2026 - Evening)
+
+12. **✅ Admin Panel: Removed Duplicate Detection Tab**
+   - **Removed**: Duplicate Detection tab from Admin Panel UI (tab button and content container)
+   - **Preserved**: Duplicate detection functionality during song addition/editing
+   - **Location Changes**:
+     - [index.html](index.html#L377): Removed duplicateDetectionTab button
+     - [index.html](index.html#L443): Removed duplicateDetectionTabContent container
+     - [main.js](main.js): Removed tab switching logic, renderDuplicateDetection(), viewLyrics(), deleteSingleDuplicateSong()
+     - [main.js](main.js#L2057): Kept stringSimilarity() function for song addition duplicate checking
+   - **Result**: Admin Panel now has 2 tabs (User Management, Recommendation Weights) instead of 3
+   - **Rationale**: Backend and frontend already prevent duplicates during song entry; admin browsing tab was redundant
+
+### Completed Fixes - Session 2 (February 14, 2026 - Evening)
+
+11. **✅ DOMContent Initialization: Fixed Double init() Calls**
+   - **Problem**: Multiple DOMContentLoaded listeners causing double initialization
+   - **Fixed**: Consolidated all inline scripts from [index.html](index.html) to [main.js](main.js)
+   - **Moved to main.js**: WEIGHTS variable, fetchRecommendationWeights(), saveRecommendationWeightsToBackend(), toggleTheme()
+   - **Removed**: All inline `<script>` blocks from [index.html](index.html)
+   - **Impact**: Single initialization, no duplicate event listeners, proper load order
+
+### Completed Fixes - Session 1 (February 14, 2026 - Afternoon)
+
+6. **✅ Code Cleanup: Removed Unused Variables**
 
 1. **✅ Issue #3: Duplicate Variable Declarations**
    - Fixed 4 local `jwtToken` redeclarations shadowing global variable
@@ -43,8 +97,6 @@
    - Genre multiselect now uses existing `setupSearchableMultiselect()` pattern
    - Verified: All other functions use proper `typeof` checks or exist
    - Impact: Eliminates crash when editing songs with genre fields
-
-### Completed Fixes - Session 2 (February 14, 2026 - Evening)
 
 6. **✅ Code Cleanup: Removed Unused Variables**
    - **socket** - WebSocket variable declared but only used in dead/commented code

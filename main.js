@@ -2,7 +2,6 @@
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
-            .then(reg => console.log('Service Worker registered:', reg))
             .catch(err => console.warn('Service Worker registration failed:', err));
     });
 }
@@ -218,8 +217,6 @@ const CHORD_TYPES = [
 
             ? 'http://localhost:3001'
             : 'https://oldand-new.vercel.app'; // Backend server on Vercel
-
-            console.log('API_BASE_URL:', API_BASE_URL);
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
@@ -446,7 +443,6 @@ function updateSongInCache(song, isNewSong = false) {
         // Check for duplicate before adding
         const existingIndex = window.dataCache.songs.findIndex(s => s.id === song.id);
         if (existingIndex !== -1) {
-            console.log(`⚠️ Song ID ${song.id} already exists in cache, updating instead of adding`);
             window.dataCache.songs[existingIndex] = song;
         } else {
             window.dataCache.songs.push(song);
@@ -552,7 +548,6 @@ function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) {
         overlay.style.display = 'none';
-        console.log('Loading hidden');
     }
     
     // Clear the safety timeout
@@ -729,7 +724,6 @@ async function loadSongsWithProgress(forceRefresh = false) {
         }
         window.songs = unique;
         songs = unique; // Also set the global variable
-        console.log('loadSongsWithProgress completed. Set global songs to:', songs.length, 'songs');
         // Update both cache and localStorage
         window.dataCache.songs = unique;
         window.dataCache.lastFetch.songs = Date.now();
@@ -1258,13 +1252,10 @@ function addGlobalKeyListener() {
 
 // Generic searchable multiselect function
 function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, allowMultiple = true) {
-    console.log(`🔧 setupSearchableMultiselect called - Input: ${inputId}, Dropdown: ${dropdownId}, Container: ${selectedId}, Items: ${dataArray.length}, Multiple: ${allowMultiple}`);
     
     const input = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
     const selectedContainer = document.getElementById(selectedId);
-    
-    console.log(`   Elements found - Input: ${!!input}, Dropdown: ${!!dropdown}, Container: ${!!selectedContainer}`);
     
     if (!input || !dropdown || !selectedContainer) {
         console.warn(`⚠️ setupSearchableMultiselect - Missing elements!`);
@@ -1418,7 +1409,6 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
         if (!option) return;
         
         const value = option.dataset.value;
-        console.log(`🖱️ Option clicked: ${value}`);
         
         if (allowMultiple) {
             option.classList.toggle('selected');
@@ -1426,10 +1416,8 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
             // Update stored selections
             if (option.classList.contains('selected')) {
                 dropdown._allSelections.add(value);
-                console.log(`   ✅ Added to selections: ${value}`);
             } else {
                 dropdown._allSelections.delete(value);
-                console.log(`   ❌ Removed from selections: ${value}`);
             }
         } else {
             // Single select - clear all others first
@@ -1444,7 +1432,6 @@ function setupSearchableMultiselect(inputId, dropdownId, selectedId, dataArray, 
             dropdown._allSelections.add(value);
         }
         
-        console.log(`   Current selections: [${Array.from(dropdown._allSelections).join(', ')}]`);
         updateSelectedMultiselect(selectedId, dropdownId, allowMultiple, inputId);
         updateSearchableInput(inputId, selectedId);
     };
@@ -1467,9 +1454,6 @@ function updateSelectedMultiselect(selectedId, dropdownId, allowMultiple, inputI
     const container = document.getElementById(selectedId);
     const dropdown = document.getElementById(dropdownId);
     
-    console.log(`🏷️ updateSelectedMultiselect called - Container: ${selectedId}, Dropdown: ${dropdownId}`);
-    console.log(`   Container exists: ${!!container}, Dropdown exists: ${!!dropdown}`);
-    
     if (!container || !dropdown) {
         console.warn(`⚠️ Missing elements - container: ${!!container}, dropdown: ${!!dropdown}`);
         return;
@@ -1479,7 +1463,6 @@ function updateSelectedMultiselect(selectedId, dropdownId, allowMultiple, inputI
     
     // Use stored selections instead of DOM selections
     const selectedValues = Array.from(dropdown._allSelections || []);
-    console.log(`   Selected values: [${selectedValues.join(', ')}]`);
     
     if (allowMultiple) {
         selectedValues.forEach(value => {
@@ -1487,7 +1470,6 @@ function updateSelectedMultiselect(selectedId, dropdownId, allowMultiple, inputI
             span.className = 'multiselect-tag';
             span.innerHTML = `${value} <span class="remove-tag" data-value="${value}">×</span>`;
             container.appendChild(span);
-            console.log(`   ✅ Created tag for: ${value}`);
         });
         
         // Add click listeners to remove tags
@@ -2022,8 +2004,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         // Hide other tabs
         document.getElementById('weightsTab').classList.remove('active');
         document.getElementById('weightsTabContent').classList.remove('active');
-        document.getElementById('duplicateDetectionTab').classList.remove('active');
-        document.getElementById('duplicateDetectionTabContent').classList.remove('active');
         
         // Load users and set up functions
         loadUsers();
@@ -2041,8 +2021,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         // Remove active from other tabs
         document.getElementById('weightsTab').classList.remove('active');
         document.getElementById('weightsTabContent').classList.remove('active');
-        document.getElementById('duplicateDetectionTab').classList.remove('active');
-        document.getElementById('duplicateDetectionTabContent').classList.remove('active');
     };
     document.getElementById('weightsTab').onclick = function() {
         // Set active tab
@@ -2052,28 +2030,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         // Remove active from other tabs
         document.getElementById('userMgmtTab').classList.remove('active');
         document.getElementById('userMgmtTabContent').classList.remove('active');
-        document.getElementById('duplicateDetectionTab').classList.remove('active');
-        document.getElementById('duplicateDetectionTabContent').classList.remove('active');
         
         // Load weights when switching to weights tab
         loadWeightsToForm();
     };
-    document.getElementById('duplicateDetectionTab').onclick = function() {
-        // Set active tab
-        document.getElementById('duplicateDetectionTab').classList.add('active');
-        document.getElementById('duplicateDetectionTabContent').classList.add('active');
-        
-        // Remove active from other tabs
-        document.getElementById('userMgmtTab').classList.remove('active');
-        document.getElementById('userMgmtTabContent').classList.remove('active');
-        document.getElementById('weightsTab').classList.remove('active');
-        document.getElementById('weightsTabContent').classList.remove('active');
-        
-        // Render duplicate detection when switching to this tab
-        renderDuplicateDetection();
-    };
 
-    // --- Duplicate Detection Logic ---
+    // --- String Similarity Helper (used for duplicate detection during song addition) ---
     function stringSimilarity(str1, str2) {
         if (!str1 || !str2) return 0;
         str1 = str1.toLowerCase();
@@ -2096,194 +2058,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         return maxLen === 0 ? 1 : 1 - dp[len1][len2] / maxLen;
     }
 
-    function findDuplicateSongs() {
-        const duplicates = [];
-        for (let i = 0; i < songs.length; i++) {
-            for (let j = i + 1; j < songs.length; j++) {
-                const s1 = songs[i];
-                const s2 = songs[j];
-                const titleSim = stringSimilarity(s1.title, s2.title);
-                const lyricsSim = stringSimilarity(s1.lyrics, s2.lyrics);
-                if (titleSim >= 0.8 || lyricsSim >= 0.8) {
-                    duplicates.push({
-                        song1: s1,
-                        song2: s2,
-                        titleSim,
-                        lyricsSim
-                    });
-                }
-            }
-        }
-        return duplicates;
-    }
-
-    function renderDuplicateDetection() {
-        const container = document.getElementById('duplicateDetectionTabContent');
-        container.innerHTML = '<h3>Duplicate Songs (≥80% match)</h3>';
-        // Show loading indicator
-        const loadingDiv = document.createElement('div');
-        loadingDiv.id = 'duplicateLoading';
-        loadingDiv.innerHTML = '<span>Detecting duplicates, please wait...</span>';
-        loadingDiv.style.padding = '12px';
-        container.appendChild(loadingDiv);
-
-        // Limit to first 500 songs for performance
-        const limitedSongs = songs.slice(0, 500);
-        const duplicates = [];
-        // Track shown pairs to avoid duplicates
-        const shownPairs = new Set();
-        // 1. Exact match detection using hash maps
-        const titleMap = new Map();
-        const lyricsMap = new Map();
-        limitedSongs.forEach(song => {
-            if (!song.title || !song.lyrics) return; // Skip songs missing essential fields
-            const t = song.title.trim().toLowerCase();
-            const l = song.lyrics.trim().toLowerCase();
-            if (titleMap.has(t)) {
-                const other = titleMap.get(t);
-                const key = [Math.min(song.id, other.id), Math.max(song.id, other.id)].join('_');
-                if (!shownPairs.has(key)) {
-                    duplicates.push({ song1: song, song2: other, titleSim: 1, lyricsSim: stringSimilarity(song.lyrics, other.lyrics) });
-                    shownPairs.add(key);
-                }
-            } else {
-                titleMap.set(t, song);
-            }
-            if (lyricsMap.has(l)) {
-                const other = lyricsMap.get(l);
-                const key = [Math.min(song.id, other.id), Math.max(song.id, other.id)].join('_');
-                if (!shownPairs.has(key)) {
-                    duplicates.push({ song1: song, song2: other, titleSim: stringSimilarity(song.title, other.title), lyricsSim: 1 });
-                    shownPairs.add(key);
-                }
-            } else {
-                lyricsMap.set(l, song);
-            }
-        });
-
-        // 2. Fuzzy match detection for likely candidates
-        // Group songs by first letter and similar length
-        const groups = {};
-        limitedSongs.forEach(song => {
-            if (!song.title || song.title.length === 0) return; // Skip songs without title
-            const key = song.title[0].toLowerCase() + '_' + song.title.length;
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(song);
-        });
-
-        // Fast similarity check: normalized common chars
-        function fastSimilarity(a, b) {
-            if (!a || !b) return 0;
-            a = a.toLowerCase();
-            b = b.toLowerCase();
-            let matches = 0;
-            for (let ch of a) {
-                if (b.includes(ch)) matches++;
-            }
-            return matches / Math.max(a.length, b.length);
-        }
-
-        Object.values(groups).forEach(group => {
-            for (let i = 0; i < group.length; i++) {
-                for (let j = i + 1; j < group.length; j++) {
-                    const s1 = group[i];
-                    const s2 = group[j];
-                    const key = [Math.min(s1.id, s2.id), Math.max(s1.id, s2.id)].join('_');
-                    if (shownPairs.has(key)) continue;
-                    // Only do expensive check if fastSimilarity > 0.6
-                    if (fastSimilarity(s1.title, s2.title) > 0.6 || fastSimilarity(s1.lyrics, s2.lyrics) > 0.6) {
-                        const titleSim = stringSimilarity(s1.title, s2.title);
-                        const lyricsSim = stringSimilarity(s1.lyrics, s2.lyrics);
-                        if (titleSim >= 0.8 || lyricsSim >= 0.8) {
-                            duplicates.push({ song1: s1, song2: s2, titleSim, lyricsSim });
-                            shownPairs.add(key);
-                        }
-                    }
-                }
-            }
-        });
-
-        loadingDiv.remove();
-        if (duplicates.length === 0) {
-            container.innerHTML += '<p>No duplicates found.</p>';
-            return;
-        }
-        let batchSize = 20;
-        let currentBatch = 0;
-        function renderBatch() {
-            const start = currentBatch * batchSize;
-            const end = Math.min(start + batchSize, duplicates.length);
-            for (let idx = start; idx < end; idx++) {
-                const dup = duplicates[idx];
-                const div = document.createElement('div');
-                div.className = 'duplicate-pair';
-                div.innerHTML = `
-                    <div class="duplicate-row" style="display:flex;align-items:flex-start;gap:32px;padding:16px 12px;margin-bottom:16px;border:1px solid #e0e0e0;border-radius:8px;background:#fafbfc;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
-                        <div class="duplicate-song" style="flex:1;min-width:220px;">
-                            <div style="font-weight:600;font-size:1.08em;margin-bottom:4px;color:#2d6cdf;"><i class="fas fa-music"></i> Song 1</div>
-                            <div style="font-size:1.04em;margin-bottom:2px;"><b>${dup.song1.title}</b></div>
-                            <div style="color:#888;font-size:0.97em;margin-bottom:6px;">ID: ${dup.song1.id}</div>
-                            <button class="btn btn-delete" style="margin-right:8px;" onclick="deleteSingleDuplicateSong(${dup.song1.id})">Delete</button>
-                            <button class="btn btn-view" onclick="viewSingleLyrics(${dup.song1.id}, '${dup.song2.id}')">View Lyrics</button>
-                        </div>
-                        <div class="duplicate-song" style="flex:1;min-width:220px;">
-                            <div style="font-weight:600;font-size:1.08em;margin-bottom:4px;color:#d14b4b;"><i class="fas fa-music"></i> Song 2</div>
-                            <div style="font-size:1.04em;margin-bottom:2px;"><b>${dup.song2.title}</b></div>
-                            <div style="color:#888;font-size:0.97em;margin-bottom:6px;">ID: ${dup.song2.id}</div>
-                            <button class="btn btn-delete" style="margin-right:8px;" onclick="deleteSingleDuplicateSong(${dup.song2.id})">Delete</button>
-                            <button class="btn btn-view" onclick="viewSingleLyrics(${dup.song2.id}, '${dup.song1.id}')">View Lyrics</button>
-                        </div>
-                        <div class="duplicate-meta" style="flex-basis:180px;min-width:140px;text-align:center;align-self:center;">
-                            <div style="font-size:0.98em;margin-bottom:4px;"><span style="color:#2d6cdf;font-weight:600;">Title Similarity:</span> ${(dup.titleSim*100).toFixed(1)}%</div>
-                            <div style="font-size:0.98em;"><span style="color:#d14b4b;font-weight:600;">Lyrics Similarity:</span> ${(dup.lyricsSim*100).toFixed(1)}%</div>
-                        </div>
-                    </div>
-                    <div id="lyricsCompare${dup.song1.id}_${dup.song2.id}" style="display:none;"></div>
-                    <div id="lyricsSingle${dup.song1.id}_${dup.song2.id}" style="display:none;"></div>
-                    <div id="lyricsSingle${dup.song2.id}_${dup.song1.id}" style="display:none;"></div>
-                `;
-// Show lyrics for a single song in duplicate pair
-window.viewSingleLyrics = function(songId, otherId) {
-    const song = songs.find(s => s.id == songId);
-    if (!song) {
-        showNotification('Song not found', 'error');
-        return;
-    }
-    const lyricsDiv = document.getElementById(`lyricsSingle${songId}_${otherId}`);
-    if (!lyricsDiv) return;
-    lyricsDiv.style.display = lyricsDiv.style.display === 'none' ? 'block' : 'none';
-    lyricsDiv.innerHTML = `<pre style='background:#f9f9f9;padding:8px;border:1px solid #ccc;'><b>${song.title}:</b>\n${song.lyrics}</pre>`;
-}
-                container.appendChild(div);
-            }
-            if (end < duplicates.length) {
-                const loadMoreBtn = document.createElement('button');
-                loadMoreBtn.textContent = `Load More (${duplicates.length - end} remaining)`;
-                loadMoreBtn.className = 'btn';
-                loadMoreBtn.style.margin = '12px 0';
-                loadMoreBtn.onclick = function() {
-                    loadMoreBtn.remove();
-                    currentBatch++;
-                    renderBatch();
-                };
-                container.appendChild(loadMoreBtn);
-            }
-        }
-        renderBatch();
-    }
-
-    window.viewLyrics = function(id1, id2) {
-        const song1 = songs.find(s => s.id === id1);
-        const song2 = songs.find(s => s.id === id2);
-        if (!song1 || !song2) {
-            showNotification('Song not found', 'error');
-            return;
-        }
-        const lyricsDiv = document.getElementById(`lyricsCompare${id1}_${id2}`);
-        if (!lyricsDiv) return;
-        lyricsDiv.style.display = lyricsDiv.style.display === 'none' ? 'block' : 'none';
-        lyricsDiv.innerHTML = `<pre style='background:#f9f9f9;padding:8px;border:1px solid #ccc;'><b>${song1.title}:</b>\n${song1.lyrics}\n\n<b>${song2.title}:</b>\n${song2.lyrics}</pre>`;
-    }
+    // Removed: findDuplicateSongs() and renderDuplicateDetection() - no longer needed
+    // Duplicate detection during song addition is still active via stringSimilarity()
 
     // Centralized song deletion logic
     async function deleteSongById(songId, postDeleteCallback) {
@@ -2306,10 +2082,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             showNotification('Error deleting song from backend');
         }
         updateSongCount();
-    }
-
-    window.deleteSingleDuplicateSong = async function(songId) {
-        await deleteSongById(songId, renderDuplicateDetection);
     }
 
     // ====================== SETLIST MANAGEMENT FUNCTIONS ======================
@@ -2372,7 +2144,6 @@ window.viewSingleLyrics = function(songId, otherId) {
         
         if (selectedValue && selectedValue !== '') {
             // Use the same logic as setlist-item click handlers
-            console.log('Opening setlist from dropdown main area:', selectedValue);
             
             // Parse the selection to get type and ID
             if (selectedValue.startsWith('global_')) {
@@ -3620,6 +3391,7 @@ window.viewSingleLyrics = function(songId, otherId) {
             // Re-get button references after rebuilding HTML
             const editSetlistSectionBtn = document.getElementById('editSetlistSectionBtn');
             const deleteSetlistSectionBtn = document.getElementById('deleteSetlistSectionBtn');
+            const resequenceSetlistSectionBtn = document.getElementById('resequenceSetlistSectionBtn');
             
             // Update button appearance based on permissions
             const canEdit = currentUser?.isAdmin;
@@ -3629,12 +3401,47 @@ window.viewSingleLyrics = function(songId, otherId) {
                     deleteSetlistSectionBtn.style.opacity = '1';
                     editSetlistSectionBtn.style.cursor = 'pointer';
                     deleteSetlistSectionBtn.style.cursor = 'pointer';
+                    
+                    // Attach event listeners for admin users
+                    editSetlistSectionBtn.onclick = () => editGlobalSetlist(setlistId);
+                    deleteSetlistSectionBtn.onclick = () => deleteGlobalSetlist(setlistId);
                 } else {
                     editSetlistSectionBtn.style.opacity = '0.5';
                     deleteSetlistSectionBtn.style.opacity = '0.5';
                     editSetlistSectionBtn.style.cursor = 'not-allowed';
                     deleteSetlistSectionBtn.style.cursor = 'not-allowed';
                 }
+            }
+            
+            // Attach resequence button handler
+            if (resequenceSetlistSectionBtn) {
+                resequenceSetlistSectionBtn.onclick = async function() {
+                    if (!currentViewingSetlist) {
+                        showNotification('No setlist is currently loaded', 'error');
+                        return;
+                    }
+                    if (!window.setlistResequenceMode) {
+                        window.setlistResequenceMode = true;
+                        resequenceSetlistSectionBtn.innerHTML = '<i class="fas fa-save"></i> Save Sequence';
+                        refreshSetlistDisplay();
+                    } else {
+                        // Save new sequence to backend
+                        const endpoint = '/api/global-setlists';
+                        await authFetch(`${API_BASE_URL}${endpoint}/${currentViewingSetlist._id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: currentViewingSetlist.name,
+                                description: currentViewingSetlist.description,
+                                songs: currentViewingSetlist.songs
+                            })
+                        });
+                        window.setlistResequenceMode = false;
+                        resequenceSetlistSectionBtn.innerHTML = '<i class="fas fa-random"></i>';
+                        refreshSetlistDisplay();
+                        showNotification('Setlist sequence saved!', 'success');
+                    }
+                };
             }
         }
 
@@ -3755,10 +3562,29 @@ window.viewSingleLyrics = function(songId, otherId) {
         if (setlistSectionActions) {
             setlistSectionActions.style.display = 'flex';
             
-            // Add back button to the existing actions
-            const backButtonHtml = `<button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu"><i class="fas fa-arrow-left"></i></button>`;
-            const existingButtons = setlistSectionActions.innerHTML;
-            // Check if back button already exists to prevent duplicates\n            if (!existingButtons.includes('fa-arrow-left')) {\n                setlistSectionActions.innerHTML = backButtonHtml + existingButtons;\n            }
+            // Rebuild actions with back button + my setlist buttons
+            setlistSectionActions.innerHTML = `
+                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist - Modify setlist name, description and song selection" aria-label="Edit Setlist">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button id="deleteSetlistSectionBtn" class="btn btn-danger setlist-action-btn" title="Delete Setlist - Permanently remove this setlist" aria-label="Delete Setlist">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button id="resequenceSetlistSectionBtn" class="btn btn-primary setlist-action-btn" title="Resequence Songs - Drag and drop to reorder songs in setlist" aria-label="Resequence Setlist">
+                    <i class="fas fa-random"></i>
+                </button>
+                <button id="saveSetlistSequenceBtn" class="btn btn-success setlist-action-btn" style="display:none;" title="Save New Sequence - Confirm the new song order" aria-label="Save Sequence">
+                    <i class="fas fa-save"></i> Save Sequence
+                </button>
+            `;
+            
+            // Re-get button references after rebuilding HTML
+            const editSetlistSectionBtn = document.getElementById('editSetlistSectionBtn');
+            const deleteSetlistSectionBtn = document.getElementById('deleteSetlistSectionBtn');
+            const resequenceSetlistSectionBtn = document.getElementById('resequenceSetlistSectionBtn');
             
             // Users can always edit their own setlists, so show full opacity
             if (editSetlistSectionBtn && deleteSetlistSectionBtn) {
@@ -3766,6 +3592,41 @@ window.viewSingleLyrics = function(songId, otherId) {
                 deleteSetlistSectionBtn.style.opacity = '1';
                 editSetlistSectionBtn.style.cursor = 'pointer';
                 deleteSetlistSectionBtn.style.cursor = 'pointer';
+                
+                // Attach event listeners
+                editSetlistSectionBtn.onclick = () => editMySetlist(setlistId);
+                deleteSetlistSectionBtn.onclick = () => deleteMySetlist(setlistId);
+            }
+            
+            // Attach resequence button handler
+            if (resequenceSetlistSectionBtn) {
+                resequenceSetlistSectionBtn.onclick = async function() {
+                    if (!currentViewingSetlist) {
+                        showNotification('No setlist is currently loaded', 'error');
+                        return;
+                    }
+                    if (!window.setlistResequenceMode) {
+                        window.setlistResequenceMode = true;
+                        resequenceSetlistSectionBtn.innerHTML = '<i class="fas fa-save"></i> Save Sequence';
+                        refreshSetlistDisplay();
+                    } else {
+                        // Save new sequence to backend
+                        const endpoint = '/api/my-setlists';
+                        await authFetch(`${API_BASE_URL}${endpoint}/${currentViewingSetlist._id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: currentViewingSetlist.name,
+                                description: currentViewingSetlist.description,
+                                songs: currentViewingSetlist.songs
+                            })
+                        });
+                        window.setlistResequenceMode = false;
+                        resequenceSetlistSectionBtn.innerHTML = '<i class="fas fa-random"></i>';
+                        refreshSetlistDisplay();
+                        showNotification('Setlist sequence saved!', 'success');
+                    }
+                };
             }
         }
 
@@ -5591,8 +5452,6 @@ window.viewSingleLyrics = function(songId, otherId) {
             return;
         }
         
-        console.log('Showing smart setlist:', smartSetlist.name, 'with', smartSetlist.songs.length, 'songs');
-        
         // Set global variables for tracking current smart setlist
         currentViewingSetlist = smartSetlist;
         currentSetlistType = 'smart';
@@ -5744,9 +5603,15 @@ window.viewSingleLyrics = function(songId, otherId) {
         currentViewingSetlist = null;
         currentSetlistType = null;
         
-        // Hide setlist section
+        // Hide setlist section and actions
         const setlistSection = document.getElementById('setlistSection');
         if (setlistSection) setlistSection.style.display = 'none';
+        
+        const setlistSectionActions = document.getElementById('setlistSectionActions');
+        if (setlistSectionActions) {
+            setlistSectionActions.style.display = 'none';
+            setlistSectionActions.innerHTML = ''; // Clear buttons to prevent stale references
+        }
         
         // Show sidebar and hide songs section on mobile
         if (window.innerWidth <= 768) {

@@ -36,13 +36,10 @@ let isConnected = false;
 
 async function connectToDatabase() {
   if (isConnected && db) {
-    console.log('Database already connected, reusing connection');
     return;
   }
   
   try {
-    console.log('Attempting to connect to MongoDB...');
-    console.log('MongoDB URI available:', !!uri);
     
     if (!uri) {
       throw new Error('MONGODB_URI environment variable is not set');
@@ -52,7 +49,6 @@ async function connectToDatabase() {
     db = client.db('OldNewSongs');
     songsCollection = db.collection('OldNewSongs');
     isConnected = true;
-    console.log('Successfully connected to MongoDB');
   } catch (err) {
     console.error('Failed to connect to MongoDB:', err);
     isConnected = false;
@@ -69,9 +65,7 @@ app.use(async (req, res, next) => {
       return next();
     }
     
-    console.log('DB Middleware - Before connection check. DB exists:', !!db, 'isConnected:', isConnected);
     await connectToDatabase();
-    console.log('DB Middleware - After connection. DB exists:', !!db);
     if (!db) {
       throw new Error('Database connection failed - db is still undefined');
     }
@@ -252,7 +246,6 @@ app.get('/api/debug/db', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   try {
     // Additional debug logging
-    console.log('Login attempt - DB status:', !!db);
     if (!db) {
       console.error('Database not connected in login endpoint');
       return res.status(500).json({ error: 'Database connection not available' });
@@ -377,8 +370,6 @@ app.get('/api/songs', async (req, res) => {
 // Protected: only logged-in users can add, update, or delete songs
 app.post('/api/songs', authMiddleware, async (req, res) => {
   try {
-    console.log('DEBUG /api/songs POST req.user:', req.user);
-    console.log('DEBUG /api/songs POST req.body:', req.body);
     
     // Ensure song has a numeric ID
     if (typeof req.body.id !== 'number') {
@@ -487,10 +478,6 @@ app.post('/api/songs/scan', async (req, res) => {
     
     // Debug: First let's see what some tempo values look like in the database
     const sampleSongs = await songsCollection.find({}).limit(5).toArray();
-    console.log('Sample tempo values from database:');
-    sampleSongs.forEach((song, index) => {
-      console.log(`Song ${index + 1}: tempo = "${song.tempo}" (type: ${typeof song.tempo})`);
-    });
     
     // Handle array conditions (use $in for matching any)
     if (keys && keys.length > 0) {
@@ -537,15 +524,9 @@ app.post('/api/songs/scan', async (req, res) => {
       const tempoMatch = {};
       if (tempoMin !== null) {
         const minTempo = parseInt(tempoMin);
-        if (!isNaN(minTempo)) {
-          console.log(`Setting tempo >= ${minTempo}`);
-        }
       }
       if (tempoMax !== null) {
         const maxTempo = parseInt(tempoMax);
-        if (!isNaN(maxTempo)) {
-          console.log(`Setting tempo <= ${maxTempo}`);
-        }
       }
       
       // Add stage to convert tempo to number and filter

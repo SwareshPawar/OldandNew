@@ -105,7 +105,7 @@
     border: 1px solid var(--input-border);
     margin-bottom: 16px;
 }
-#weightsTable th, #weightsTable td {
+#adminPanelModal #usersTable th, #adminPanelModal #usersTable td {
     background: var(--form-bg);
     color: var(--input-text);
     border-bottom: 1px solid var(--input-border);
@@ -5261,7 +5261,7 @@ body.dark-mode .modal-content {
                     padding: 8px 18px;
                     font-size: 1em;
                     cursor: pointer;
-                    color: #333;
+                    color: #ffffff;
                     transition: background 0.2s, color 0.2s;
                 }
                 #adminPanelModal .admin-tab.active {
