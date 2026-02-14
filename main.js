@@ -224,7 +224,11 @@ const CHORD_TYPES = [
 // Recommendation weights functions
 async function fetchRecommendationWeights() {
     try {
-        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`);
+        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
+            }
+        });
         if (res.ok) {
             const data = await res.json();
             WEIGHTS = data;
@@ -5264,7 +5268,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             const response = await fetch(`${API_BASE_URL}/api/songs/scan`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
                 },
                 body: JSON.stringify(conditions)
             });
