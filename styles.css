@@ -1177,7 +1177,7 @@
     /* Song Item Theme */
     --song-item-bg: #F1F0E4;
     --song-item-text: #3E3F29;
-    --song-item-border: #2e2d2c;
+    --song-item-border: #BCA88D;
     --song-meta-color: #7D8D86;
     --song-item-text-bg: #dfc07d;
     --song-item-shadow: rgba(0,0,0,0.1);
@@ -1571,32 +1571,6 @@ body.dark-mode #installAppBtn {
                 box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             }
 
-            /* Slimmer Back to Menu button in All Songs */
-            .sidebar-btn.back-to-menu-btn {
-                padding: 5px 12px;
-                font-size: 0.75rem;
-                font-weight: 600;
-                gap: 4px;
-                max-width: 100%;
-                background: var(--accent-color);
-                color: var(--primary-color);
-                border-color: var(--accent-color);
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-
-            .sidebar-btn.back-to-menu-btn:hover {
-                background: var(--primary-color);
-                color: var(--accent-color);
-                border-color: var(--accent-color);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            }
-
-            .sidebar-btn.back-to-menu-btn i {
-                font-size: 0.95rem;
-                width: auto;
-            }
-
             .sidebar-menu a i,
             .sidebar-btn i {
                 font-size: 1.1rem;
@@ -1980,29 +1954,6 @@ body.dark-mode #installAppBtn {
             max-width: 110px;
         }
 
-        /* Slimmer back button - inherits theme from btn-secondary */
-        .setlist-header-actions .setlist-action-btn.back-btn {
-            max-width: 40px;
-            min-width: 40px;
-            width: 40px;
-            padding: 5px;
-            justify-content: center;
-            flex: 0 0 40px;
-        }
-        
-        .setlist-header-actions .setlist-action-btn.back-btn.btn-secondary {
-            background: var(--accent-color);
-            color: var(--primary-color);
-            border-color: var(--accent-color);
-        }
-        
-        .setlist-header-actions .setlist-action-btn.back-btn.btn-secondary:hover {
-            background: var(--primary-color);
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-            transform: scale(1.05);
-        }
-
         .setlist-action-btn.btn-secondary {
             background: var(--accent-color);
             color: var(--primary-color);
@@ -2047,26 +1998,6 @@ body.dark-mode #installAppBtn {
                 min-height: 32px;
                 border-radius: 6px;
                 justify-content: center;
-            }
-            .setlist-header-actions .setlist-action-btn.back-btn {
-                flex: 0 0 36px;
-                max-width: 36px;
-                min-width: 36px;
-                width: 36px;
-                padding: 6px 4px;
-            }
-            .setlist-header-actions .setlist-action-btn.back-btn.btn-secondary {
-                background: var(--accent-color);
-                color: var(--primary-color);
-                border-color: var(--accent-color);
-            }
-            
-            /* Back to Menu button on mobile */
-            .sidebar-btn.back-to-menu-btn {
-                padding: 6px 10px;
-                font-size: 0.8rem;
-                max-width: 160px;
-                gap: 6px;
             }
         }
 
@@ -2966,6 +2897,7 @@ body.dark-mode #installAppBtn {
         .filters-row {
             display: flex;
             flex-direction: column;
+            gap: 4px;
             padding: 0;
             width: 100%;
             max-width: 100%;
@@ -3159,7 +3091,7 @@ body.dark-mode #installAppBtn {
         }
 
         .song-title {
-            font-size: 1.0rem;
+            font-size: 1.05rem;
             font-weight: 600;
             margin: 0;
             line-height: 1.3;
@@ -3803,18 +3735,18 @@ body.dark-mode #installAppBtn {
             }
 
             .sticky-header {
-                padding: 4px;
-                gap: 5px;
+                padding: 10px;
+                gap: 10px;
             }
 
             .song-item {
-                padding: 4px 4px;
+                padding: 6px 8px;
                 gap: 2px;
                 border-radius: 10px;
             }
 
             .song-title {
-                font-size: 1.0rem;
+                font-size: 1.1rem;
                 line-height: 1.4;
                 white-space: nowrap;
                 overflow: hidden;
@@ -3927,10 +3859,10 @@ body.dark-mode #installAppBtn {
 
         .setlist h3 {
             color: var(--title-color);
-            margin-bottom: 1px;
+            margin-bottom: 10px;
             font-weight: 600;
             text-align: center;
-            font-size: 1.0em;
+            font-size: 1.5em;
         }
 
         .setlist-content {

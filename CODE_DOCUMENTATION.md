@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 15, 2026 - 01:00 AM  
-**Version:** 1.5
+**Last Updated:** February 15, 2026 - 02:30 AM  
+**Version:** 1.6
 
 ---
 
@@ -1238,7 +1238,171 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 
 ---
 
-## 8. DEPENDENCIES
+## 8. BUGS ENCOUNTERED & RESOLVED
+
+This section documents production bugs discovered during development and testing, along with their root causes and solutions. Each entry includes reproduction steps, debugging process, and lessons learned.
+
+### Bug #1: Back Button Not Showing Sidebar on Mobile (Setlist View)
+**Date Discovered:** February 15, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+When viewing a setlist on mobile (width ≤ 768px) and clicking the back button in the setlist header, the sidebar would briefly appear then immediately disappear, leaving the user with no visible panels.
+
+**Affected Components:**
+- Mobile navigation (main.js)
+- Setlist header back button (dynamically generated)
+- Document click listener for panel auto-hide
+
+**Reproduction Steps:**
+1. Open application on mobile device or narrow browser window (≤768px)
+2. Navigate to any setlist (Global, My, or Smart)
+3. Click the back button (← arrow) in setlist header
+4. **Expected:** Sidebar menu appears and stays visible
+5. **Actual:** Sidebar flashes briefly then disappears
+
+**Root Cause Analysis:**
+
+The bug was caused by **event bubbling** with the following sequence:
+
+1. User clicks back button → `goBackToSidebar()` executes
+2. `goBackToSidebar()` removes `.hidden` class from sidebar → sidebar becomes visible
+3. Click event continues bubbling up the DOM tree to document listener
+4. Document click listener fires its auto-hide logic
+5. Document listener checks if click target is inside excluded elements (`.sidebar`, `.songs-section`, `.panel-toggle`, `.modal`)
+6. By the time this check runs, `goBackToSidebar()` has already hidden the setlist section (`display: none`)
+7. The back button is inside `.setlist` element, but that element is now hidden/removed from layout
+8. `e.target.closest('.setlist')` can't find a parent because layout has changed
+9. Document listener concludes click was "outside" → hides sidebar again
+
+**Debug Process:**
+
+```javascript
+// Added console logging to trace execution order:
+function goBackToSidebar() {
+    console.log('goBackToSidebar() called');
+    // ... code ...
+    console.log('Sidebar element:', sidebar);
+    console.log('Sidebar has .hidden?', sidebar?.classList.contains('hidden'));
+    // ... remove .hidden class ...
+    console.log('After removing .hidden:', sidebar?.classList.contains('hidden'));
+}
+
+// In document listener:
+document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 && /* exclusions */) {
+        console.log('Document click hiding sidebar - target:', e.target);
+        sidebar.classList.add('hidden');
+        // ...
+    }
+});
+```
+
+**Console Output Revealed:**
+```
+goBackToSidebar() called
+Mobile view: showing sidebar
+Sidebar element: <div class="sidebar hidden">...</div>
+Sidebar has .hidden? true
+After removing .hidden: false
+Document click hiding sidebar - target: <button onclick="goBackToSidebar()">...</button>
+```
+
+This confirmed the sidebar was successfully shown, then immediately hidden by the document listener.
+
+**Initial Attempted Fixes (Failed):**
+1. ❌ Added `.setlist` to document listener exclusions - Still failed because setlist was hidden before check
+2. ❌ Added `.setlist-header-actions` to exclusions - Still failed due to timing issue
+3. ❌ Tried CSS-based solutions - Problem was JavaScript event flow, not styling
+
+**Final Solution:**
+
+Stop event propagation at the source by modifying `goBackToSidebar()` to accept and handle the event object:
+
+```javascript
+// Before (BUGGY):
+function goBackToSidebar() {
+    // Clear current setlist tracking
+    currentViewingSetlist = null;
+    // ... show sidebar ...
+}
+
+// After (FIXED):
+function goBackToSidebar(event) {
+    // Stop event propagation to prevent document click listener from hiding sidebar
+    if (event) {
+        event.stopPropagation();  // Prevents bubbling to document listener
+        event.preventDefault();    // Prevents default button behavior
+    }
+    
+    // Store the setlist info before clearing
+    const wasViewingSetlist = currentViewingSetlist !== null;
+    const activeSetlistId = activeSetlistElementId;
+    // ... rest of function ...
+}
+```
+
+**Updated Button Onclick Handlers:**
+```javascript
+// All back button locations updated to pass event:
+<button onclick="goBackToSidebar(event)" ...>
+    <i class="fas fa-arrow-left"></i>
+</button>
+```
+
+**Files Modified:**
+- [main.js](main.js#L5648) - Updated `goBackToSidebar(event)` function signature
+- [main.js](main.js#L3420) - Global setlists back button: `onclick="goBackToSidebar(event)"`
+- [main.js](main.js#L3613) - My setlists back button: `onclick="goBackToSidebar(event)"`
+- [main.js](main.js#L5530) - Smart setlists back button: `onclick="goBackToSidebar(event)"`
+- [index.html](index.html#L272) - All Songs back button: `onclick="goBackToSidebar(event)"`
+- [main.js](main.js#L6486) - Simplified document listener (removed unnecessary exclusions)
+
+**Important Considerations:**
+
+1. **Event Propagation Timing:**
+   - DOM modifications during event handlers affect `.closest()` checks
+   - Elements hidden during bubbling phase may not be found by parent selectors
+   - Always consider event flow when multiple listeners interact with same elements
+
+2. **Inline onclick vs addEventListener:**
+   - Inline `onclick` attributes need explicit event parameter: `onclick="func(event)"`
+   - `addEventListener` automatically passes event as first parameter
+   - Both approaches are valid; inline is simpler for this use case
+
+3. **Mobile Event Handling:**
+   - Mobile interfaces often use document-level click listeners for auto-hide behaviors
+   - Must carefully exclude interactive elements to prevent conflicts
+   - `stopPropagation()` is cleaner than long exclusion lists
+
+4. **Debugging Event Flow:**
+   - Use `console.log` with timestamps to trace execution order
+   - Log both the element state and event target at each step
+   - Check `event.target`, `event.currentTarget`, and DOM state at handler execution time
+
+**Lessons Learned:**
+
+1. **Event bubbling can cause race conditions** when multiple handlers modify the same elements
+2. **DOM state changes during event bubbling** affect subsequent checks in parent listeners
+3. **`stopPropagation()` at source is often cleaner** than complex exclusion logic in document listeners
+4. **Mobile debugging requires actual device testing** - desktop dev tools don't always catch these issues
+5. **Git history is valuable** for comparing working vs broken states (`git show` revealed previous working code)
+
+**Testing Verification:**
+- ✅ Back button works from setlist headers (all types: Global, My, Smart)
+- ✅ Back button works from "All Songs" section header
+- ✅ Sidebar stays visible after clicking back button on mobile
+- ✅ Active setlist is properly restored in sidebar when returning
+- ✅ Desktop functionality unchanged (event.stopPropagation() is safe on desktop too)
+
+**Related Issues:**
+- Connects to earlier fix: Document click listener excluding `.setlist` to prevent auto-hide during setlist viewing
+- Related to activeSetlistElementId tracking implementation (Bug prevention)
+
+---
+
+## 9. DEPENDENCIES
 
 ### Backend Dependencies ([package.json](package.json))
 
@@ -1309,7 +1473,7 @@ Based on backup files and migration documents, major changes include:
 
 ---
 
-## 9. MIGRATION & CONSOLIDATION HISTORY
+## 10. MIGRATION & CONSOLIDATION HISTORY
 
 ### Issue #1: Song ID Standardization ✅ COMPLETED
 **Date:** February 13, 2026  
@@ -1348,7 +1512,7 @@ Based on backup files and migration documents, major changes include:
 
 ---
 
-## 10. ERROR HANDLING IMPROVEMENTS
+## 11. ERROR HANDLING IMPROVEMENTS
 
 ### Try-Catch Coverage Added (February 14, 2026)
 
@@ -1371,7 +1535,7 @@ Based on backup files and migration documents, major changes include:
 
 ---
 
-## 11. UI CONSISTENCY STANDARDS
+## 12. UI CONSISTENCY STANDARDS
 
 ### Delete Confirmation Modal Standards (February 14, 2026)
 
@@ -1406,7 +1570,7 @@ Based on backup files and migration documents, major changes include:
 
 ---
 
-## 12. TESTING RECOMMENDATIONS
+## 13. TESTING RECOMMENDATIONS
 
 ### Unit Testing
 1. **Core Functions**: transpose, chord extraction, string similarity
@@ -1434,7 +1598,7 @@ Based on backup files and migration documents, major changes include:
 
 ---
 
-## 13. ARCHITECTURE & FUTURE IMPROVEMENTS
+## 14. ARCHITECTURE & FUTURE IMPROVEMENTS
 
 ### Recommended Architecture Changes
 1. **Module Splitting**: Break main.js into logical modules
@@ -1472,7 +1636,7 @@ Based on backup files and migration documents, major changes include:
 
 ---
 
-## 14. PROJECT OVERVIEW
+## 15. PROJECT OVERVIEW
 
 ### Application Purpose
 **Old & New Songs** - A comprehensive web application for managing song collections, setlists, and musical performances. Designed for musicians, worship teams, and music directors who need organized access to lyrics, chord charts, and setlist management.
@@ -1513,4 +1677,4 @@ Based on backup files and migration documents, major changes include:
 
 ---
 
-**Document End - Last Updated: February 14, 2026 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: February 15, 2026 - Version 1.6 - Comprehensive Single Source of Truth**

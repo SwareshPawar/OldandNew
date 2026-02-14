@@ -1797,6 +1797,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         let mySetlists = [];
         let currentViewingSetlist = null;
         let currentSetlistType = null; // 'global' or 'my'
+        let activeSetlistElementId = null; // Track which setlist item is active in sidebar
 
         // Update currentUser from localStorage (no redeclaration needed)
         try {
@@ -2188,9 +2189,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             // Parse the selection to get type and ID
             if (selectedValue.startsWith('global_')) {
                 const setlistId = selectedValue.replace('global_', '');
+                activeSetlistElementId = setlistId; // Track for back button
                 showGlobalSetlistInMainSection(setlistId);
             } else if (selectedValue.startsWith('my_')) {
                 const setlistId = selectedValue.replace('my_', '');
+                activeSetlistElementId = setlistId; // Track for back button
                 showMySetlistInMainSection(setlistId);
             }
         } else {
@@ -3308,6 +3311,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 if (!e.target.closest('.setlist-actions') && !e.target.closest('.smart-setlist-actions')) {
                     if (logPrefix) console.log(`${logPrefix} Setlist clicked:`, setlistId);
                     
+                    // Store active setlist element for back button
+                    activeSetlistElementId = setlistId;
+                    
                     showHandler(setlistId);
                     
                     const setlist = dataArray.find(s => (s.id || s._id) === setlistId);
@@ -3411,7 +3417,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             
             // Rebuild actions with back button + original buttons
             setlistSectionActions.innerHTML = `
-                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn back-btn" title="Back to Menu" aria-label="Back to Menu">
+                <button onclick="goBackToSidebar(event)" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist - Modify setlist name, description and song selection" aria-label="Edit Setlist">
@@ -3604,7 +3610,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             
             // Rebuild actions with back button + my setlist buttons
             setlistSectionActions.innerHTML = `
-                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn back-btn" title="Back to Menu" aria-label="Back to Menu">
+                <button onclick="goBackToSidebar(event)" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist - Modify setlist name, description and song selection" aria-label="Edit Setlist">
@@ -5521,7 +5527,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         if (setlistSectionActions) {
             setlistSectionActions.style.display = 'flex';
             setlistSectionActions.innerHTML = `
-                <button onclick="goBackToSidebar()" class="btn btn-secondary setlist-action-btn back-btn" title="Back to Menu" aria-label="Back to Menu">
+                <button onclick="goBackToSidebar(event)" class="btn btn-secondary setlist-action-btn" title="Back to Menu" aria-label="Back to Menu">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 ${isAdmin() ? `
@@ -5639,7 +5645,17 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     }
 
     // Go back to sidebar menu
-    function goBackToSidebar() {
+    function goBackToSidebar(event) {
+        // Stop event propagation to prevent document click listener from hiding sidebar
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
+        // Store the setlist info before clearing
+        const wasViewingSetlist = currentViewingSetlist !== null;
+        const activeSetlistId = activeSetlistElementId;
+        
         // Clear current setlist tracking
         currentViewingSetlist = null;
         currentSetlistType = null;
@@ -5695,10 +5711,26 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             }
         }
         
-        // Clear active setlist from sidebar
+        // Restore active setlist in sidebar or default to All Songs
         document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-        const showAllBtn = document.getElementById('showAll');
-        if (showAllBtn) showAllBtn.classList.add('active');
+        
+        // If we were viewing a setlist, re-activate it in the sidebar
+        if (wasViewingSetlist && activeSetlistId) {
+            const setlistItem = document.querySelector(`.setlist-item[data-setlist-id="${activeSetlistId}"]`);
+            if (setlistItem) {
+                // Mark the parent li as active
+                const li = setlistItem.closest('li');
+                if (li) li.classList.add('active');
+            } else {
+                // Fallback to All Songs if setlist item not found
+                const showAllBtn = document.getElementById('showAll');
+                if (showAllBtn) showAllBtn.classList.add('active');
+            }
+        } else {
+            // Default to All Songs if not viewing a setlist
+            const showAllBtn = document.getElementById('showAll');
+            if (showAllBtn) showAllBtn.classList.add('active');
+        }
         
         showNotification('Returned to menu');
     }
@@ -9513,6 +9545,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     
                     const [type, id] = selectedValue.split('_');
                     
+                    activeSetlistElementId = id; // Track for back button
+                    
                     if (type === 'global') {
                         showGlobalSetlistInMainSection(id);
                     } else if (type === 'my') {
@@ -9535,6 +9569,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                             
                             // Auto-load the setlist if it was previously selected
                             const [type, id] = savedSelection.split('_');
+                            activeSetlistElementId = id; // Track for back button
                             if (type === 'global') {
                                 showGlobalSetlistInMainSection(id);
                             } else if (type === 'my') {
@@ -9552,6 +9587,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 setlistSection.style.display = 'none';
                 deleteSection.style.display = 'none';
                 favoritesSection.style.display = 'none';
+                
+                // Clear active setlist tracking
+                activeSetlistElementId = null;
                 
                 // Reset setlist header to default text
                 const setlistHeader = document.getElementById('setlistViewHeader');
