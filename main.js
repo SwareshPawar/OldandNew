@@ -595,8 +595,16 @@ function showLoading(percent, message = null) {
     // Safety timeout - hide loading after 30 seconds max
     clearTimeout(window.loadingTimeout);
     window.loadingTimeout = setTimeout(() => {
-        console.warn('Loading timeout reached, forcing hide');
+        console.warn('Loading timeout reached - too many songs to download');
         hideLoading();
+        
+        // Show message asking user to refresh
+        const shouldRefresh = confirm('Loading is taking longer than expected due to the large number of songs.\n\nWould you like to refresh the page to retry?');
+        if (shouldRefresh) {
+            window.location.reload();
+        } else {
+            showNotification('If songs don\'t load, please refresh the page manually', 5000);
+        }
     }, 30000);
 }
 
@@ -932,7 +940,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateLocalTransposeCache();
 
-    // Inject spinner overlay and start initialization
+    // Inject spinner overlay and start initialization (only if authenticated)
     (async () => {
         // Inject spinner overlay if absent
         if (!document.getElementById('loadingOverlay')) {
@@ -942,7 +950,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 .catch(() => {});
         }
 
-        // Use window.init() for all initialization - no direct song loading here
+        // Check if user is authenticated
+        const token = localStorage.getItem('jwtToken');
+        const isAuthenticated = token && isJwtValid(token);
+
+        if (!isAuthenticated) {
+            // User not logged in - show auth choice modal and wait
+            console.log('⚠️ User not authenticated - showing auth choice modal');
+            
+            // Show a message instead of loading
+            showLoading(0, 'Please sign in to continue');
+            
+            // Show auth choice modal after a brief delay
+            setTimeout(() => {
+                hideLoading();
+                
+                // Show a modal with both Login and Register options
+                let modal = document.getElementById('authChoiceModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'authChoiceModal';
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-content" style="text-align:center;">
+                            <h3>Welcome!</h3>
+                            <p>Please login or register to continue.</p>
+                            <button id="authLoginBtn" class="btn btn-primary" style="margin:8px 0 8px 0;width:80%;">Login</button>
+                            <button id="authRegisterBtn" class="btn btn-secondary" style="margin-bottom:8px;width:80%;">Register</button>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    document.getElementById('authLoginBtn').onclick = () => {
+                        modal.style.display = 'none';
+                        showLoginModal();
+                    };
+                    document.getElementById('authRegisterBtn').onclick = () => {
+                        modal.style.display = 'none';
+                        showRegisterModal();
+                    };
+                }
+                modal.style.display = 'flex';
+            }, 500);
+            
+            return; // Don't initialize until user logs in
+        }
+
+        // User is authenticated - proceed with initialization
         if (!initializationState.isInitialized && !initializationState.isInitializing) {
             // Show loading immediately
             showLoading(0, 'Initializing...');
@@ -1058,7 +1111,16 @@ document.addEventListener('DOMContentLoaded', () => {
         loginBtn.addEventListener('click', () => loginModal.style.display = 'flex');
     }
     if (closeLoginModal && loginModal) {
-        closeLoginModal.addEventListener('click', () => loginModal.style.display = 'none');
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.style.display = 'none';
+            
+            // If app hasn't been initialized yet, remind user to log in
+            if (!initializationState.isInitialized && !initializationState.isInitializing) {
+                setTimeout(() => {
+                    showNotification('Please sign in to access songs and setlists', 'info');
+                }, 500);
+            }
+        });
     }
 
     // Register modal
@@ -1137,18 +1199,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     jwtToken = data.token;
                     currentUser = data.user;
                     
-                    // Update UI without page reload
-                    updateAuthButtons();
-                    await loadUserData();
-                    await loadMySetlists();
-                    await loadSmartSetlistsFromServer();
-                    renderMySetlists();
-                    renderSmartSetlists();
-                    
                     // Close login modal
                     document.getElementById('loginModal').style.display = 'none';
                     
                     showNotification('Login successful!', 2000);
+                    
+                    // Check if app was already initialized (subsequent login)
+                    if (initializationState.isInitialized) {
+                        // App already loaded - just update UI and load user-specific data
+                        updateAuthButtons();
+                        await loadUserData();
+                        await loadMySetlists();
+                        await loadSmartSetlistsFromServer();
+                        renderMySetlists();
+                        renderSmartSetlists();
+                    } else if (!initializationState.isInitializing) {
+                        // First-time login - start full initialization with loader
+                        console.log('🚀 Starting initialization after login...');
+                        showLoading(0, 'Initializing...');
+                        await window.init();
+                        
+                        // After initialization, show sidebar on mobile
+                        if (window.innerWidth <= 768) {
+                            const sidebar = document.querySelector('.sidebar');
+                            if (sidebar) {
+                                sidebar.classList.remove('hidden');
+                                console.log('📱 Mobile: Showing sidebar after login');
+                            }
+                        }
+                    }
                 } else {
                     errorDiv.textContent = data.error || 'Login failed';
                     errorDiv.style.display = 'block';
@@ -1186,37 +1265,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }, 100);
-
-    if (!jwtToken || !isJwtValid(jwtToken)) {
-    // Show a modal with both Login and Register options
-    let modal = document.getElementById('authChoiceModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'authChoiceModal';
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content" style="text-align:center;">
-                <h3>Welcome!</h3>
-                <p>Please login or register to continue.</p>
-                <button id="authLoginBtn" class="btn btn-primary" style="margin:8px 0 8px 0;width:80%;">Login</button>
-                <button id="authRegisterBtn" class="btn btn-secondary" style="margin-bottom:8px;width:80%;">Register</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        document.getElementById('authLoginBtn').onclick = () => {
-            modal.style.display = 'none';
-            showLoginModal();
-        };
-        document.getElementById('authRegisterBtn').onclick = () => {
-            modal.style.display = 'none';
-            showRegisterModal();
-        };
-    }
-    modal.style.display = 'flex';
-}
 });
-
-
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -1842,6 +1891,15 @@ async function performInitialization() {
     console.log('✅ App initialization complete - hiding loader');
     setTimeout(() => {
         hideLoading();
+        
+        // On mobile, ensure sidebar is visible after first load
+        if (window.innerWidth <= 768) {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && sidebar.classList.contains('hidden')) {
+                sidebar.classList.remove('hidden');
+                console.log('📱 Mobile: Showing sidebar after initialization');
+            }
+        }
     }, 300); // Small delay to ensure UI has rendered
 }
 
@@ -5128,53 +5186,17 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 
         // Show login modal (local/JWT)
         function showLoginModal() {
-            let modal = document.getElementById('loginModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'loginModal';
-                modal.className = 'modal';
-                modal.innerHTML = `
-                    <div class="modal-content">
-                        <span class="close-modal" onclick="this.closest('.modal').style.display='none'">×</span>
-                        <h3>Login</h3>
-                        <input id="loginUsername" type="text" placeholder="Username" style="width:100%;margin-bottom:10px;">
-                        <input id="loginPassword" type="password" placeholder="Password" style="width:100%;margin-bottom:10px;">
-                        <button id="loginSubmitBtn" class="btn btn-primary" style="width:100%;">Login</button>
-                        <div style="margin-top:10px;text-align:center;">
-                            <a href="#" id="showRegisterLink">Register</a>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-                document.getElementById('loginSubmitBtn').onclick = login;
-                document.getElementById('showRegisterLink').onclick = (e) => {
-                    e.preventDefault();
-                    modal.style.display = 'none';
-                    showRegisterModal();
-                };
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                modal.style.display = 'flex';
             }
-            modal.style.display = 'flex';
         }
 
         function showRegisterModal() {
-            let modal = document.getElementById('registerModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'registerModal';
-                modal.className = 'modal';
-                modal.innerHTML = `
-                    <div class="modal-content">
-                        <span class="close-modal" onclick="this.closest('.modal').style.display='none'">×</span>
-                        <h3>Register</h3>
-                        <input id="registerUsername" type="text" placeholder="Username" style="width:100%;margin-bottom:10px;">
-                        <input id="registerPassword" type="password" placeholder="Password" style="width:100%;margin-bottom:10px;">
-                        <button id="registerSubmitBtn" class="btn btn-primary" style="width:100%;">Register</button>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-                document.getElementById('registerSubmitBtn').onclick = register;
+            const modal = document.getElementById('registerModal');
+            if (modal) {
+                modal.style.display = 'flex';
             }
-            modal.style.display = 'flex';
         }
 
         async function login() {
@@ -5194,16 +5216,36 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     document.getElementById('loginModal').style.display = 'none';
                     showNotification('Login successful!');
+                    
                     // If user is admin, reload page to ensure all admin UI loads
                     if (currentUser && (currentUser.isAdmin === true || currentUser.isAdmin === 'true')) {
                         setTimeout(() => { window.location.reload(); }, 500);
                     } else {
                         updateAuthButtons();
-                        await loadUserData();
-                        await loadMySetlists(); // Load user's setlists after login
-                        await loadSmartSetlistsFromServer(); // Load smart setlists after login
-                        renderMySetlists();
-                        renderSmartSetlists();
+                        
+                        // Check if app was already initialized (subsequent login)
+                        if (initializationState.isInitialized) {
+                            // App already loaded - just load user-specific data
+                            await loadUserData();
+                            await loadMySetlists();
+                            await loadSmartSetlistsFromServer();
+                            renderMySetlists();
+                            renderSmartSetlists();
+                        } else if (!initializationState.isInitializing) {
+                            // First-time login - start full initialization
+                            console.log('🚀 Starting initialization after login...');
+                            showLoading(0, 'Initializing...');
+                            await window.init();
+                            
+                            // After initialization, show sidebar on mobile
+                            if (window.innerWidth <= 768) {
+                                const sidebar = document.querySelector('.sidebar');
+                                if (sidebar) {
+                                    sidebar.classList.remove('hidden');
+                                    console.log('📱 Mobile: Showing sidebar after login');
+                                }
+                            }
+                        }
                     }
                 } else {
                     showNotification(data.error || 'Login failed');
@@ -5226,6 +5268,17 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 if (res.ok) {
                     document.getElementById('registerModal').style.display = 'none';
                     showNotification('Registration successful! Please login.');
+                    
+                    // Show login modal after brief delay
+                    setTimeout(() => {
+                        const loginModal = document.getElementById('loginModal');
+                        if (loginModal) {
+                            loginModal.style.display = 'flex';
+                            // Pre-fill username
+                            const loginUsername = document.getElementById('loginUsername');
+                            if (loginUsername) loginUsername.value = username;
+                        }
+                    }, 1000);
                 } else {
                     showNotification(data.error || 'Registration failed');
                 }

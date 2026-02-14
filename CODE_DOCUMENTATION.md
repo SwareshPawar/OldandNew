@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 14, 2026 - 04:45 PM  
-**Version:** 1.7
+**Last Updated:** February 14, 2026 - 08:30 PM  
+**Version:** 1.8
 
 ---
 
@@ -2169,6 +2169,382 @@ addEventListeners();
 addPanelToggles();
 updateProgress('setupUI', 30);
 
+---
+
+### Session #2: Authentication Modal Fixes & Loading UX Improvements
+**Date:** February 14, 2026  
+**Duration:** ~3 hours  
+**Status:** ✅ COMPLETED & TESTED  
+**Version:** 1.8
+
+#### Problem Statement
+
+**Issue 1 - Duplicate Login/Register Modals:**
+Users were seeing duplicate modal popups for login and registration because:
+- `showLoginModal()` and `showRegisterModal()` were creating NEW div elements with `document.createElement()`
+- HTML already contained `<div id="loginModal">` and `<div id="registerModal">`
+- Result: Two modals appeared on screen simultaneously
+
+**Issue 2 - Missing Auth Choice Modal:**
+- After initial fixes, users were taken directly to login form
+- No option to choose between Login and Register
+- Previous "Welcome! Please login or register to continue" modal was removed by mistake
+
+**Issue 3 - No Loader After Login:**
+- When users clicked login button, app would initialize but no progress loader shown
+- Page appeared frozen during song loading
+- Expected to see same 0-100% progress as on page reload
+
+**Issue 4 - Loading Timeout User Experience:**
+- When loading timed out after 30 seconds (due to large song collection), loader just disappeared
+- Users were left confused with no guidance on what to do
+- No option to refresh or retry
+
+**Issue 5 - Unnecessary CSS Class:**
+- `auth-modal-content` class was being used but was redundant
+- Standard `modal-content` class already provided all needed styling
+
+---
+
+#### Implementation Part 1: Fix Duplicate Modals
+
+**Problem:** Dynamic modal creation conflicting with existing HTML elements.
+
+**Solution:** Simplified `showLoginModal()` and `showRegisterModal()` to just show existing modals.
+
+**Files Modified:**
+- `main.js` lines 5175-5187
+
+**Before (30+ lines with createElement):**
+```javascript
+function showLoginModal() {
+    let modal = document.getElementById('loginModal');
+    if (!modal) {
+        modal = document.createElement('div');  // ❌ Creates duplicate
+        modal.id = 'loginModal';
+        modal.className = 'modal';
+        modal.innerHTML = `...30 lines of HTML...`;
+        document.body.appendChild(modal);  // ❌ Appends new modal
+        // Event listener setup...
+    }
+    modal.style.display = 'flex';
+}
+```
+
+**After (6 lines - simple display):**
+```javascript
+function showLoginModal() {
+    const modal = document.getElementById('loginModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+```
+
+**Impact:**
+- Removed 49 lines of duplicate code
+- Fixed duplicate modal bug completely
+- Maintains all functionality with existing HTML modals
+
+---
+
+#### Implementation Part 2: Remove Redundant CSS Class
+
+**Problem:** `auth-modal-content` class was unnecessary and causing styling confusion.
+
+**Solution:** Replaced with standard `modal-content` class throughout.
+
+**Files Modified:**
+- `index.html` lines 21, 40, 64, 84 (4 modals)
+- `styles.css` lines 4545-4558 (removed CSS rules)
+
+**Changes:**
+```html
+<!-- BEFORE -->
+<div class="modal-content auth-modal-content">
+
+<!-- AFTER -->
+<div class="modal-content">
+```
+
+**Removed CSS:**
+```css
+/* Auth Modal Styles */
+.auth-modal-content {
+    max-width: 400px;
+    width: 95vw;
+    padding: 32px 24px 24px 24px;
+    /* ... 14 lines removed ... */
+}
+```
+
+**Impact:**
+- Cleaner HTML structure
+- Reduced CSS duplication
+- Standard styling across all modals
+
+---
+
+#### Implementation Part 3: Restore Auth Choice Modal
+
+**Problem:** Direct login modal was too aggressive - users need option to register.
+
+**Solution:** Added "Welcome!" modal with Login and Register buttons on page load for unauthenticated users.
+
+**Files Modified:**
+- `main.js` lines 949-983 (DOMContentLoaded authentication gate)
+
+**Implementation:**
+```javascript
+if (!isAuthenticated) {
+    // Show a message instead of loading
+    showLoading(0, 'Please sign in to continue');
+    
+    // Show auth choice modal after a brief delay
+    setTimeout(() => {
+        hideLoading();
+        
+        // Show a modal with both Login and Register options
+        let modal = document.getElementById('authChoiceModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'authChoiceModal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="text-align:center;">
+                    <h3>Welcome!</h3>
+                    <p>Please login or register to continue.</p>
+                    <button id="authLoginBtn" class="btn btn-primary" 
+                            style="margin:8px 0 8px 0;width:80%;">Login</button>
+                    <button id="authRegisterBtn" class="btn btn-secondary" 
+                            style="margin-bottom:8px;width:80%;">Register</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('authLoginBtn').onclick = () => {
+                modal.style.display = 'none';
+                showLoginModal();
+            };
+            document.getElementById('authRegisterBtn').onclick = () => {
+                modal.style.display = 'none';
+                showRegisterModal();
+            };
+        }
+        modal.style.display = 'flex';
+    }, 500);
+    
+    return; // Don't initialize until user logs in
+}
+```
+
+**Impact:**
+- Better UX - users can choose login or register
+- Prevents confusion for new users
+- Clear call-to-action on page load
+
+---
+
+#### Implementation Part 4: Add Loader After Login
+
+**Problem:** First-time login didn't show initialization progress loader.
+
+**Solution:** Enhanced login form handler to show loader and call `window.init()`.
+
+**Files Modified:**
+- `main.js` lines 1169-1215 (loginForm.addEventListener)
+
+**Implementation:**
+```javascript
+loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    // ... authentication logic ...
+    
+    if (res.ok && data.token) {
+        // Close login modal
+        document.getElementById('loginModal').style.display = 'none';
+        
+        showNotification('Login successful!', 2000);
+        
+        // Check if app was already initialized (subsequent login)
+        if (initializationState.isInitialized) {
+            // App already loaded - just update UI and load user-specific data
+            updateAuthButtons();
+            await loadUserData();
+            await loadMySetlists();
+            await loadSmartSetlistsFromServer();
+            renderMySetlists();
+            renderSmartSetlists();
+        } else if (!initializationState.isInitializing) {
+            // First-time login - start full initialization with loader
+            console.log('🚀 Starting initialization after login...');
+            showLoading(0, 'Initializing...');  // ✅ Show loader
+            await window.init();
+            
+            // After initialization, show sidebar on mobile
+            if (window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) {
+                    sidebar.classList.remove('hidden');
+                    console.log('📱 Mobile: Showing sidebar after login');
+                }
+            }
+        }
+    }
+});
+```
+
+**Impact:**
+- Users see progress bar 0-100% after login
+- Same experience as page reload
+- Clear feedback during song loading
+- Mobile sidebar automatically shown
+
+---
+
+#### Implementation Part 5: Enhanced Loading Timeout
+
+**Problem:** When loading timed out, users were left without guidance.
+
+**Solution:** Added user-friendly confirmation dialog with refresh option.
+
+**Files Modified:**
+- `main.js` lines 596-606 (showLoading timeout handler)
+
+**Before:**
+```javascript
+window.loadingTimeout = setTimeout(() => {
+    console.warn('Loading timeout reached, forcing hide');
+    hideLoading();
+}, 30000);
+```
+
+**After:**
+```javascript
+window.loadingTimeout = setTimeout(() => {
+    console.warn('Loading timeout reached - too many songs to download');
+    hideLoading();
+    
+    // Show message asking user to refresh
+    const shouldRefresh = confirm(
+        'Loading is taking longer than expected due to the large number of songs.\\n\\n' +
+        'Would you like to refresh the page to retry?'
+    );
+    if (shouldRefresh) {
+        window.location.reload();
+    } else {
+        showNotification('If songs don\\'t load, please refresh the page manually', 5000);
+    }
+}, 30000);
+```
+
+**Impact:**
+- Clear explanation of timeout (large song collection)
+- One-click refresh option
+- Fallback notification if user declines refresh
+- Better user experience during slow loads
+
+---
+
+#### Testing Performed
+
+**1. Duplicate Modal Fix:**
+- ✅ Cleared cache and refreshed page
+- ✅ Clicked login button → Only ONE modal appears
+- ✅ Closed and reopened → Still only ONE modal
+- ✅ Tested register button → Only ONE register modal
+- ✅ No duplicate content visible
+
+**2. Auth Choice Modal:**
+- ✅ Cleared localStorage (`localStorage.clear()`)
+- ✅ Refreshed page → Saw "Please sign in to continue" loader
+- ✅ After 0.5s → "Welcome!" modal appeared with Login/Register buttons
+- ✅ Clicked Login → Login modal opened, auth choice hidden
+- ✅ Closed login → Auth choice still hidden (correct behavior)
+- ✅ Clicked Register → Register modal opened
+
+**3. Loader After Login:**
+- ✅ Entered credentials and clicked Login button
+- ✅ Login modal closed immediately
+- ✅ Loader appeared showing "Initializing... 0%"
+- ✅ Progress incremented: 3% → 20% → 50% → 70% → 85% → 100%
+- ✅ Dynamic messages: "Loading songs..." → "Loading setlists..." → "Setting up UI..." → "Finalizing..."
+- ✅ App fully functional after 100%
+
+**4. Mobile Sidebar:** 
+- ✅ Used Chrome DevTools mobile view (width 375px)
+- ✅ Logged in → Sidebar visible (not hidden)
+- ✅ Can navigate to setlists from sidebar
+- ✅ Desktop view → Normal behavior unchanged
+
+**5. Loading Timeout:**
+- ✅ Simulated slow network (Chrome DevTools throttling)
+- ✅ After 30 seconds → Loader disappeared
+- ✅ Confirmation dialog appeared with clear message
+- ✅ Clicked OK → Page refreshed
+- ✅ Tested Cancel → Notification shown for 5 seconds
+
+---
+
+#### Files Modified Summary
+
+| File | Lines Modified | Changes |
+|------|---------------|---------|
+| `main.js` | 5175-5187 | Simplified showLoginModal() and showRegisterModal() |
+| `main.js` | 949-983 | Added auth choice modal on page load |
+| `main.js` | 1169-1215 | Enhanced login handler with loader and init |
+| `main.js` | 596-606 | Added timeout handler with refresh prompt |
+| `index.html` | 21, 40, 64, 84 | Removed auth-modal-content class |
+| `styles.css` | 4545-4558 | Removed redundant CSS rules |
+| `styles.css` | 4590-4610 | Fixed malformed .modal-content CSS |
+
+**Total Changes:**
+- **Lines Added:** ~80
+- **Lines Removed:** ~65
+- **Net Change:** +15 lines
+- **Functions Modified:** 3
+- **CSS Rules Removed:** 2
+
+---
+
+#### Performance Impact
+
+**No performance changes** - this session focused on UX fixes:
+- Authentication flow remains same speed
+- Loader timing already optimized in Session #1
+- No additional network requests
+- CSS slightly smaller (removed 14 lines)
+
+---
+
+#### Lessons Learned
+
+1. **Check for Existing DOM Elements:**
+   - Always verify if HTML elements already exist before creating with `createElement()`
+   - Use `document.getElementById()` first, create only if missing
+   - Prevents duplicate elements and wasted memory
+
+2. **Authentication UX Balance:**
+   - Direct login is too aggressive for new users
+   - Welcome modal with Login/Register choice is friendlier
+   - Always provide escape route (close modal option)
+
+3. **Progress Feedback is Critical:**
+   - Users need visual feedback during long operations
+   - Show loader immediately on action (login, refresh, etc.)
+   - Dynamic messages improve perceived performance
+
+4. **Timeout Handling:**
+   - Don't just hide loader on timeout
+   - Provide actionable options (refresh, retry, etc.)
+   - Explain WHY timeout occurred (large dataset, slow network)
+
+5. **CSS Class Management:**
+   - Avoid creating specialized classes when general classes work
+   - Reduces CSS bloat and maintenance burden
+   - Standard classes improve consistency
+
+---
+
 create
 
 ### Issue #1: Song ID Standardization ✅ COMPLETED
@@ -2373,10 +2749,16 @@ create
 
 ---
 
-**Document End - Last Updated: February 14, 2026 - Version 1.7 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: February 14, 2026, 08:30 PM - Version 1.8 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
 - Documented Session #1: Delta Sync & Loader Timing Improvements
-- Performance: 90%+ faster subsequent page loads
-- UX: Immediate loader display with dynamic progress messages
+  * Performance: 90%+ faster subsequent page loads
+  * UX: Immediate loader display with dynamic progress messages
+- Documented Session #2: Authentication Modal Fixes & Loading UX Improvements
+  * Fixed duplicate login/register modals (removed 49 lines of code)
+  * Restored auth choice modal for better UX
+  * Added loader display after login (0-100% progress)
+  * Enhanced loading timeout with refresh prompt
+  * Removed redundant auth-modal-content CSS class

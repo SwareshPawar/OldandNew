@@ -4541,21 +4541,7 @@ body.dark-mode #installAppBtn {
             cursor: not-allowed;
         }
 
-        /* Auth Modal Styles */
-        .auth-modal-content {
-            max-width: 400px;
-            width: 95vw;
-            padding: 32px 24px 24px 24px;
-            border-radius: 14px;
-            background: var(--light-bg);
-            color: var(--text-color);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-            position: relative;
-        }
-        body.dark-mode .auth-modal-content {
-            background: var(--light-bg);
-            color: var(--text-color);
-        }
+
         .auth-form {
             display: flex;
             flex-direction: column;
@@ -4602,10 +4588,6 @@ body.dark-mode #installAppBtn {
         .modal-content {
             background: var(--light-bg);
             color: var(--text-color);
-body.dark-mode .modal-content {
-    background: var(--light-bg);
-    color: var(--text-color);
-}
             padding: 20px;
             border-radius: 8px;
             width: 70%;
@@ -4614,6 +4596,11 @@ body.dark-mode .modal-content {
             overflow-y: auto;
             position: relative;
             animation: slideUp 0.3s ease;
+        }
+
+        body.dark-mode .modal-content {
+            background: var(--light-bg);
+            color: var(--text-color);
         }
 
         @keyframes slideUp {
