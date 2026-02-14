@@ -1992,6 +1992,16 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         document.getElementById('weightGenre').value = WEIGHTS.genre;
         document.getElementById('weightVocal').value = WEIGHTS.vocal;
         document.getElementById('weightMood').value = WEIGHTS.mood;
+        
+        // Calculate and display total
+        const total = WEIGHTS.language + WEIGHTS.scale + WEIGHTS.timeSignature + 
+                      WEIGHTS.taal + WEIGHTS.tempo + WEIGHTS.genre + 
+                      WEIGHTS.vocal + WEIGHTS.mood;
+        const bar = document.getElementById('weightsTotalBar');
+        if (bar) {
+            bar.textContent = `Total: ${total} / 100`;
+            bar.style.color = (total === 100) ? '#27ae60' : '#e74c3c';
+        }
     }
     
     function showAdminPanelModal() {
@@ -7601,7 +7611,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 
         async function fetchRecommendationWeights() {
             try {
-                const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`);
+                const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
+                    }
+                });
                 if (res.ok) {
                     const data = await res.json();
                     const localLastModified = WEIGHTS.lastModified || localStorage.getItem('recommendationWeightsLastModified');
