@@ -21,6 +21,18 @@ let isDarkMode = localStorage.getItem('darkMode') === 'true';
 let songs = []; // Global songs array
 let smartSetlists = []; // Global smart setlists array - loaded from server
 
+// Recommendation weights: loaded from backend or localStorage fallback
+let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
+    language: 20,
+    scale: 25,
+    timeSignature: 20,
+    taal: 15,
+    tempo: 5,
+    genre: 5,
+    vocal: 5,
+    mood: 5
+};
+
 // Initialize currentUser from localStorage
 try {
     const storedUser = localStorage.getItem('currentUser');
@@ -211,6 +223,42 @@ const CHORD_TYPES = [
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
+
+// Recommendation weights functions
+async function fetchRecommendationWeights() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`);
+        if (res.ok) {
+            const data = await res.json();
+            WEIGHTS = data;
+            localStorage.setItem('recommendationWeights', JSON.stringify(data));
+        }
+    } catch (e) { /* fallback to local */ }
+}
+
+async function saveRecommendationWeightsToBackend(weights) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
+            },
+            body: JSON.stringify(weights)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('recommendationWeights', JSON.stringify(weights));
+            WEIGHTS = weights;
+            return { success: true, message: data.message || 'Weights updated' };
+        } else {
+            const err = await res.json();
+            return { success: false, message: err.error || 'Failed to update weights' };
+        }
+    } catch (e) {
+        return { success: false, message: 'Network error' };
+    }
+}
 
 // --- CHORD REGEXES: always use CHORD_TYPES ---
 const CHORDS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
@@ -1507,6 +1555,11 @@ function applyTheme(isDark) {
     if (typeof redrawPreviewOnThemeChange === 'function') {
         redrawPreviewOnThemeChange();
     }
+}
+
+// Theme toggle function (used by sidebar button and other UI elements)
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
 }
 
 

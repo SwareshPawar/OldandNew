@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 14, 2026  
-**Version:** 1.1
+**Last Updated:** February 14, 2026 - 10:00 PM  
+**Version:** 1.2
 
 ---
 
@@ -67,15 +67,28 @@
    - **All Delete Operations**: Now use consistent modal structure with proper theming
    - Impact: Professional appearance, consistent UX, mobile-friendly, dark/light mode support
 
+### Completed Fixes - Session 3 (February 14, 2026 - Late Evening)
+
+9. **✅ JavaScript Architecture: Consolidated All Scripts from index.html to main.js**
+   - **Removed inline scripts** - All `<script>` blocks removed from [index.html](index.html)
+   - **Moved WEIGHTS variable** - Recommendation weights now initialized in [main.js](main.js#L25) with other globals
+   - **Moved fetchRecommendationWeights()** - Function relocated to [main.js](main.js#L228) after API_BASE_URL definition
+   - **Moved saveRecommendationWeightsToBackend()** - Function relocated to [main.js](main.js#L239)
+   - **Moved toggleTheme()** - Simple theme toggle function added to [main.js](main.js#L1561)
+   - **Removed duplicate DOMContentLoaded** - Eliminated race condition from HTML file
+   - **Single script tag** - Only `<script src="main.js"></script>` remains in HTML
+   - Impact: Eliminated double initialization of init(), proper variable scoping, cleaner architecture, single source of truth for JavaScript
+
 ### Code Metrics - Updated
-- **Total Lines Removed:** ~911 lines of duplicate/obsolete code (+10 from unused variables)
+- **Total Lines Removed:** ~921 lines of duplicate/obsolete code (+10 from inline scripts)
 - **Null Guards Added:** 6 protective checks
 - **Try-Catch Blocks Added:** 12+ error handling improvements
 - **Runtime Errors Fixed:** 1 undefined function call
 - **UI Inconsistencies Fixed:** 3 delete confirmation inconsistencies
-- **File Size Reduction:** ~8.2% reduction in main.js
-- **Issues Resolved:** 11 major issues fixed (+3 from this session)
-- **Bugs Fixed:** Authentication, button visibility, null references, undefined functions, storage errors, UI consistency
+- **Architecture Improvements:** All JavaScript consolidated to main.js
+- **File Size Reduction:** ~8.3% reduction in main.js, cleaner HTML structure
+- **Issues Resolved:** 12 major issues fixed (+1 from this session)
+- **Bugs Fixed:** Authentication, button visibility, null references, undefined functions, storage errors, UI consistency, script initialization race conditions
 
 ---
 
@@ -98,6 +111,7 @@
 | `currentSetlistType` | String/null | Type of current setlist: 'global', 'my', 'smart' | `null` | Setlist display functions |
 | `keepScreenOn` | Boolean | Screen wake lock state | `false` | initScreenWakeLock |
 | `autoScrollSpeed` | Number | Auto-scroll speed in ms | `localStorage.getItem('autoScrollSpeed')` or `1500` | Settings form |
+| `WEIGHTS` | Object | AI recommendation weights configuration | `localStorage.getItem('recommendationWeights')` or default values | fetchRecommendationWeights, saveRecommendationWeightsToBackend |
 | `suggestedSongsDrawerOpen` | Boolean | Suggested songs drawer state | `false` | Toggle drawer functions |
 | `isScrolling` | Boolean | Auto-scroll active state | `false` | Auto-scroll toggle |
 | `navigationHistory` | Array | Song navigation history | `[]` | showPreview function |
@@ -122,6 +136,28 @@
 | `CHORD_TYPES` | Array | Chord type patterns | ["madd13", "maj7", "m7", "dim", "aug", ...] |
 | `CHORDS` | Array | Base chord names | ["C", "C#", "D", "Eb", "E", "F", ...] |
 | `TIME_GENRE_MAP` | Object | Maps time signatures to taals | `{"4/4": ["Keherwa", ...], "3/4": ["Waltz", ...]}` |
+
+### Recommendation Weights Configuration ([main.js](main.js))
+
+The `WEIGHTS` object (note: it's a variable, not a constant, as it's updated from the backend):
+
+```javascript
+WEIGHTS = {
+    language: 20,        // Weight for language matching (20 points)
+    scale: 25,          // Weight for key/scale relationships (25 points)
+    timeSignature: 20,  // Weight for time signature matching (20 points)
+    taal: 15,           // Weight for taal/rhythm pattern matching (15 points)
+    tempo: 5,           // Weight for tempo similarity (5 points)
+    genre: 5,           // Weight for genre matching (5 points)
+    vocal: 5,           // Weight for vocal type matching (5 points)
+    mood: 5             // Weight for mood matching (5 points)
+}
+```
+
+**Total Maximum Score:** 100 points  
+**Storage:** Synced between backend API and localStorage  
+**Admin Configurable:** Yes (via Admin Panel)  
+**Default Fallback:** Used when backend is unavailable
 
 ### Cache and Data Management ([main.js](main.js))
 
@@ -306,14 +342,51 @@
 | `updateSongInCache(song, isNewSong)` | song: Object, isNewSong?: Boolean | Boolean | Update song in cache | After add/edit |
 | `deleteSongById(songId, postDeleteCallback)` | songId, callback | Promise<void> | Delete song by ID with callback | Delete functions |
 
-### D. UI/Rendering Functions ([main.js](main.js))
+### D. AI Recommendation System Functions ([main.js](main.js))
+
+| Function | Parameters | Return Type | Purpose | Called From |
+|----------|------------|-------------|---------|-------------|
+| `fetchRecommendationWeights()` | None | Promise<void> | Fetch recommendation weights from backend | DOMContentLoaded, init |
+| `saveRecommendationWeightsToBackend(weights)` | weights: Object | Promise<Object> | Save weights to backend and update local | Admin panel |
+| `getSuggestedSongs(currentSongId)` | currentSongId: Number | Array<Song> | Calculate and return top 20 suggested songs | showSuggestedSongs |
+| `showSuggestedSongs()` | None | void | Display suggested songs in drawer | Song preview |
+| `closeSuggestedSongsDrawer()` | None | void | Close suggested songs drawer | Close button, ESC key |
+| `setupSuggestedSongsClosing()` | None | void | Setup event listeners for drawer | DOMContentLoaded |
+
+#### Recommendation Algorithm Details
+
+The `getSuggestedSongs()` function uses weighted scoring based on multiple musical attributes:
+
+**Scoring Weights (configurable via WEIGHTS object):**
+- **Language Match** (20 points): Matches songs in the same language (English, Hindi, Marathi, etc.)
+- **Scale/Key Relationships** (25 points): 
+  - Same key: 100% score
+  - Relative major/minor: 90% score
+  - Circle of fifths relations: 80% score
+  - Same scale type (major/minor): 50% score
+- **Time Signature** (20 points):
+  - Exact match: 100% score
+  - Compatible signatures (6/8↔3/4): 90% score
+- **Taal Match** (15 points): Same Indian rhythm pattern
+- **Tempo Similarity** (5 points): Calculated using BPM difference (±35 BPM tolerance)
+- **Genre Match** (5 points): Non-language genre overlap
+- **Vocal Type** (5 points): Male/Female/Duet matching
+- **Mood Match** (5 points): Emotional tone similarity
+
+**Filters:**
+- Only suggests songs from the same category (New/Old)
+- Excludes the current song
+- Returns top 20 matches sorted by score (0-100%)
+
+### E. UI/Rendering Functions ([main.js](main.js))
 
 | Function | Parameters | Return Type | Purpose | Called From |
 |----------|------------|-------------|---------|-------------|
 | `showLoading(percent)` | percent?: Number | void | Show loading overlay with progress | During loading |
 | `hideLoading()` | None | void | Hide loading overlay | After loading complete |
 | `showNotification(message, typeOrDuration)` | message: String, typeOrDuration: String\|Number | void | Show notification toast | Throughout app |
-| `applyTheme(isDark)` | isDark: Boolean | void | Apply light or dark theme | Theme toggle, init |
+| `applyTheme(isDark)` | isDark: Boolean | void | Apply light or dark theme with UI updates | Theme toggle, init |
+| `toggleTheme()` | None | void | Simple theme toggle for sidebar button | Sidebar theme button |
 | `renderGenreOptions(dropdownId)` | dropdownId: String | void | Render genre multiselect options | Multiselect setup |
 | `renderMoodOptions(dropdownId)` | dropdownId: String | void | Render mood multiselect options | Multiselect setup |
 | `renderArtistOptions(dropdownId)` | dropdownId: String | void | Render artist multiselect options | Multiselect setup |
@@ -323,8 +396,10 @@
 | `addPanelToggles()` | None | void | Add panel toggle event handlers | init |
 | `goBackToSidebar()` | None | void | Return from setlist to sidebar menu | Back button click |
 | `renderFavorites()` | None | void | Render favorite songs | Favorites view |
+| `createMobileNavButtons()` | None | void | Create mobile navigation buttons UI | init, window resize |
+| `addMobileTouchNavigation()` | None | void | Enable touch swipe gestures for navigation | init (mobile only) |
 
-### E. Database Functions ([server.js](server.js))
+### F. Database Functions ([server.js](server.js))
 
 | Function | Parameters | Return Type | Purpose | Called From |
 |----------|------------|-------------|---------|-------------|
@@ -332,7 +407,7 @@
 | `authMiddleware(req, res, next)` | Express middleware params | void | Verify JWT authentication | Protected routes |
 | `requireAdmin(req, res, next)` | Express middleware params | void | Require admin role | Admin routes |
 
-### F. Utility Functions ([main.js](main.js))
+### G. Utility Functions ([main.js](main.js))
 
 | Function | Parameters | Return Type | Purpose | Called From |
 |----------|------------|-------------|---------|-------------|
@@ -351,6 +426,11 @@
 | `isCacheFresh(type, timestamp)` | type, timestamp | Boolean | Check if cache is fresh | Cache loading |
 | `stringSimilarity(str1, str2)` | str1, str2 | Number | Calculate string similarity (0-1) | Duplicate detection |
 | `findDuplicateSongs()` | None | Array | Find duplicate songs | Admin panel |
+| `getMoodTags(moodString)` | moodString: String | Array<String> | Parse comma-separated mood string into array | Recommendation system |
+| `getMoodMatchScore(mood1, mood2)` | mood1: String, mood2: String | Number | Calculate mood similarity (0-1) | getSuggestedSongs |
+| `getVocalTags(genres)` | genres: Array | Array<String> | Extract vocal tags (Male/Female/Duet) from genres | Recommendation system |
+| `getVocalMatchScore(genres1, genres2)` | genres1: Array, genres2: Array | Number | Calculate vocal type similarity (0-1) | getSuggestedSongs |
+| `getCurrentFilterValues()` | None | Object | Get current filter values from UI | renderSongs |
 
 ---
 
@@ -407,6 +487,16 @@
 | `.btn-delete` | click | deleteSong | Song item | Delete song |
 | `#NewTab` | click | Switch to New tab | Tabs | Show New category songs |
 | `#OldTab` | click | Switch to Old tab | Tabs | Show Old category songs |
+
+### Suggested Songs Drawer Events ([main.js](main.js))
+
+| Element ID/Selector | Event Type | Handler Function | Location | Purpose |
+|---------------------|------------|------------------|----------|---------|
+| `#toggleSuggestedSongs` | click | Show suggested songs | Song preview | Open AI recommendations drawer |
+| `#closeSuggestedSongs` | click | closeSuggestedSongsDrawer | Drawer | Close recommendations drawer |
+| `.suggested-song-item` | click | Show song preview | Drawer | Preview suggested song |
+| `document` | click | Close drawer (outside) | Global | Close drawer on outside click |
+| `document` | keydown (ESC) | closeSuggestedSongsDrawer | Global | Close drawer with ESC key |
 
 ### Filter Events ([main.js](main.js))
 
@@ -539,6 +629,23 @@
 | `setlistViewModal` | Setlist view modal |
 | `confirmDeleteSetlistModal` | Delete setlist confirmation |
 | `addManualSongModal` | Add manual song to setlist modal |
+
+### Suggested Songs Drawer ([index.html](index.html))
+
+| Element ID | Purpose |
+|------------|---------|
+| `suggestedSongsDrawer` | AI recommendations drawer container |
+| `suggestedSongsContent` | Suggested songs list container |
+| `toggleSuggestedSongs` | Toggle button for recommendations drawer |
+| `closeSuggestedSongs` | Close button inside drawer |
+
+**Features:**
+- Displays top 20 AI-recommended songs based on current song
+- Shows match score (0-100%) for each suggestion
+- Displays key, tempo, time signature, taal, and mood metadata
+- Click any suggestion to preview that song
+- Opens/closes with animation from right side
+- Closes on ESC key or outside click
 
 ### Form Fields ([index.html](index.html))
 

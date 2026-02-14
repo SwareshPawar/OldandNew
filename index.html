@@ -3,65 +3,11 @@
 <head>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#667eea">
-<script>
-// Recommendation weights: loaded from backend or localStorage fallback
-let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
-    language: 20,
-    scale: 25,
-    timeSignature: 20,
-    taal: 15,
-    tempo: 5,
-    genre: 5,
-    vocal: 5,
-    mood: 5
-};
-
-async function fetchRecommendationWeights() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`);
-        if (res.ok) {
-            const data = await res.json();
-            WEIGHTS = data;
-            localStorage.setItem('recommendationWeights', JSON.stringify(data));
-        }
-    } catch (e) { /* fallback to local */ }
-}
-
-async function saveRecommendationWeightsToBackend(weights) {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/recommendation-weights`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
-            },
-            body: JSON.stringify(weights)
-        });
-        if (res.ok) {
-            const data = await res.json();
-            localStorage.setItem('recommendationWeights', JSON.stringify(weights));
-            WEIGHTS = weights;
-            return { success: true, message: data.message || 'Weights updated' };
-        } else {
-            const err = await res.json();
-            return { success: false, message: err.error || 'Failed to update weights' };
-        }
-    } catch (e) {
-        return { success: false, message: 'Network error' };
-    }
-}
-</script>
     <!-- Auth0 script removed: now using local JWT auth -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New & Old Songs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
         <link rel="stylesheet" href="styles.css">
-        <script>
-        // Theme toggle logic (used by sidebar button)
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-        }
-        </script>
 
     <!-- Apple PWA meta tags for iOS support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1305,20 +1251,4 @@ async function saveRecommendationWeightsToBackend(weights) {
     <i class="fa fa-random"></i>
 </button>
 </body>
-<script>
-window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Show loading immediately on page load
-        if (typeof showLoading === 'function') {
-            showLoading(0);
-        }
-        await init();
-    } catch (e) {
-        console.error('App failed to initialize:', e);
-        if (typeof hideLoading === 'function') {
-            hideLoading();
-        }
-    }
-});
-</script>
 </html>
