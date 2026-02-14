@@ -2,12 +2,30 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 14, 2026 - 11:30 PM  
-**Version:** 1.3
+**Last Updated:** February 15, 2026 - 12:00 AM  
+**Version:** 1.4
 
 ---
 
-## RECENT CHANGES (February 14, 2026)
+## RECENT CHANGES (February 14-15, 2026)
+
+### Completed Fixes - Session 5 (February 15, 2026 - Midnight)
+
+15. **✅ API Security: Protected All Public Endpoints**
+   - **Problem**: Critical API endpoints were publicly accessible without authentication
+   - **Vulnerable Endpoints Secured**:
+     - `GET /api/songs` - Now requires authentication (was public)
+     - `GET /api/global-setlists` - Now requires authentication (was public)
+     - `POST /api/songs/scan` - Now requires authentication (was public)
+     - `GET /api/recommendation-weights` - Now requires authentication (was public)
+     - `GET /api/debug/db` - Now requires admin role (was public)
+   - **Impact**: 
+     - Direct API access via browser URL now returns 401 Unauthorized
+     - All song data, setlists, and configurations protected
+     - Only authenticated users can access app data
+     - Prevents data scraping and unauthorized access
+   - **Locations**: [server.js](server.js#L104, server.js#L341, server.js#L473, server.js#L741, server.js#L232)
+   - **Authentication Flow**: All protected endpoints now require `Authorization: Bearer <JWT_TOKEN>` header
 
 ### Completed Fixes - Session 4 (February 14, 2026 - Night)
 

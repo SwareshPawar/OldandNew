@@ -100,8 +100,8 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// Get recommendation weights config
-app.get('/api/recommendation-weights', async (req, res) => {
+// Get recommendation weights config (requires authentication)
+app.get('/api/recommendation-weights', authMiddleware, async (req, res) => {
   try {
     const config = await db.collection('config').findOne({ _id: 'weights' });
     if (!config) {
@@ -228,8 +228,8 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Debug endpoint to check database connection
-app.get('/api/debug/db', async (req, res) => {
+// Debug endpoint to check database connection (admin only for security)
+app.get('/api/debug/db', authMiddleware, requireAdmin, async (req, res) => {
   try {
     res.json({ 
       dbConnected: !!db,
@@ -338,7 +338,7 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-app.get('/api/songs', async (req, res) => {
+app.get('/api/songs', authMiddleware, async (req, res) => {
   try {
     // Support delta fetching: if ?since=TIMESTAMP is provided, only return songs updated after that
     const { since } = req.query;
@@ -469,8 +469,8 @@ app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-// Scan songs based on multiple filter conditions
-app.post('/api/songs/scan', async (req, res) => {
+// Scan songs based on multiple filter conditions (requires authentication)
+app.post('/api/songs/scan', authMiddleware, async (req, res) => {
   try {
     const { keys, tempoMin, tempoMax, times, taals, moods, genres, categories } = req.body;
     
@@ -737,8 +737,8 @@ app.put('/api/userdata', authMiddleware, async (req, res) => {
   res.json({ message: 'User data updated' });
 });
 
-// Global Setlist endpoints (admin only)
-app.get('/api/global-setlists', async (req, res) => {
+// Global Setlist endpoints (requires authentication to view, admin to modify)
+app.get('/api/global-setlists', authMiddleware, async (req, res) => {
   try {
     const setlists = await db.collection('GlobalSetlists').find({}).toArray();
     res.json(setlists);
