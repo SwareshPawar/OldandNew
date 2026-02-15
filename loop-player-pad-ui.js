@@ -49,6 +49,26 @@ function getTempoCategory(bpm) {
 }
 
 /**
+ * Check if two time signatures are equivalent
+ * Examples: 6/8 ≡ 3/4, 9/8 ≡ 3/4, 12/8 ≡ 4/4
+ */
+function areTimeSignaturesEquivalent(time1, time2) {
+    if (time1 === time2) return true;
+    
+    // Common equivalent time signatures
+    const equivalents = {
+        '6/8': ['3/4'],
+        '3/4': ['6/8'], 
+        '9/8': ['3/4'],
+        '12/8': ['4/4'],
+        '4/4': ['12/8']
+    };
+    
+    const time1Equivalents = equivalents[time1] || [];
+    return time1Equivalents.includes(time2);
+}
+
+/**
  * Find best matching loop set for a song
  * Returns: {loopSet, score} or null
  */
@@ -112,11 +132,11 @@ async function findMatchingLoopSet(song) {
         
         // **REQUIRED**: Taal and Time must match
         const taalMatch = songTaal.includes(cond.taal.toLowerCase()) || cond.taal.toLowerCase().includes(songTaal);
-        const timeMatch = cond.timeSignature === songTime;
+        const timeMatch = areTimeSignaturesEquivalent(cond.timeSignature, songTime);
 
         console.log(`🔍 Testing loop set ${key}:`, {
             taalMatch: `"${songTaal}" vs "${cond.taal.toLowerCase()}"`,
-            timeMatch: `"${songTime}" vs "${cond.timeSignature}"`,
+            timeMatch: `"${songTime}" vs "${cond.timeSignature}" (equivalent: ${timeMatch})`,
             taalResult: taalMatch,
             timeResult: timeMatch
         });
