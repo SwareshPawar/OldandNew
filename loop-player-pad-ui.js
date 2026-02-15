@@ -364,7 +364,13 @@ async function initializeLoopPlayer(songId) {
     
     // Load loops with dynamic file mapping from matched loop set
     const status = document.getElementById(`loopStatus-${songId}`);
+    const playBtn = document.getElementById(`loopPlayBtn-${songId}`);
+    
     if (status) status.textContent = 'Loading loops...';
+    if (playBtn) {
+        playBtn.disabled = true;
+        playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading...</span>';
+    }
     
     try {
         // Create loop map from matched files
@@ -381,19 +387,44 @@ async function initializeLoopPlayer(songId) {
         console.log('🔊 Loading loops from:', loopMap);
         
         await loopPlayerInstance.loadLoops(loopMap);
+        
+        // Wait for audio context and decoding to complete
+        if (status) status.textContent = 'Decoding audio...';
+        
+        // Wait a bit more for decoding to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if audio buffers are ready
+        const audioBuffersReady = loopPlayerInstance.audioBuffers && loopPlayerInstance.audioBuffers.size === 6;
+        
         if (status) {
-            // Check if all loops fetched successfully
-            const loadedCount = loopPlayerInstance.rawAudioData ? loopPlayerInstance.rawAudioData.size : 0;
-            if (loadedCount === 6) {
+            if (audioBuffersReady) {
                 const matchInfo = getMatchQuality(score);
                 status.textContent = `Ready - ${matchInfo.label}`;
                 status.title = matchInfo.description;
+                
+                // Enable play button
+                if (playBtn) {
+                    playBtn.disabled = false;
+                    playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                }
             } else {
+                const loadedCount = loopPlayerInstance.rawAudioData ? loopPlayerInstance.rawAudioData.size : 0;
                 status.textContent = `Loaded ${loadedCount}/6 loops`;
+                
+                if (playBtn) {
+                    playBtn.disabled = false;
+                    playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                }
             }
         }
     } catch (error) {
+        console.error('Error loading loops:', error);
         if (status) status.textContent = 'Failed to load loops';
+        if (playBtn) {
+            playBtn.disabled = false;
+            playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+        }
         return;
     }
     
@@ -403,15 +434,21 @@ async function initializeLoopPlayer(songId) {
         const loopName = pad.dataset.loop;
         const loopFile = loopSet.files[loopName];
         const isLoaded = loopPlayerInstance.rawAudioData && loopPlayerInstance.rawAudioData.has(loopName);
+        const isDecoded = loopPlayerInstance.audioBuffers && loopPlayerInstance.audioBuffers.has(loopName);
         
-        // Disable pad if file doesn't exist or failed to load
-        if (!loopFile || !isLoaded) {
+        // Disable pad if file doesn't exist, failed to load, or not decoded yet
+        if (!loopFile || !isLoaded || !isDecoded) {
             pad.disabled = true;
             pad.classList.add('loop-pad-disabled');
-            pad.title = `${loopName} not available`;
+            if (!loopFile) {
+                pad.title = `${loopName} not available`;
+            } else if (!isDecoded) {
+                pad.title = `${loopName} loading...`;
+            }
         } else {
             pad.disabled = false;
             pad.classList.remove('loop-pad-disabled');
+            pad.title = '';
         }
     });
     
@@ -430,18 +467,25 @@ async function initializeLoopPlayer(songId) {
         });
     });
     
-    // Play/Pause button
-    const playBtn = document.getElementById(`loopPlayBtn-${songId}`);
+    // Play/Pause button (reusing playBtn from above)
     if (playBtn) {
         playBtn.addEventListener('click', async () => {
+            if (playBtn.disabled) return; // Prevent clicks while loading
+            
             if (loopPlayerInstance.isPlaying) {
                 loopPlayerInstance.pause();
                 playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 playBtn.classList.remove('playing');
             } else {
-                await loopPlayerInstance.play();
-                playBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
-                playBtn.classList.add('playing');
+                try {
+                    await loopPlayerInstance.play();
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                    playBtn.classList.add('playing');
+                } catch (error) {
+                    console.error('Error playing loops:', error);
+                    const status = document.getElementById(`loopStatus-${songId}`);
+                    if (status) status.textContent = `Error: ${error.message}`;
+                }
             }
         });
     }
@@ -638,6 +682,18 @@ const loopPlayerStyles = `
 .loop-control-btn.active {
     background: rgba(76, 175, 80, 0.8);
     border-color: rgba(76, 175, 80, 1);
+}
+
+.loop-control-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(100, 100, 100, 0.3);
+    border-color: rgba(100, 100, 100, 0.5);
+}
+
+.loop-control-btn:disabled:hover {
+    background: rgba(100, 100, 100, 0.3);
+    border-color: rgba(100, 100, 100, 0.5);
 }
 
 .loop-control-group {
