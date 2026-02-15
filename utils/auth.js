@@ -73,6 +73,8 @@ async function registerUser(db, { firstName, lastName, username, email, phone, p
   });
   if (existing) throw new Error('User or email already exists');
   const hash = await bcrypt.hash(password, 10);
+  // isAdmin is already converted to boolean in server.js before calling this function
+  // No additional Boolean() conversion needed here to avoid Boolean("false") bug
   const result = await users.insertOne({
     firstName,
     lastName,
@@ -97,6 +99,10 @@ async function authenticateUser(db, { loginInput, password }) {
   if (!user) throw new Error('Invalid credentials');
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new Error('Invalid credentials');
+  // Ensure isAdmin is always boolean in JWT token (handles legacy string data)
+  // This handles users who may have string "true" in database from old code
+  // After migration, all DB values are boolean, but this provides safety
+  const isAdminBoolean = user.isAdmin === true || user.isAdmin === 'true';
   const token = jwt.sign({
     id: user._id,
     firstName: user.firstName,
@@ -104,7 +110,7 @@ async function authenticateUser(db, { loginInput, password }) {
     username: user.username,
     email: user.email,
     phone: user.phone,
-    isAdmin: user.isAdmin
+    isAdmin: isAdminBoolean
   }, JWT_SECRET, { expiresIn: '7d' });
   return {
   token,
@@ -115,7 +121,7 @@ async function authenticateUser(db, { loginInput, password }) {
     username: user.username,
     email: user.email,
     phone: user.phone,
-    isAdmin: user.isAdmin
+    isAdmin: isAdminBoolean
   }
 };
 }

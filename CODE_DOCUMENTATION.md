@@ -1444,6 +1444,247 @@ function goBackToSidebar(event) {
 
 ---
 
+### Bug #2: Admin-Created Smart Setlists Not Visible to Other Users
+**Date Discovered:** February 15, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+Admin-created smart setlists were only visible to the admin user who created them, not to all users as intended. The smart setlists should be read-only and visible to all users when created by admin, but were appearing private to the creator.
+
+**Affected Components:**
+- Smart setlist database query (server.js)
+- Smart setlist creation endpoint (server.js)
+- Admin role checking (server.js, utils/auth.js)
+- User authentication (utils/auth.js)
+
+**Reproduction Steps:**
+1. Log in as admin user
+2. Create a smart setlist
+3. Log out and log in as a non-admin user
+4. Navigate to Smart Setlists section
+5. **Expected:** All admin-created smart setlists should be visible
+6. **Actual:** Smart setlist created by admin is not visible to other users
+
+**Root Cause Analysis:**
+
+The issue had two root causes:
+
+1. **Data Type Mismatch:** The `isAdmin` field in the Users collection was stored as the string `"true"` instead of the boolean `true`. This caused strict equality checks (`===`) to fail.
+
+2. **Unset Flag on Legacy Data:** Older smart setlists created before the `isAdminCreated` flag was implemented had `isAdminCreated: undefined`, which MongoDB's query for `{ isAdminCreated: true }` would not match.
+
+**Debug Process:**
+
+Created debugging scripts to investigate:
+
+1. **verify-database.js** - Showed that 4 smart setlists existed but none were marked as admin-created
+   ```
+   🧠 SMART SETLISTS:
+     Total: 4
+     Admin-created: 0  <-- Problem!
+     User-created: 4
+   ```
+
+2. **debug-smartsetlists.js** - Revealed the actual data in the database:
+   - All 4 setlists created by admin user (swaresh1)
+   - First 2 had `isAdminCreated: undefined`
+   - Last 2 had `isAdminCreated: true` (but still not working)
+
+3. **debug-data-types.js** - Uncovered the data type issue:
+   ```javascript
+   isAdmin: true
+   isAdmin type: string  // <-- Should be boolean!
+   isAdmin === true: false
+   isAdmin == true: false
+   ```
+
+**Console Output:**
+```
+👤 Admin User: swaresh1
+   isAdmin: true
+   isAdmin type: string    // <-- Root cause discovered
+   isAdmin === true: false
+```
+
+**Initial Attempted Fixes (Failed):**
+1. ❌ Ran migration script with `creator.isAdmin === true` - Failed because isAdmin was a string
+2. ❌ Checked query logic in server.js - Query was correct, but data was wrong
+3. ❌ Added string checks throughout code - Treating symptom, not cause
+
+**Final Solution:**
+
+**Root Cause Fix: Ensure isAdmin is Always Boolean**
+
+Instead of handling both boolean and string types everywhere, fixed the root cause by ensuring `isAdmin` is always stored and handled as a boolean throughout the system.
+
+**Part 1: Fixed User Registration**
+
+Updated registration endpoint to convert incoming `isAdmin` to boolean:
+
+```javascript
+// server.js - Registration endpoint
+app.post('/api/register', async (req, res) => {
+  // ...
+  // Convert isAdmin to boolean (handles string "true"/"false" or boolean)
+  isAdmin = isAdmin === true || isAdmin === 'true';
+  const user = await registerUser(db, { firstName, lastName, username, email, phone, password, isAdmin });
+  // ...
+});
+```
+
+Updated `registerUser()` to ensure boolean storage:
+
+```javascript
+// utils/auth.js - Before (BUGGY):
+const result = await users.insertOne({
+    firstName, lastName, username: username.toLowerCase(),
+    email: email.toLowerCase(), phone, password: hash,
+    isAdmin  // Could be string or boolean
+});
+
+// utils/auth.js - After (FIXED):
+// Ensure isAdmin is stored as boolean
+const isAdminBoolean = Boolean(isAdmin);
+const result = await users.insertOne({
+    firstName, lastName, username: username.toLowerCase(),
+    email: email.toLowerCase(), phone, password: hash,
+    isAdmin: isAdminBoolean  // Always boolean
+});
+return { id: result.insertedId, firstName, lastName, username, email, phone, isAdmin: isAdminBoolean };
+```
+
+**Part 2: Fixed Authentication**
+
+Updated `authenticateUser()` to ensure JWT contains boolean:
+
+```javascript
+// utils/auth.js - Before (BUGGY):
+const token = jwt.sign({
+    id: user._id,
+    // ...
+    isAdmin: user.isAdmin  // Could be string from old data
+}, JWT_SECRET, { expiresIn: '7d' });
+
+// utils/auth.js - After (FIXED):
+// Ensure isAdmin is always boolean in JWT token (handles legacy string data)
+const isAdminBoolean = user.isAdmin === true || user.isAdmin === 'true';
+const token = jwt.sign({
+    id: user._id,
+    // ...
+    isAdmin: isAdminBoolean  // Always boolean
+}, JWT_SECRET, { expiresIn: '7d' });
+```
+
+**Part 3: Reverted Server Checks to Use Strict Boolean**
+
+Now that data is consistent, server can use strict boolean checks:
+
+```javascript
+// server.js - requireAdmin middleware
+function requireAdmin(req, res, next) {
+  if (req.user && req.user.isAdmin === true) return next();  // Strict boolean check
+  return res.status(403).json({ error: 'Admin access required' });
+}
+
+// server.js - Smart setlist creation
+const isAdmin = req.user.isAdmin === true;  // Strict boolean check
+```
+
+**Part 4: Database Migration**
+
+Created migration script to fix existing users with string "true":
+
+```javascript
+// migrate-users-isadmin-to-boolean.js
+const newIsAdmin = user.isAdmin === 'true' || user.isAdmin === true;
+await usersCollection.updateOne(
+  { _id: user._id },
+  { $set: { isAdmin: newIsAdmin } }  // Convert to boolean
+);
+```
+
+**Migration Results:**
+
+```
+📊 MIGRATION SUMMARY:
+   Total users: 16
+   Updated: 1 (converted string "true" to boolean true)
+   Already boolean: 15
+```
+
+All users now have proper boolean `isAdmin` values.
+
+**Updated Code Locations:**
+1. [server.js](server.js#L227): Registration endpoint converts isAdmin to boolean
+2. [server.js](server.js#L1206): Smart setlist creation uses strict boolean check
+3. [server.js](server.js#L1247): Smart setlist update uses strict boolean check (FIXED)
+4. [server.js](server.js#L1291): Smart setlist delete uses strict boolean check (FIXED)
+5. [server.js](server.js#L212): `requireAdmin()` uses strict boolean check
+6. [server.js](server.js#L173): Admin panel "Make Admin" sets `isAdmin: true` (boolean)
+7. [server.js](server.js#L197): Admin panel "Remove Admin" sets `isAdmin: false` (boolean)
+8. [utils/auth.js](utils/auth.js#L76): `registerUser()` stores isAdmin as boolean
+9. [utils/auth.js](utils/auth.js#L100): `authenticateUser()` converts to boolean for JWT
+10. [migrate-smart-setlists-admin-flag.js](migrate-smart-setlists-admin-flag.js): Uses strict boolean check
+11. [migrate-users-isadmin-to-boolean.js](migrate-users-isadmin-to-boolean.js): Migration to fix users
+
+**Created Files:**
+1. `debug-smartsetlists.js` - Debug script to inspect smart setlist and user data
+2. `debug-data-types.js` - Debug script to check exact data types
+3. `migrate-smart-setlists-admin-flag.js` - Migration script to fix `isAdminCreated` flag
+4. `migrate-users-isadmin-to-boolean.js` - Migration script to convert isAdmin to boolean
+5. `verify-isadmin-boolean.js` - Verification script documenting all isAdmin usages
+
+**Testing:**
+- ✅ All 4 existing smart setlists marked as admin-created
+- ✅ All 16 users now have boolean `isAdmin` values
+- ✅ New users registered with proper boolean `isAdmin`
+- ✅ Authentication returns boolean in JWT tokens
+- ✅ Server uses strict boolean checks throughout (including smart setlist update/delete)
+- ✅ Admin panel correctly sets boolean values when making/removing admins
+- ✅ Migration scripts fix legacy data
+- ✅ Server starts without errors
+
+**Admin Panel Verification:**
+- ✅ `PATCH /api/users/:id/admin` - Sets `isAdmin: true` (boolean)
+- ✅ `PATCH /api/users/:id/remove-admin` - Sets `isAdmin: false` (boolean)
+- ✅ Frontend sends `{ isAdmin: true }` (boolean) in API calls
+- ✅ All admin role changes use proper boolean values
+
+**Why This Solution is Better:**
+
+1. **Single Source of Truth**: isAdmin is always boolean, everywhere
+2. **Type Safety**: Strict `===` checks work correctly
+3. **No Workarounds**: Don't need to check for both string and boolean
+4. **Database Consistency**: All data is properly typed
+5. **Future-Proof**: New code doesn't need special handling
+6. **Cleaner Code**: No conditional type checks scattered throughout
+7. **Easier Maintenance**: One place to fix, not many
+
+**Lessons Learned:**
+1. **Fix root causes, not symptoms** - Initially added string checks everywhere; proper fix was to ensure consistent data types
+2. **Always verify data types** - Don't assume boolean fields are actually boolean in MongoDB
+3. **Use strict type checking** - `===` prevented silent type coercion that would have hidden the bug
+4. **Handle legacy data in read paths** - Authentication converts old string data to boolean
+5. **Enforce types in write paths** - Registration and updates ensure boolean storage
+6. **Create debug utilities** - Custom debug scripts were crucial for diagnosing the issue
+7. **Migration scripts are essential** - Needed to fix existing data, not just new data
+8. **Type safety matters** - This bug would have been caught at compile time in TypeScript
+
+**Recommendations for Future:**
+1. ✅ **COMPLETED**: Ensure isAdmin is always boolean throughout the system
+2. Consider migrating to TypeScript for compile-time type safety
+3. Add database schema validation to enforce data types
+4. Add automated tests for admin permission checks
+5. Consider MongoDB schema validation rules to prevent type inconsistencies
+
+**Related Issues:**
+- Affects all admin-created smart setlists' visibility
+- Related to JWT token payload structure in authenticateUser()
+- Connected to user registration flow where isAdmin is set
+
+---
+
 ## 9. DEPENDENCIES
 
 ### Backend Dependencies ([package.json](package.json))

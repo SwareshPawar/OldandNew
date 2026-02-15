@@ -209,8 +209,14 @@ app.patch('/api/users/:id/remove-admin', authMiddleware, requireAdmin, async (re
 
 // Database connection will be handled by connectToDatabase() function
 
+/**
+ * Middleware to require admin privileges for protected routes
+ * Uses strict boolean comparison (===) to ensure type safety
+ * Only accepts boolean true, rejects string "true" or other truthy values
+ * JWT tokens from authenticateUser() contain boolean isAdmin values
+ */
 function requireAdmin(req, res, next) {
-  if (req.user && req.user.isAdmin) return next();
+  if (req.user && req.user.isAdmin === true) return next();
   return res.status(403).json({ error: 'Admin access required' });
 }
 // User registration
@@ -222,7 +228,12 @@ app.post('/api/register', async (req, res) => {
     }
     username = username.trim().toLowerCase(); // store username as lowercase
     email = email.trim().toLowerCase();
-    // Pass all fields to registerUser
+    // Convert isAdmin to boolean (critical for type safety)
+    // Handles: boolean true/false, string "true"/"false", undefined, null
+    // Important: Prevents Boolean("false") bug which would incorrectly return true
+    // Only string "true" or boolean true will result in true, everything else becomes false
+    isAdmin = isAdmin === true || isAdmin === 'true';
+    // Pass all fields to registerUser (isAdmin already converted to boolean)
     const user = await registerUser(db, { firstName, lastName, username, email, phone, password, isAdmin });
     res.status(201).json({ message: 'User registered', user });
   } catch (err) {
@@ -1202,7 +1213,7 @@ app.post('/api/smart-setlists', authMiddleware, async (req, res) => {
     await connectToDatabase();
     const { name, description, conditions, songs } = req.body;
     const userId = req.user.id;
-    const isAdmin = req.user.isAdmin || false;
+    const isAdmin = req.user.isAdmin === true;
     
     console.log(`📋 Creating Smart Setlist "${name}" for user ID: ${userId} (${req.user.username}), isAdmin: ${isAdmin}`);
     console.log(`📋 Smart Setlist will have ${songs ? songs.length : 0} songs`);
@@ -1242,7 +1253,7 @@ app.put('/api/smart-setlists/:id', authMiddleware, async (req, res) => {
     const setlistId = req.params.id;
     const { name, description, conditions, songs } = req.body;
     const userId = req.user.id;
-    const isAdmin = req.user.isAdmin || false;
+    const isAdmin = req.user.isAdmin === true;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Smart setlist name is required' });
@@ -1286,7 +1297,7 @@ app.delete('/api/smart-setlists/:id', authMiddleware, async (req, res) => {
     await connectToDatabase();
     const setlistId = req.params.id;
     const userId = req.user.id;
-    const isAdmin = req.user.isAdmin || false;
+    const isAdmin = req.user.isAdmin === true;
 
     // Get the existing setlist to check permissions
     const existingSetlist = await db.collection('SmartSetlists').findOne({ _id: setlistId });
