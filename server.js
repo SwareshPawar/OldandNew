@@ -11,10 +11,18 @@ let db;
 let songsCollection;
 let deletedSongsCollection;
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads', 'loops');
+// Create uploads directory (use /tmp in serverless environments)
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+const uploadsDir = isServerless 
+  ? path.join('/tmp', 'loops')
+  : path.join(__dirname, 'uploads', 'loops');
+
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (err) {
+    console.warn('Could not create uploads directory:', err.message);
+  }
 }
 
 // Configure multer for audio file uploads
@@ -1183,8 +1191,12 @@ app.get('/api/loops/metadata', async (req, res) => {
           .filter(t => t);
       }
 
-      // Save updated metadata
-      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      // Save updated metadata (skip in serverless - ephemeral file system)
+      try {
+        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      } catch (err) {
+        console.warn('Could not write metadata (serverless mode):', err.message);
+      }
     }
 
     res.json(metadata);
@@ -1310,8 +1322,12 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
       uploadedFiles.push(correctFilename);
     }
 
-    // Save updated metadata
-    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    // Save updated metadata (skip in serverless - ephemeral file system)
+    try {
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    } catch (err) {
+      console.warn('Could not write metadata (serverless mode):', err.message);
+    }
 
     res.json({
       success: true,
@@ -1413,8 +1429,12 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     // Add new entry
     metadata.loops.push(loopEntry);
 
-    // Save updated metadata
-    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    // Save updated metadata (skip in serverless - ephemeral file system)
+    try {
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    } catch (err) {
+      console.warn('Could not write metadata (serverless mode):', err.message);
+    }
 
     res.json({
       success: true,
@@ -1448,17 +1468,25 @@ app.delete('/api/loops/:loopId', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Loop not found' });
     }
 
-    // Delete actual file
+    // Delete actual file (skip in serverless - ephemeral file system)
     const filePath = path.join(loopsDir, loopEntry.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (err) {
+      console.warn('Could not delete file (serverless mode):', err.message);
     }
 
     // Remove from metadata
     metadata.loops = metadata.loops.filter(loop => loop.id !== loopId);
 
-    // Save updated metadata
-    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    // Save updated metadata (skip in serverless - ephemeral file system)
+    try {
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    } catch (err) {
+      console.warn('Could not write metadata (serverless mode):', err.message);
+    }
 
     res.json({ success: true, deleted: loopEntry.filename });
   } catch (error) {

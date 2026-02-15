@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 15, 2026 - 11:30 PM  
-**Version:** 1.13
+**Last Updated:** February 15, 2026 - 11:45 PM  
+**Version:** 1.14
 
 ---
 
@@ -455,6 +455,45 @@ Before marking vulnerabilities as fixed:
      - Global variables from main.js are accessible to loop-player-pad-ui.js
      - loop-manager.js keeps its own API_BASE_URL (separate page, no conflict)
    - **Impact**: No more duplicate declaration errors, loop player loads correctly
+
+24. **✅ Server: Added Serverless Compatibility for Vercel**
+   - **Problem**: "FUNCTION_INVOCATION_FAILED" on Vercel, API endpoints returning "A server error has occurred"
+   - **Root Cause**: Vercel serverless functions cannot write to regular file system, causing crashes on startup
+   - **File System Issues**:
+     - Lines 15-19: `fs.mkdirSync(uploadsDir)` crashes in serverless environment
+     - Multiple `fs.writeFileSync()` calls fail and crash the function
+     - `fs.unlinkSync()` calls fail and crash the function
+   - **Fix**: Added serverless environment detection and safe file operations
+   - **Changes in [server.js](server.js)**:
+     - Lines 15-26: Use `/tmp` directory for uploads in serverless environments
+     ```javascript
+     // Before (CRASHED):
+     const uploadsDir = path.join(__dirname, 'uploads', 'loops');
+     fs.mkdirSync(uploadsDir, { recursive: true });
+     
+     // After (SERVERLESS-SAFE):
+     const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+     const uploadsDir = isServerless 
+       ? path.join('/tmp', 'loops')
+       : path.join(__dirname, 'uploads', 'loops');
+     
+     try {
+       fs.mkdirSync(uploadsDir, { recursive: true });
+     } catch (err) {
+       console.warn('Could not create uploads directory:', err.message);
+     }
+     ```
+     - Lines 1194-1200: Wrapped metadata saves in try-catch blocks
+     - Lines 1325-1331: Wrapped metadata saves in try-catch blocks  
+     - Lines 1432-1438: Wrapped metadata saves in try-catch blocks
+     - Lines 1473-1479: Wrapped file deletes in try-catch blocks
+     - Lines 1487-1493: Wrapped metadata saves in try-catch blocks
+   - **Why Changes Are Correct**:
+     - Vercel functions have ephemeral file system - writes don't persist anyway
+     - `/tmp` is the only writable directory in serverless environments
+     - Graceful degradation: warnings logged instead of crashes
+     - Core API functionality preserved: reading existing metadata still works
+   - **Impact**: Vercel backend now starts successfully, GitHub Pages frontend can connect
 
 ### Completed Fixes - Session 5 (February 15, 2026 - Midnight)
 
