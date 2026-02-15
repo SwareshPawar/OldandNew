@@ -203,71 +203,79 @@ function getLoopPlayerHTML(songId) {
 <div class="loop-player-container" id="loopPlayerContainer-${songId}" style="display: none;">
     <div class="loop-player-header">
         <h4><i class="fas fa-drum"></i> Rhythm Pads</h4>
-        <div class="loop-player-status" id="loopStatus-${songId}">Loading...</div>
-    </div>
-    
-    <!-- Pad Grid: 2 rows -->
-    <div class="loop-pads-grid" id="padGrid-${songId}">
-        <!-- Top Row: Loops -->
-        <div class="loop-pads-row">
-            <button class="loop-pad loop-pad-active" data-loop="loop1" id="pad-loop1-${songId}">
-                <span class="pad-number">1</span>
-                <span class="pad-label">Loop 1</span>
-            </button>
-            <button class="loop-pad" data-loop="loop2" id="pad-loop2-${songId}">
-                <span class="pad-number">2</span>
-                <span class="pad-label">Loop 2</span>
-            </button>
-            <button class="loop-pad" data-loop="loop3" id="pad-loop3-${songId}">
-                <span class="pad-number">3</span>
-                <span class="pad-label">Loop 3</span>
-            </button>
-        </div>
-        
-        <!-- Bottom Row: Fills -->
-        <div class="loop-pads-row">
-            <button class="loop-pad loop-pad-fill" data-loop="fill1" id="pad-fill1-${songId}">
-                <span class="pad-number">F1</span>
-                <span class="pad-label">Fill 1</span>
-            </button>
-            <button class="loop-pad loop-pad-fill" data-loop="fill2" id="pad-fill2-${songId}">
-                <span class="pad-number">F2</span>
-                <span class="pad-label">Fill 2</span>
-            </button>
-            <button class="loop-pad loop-pad-fill" data-loop="fill3" id="pad-fill3-${songId}">
-                <span class="pad-number">F3</span>
-                <span class="pad-label">Fill 3</span>
+        <div class="loop-player-controls-header">
+            <div class="loop-player-status" id="loopStatus-${songId}">Loading...</div>
+            <button class="loop-player-toggle-btn" id="loopToggleBtn-${songId}" title="Expand/Collapse Rhythm Pads">
+                <i class="fas fa-chevron-down" id="loopToggleIcon-${songId}"></i>
             </button>
         </div>
     </div>
     
-    <!-- Controls -->
-    <div class="loop-player-controls">
-        <button class="loop-control-btn loop-play-btn" id="loopPlayBtn-${songId}">
-            <i class="fas fa-play"></i>
-            <span>Play</span>
-        </button>
-        
-        <button class="loop-control-btn loop-autofill-btn" id="loopAutoFillBtn-${songId}">
-            <i class="fas fa-magic"></i>
-            <span>Auto-Fill: OFF</span>
-        </button>
-        
-        <div class="loop-control-group">
-            <label><i class="fas fa-volume-up"></i> Volume</label>
-            <input type="range" min="0" max="100" value="80" class="loop-slider" id="loopVolume-${songId}">
-            <span class="loop-value" id="loopVolumeValue-${songId}">80%</span>
+    <!-- Collapsible Content (default collapsed) -->
+    <div class="loop-player-content collapsed" id="loopPlayerContent-${songId}">
+        <!-- Pad Grid: 2 rows -->
+        <div class="loop-pads-grid" id="padGrid-${songId}">
+            <!-- Top Row: Loops -->
+            <div class="loop-pads-row">
+                <button class="loop-pad loop-pad-active" data-loop="loop1" id="pad-loop1-${songId}">
+                    <span class="pad-number">1</span>
+                    <span class="pad-label">Loop 1</span>
+                </button>
+                <button class="loop-pad" data-loop="loop2" id="pad-loop2-${songId}">
+                    <span class="pad-number">2</span>
+                    <span class="pad-label">Loop 2</span>
+                </button>
+                <button class="loop-pad" data-loop="loop3" id="pad-loop3-${songId}">
+                    <span class="pad-number">3</span>
+                    <span class="pad-label">Loop 3</span>
+                </button>
+            </div>
+            
+            <!-- Bottom Row: Fills -->
+            <div class="loop-pads-row">
+                <button class="loop-pad loop-pad-fill" data-loop="fill1" id="pad-fill1-${songId}">
+                    <span class="pad-number">F1</span>
+                    <span class="pad-label">Fill 1</span>
+                </button>
+                <button class="loop-pad loop-pad-fill" data-loop="fill2" id="pad-fill2-${songId}">
+                    <span class="pad-number">F2</span>
+                    <span class="pad-label">Fill 2</span>
+                </button>
+                <button class="loop-pad loop-pad-fill" data-loop="fill3" id="pad-fill3-${songId}">
+                    <span class="pad-number">F3</span>
+                    <span class="pad-label">Fill 3</span>
+                </button>
+            </div>
         </div>
         
-        <div class="loop-control-group">
-            <label>
-                <i class="fas fa-tachometer-alt"></i> Tempo
-            </label>
-            <input type="range" min="90" max="110" value="100" class="loop-slider" id="loopTempo-${songId}" step="1">
-            <span class="loop-value" id="loopTempoValue-${songId}">100%</span>
-            <button class="loop-tempo-reset-btn" id="loopTempoReset-${songId}" title="Reset to 100%">
-                <i class="fas fa-undo"></i>
+        <!-- Controls -->
+        <div class="loop-player-controls">
+            <button class="loop-control-btn loop-play-btn" id="loopPlayBtn-${songId}">
+                <i class="fas fa-play"></i>
+                <span>Play</span>
             </button>
+            
+            <button class="loop-control-btn loop-autofill-btn" id="loopAutoFillBtn-${songId}">
+                <i class="fas fa-magic"></i>
+                <span>Auto-Fill: OFF</span>
+            </button>
+            
+            <div class="loop-control-group">
+                <label><i class="fas fa-volume-up"></i> Volume</label>
+                <input type="range" min="0" max="100" value="80" class="loop-slider" id="loopVolume-${songId}">
+                <span class="loop-value" id="loopVolumeValue-${songId}">80%</span>
+            </div>
+            
+            <div class="loop-control-group">
+                <label>
+                    <i class="fas fa-tachometer-alt"></i> Tempo
+                </label>
+                <input type="range" min="90" max="110" value="100" class="loop-slider" id="loopTempo-${songId}" step="1">
+                <span class="loop-value" id="loopTempoValue-${songId}">100%</span>
+                <button class="loop-tempo-reset-btn" id="loopTempoReset-${songId}" title="Reset to 100%">
+                    <i class="fas fa-undo"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -546,6 +554,14 @@ async function initializeLoopPlayer(songId) {
             }
         });
     }
+    
+    // Toggle button (expand/collapse)
+    const toggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            toggleLoopPlayer(songId);
+        });
+    }
 }
 
 /**
@@ -557,15 +573,61 @@ function cleanupLoopPlayer() {
     }
 }
 
+/**
+ * Toggle loop player expand/collapse state
+ */
+function toggleLoopPlayer(songId) {
+    const content = document.getElementById(`loopPlayerContent-${songId}`);
+    const toggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
+    const toggleIcon = document.getElementById(`loopToggleIcon-${songId}`);
+    
+    if (content && toggleBtn && toggleIcon) {
+        const isCollapsed = content.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            // Expand
+            content.classList.remove('collapsed');
+            toggleBtn.classList.add('expanded');
+            toggleIcon.className = 'fas fa-chevron-up';
+            toggleBtn.title = 'Collapse Rhythm Pads';
+        } else {
+            // Collapse
+            content.classList.add('collapsed');
+            toggleBtn.classList.remove('expanded');
+            toggleIcon.className = 'fas fa-chevron-down';
+            toggleBtn.title = 'Expand Rhythm Pads';
+        }
+    }
+}
+
 // CSS Styles
 const loopPlayerStyles = `
 <style>
 .loop-player-container {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--light-bg) 100%);
+    border: 2px solid var(--accent-color);
     border-radius: 12px;
     padding: 20px;
     margin: 20px 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 
+        0 4px 15px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(197, 177, 148, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.loop-player-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(197, 177, 148, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(125, 141, 134, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .loop-player-header {
@@ -573,21 +635,93 @@ const loopPlayerStyles = `
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-    color: white;
+    color: var(--accent-color);
+    position: relative;
+    z-index: 1;
 }
 
 .loop-player-header h4 {
     margin: 0;
     font-size: 1.1em;
     font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loop-player-header h4 i {
+    color: var(--warning-color);
+    font-size: 1.2em;
+    animation: rhythmPulse 2s ease-in-out infinite;
+}
+
+@keyframes rhythmPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.loop-player-controls-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .loop-player-status {
     font-size: 0.9em;
-    opacity: 0.9;
-    background: rgba(255,255,255,0.15);
-    padding: 4px 12px;
-    border-radius: 12px;
+    background: rgba(197, 177, 148, 0.2);
+    color: var(--accent-color);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(197, 177, 148, 0.3);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    font-weight: 500;
+}
+
+.loop-player-toggle-btn {
+    background: linear-gradient(135deg, rgba(197, 177, 148, 0.2) 0%, rgba(125, 141, 134, 0.2) 100%);
+    border: 1px solid var(--accent-color);
+    border-radius: 8px;
+    color: var(--accent-color);
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.loop-player-toggle-btn:hover {
+    background: linear-gradient(135deg, rgba(197, 177, 148, 0.3) 0%, rgba(125, 141, 134, 0.3) 100%);
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.loop-player-toggle-btn i {
+    transition: transform 0.3s ease;
+}
+
+.loop-player-toggle-btn.expanded i {
+    transform: rotate(180deg);
+}
+
+.loop-player-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+.loop-player-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
 }
 
 .loop-pads-grid {
@@ -597,129 +731,205 @@ const loopPlayerStyles = `
 .loop-pads-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .loop-pad {
-    background: rgba(255,255,255,0.15);
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 8px;
+    background: linear-gradient(135deg, 
+        rgba(197, 177, 148, 0.15) 0%, 
+        rgba(125, 141, 134, 0.15) 50%, 
+        rgba(62, 63, 41, 0.15) 100%);
+    border: 2px solid rgba(197, 177, 148, 0.4);
+    border-radius: 10px;
     padding: 20px 10px;
-    color: white;
+    color: var(--accent-color);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    box-shadow: 
+        0 3px 6px rgba(0,0,0,0.2),
+        inset 0 1px 0 rgba(197, 177, 148, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.loop-pad::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(197, 177, 148, 0.05) 0%, transparent 70%);
+    transition: opacity 0.3s ease;
+    opacity: 0;
 }
 
 .loop-pad:hover {
-    background: rgba(255,255,255,0.25);
-    border-color: rgba(255,255,255,0.5);
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, 
+        rgba(197, 177, 148, 0.25) 0%, 
+        rgba(125, 141, 134, 0.25) 50%, 
+        rgba(62, 63, 41, 0.25) 100%);
+    border-color: var(--accent-color);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 
+        0 6px 12px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(197, 177, 148, 0.2);
+    color: #fff;
+}
+
+.loop-pad:hover::before {
+    opacity: 1;
 }
 
 .loop-pad-active {
-    background: rgba(255,255,255,0.3);
-    border-color: white;
-    box-shadow: 0 0 15px rgba(255,255,255,0.4);
+    background: linear-gradient(135deg, 
+        rgba(243, 156, 18, 0.2) 0%, 
+        rgba(197, 177, 148, 0.2) 50%, 
+        rgba(125, 141, 134, 0.2) 100%);
+    border-color: var(--warning-color);
+    color: #fff;
+    box-shadow: 
+        0 0 20px rgba(243, 156, 18, 0.4),
+        0 4px 8px rgba(0,0,0,0.3);
+    animation: activePadGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes activePadGlow {
+    0% { box-shadow: 0 0 20px rgba(243, 156, 18, 0.4), 0 4px 8px rgba(0,0,0,0.3); }
+    100% { box-shadow: 0 0 25px rgba(243, 156, 18, 0.6), 0 4px 8px rgba(0,0,0,0.3); }
 }
 
 .loop-pad-fill {
-    background: rgba(255, 193, 7, 0.2);
-    border-color: rgba(255, 193, 7, 0.5);
+    background: linear-gradient(135deg, 
+        rgba(125, 141, 134, 0.2) 0%, 
+        rgba(62, 63, 41, 0.2) 50%, 
+        rgba(45, 44, 40, 0.2) 100%);
+    border-color: var(--secondary-color);
 }
 
 .loop-pad-fill:hover {
-    background: rgba(255, 193, 7, 0.3);
-    border-color: rgba(255, 193, 7, 0.8);
+    background: linear-gradient(135deg, 
+        rgba(125, 141, 134, 0.3) 0%, 
+        rgba(62, 63, 41, 0.3) 50%, 
+        rgba(45, 44, 40, 0.3) 100%);
+    border-color: var(--text-color);
 }
 
 .loop-pad-disabled {
     opacity: 0.4 !important;
     cursor: not-allowed !important;
-    background: rgba(100, 100, 100, 0.2) !important;
+    background: linear-gradient(135deg, 
+        rgba(100, 100, 100, 0.15) 0%, 
+        rgba(80, 80, 80, 0.15) 100%) !important;
     border-color: rgba(100, 100, 100, 0.3) !important;
+    color: rgba(197, 177, 148, 0.5) !important;
 }
 
 .loop-pad-disabled:hover {
-    background: rgba(100, 100, 100, 0.2) !important;
     transform: none !important;
-    box-shadow: none !important;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2) !important;
 }
 
 .pad-number {
-    font-size: 1.4em;
+    font-size: 1.5em;
     font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .pad-label {
     font-size: 0.85em;
     opacity: 0.9;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .loop-player-controls {
     display: grid;
     grid-template-columns: auto auto;
-    gap: 12px;
+    gap: 15px;
     align-items: center;
 }
 
 .loop-control-btn {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 6px;
-    color: white;
-    padding: 10px 20px;
+    background: linear-gradient(135deg, 
+        rgba(197, 177, 148, 0.2) 0%, 
+        rgba(125, 141, 134, 0.2) 100%);
+    border: 1px solid var(--accent-color);
+    border-radius: 8px;
+    color: var(--accent-color);
+    padding: 12px 20px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
     justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .loop-control-btn:hover {
-    background: rgba(255,255,255,0.3);
-    border-color: rgba(255,255,255,0.6);
+    background: linear-gradient(135deg, 
+        rgba(197, 177, 148, 0.3) 0%, 
+        rgba(125, 141, 134, 0.3) 100%);
+    border-color: var(--warning-color);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
 .loop-control-btn.playing,
 .loop-control-btn.active {
-    background: rgba(76, 175, 80, 0.8);
-    border-color: rgba(76, 175, 80, 1);
+    background: linear-gradient(135deg, 
+        rgba(40, 167, 69, 0.7) 0%, 
+        rgba(34, 139, 58, 0.7) 100%);
+    border-color: var(--success-color);
+    color: white;
+    box-shadow: 
+        0 0 15px rgba(40, 167, 69, 0.5),
+        0 2px 4px rgba(0,0,0,0.2);
 }
 
 .loop-control-btn:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-    background: rgba(100, 100, 100, 0.3);
-    border-color: rgba(100, 100, 100, 0.5);
+    background: linear-gradient(135deg, 
+        rgba(100, 100, 100, 0.2) 0%, 
+        rgba(80, 80, 80, 0.2) 100%);
+    border-color: rgba(100, 100, 100, 0.3);
+    color: rgba(197, 177, 148, 0.5);
 }
 
 .loop-control-btn:disabled:hover {
-    background: rgba(100, 100, 100, 0.3);
-    border-color: rgba(100, 100, 100, 0.5);
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .loop-control-group {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: white;
-    background: rgba(0,0,0,0.15);
-    padding: 8px 12px;
-    border-radius: 6px;
+    color: var(--accent-color);
+    background: linear-gradient(135deg, 
+        rgba(45, 44, 40, 0.4) 0%, 
+        rgba(62, 63, 41, 0.4) 100%);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(197, 177, 148, 0.2);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .loop-control-group label {
     font-size: 0.9em;
     font-weight: 600;
     white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .loop-tempo-info {
@@ -731,29 +941,30 @@ const loopPlayerStyles = `
 .loop-tempo-quality {
     margin-left: 8px;
     padding: 2px 8px;
-    border-radius: 3px;
+    border-radius: 4px;
     font-size: 0.7em;
     font-weight: 600;
 }
 
 .loop-tempo-quality.optimal {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(40, 167, 69, 0.8);
+    color: white;
 }
 
 .loop-tempo-quality.acceptable {
-    background: #fff3cd;
-    color: #856404;
+    background: rgba(243, 156, 18, 0.8);
+    color: white;
 }
 
 .loop-tempo-quality.extreme {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(231, 76, 60, 0.8);
+    color: white;
 }
 
 .loop-slider {
     flex: 1;
     min-width: 80px;
+    accent-color: var(--accent-color);
 }
 
 .loop-value {
@@ -761,11 +972,14 @@ const loopPlayerStyles = `
     font-weight: 600;
     min-width: 40px;
     text-align: right;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .loop-tempo-reset-btn {
-    background: #f0f0f0;
-    border: 1px solid #ccc;
+    background: linear-gradient(135deg, 
+        rgba(197, 177, 148, 0.8) 0%, 
+        rgba(125, 141, 134, 0.8) 100%);
+    border: 1px solid var(--accent-color);
     border-radius: 4px;
     width: 28px;
     height: 28px;
@@ -776,13 +990,18 @@ const loopPlayerStyles = `
     margin-left: 8px;
     transition: all 0.2s;
     font-size: 0.8em;
-    color: #555;
+    color: var(--primary-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .loop-tempo-reset-btn:hover {
-    background: #e0e0e0;
-    border-color: #999;
-    color: #000;
+    background: linear-gradient(135deg, 
+        rgba(197, 177, 148, 1) 0%, 
+        rgba(125, 141, 134, 1) 100%);
+    border-color: var(--warning-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
 .loop-tempo-reset-btn:active {
@@ -800,6 +1019,11 @@ const loopPlayerStyles = `
     
     .loop-pad {
         padding: 15px 8px;
+    }
+    
+    .loop-player-container {
+        padding: 15px;
+        margin: 15px 0;
     }
 }
 </style>
