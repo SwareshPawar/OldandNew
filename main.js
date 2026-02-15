@@ -55,7 +55,107 @@ const KEYS = [
 const CATEGORIES = ["New", "Old"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
-    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow",  "EkTaal", "JhapTaal", "TeenTaal","Rupak", "Deepchandi", "Garba","RD Pattern","Desi Drum", "Western", "Waltz", "Rock","Drum Fast","Drum Slow","Folk","Dholak","Tabla", "Bhangra", "Garba", "Bollywood"
+
+  // ===== HINDUSTANI CLASSICAL =====
+  "TeenTaal",
+  "EkTaal",
+  "JhapTaal",
+  "Rupak",
+  "Dadra",
+  "Keherwa",
+  "Deepchandi",
+  "Chautaal",
+  "Tilwada",
+  "Addha",
+  "Punjabi Theka",
+
+  // ===== SLOW / VARIANTS =====
+  "Keherwa Slow",
+  "Dadra Slow",
+  "Bhajan",
+  "Bhajan 8 Beat",
+  "Bhajan 6 Beat",
+
+  // ===== FOLK & DEVOTIONAL =====
+  "Garba",
+  "Dandiya",
+  "Bhangra",
+  "Lavani",
+  "Folk",
+  "Desi",
+  "Qawali",
+  "Kirtan",
+  "Maharashtrian Dholki",
+  "Punjabi Dhol",
+
+  // ===== INDIAN FILM / BAND STYLES =====
+  "Bollywood",
+  "Filmi 8 Beat",
+  "Filmi 16 Beat",
+  "RD Pattern",
+  "RD Groove",
+  "Disco Indian",
+  "Mumbai Pop",
+  "Retro Bollywood",
+
+  // ===== HAND DRUM PATTERNS =====
+  "Tabla",
+  "Dholak",
+  "Dholki",
+  "Duff",
+  "Naal",
+  "Bongo",
+  "Congo",
+  "Bongo-Congo",
+  "Cajon Indian",
+
+  // ===== DRUM MACHINE / GENERAL =====
+  "Drum",
+  "Drum Fast",
+  "Drum Slow",
+  "Indian Rock",
+  "Indian Pop",
+  "Fusion",
+
+  // ===== WESTERN — BASIC =====
+  "Western",
+  "Rock",
+  "Pop",
+  "Ballad",
+  "Slow Rock",
+  "Soft Rock",
+  "Hard Rock",
+  "Country",
+  "Funk",
+  "Blues",
+  "Shuffle",
+
+  // ===== WESTERN — DANCE =====
+  "Disco",
+  "EDM",
+  "Dance",
+  "Techno",
+  "House",
+  "Reggae",
+  "Samba",
+  "Cha Cha",
+  "Rumba",
+  "Bossa Nova",
+  "Latin",
+
+  // ===== TIME SIGNATURE BASED =====
+  "Waltz",
+  "Jazz Waltz",
+  "3/4",
+  "6/8",
+  "12/8",
+
+  // ===== SPECIAL / UTILITY =====
+  "March",
+  "Orchestral",
+  "Ambient",
+  "Unplugged",
+  "Acoustic"
 ];
 
 const MOODS = [
