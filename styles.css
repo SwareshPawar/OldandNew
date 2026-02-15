@@ -3292,6 +3292,89 @@ body.dark-mode #installAppBtn {
             background: var(--primary-color);
         }
 
+        /* ===============================
+           FLOATING STOP BUTTON STYLES
+           =============================== */
+        .floating-stop-btn {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+
+        .floating-stop-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.5);
+            background: linear-gradient(135deg, #c0392b, #a93226);
+        }
+
+        .floating-stop-btn:active {
+            transform: scale(0.95);
+        }
+
+        .floating-stop-btn i {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+
+        .floating-stop-btn span {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .floating-stop-btn.animate-stop {
+            animation: stopPulse 0.6s ease-out;
+        }
+
+        @keyframes stopPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); background: linear-gradient(135deg, #ff6b6b, #ee5a5a); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .floating-stop-btn {
+                right: 15px;
+                width: 60px;
+                height: 60px;
+            }
+            
+            .floating-stop-btn i {
+                font-size: 18px;
+            }
+            
+            .floating-stop-btn span {
+                font-size: 8px;
+                max-width: 50px;
+            }
+        }
+
         /* Smart Setlist Styles */
         .smart-setlist-conditions {
             margin: 20px 0;

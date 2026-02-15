@@ -20,6 +20,10 @@ let isDarkMode = localStorage.getItem('darkMode') === 'true';
 let songs = []; // Global songs array
 let smartSetlists = []; // Global smart setlists array - loaded from server
 
+// Floating stop button state tracking
+let currentlyPlayingSongs = new Set(); // Track which songs are currently playing
+let currentPlayingSongId = null; // Track the main currently playing song
+
 // Recommendation weights: loaded from backend or localStorage fallback
 let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
     language: 20,
@@ -1161,6 +1165,9 @@ document.addEventListener('DOMContentLoaded', () => {
             updateThemeToggleBtn();
         });
     }
+
+    // Initialize floating stop button
+    initializeFloatingStopButton();
 
     // Auth UI
     if (typeof updateAuthButtons === 'function') updateAuthButtons();
@@ -11584,6 +11591,95 @@ function hideAuthModals() {
 
 // Export functions for global access if needed
 window.showForgotPasswordModal = showForgotPasswordModal;
+
+// ===============================
+// FLOATING STOP BUTTON FUNCTIONS  
+// ===============================
+
+// Floating Stop Button Functions
+function initializeFloatingStopButton() {
+    const floatingStopBtn = document.getElementById('floatingStopBtn');
+    if (floatingStopBtn) {
+        floatingStopBtn.addEventListener('click', stopCurrentlyPlayingSong);
+    }
+}
+
+function showFloatingStopButton(songId, songTitle) {
+    const floatingStopBtn = document.getElementById('floatingStopBtn');
+    const floatingStopText = document.getElementById('floatingStopText');
+    
+    if (floatingStopBtn) {
+        currentlyPlayingSongs.add(songId);
+        currentPlayingSongId = songId;
+        
+        // Update button text with song info (limit length for better display)
+        const shortTitle = songTitle && songTitle.length > 12 ? songTitle.substring(0, 12) + '...' : (songTitle || 'Song');
+        floatingStopText.textContent = shortTitle;
+        
+        floatingStopBtn.style.display = 'flex';
+        floatingStopBtn.title = `Stop "${songTitle}" (currently playing)`;
+    }
+}
+
+function hideFloatingStopButton(songId) {
+    currentlyPlayingSongs.delete(songId);
+    
+    // If this was the main playing song and there are no other playing songs
+    if (currentPlayingSongId === songId && currentlyPlayingSongs.size === 0) {
+        const floatingStopBtn = document.getElementById('floatingStopBtn');
+        if (floatingStopBtn) {
+            floatingStopBtn.style.display = 'none';
+        }
+        currentPlayingSongId = null;
+    }
+    // If there are other playing songs, update to show another one
+    else if (currentPlayingSongId === songId && currentlyPlayingSongs.size > 0) {
+        const nextSongId = Array.from(currentlyPlayingSongs)[0];
+        const nextSong = songs.find(s => s.id === nextSongId);
+        currentPlayingSongId = nextSongId;
+        
+        if (nextSong) {
+            const floatingStopText = document.getElementById('floatingStopText');
+            const shortTitle = nextSong.title && nextSong.title.length > 12 ? nextSong.title.substring(0, 12) + '...' : (nextSong.title || 'Song');
+            floatingStopText.textContent = shortTitle;
+        }
+    }
+}
+
+function stopCurrentlyPlayingSong() {
+    if (currentPlayingSongId) {
+        // Get the loop player instance and stop it directly
+        const loopPlayer = window.getLoopPlayerInstance && window.getLoopPlayerInstance();
+        if (loopPlayer && loopPlayer.isPlaying) {
+            loopPlayer.pause();
+        } else {
+            // Fallback: try to click the play button
+            const loopContainer = document.querySelector(`#loopPlayerContainer-${currentPlayingSongId}`);
+            if (loopContainer) {
+                const playBtn = loopContainer.querySelector('.loop-play-btn');
+                if (playBtn && playBtn.classList.contains('playing')) {
+                    playBtn.click();
+                }
+            }
+        }
+        
+        // Add animation to the floating button
+        const floatingStopBtn = document.getElementById('floatingStopBtn');
+        if (floatingStopBtn) {
+            floatingStopBtn.classList.add('animate-stop');
+            setTimeout(() => {
+                floatingStopBtn.classList.remove('animate-stop');
+            }, 600);
+        }
+                
+        // Hide the button after stopping
+        hideFloatingStopButton(currentPlayingSongId);
+    }
+}
+
+// Make functions globally available for integration with loop player
+window.showFloatingStopButton = showFloatingStopButton;
+window.hideFloatingStopButton = hideFloatingStopButton;
 window.initiatePasswordReset = initiatePasswordReset;
 window.verifyOtpAndResetPassword = verifyOtpAndResetPassword;
 window.resendOtp = resendOtp;

@@ -16,6 +16,9 @@
 let loopPlayerInstance = null;
 let loopsMetadataCache = null;
 
+// Make loop player instance globally accessible for floating stop button
+window.getLoopPlayerInstance = () => loopPlayerInstance;
+
 /**
  * Load loops metadata (cached)
  */
@@ -471,6 +474,11 @@ async function initializeLoopPlayer(songId) {
                 loopPlayerInstance.pause();
                 playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 playBtn.classList.remove('playing');
+                // Hide floating stop button when song stops
+                if (typeof window.hideFloatingStopButton === 'function') {
+                    const song = songs?.find(s => s.id === songId);
+                    window.hideFloatingStopButton(songId);
+                }
             } else {
                 try {
                     // Check if this is the first play (audio not initialized yet)
@@ -489,6 +497,13 @@ async function initializeLoopPlayer(songId) {
                     playBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                     playBtn.classList.add('playing');
                     playBtn.disabled = false;
+                    
+                    // Show floating stop button when song starts playing
+                    if (typeof window.showFloatingStopButton === 'function') {
+                        const song = songs?.find(s => s.id === songId);
+                        const songTitle = song ? song.title : `Song ${songId}`;
+                        window.showFloatingStopButton(songId, songTitle);
+                    }
                     
                     if (isFirstPlay && status) {
                         const matchInfo = getMatchQuality(score);
