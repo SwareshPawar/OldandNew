@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 15, 2026 - 10:30 PM  
-**Version:** 1.11
+**Last Updated:** February 15, 2026 - 11:00 PM  
+**Version:** 1.12
 
 ---
 
@@ -405,6 +405,35 @@ Before marking vulnerabilities as fixed:
      - API routing moved to "rewrites" (modern Vercel approach)
      - SPA fallback essential for client-side routing
    - **Impact**: Deployment now succeeds, app works on Vercel production
+
+22. **✅ Server: Fixed CORS Configuration for Vercel Production**
+   - **Problem**: "Failed to fetch" errors when accessing API endpoints on production
+   - **Error**: `TypeError: Failed to fetch` at `authFetch` → `cachedFetch` → `loadSongsWithProgress`
+   - **Root Cause**: CORS policy blocked requests from `https://oldand-new.vercel.app` - domain not in allowed origins list
+   - **Fix**: Added Vercel production URL to CORS allowed origins
+   - **Location**: [server.js](server.js#L60-L69) - CORS configuration
+   - **Change**:
+     ```javascript
+     // Before:
+     origin: [
+       'http://localhost:3000',
+       'http://127.0.0.1:5501',
+       'http://localhost:5501',
+       'https://oldandnew.onrender.com',
+       'https://swareshpawar.github.io'
+     ]
+     
+     // After:
+     origin: [
+       'http://localhost:3000',
+       'http://127.0.0.1:5501',
+       'http://localhost:5501',
+       'https://oldandnew.onrender.com',
+       'https://swareshpawar.github.io',
+       'https://oldand-new.vercel.app' // ✅ Added Vercel URL
+     ]
+     ```
+   - **Impact**: API requests now work on production, app can fetch songs and data successfully
 
 ### Completed Fixes - Session 5 (February 15, 2026 - Midnight)
 

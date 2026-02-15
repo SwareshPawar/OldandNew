@@ -63,7 +63,8 @@ app.use(cors({
     'http://127.0.0.1:5501',
     'http://localhost:5501',
     'https://oldandnew.onrender.com',
-    'https://swareshpawar.github.io' // <-- Add this line
+    'https://swareshpawar.github.io',
+    'https://oldand-new.vercel.app' // Vercel production URL
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'], // <-- Add 'Authorization' if not present
