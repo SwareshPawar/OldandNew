@@ -121,6 +121,126 @@
       "files": {
         "fill3": "dadra_3_4_medium_dholak_FILL3.wav"
       }
+    },
+    {
+      "id": "deepchandi_14_8_slow_classical_loop1",
+      "filename": "deepchandi_14_8_slow_classical_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "deepchandi",
+        "timeSignature": "14/8",
+        "tempo": "slow",
+        "genre": "classical"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T17:47:49.715Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "deepchandi_14_8_slow_classical_LOOP1.wav"
+      }
+    },
+    {
+      "id": "deepchandi_14_8_slow_classical_loop2",
+      "filename": "deepchandi_14_8_slow_classical_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "conditions": {
+        "taal": "deepchandi",
+        "timeSignature": "14/8",
+        "tempo": "slow",
+        "genre": "classical"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T17:47:50.282Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "deepchandi_14_8_slow_classical_LOOP2.wav"
+      }
+    },
+    {
+      "id": "deepchandi_14_8_slow_classical_loop3",
+      "filename": "deepchandi_14_8_slow_classical_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "conditions": {
+        "taal": "deepchandi",
+        "timeSignature": "14/8",
+        "tempo": "slow",
+        "genre": "classical"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T17:47:50.931Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "deepchandi_14_8_slow_classical_LOOP3.wav"
+      }
+    },
+    {
+      "id": "deepchandi_14_8_slow_classical_fill1",
+      "filename": "deepchandi_14_8_slow_classical_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "conditions": {
+        "taal": "deepchandi",
+        "timeSignature": "14/8",
+        "tempo": "slow",
+        "genre": "classical"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T17:47:51.618Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "deepchandi_14_8_slow_classical_FILL1.wav"
+      }
+    },
+    {
+      "id": "deepchandi_14_8_slow_classical_fill2",
+      "filename": "deepchandi_14_8_slow_classical_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "conditions": {
+        "taal": "deepchandi",
+        "timeSignature": "14/8",
+        "tempo": "slow",
+        "genre": "classical"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T17:47:52.377Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "deepchandi_14_8_slow_classical_FILL2.wav"
+      }
+    },
+    {
+      "id": "deepchandi_14_8_slow_classical_fill3",
+      "filename": "deepchandi_14_8_slow_classical_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "conditions": {
+        "taal": "deepchandi",
+        "timeSignature": "14/8",
+        "tempo": "slow",
+        "genre": "classical"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T17:47:53.113Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "deepchandi_14_8_slow_classical_FILL3.wav"
+      }
     }
   ],
   "tempoRanges": {
