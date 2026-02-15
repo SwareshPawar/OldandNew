@@ -290,7 +290,26 @@ async function uploadSingleFile(slotNumber, type) {
             body: formData
         });
         
-        const result = await response.json();
+        let result;
+        const contentType = response.headers.get('content-type');
+        
+        try {
+            if (contentType && contentType.includes('application/json')) {
+                result = await response.json();
+            } else {
+                // Handle non-JSON response (like HTML error pages)
+                const text = await response.text();
+                result = { 
+                    error: `Server error (${response.status})`,
+                    details: text.length > 200 ? text.substring(0, 200) + '...' : text
+                };
+            }
+        } catch (parseError) {
+            result = { 
+                error: `Failed to parse server response (${response.status})`,
+                details: parseError.message
+            };
+        }
         
         if (response.ok) {
             statusSpan.textContent = '✓ Uploaded';
@@ -306,10 +325,21 @@ async function uploadSingleFile(slotNumber, type) {
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
+            } else if (response.status === 501) {
+                // Handle serverless limitation
+                statusSpan.textContent = '✗ Not Supported';
+                statusSpan.className = 'upload-status error';
+                showAlert('uploadAlert', result.error + '\n\n' + (result.message || '') + '\n\n' + (result.suggestion || ''), 'error');
             } else {
                 statusSpan.textContent = '✗ Failed';
                 statusSpan.className = 'upload-status error';
-                showAlert('uploadAlert', result.error || 'Upload failed', 'error');
+                const errorMsg = result.error || result.message || `Server error (${response.status})`;
+                showAlert('uploadAlert', errorMsg, 'error');
+                
+                // Log details for debugging
+                if (result.details) {
+                    console.error('Upload error details:', result.details);
+                }
             }
         }
     } catch (error) {

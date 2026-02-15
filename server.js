@@ -1212,7 +1212,15 @@ app.get('/api/loops/metadata', async (req, res) => {
 const loopUpload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, loopsDir);
+      // Use /tmp directory for Vercel serverless compatibility
+      const uploadDir = process.env.VERCEL ? '/tmp' : loopsDir;
+      
+      // Ensure directory exists
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
       // Keep original filename (should already be in correct format)
@@ -1225,6 +1233,9 @@ const loopUpload = multer({
     } else {
       cb(new Error('Only WAV files are allowed'));
     }
+  },
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
   }
 });
 
@@ -1359,25 +1370,38 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Load existing metadata
+    // Handle serverless environment limitations
+    if (process.env.VERCEL) {
+      return res.status(501).json({ 
+        error: 'File uploads are not supported in serverless environment',
+        message: 'Loop uploads require a persistent file system. Please use the local development server for uploading files.',
+        suggestion: 'Upload files locally, then commit them to your repository'
+      });
+    }
+
     const metadataPath = path.join(loopsDir, 'loops-metadata.json');
     let metadata;
 
-    if (fs.existsSync(metadataPath)) {
-      metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-    } else {
-      metadata = {
-        version: '2.0',
-        loops: [],
-        tempoRanges: {
-          slow: { min: 0, max: 80, label: 'Slow' },
-          medium: { min: 80, max: 120, label: 'Medium' },
-          fast: { min: 120, max: 999, label: 'Fast' }
-        },
-        supportedTaals: ['keherwa', 'dadra', 'rupak', 'jhaptal', 'teental', 'ektaal'],
-        supportedGenres: ['acoustic', 'rock', 'rd', 'qawalli', 'blues'],
-        supportedTimeSignatures: ['4/4', '3/4', '6/8', '7/8']
-      };
+    try {
+      if (fs.existsSync(metadataPath)) {
+        metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+      } else {
+        metadata = {
+          version: '2.0',
+          loops: [],
+          tempoRanges: {
+            slow: { min: 0, max: 80, label: 'Slow' },
+            medium: { min: 80, max: 120, label: 'Medium' },
+            fast: { min: 120, max: 999, label: 'Fast' }
+          },
+          supportedTaals: ['keherwa', 'dadra', 'rupak', 'jhaptal', 'teental', 'ektaal'],
+          supportedGenres: ['acoustic', 'rock', 'rd', 'qawalli', 'blues'],
+          supportedTimeSignatures: ['4/4', '3/4', '6/8', '7/8']
+        };
+      }
+    } catch (err) {
+      console.error('Error reading metadata:', err);
+      return res.status(500).json({ error: 'Failed to read loop metadata' });
     }
 
     // Generate correct filename based on naming convention v2.0
@@ -1390,14 +1414,19 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     const oldPath = file.path;
     const newPath = path.join(loopsDir, correctFilename);
 
-    // If file with same name exists, delete it first
-    if (fs.existsSync(newPath) && oldPath !== newPath) {
-      fs.unlinkSync(newPath);
-    }
+    try {
+      // If file with same name exists, delete it first
+      if (fs.existsSync(newPath) && oldPath !== newPath) {
+        fs.unlinkSync(newPath);
+      }
 
-    // Rename file
-    if (oldPath !== newPath) {
-      fs.renameSync(oldPath, newPath);
+      // Rename file
+      if (oldPath !== newPath) {
+        fs.renameSync(oldPath, newPath);
+      }
+    } catch (err) {
+      console.error('Error moving file:', err);
+      return res.status(500).json({ error: 'Failed to save uploaded file' });
     }
 
     // Create metadata entry
@@ -1429,11 +1458,12 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     // Add new entry
     metadata.loops.push(loopEntry);
 
-    // Save updated metadata (skip in serverless - ephemeral file system)
+    // Save updated metadata
     try {
       fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
     } catch (err) {
-      console.warn('Could not write metadata (serverless mode):', err.message);
+      console.error('Error writing metadata:', err);
+      return res.status(500).json({ error: 'Failed to update loop metadata' });
     }
 
     res.json({
@@ -1444,7 +1474,21 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     });
   } catch (error) {
     console.error('Error uploading single loop:', error);
-    res.status(500).json({ error: error.message });
+    
+    // Clean up uploaded file if it exists
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupErr) {
+        console.error('Error cleaning up uploaded file:', cleanupErr);
+      }
+    }
+    
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
