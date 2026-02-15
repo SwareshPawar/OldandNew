@@ -55,6 +55,7 @@ function getTempoCategory(bpm) {
 async function findMatchingLoopSet(song) {
     const metadata = await getLoopsMetadata();
     if (!metadata || !metadata.loops || metadata.loops.length === 0) {
+        console.log('🔍 Loop matching: No metadata or loops available');
         return null;
     }
 
@@ -62,6 +63,16 @@ async function findMatchingLoopSet(song) {
     const songTime = (song.time || song.timeSignature || '').trim();
     const songGenre = (song.genre || '').toLowerCase().trim();
     const songTempo = getTempoCategory(song.bpm || song.tempo);
+
+    console.log('🔍 Loop matching for song:', {
+        songId: song.id,
+        title: song.title,
+        songTaal,
+        songTime, 
+        songGenre,
+        songTempo,
+        availableLoops: metadata.loops.length
+    });
 
     // Group loops by condition set
     const loopSets = {};
@@ -81,6 +92,17 @@ async function findMatchingLoopSet(song) {
         loopSets[key].files[fileKey] = loop.filename;
     });
 
+    console.log('🔍 Available loop sets:', Object.keys(loopSets).map(key => {
+        const set = loopSets[key];
+        return {
+            key,
+            taal: set.conditions.taal,
+            time: set.conditions.timeSignature,
+            tempo: set.conditions.tempo,
+            genre: set.conditions.genre
+        };
+    }));
+
     // Find matching loop sets and score them
     let bestMatch = null;
     let bestScore = 0;
@@ -91,6 +113,13 @@ async function findMatchingLoopSet(song) {
         // **REQUIRED**: Taal and Time must match
         const taalMatch = songTaal.includes(cond.taal.toLowerCase()) || cond.taal.toLowerCase().includes(songTaal);
         const timeMatch = cond.timeSignature === songTime;
+
+        console.log(`🔍 Testing loop set ${key}:`, {
+            taalMatch: `"${songTaal}" vs "${cond.taal.toLowerCase()}"`,
+            timeMatch: `"${songTime}" vs "${cond.timeSignature}"`,
+            taalResult: taalMatch,
+            timeResult: timeMatch
+        });
 
         if (!taalMatch || !timeMatch) {
             continue; // Skip if required conditions don't match
@@ -231,34 +260,52 @@ ${loopPlayerStyles}
  * Initialize loop player for a song
  */
 async function initializeLoopPlayer(songId) {
+    console.log('🎵 Initializing loop player for song:', songId);
+    
     // Check if songs array exists
     if (typeof songs === 'undefined') {
+        console.log('❌ Songs array not available');
         return;
     }
     
     // Check if song is in the songs array
     const song = songs.find(s => s.id == songId);
     if (!song) {
+        console.log('❌ Song not found in songs array:', songId);
         return;
     }
+    
+    console.log('🎵 Found song for loop matching:', { 
+        id: song.id, 
+        title: song.title, 
+        taal: song.taal, 
+        time: song.time || song.timeSignature,
+        genre: song.genre,
+        bpm: song.bpm || song.tempo
+    });
     
     // Find matching loop set for this song
     const matchResult = await findMatchingLoopSet(song);
     
     if (!matchResult) {
+        console.log('❌ No matching loop set found for song:', songId);
         const container = document.getElementById(`loopPlayerContainer-${songId}`);
         if (container) container.style.display = 'none';
         return;
     }
+    
+    console.log('✅ Found matching loop set with score:', matchResult.score);
     
     const { loopSet, score } = matchResult;
     
     // Show the container
     const container = document.getElementById(`loopPlayerContainer-${songId}`);
     if (!container) {
+        console.log('❌ Loop container element not found:', `loopPlayerContainer-${songId}`);
         return;
     }
     container.style.display = 'block';
+    console.log('✅ Loop player container shown for song:', songId);
     
     // Create or reuse player instance
     if (!loopPlayerInstance) {
