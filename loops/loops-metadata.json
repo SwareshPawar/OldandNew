@@ -1,7 +1,128 @@
 {
   "version": "2.0",
   "description": "Loop file metadata and matching conditions",
-  "loops": [],
+  "loops": [
+    {
+      "id": "dadra_3_4_medium_dholak_loop1",
+      "filename": "dadra_3_4_medium_dholak_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "3/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T14:19:00.495Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "dadra_3_4_medium_dholak_LOOP1.wav"
+      }
+    },
+    {
+      "id": "dadra_3_4_medium_dholak_loop2",
+      "filename": "dadra_3_4_medium_dholak_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "3/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T14:19:01.178Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "dadra_3_4_medium_dholak_LOOP2.wav"
+      }
+    },
+    {
+      "id": "dadra_3_4_medium_dholak_loop3",
+      "filename": "dadra_3_4_medium_dholak_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "3/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T14:19:01.619Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "dadra_3_4_medium_dholak_LOOP3.wav"
+      }
+    },
+    {
+      "id": "dadra_3_4_medium_dholak_fill1",
+      "filename": "dadra_3_4_medium_dholak_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "3/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T14:19:02.101Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "dadra_3_4_medium_dholak_FILL1.wav"
+      }
+    },
+    {
+      "id": "dadra_3_4_medium_dholak_fill2",
+      "filename": "dadra_3_4_medium_dholak_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "3/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T14:19:02.522Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "dadra_3_4_medium_dholak_FILL2.wav"
+      }
+    },
+    {
+      "id": "dadra_3_4_medium_dholak_fill3",
+      "filename": "dadra_3_4_medium_dholak_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "3/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-15T14:19:02.961Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "dadra_3_4_medium_dholak_FILL3.wav"
+      }
+    }
+  ],
   "tempoRanges": {
     "slow": {
       "min": 0,

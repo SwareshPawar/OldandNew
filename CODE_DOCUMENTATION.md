@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 15, 2026 - 09:00 PM  
-**Version:** 1.9
+**Last Updated:** February 15, 2026 - 10:00 PM  
+**Version:** 1.10
 
 ---
 
@@ -351,6 +351,26 @@ Before marking vulnerabilities as fixed:
      - [index.html](index.html#L377-L380) - Loop Manager link in admin tabs
      - [styles.css](styles.css#L5901-L5915) - Link-specific styles
    - **Impact**: Better admin workflow, centralized loop management access
+
+20. **✅ Loop Player: Fixed Production API URLs (404 Errors)**
+   - **Problem**: Loop player files using hardcoded relative paths `/api/loops/metadata` causing 404 errors on production (Vercel)
+   - **Error Messages**: 
+     - `Failed to load resource: the server responded with a status of 404 () /api/song-metadata:1`
+     - `Failed to load resource: the server responded with a status of 404 () /api/loops/metadata:1`
+   - **Root Cause**: Files missing dynamic API_BASE_URL logic that switches between localhost and production
+   - **Fix**: Added API_BASE_URL detection and updated all fetch calls
+   - **Files Modified**:
+     - [loop-player-pad-ui.js](loop-player-pad-ui.js#L13-L16) - Added API_BASE_URL constant
+     - [loop-player-pad-ui.js](loop-player-pad-ui.js#L31) - Updated `/api/loops/metadata` → `${API_BASE_URL}/api/loops/metadata`
+     - [loop-manager.js](loop-manager.js#L6-L9) - Added API_BASE_URL constant
+     - [loop-manager.js](loop-manager.js#L75) - Updated `/api/song-metadata` → `${API_BASE_URL}/api/song-metadata`
+     - [loop-manager.js](loop-manager.js#L129) - Updated `/api/loops/metadata` → `${API_BASE_URL}/api/loops/metadata`
+     - [loop-manager.js](loop-manager.js#L285) - Updated `/api/loops/upload-single` → `${API_BASE_URL}/api/loops/upload-single`
+     - [loop-manager.js](loop-manager.js#L450) - Updated `/api/loops/${loopId}` → `${API_BASE_URL}/api/loops/${loopId}` (DELETE)
+   - **Behavior**:
+     - Localhost: Uses `http://localhost:3001`
+     - Production: Uses `https://oldand-new.vercel.app`
+   - **Impact**: Loop player and loop manager now work correctly in production, matching the pattern used in main.js
 
 ### Completed Fixes - Session 5 (February 15, 2026 - Midnight)
 

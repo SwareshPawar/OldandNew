@@ -10,6 +10,11 @@
  * - Transition FROM loop3 → uses fill3
  */
 
+// Dynamic API base URL for local/dev/prod
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3001'
+    : 'https://oldand-new.vercel.app';
+
 // Global instance
 let loopPlayerInstance = null;
 let loopsMetadataCache = null;
@@ -23,7 +28,7 @@ async function getLoopsMetadata() {
     }
 
     try {
-        const response = await fetch('/api/loops/metadata');
+        const response = await fetch(`${API_BASE_URL}/api/loops/metadata`);
         if (response.ok) {
             loopsMetadataCache = await response.json();
             return loopsMetadataCache;

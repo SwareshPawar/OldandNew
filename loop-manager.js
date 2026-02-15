@@ -3,6 +3,11 @@
  * Handles loop file uploads, metadata management, and display
  */
 
+// Dynamic API base URL for local/dev/prod
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3001'
+    : 'https://oldand-new.vercel.app';
+
 let loopsMetadata = null;
 let songMetadata = null;
 let currentAudio = null;
@@ -67,7 +72,7 @@ function showAuthenticationWarning() {
  */
 async function loadSongMetadata() {
     try {
-        const response = await fetch('/api/song-metadata');
+        const response = await fetch(`${API_BASE_URL}/api/song-metadata`);
         if (response.ok) {
             songMetadata = await response.json();
             populateDropdowns();
@@ -121,7 +126,7 @@ function populateDropdowns() {
  */
 async function loadLoopsMetadata() {
     try {
-        const response = await fetch('/api/loops/metadata');
+        const response = await fetch(`${API_BASE_URL}/api/loops/metadata`);
         if (response.ok) {
             loopsMetadata = await response.json();
             displayLoops();
@@ -277,7 +282,7 @@ async function uploadSingleFile(slotNumber, type) {
         formData.append('description', description);
         
         // Upload to server
-        const response = await fetch('/api/loops/upload-single', {
+        const response = await fetch(`${API_BASE_URL}/api/loops/upload-single`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
@@ -442,7 +447,7 @@ async function deleteLoop(loopId) {
     }
 
     try {
-        const response = await fetch(`/api/loops/${loopId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/loops/${loopId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
