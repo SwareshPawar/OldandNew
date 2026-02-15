@@ -368,15 +368,17 @@ async function initializeLoopPlayer(songId) {
     
     try {
         // Create loop map from matched files
-        // Note: Tone.js handles URL encoding internally, so pass raw paths
+        // Use API_BASE_URL for GitHub Pages compatibility (loops are served from Vercel backend)
         const loopMap = {
-            loop1: `/loops/${loopSet.files.loop1}`,
-            loop2: `/loops/${loopSet.files.loop2}`,
-            loop3: `/loops/${loopSet.files.loop3}`,
-            fill1: `/loops/${loopSet.files.fill1}`,
-            fill2: `/loops/${loopSet.files.fill2}`,
-            fill3: `/loops/${loopSet.files.fill3}`
+            loop1: `${API_BASE_URL}/loops/${loopSet.files.loop1}`,
+            loop2: `${API_BASE_URL}/loops/${loopSet.files.loop2}`,
+            loop3: `${API_BASE_URL}/loops/${loopSet.files.loop3}`,
+            fill1: `${API_BASE_URL}/loops/${loopSet.files.fill1}`,
+            fill2: `${API_BASE_URL}/loops/${loopSet.files.fill2}`,
+            fill3: `${API_BASE_URL}/loops/${loopSet.files.fill3}`
         };
+        
+        console.log('🔊 Loading loops from:', loopMap);
         
         await loopPlayerInstance.loadLoops(loopMap);
         if (status) {
