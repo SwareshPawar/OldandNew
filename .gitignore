@@ -51,3 +51,4 @@ logs
 *.log
 .env.example
 .vercel
+.env*.local

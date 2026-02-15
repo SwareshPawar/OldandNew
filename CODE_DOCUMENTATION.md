@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 15, 2026 - 10:00 PM  
-**Version:** 1.10
+**Last Updated:** February 15, 2026 - 10:30 PM  
+**Version:** 1.11
 
 ---
 
@@ -371,6 +371,40 @@ Before marking vulnerabilities as fixed:
      - Localhost: Uses `http://localhost:3001`
      - Production: Uses `https://oldand-new.vercel.app`
    - **Impact**: Loop player and loop manager now work correctly in production, matching the pattern used in main.js
+
+21. **✅ Vercel Deployment: Fixed vercel.json Configuration**
+   - **Problem**: Deployment failing with error: "If `rewrites`, `redirects`, `headers`, `cleanUrls` or `trailingSlash` are used, then `routes` cannot be present"
+   - **Root Cause**: Legacy "routes" property conflicting with modern "rewrites" property
+   - **Fix**: Removed obsolete "routes" config, modernized to use "rewrites" and "headers"
+   - **Changes in [vercel.json](vercel.json)**:
+     - ❌ **Removed**: Legacy `"routes"` array (incompatible with modern config)
+     - ✅ **Kept**: `"functions"` - API function configuration
+     - ✅ **Kept**: `"rewrites"` - API routing to serverless function
+     - ✅ **Added**: SPA fallback rewrite `"/(.*)" → "/index.html"`
+     - ✅ **Kept**: `"headers"` - Cache-Control for loop files
+   - **Old Configuration** (Caused Error):
+     ```json
+     "routes": [
+       { "src": "/loops/(.*)", "dest": "/loops/$1" },
+       { "src": "/(.*\\.(js|css...))", "dest": "/$1" },
+       { "src": "/api/(.*)", "dest": "/api/index.js" },
+       { "src": "/(.*)", "dest": "/index.html" }
+     ]
+     ```
+   - **New Configuration** (Working):
+     ```json
+     "rewrites": [
+       { "source": "/api/(.*)", "destination": "/api/index.js" },
+       { "source": "/(.*)", "destination": "/index.html" }
+     ],
+     "headers": [...]
+     ```
+   - **Why Changes Are Correct**:
+     - `/loops/(.*)` routing not needed - Vercel serves static files automatically
+     - `/(.*\.(js|css...))` routing not needed - Vercel serves static assets automatically
+     - API routing moved to "rewrites" (modern Vercel approach)
+     - SPA fallback essential for client-side routing
+   - **Impact**: Deployment now succeeds, app works on Vercel production
 
 ### Completed Fixes - Session 5 (February 15, 2026 - Midnight)
 
