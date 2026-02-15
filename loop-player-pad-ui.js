@@ -388,35 +388,45 @@ async function initializeLoopPlayer(songId) {
         
         await loopPlayerInstance.loadLoops(loopMap);
         
-        // Wait for audio context and decoding to complete
-        if (status) status.textContent = 'Decoding audio...';
-        
-        // Wait a bit more for decoding to complete
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Check if audio buffers are ready
-        const audioBuffersReady = loopPlayerInstance.audioBuffers && loopPlayerInstance.audioBuffers.size === 6;
-        
-        if (status) {
-            if (audioBuffersReady) {
-                const matchInfo = getMatchQuality(score);
-                status.textContent = `Ready - ${matchInfo.label}`;
-                status.title = matchInfo.description;
-                
-                // Enable play button
-                if (playBtn) {
-                    playBtn.disabled = false;
-                    playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
-                }
+        // Enable/disable pads based on successful fetch (ready for on-demand decode)
+        const pads = container.querySelectorAll('.loop-pad');
+        pads.forEach(pad => {
+            const loopName = pad.dataset.loop;
+            const loopFile = loopSet.files[loopName];
+            const isLoaded = loopPlayerInstance.rawAudioData && loopPlayerInstance.rawAudioData.has(loopName);
+            
+            // Enable pad if file exists and was successfully fetched
+            if (loopFile && isLoaded) {
+                pad.disabled = false;
+                pad.classList.remove('loop-pad-disabled');
+                pad.title = '';
             } else {
-                const loadedCount = loopPlayerInstance.rawAudioData ? loopPlayerInstance.rawAudioData.size : 0;
-                status.textContent = `Loaded ${loadedCount}/6 loops`;
-                
-                if (playBtn) {
-                    playBtn.disabled = false;
-                    playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                pad.disabled = true;
+                pad.classList.add('loop-pad-disabled');
+                if (!loopFile) {
+                    pad.title = `${loopName} not available`;
+                } else {
+                    pad.title = `${loopName} failed to load`;
                 }
             }
+        });
+        
+        // Update status and play button
+        const loadedCount = loopPlayerInstance.rawAudioData ? loopPlayerInstance.rawAudioData.size : 0;
+        if (status) {
+            if (loadedCount === 6) {
+                const matchInfo = getMatchQuality(score);
+                status.textContent = `Ready - ${matchInfo.label} (Click Play to initialize audio)`;
+                status.title = matchInfo.description;
+            } else {
+                status.textContent = `Loaded ${loadedCount}/6 loops`;
+            }
+        }
+        
+        // Enable play button (audio will be initialized on first click)
+        if (playBtn) {
+            playBtn.disabled = false;
+            playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
         }
     } catch (error) {
         console.error('Error loading loops:', error);
@@ -428,31 +438,8 @@ async function initializeLoopPlayer(songId) {
         return;
     }
     
-    // Disable pads for missing loops
-    const pads = container.querySelectorAll('.loop-pad');
-    pads.forEach(pad => {
-        const loopName = pad.dataset.loop;
-        const loopFile = loopSet.files[loopName];
-        const isLoaded = loopPlayerInstance.rawAudioData && loopPlayerInstance.rawAudioData.has(loopName);
-        const isDecoded = loopPlayerInstance.audioBuffers && loopPlayerInstance.audioBuffers.has(loopName);
-        
-        // Disable pad if file doesn't exist, failed to load, or not decoded yet
-        if (!loopFile || !isLoaded || !isDecoded) {
-            pad.disabled = true;
-            pad.classList.add('loop-pad-disabled');
-            if (!loopFile) {
-                pad.title = `${loopName} not available`;
-            } else if (!isDecoded) {
-                pad.title = `${loopName} loading...`;
-            }
-        } else {
-            pad.disabled = false;
-            pad.classList.remove('loop-pad-disabled');
-            pad.title = '';
-        }
-    });
-    
     // Set up pad click handlers
+    const pads = container.querySelectorAll('.loop-pad');
     pads.forEach(pad => {
         pad.addEventListener('click', () => {
             if (pad.disabled) return; // Prevent clicks on disabled pads
@@ -478,13 +465,36 @@ async function initializeLoopPlayer(songId) {
                 playBtn.classList.remove('playing');
             } else {
                 try {
+                    // Check if this is the first play (audio not initialized yet)
+                    const isFirstPlay = !loopPlayerInstance.audioContext && loopPlayerInstance.rawAudioData.size > 0;
+                    
+                    if (isFirstPlay) {
+                        // Show loading during first-time audio initialization
+                        playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Initializing...</span>';
+                        playBtn.disabled = true;
+                        if (status) status.textContent = 'Initializing audio & decoding buffers...';
+                    }
+                    
                     await loopPlayerInstance.play();
+                    
+                    // Update UI after successful play
                     playBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                     playBtn.classList.add('playing');
+                    playBtn.disabled = false;
+                    
+                    if (isFirstPlay && status) {
+                        const matchInfo = getMatchQuality(score);
+                        status.textContent = `Playing - ${matchInfo.label} (Audio cached for instant playback)`;
+                    }
                 } catch (error) {
                     console.error('Error playing loops:', error);
                     const status = document.getElementById(`loopStatus-${songId}`);
                     if (status) status.textContent = `Error: ${error.message}`;
+                    
+                    // Reset button state on error
+                    playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    playBtn.classList.remove('playing');
+                    playBtn.disabled = false;
                 }
             }
         });
