@@ -5905,6 +5905,17 @@ body.dark-mode #installAppBtn {
     color: var(--accent-color);
 }
 
+.admin-tab-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+}
+
+.admin-tab-link:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
 .admin-tab-content {
     display: none;
 }

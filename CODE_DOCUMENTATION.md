@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 14, 2026 - 08:30 PM  
-**Version:** 1.8
+**Last Updated:** February 15, 2026 - 09:00 PM  
+**Version:** 1.9
 
 ---
 
@@ -310,6 +310,47 @@ Before marking vulnerabilities as fixed:
 ---
 
 ## RECENT CHANGES (February 14-15, 2026)
+
+### Completed Fixes - Session 6 (February 15, 2026 - Evening)
+
+16. **✅ Loop Player: Individual File Uploads with Auto-Renaming**
+   - **Problem**: Bulk 6-file upload was confusing for users
+   - **Change**: Redesigned to individual file upload system with 6 separate slots
+   - **Features**:
+     - Each slot for specific file (Loop 1, Loop 2, Loop 3, Fill 1, Fill 2, Fill 3)
+     - Automatic filename generation based on selected conditions
+     - Individual upload buttons with real-time status feedback
+     - Preview of expected filenames before upload
+   - **Locations**: 
+     - [loop-manager.html](loop-manager.html#L436-L505) - 6 individual upload slots
+     - [loop-manager.js](loop-manager.js#L199-L280) - Upload handling functions
+     - [server.js](server.js#L1330-L1444) - New `/api/loops/upload-single` endpoint
+   - **Impact**: More intuitive upload process, better error handling per file
+
+17. **✅ Loop Player: Tempo Control UI Cleanup and Reset Button**
+   - **Removed**: "±10% range minimizes pitch change" info text (unnecessary clutter)
+   - **Removed**: "✓ Optimal" quality indicator (all values in 90-110% range are acceptable)
+   - **Added**: Tempo reset button with undo icon to quickly return to 100%
+   - **Locations**:
+     - [loop-player-pad-ui.js](loop-player-pad-ui.js#L211-L220) - Simplified tempo slider HTML
+     - [loop-player-pad-ui.js](loop-player-pad-ui.js#L401-L421) - Reset button event handler
+     - [loop-player-pad-ui.js](loop-player-pad-ui.js#L622-L652) - Reset button CSS styles
+   - **Impact**: Cleaner UI, easier tempo management
+
+18. **✅ Loop Player: Graceful Error Handling for Corrupt Audio Files**
+   - **Problem**: EncodingError crashes when WAV files are corrupt/invalid
+   - **Fix**: Changed decode errors from throwing exceptions to warning logs
+   - **Behavior**: App continues with partial loop set (working files only)
+   - **Location**: [loop-player-pad.js](loop-player-pad.js#L115-L121) - `_decodeAudioData()` error handling
+   - **Impact**: No crashes on corrupt files, graceful degradation
+
+19. **✅ Admin Panel: Added Loop Manager Link**
+   - **Added**: "Loop Manager" tab link in Admin Panel popup
+   - **Features**: Opens loop-manager.html in new tab, drum icon, themed styling
+   - **Locations**:
+     - [index.html](index.html#L377-L380) - Loop Manager link in admin tabs
+     - [styles.css](styles.css#L5901-L5915) - Link-specific styles
+   - **Impact**: Better admin workflow, centralized loop management access
 
 ### Completed Fixes - Session 5 (February 15, 2026 - Midnight)
 
@@ -1283,6 +1324,116 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 ## 8. BUGS ENCOUNTERED & RESOLVED
 
 This section documents production bugs discovered during development and testing, along with their root causes and solutions. Each entry includes reproduction steps, debugging process, and lessons learned.
+
+### Bug #2: Loop Player Crashing on Corrupt Audio Files
+**Date Discovered:** February 15, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+When playing loops for the first time, if any WAV files were corrupt or had encoding issues, the entire loop player would crash with an "EncodingError: Unable to decode audio data" exception. This prevented users from playing even the working loop files.
+
+**Affected Components:**
+- Loop player audio decoding ([loop-player-pad.js](loop-player-pad.js))
+- Web Audio API AudioContext.decodeAudioData()
+- Loop pad UI state management
+
+**Reproduction Steps:**
+1. Upload a loop set with at least one corrupt/invalid WAV file
+2. Open a song that matches the loop conditions
+3. Click play button on loop player
+4. **Expected:** Working files play, corrupt files are skipped
+5. **Actual:** App crashes with uncaught promise rejection
+
+**Error Message:**
+```
+EncodingError: Unable to decode audio data
+    at loop-player-pad.js:119
+Uncaught (in promise) EncodingError: Unable to decode audio data
+```
+
+**Console Output:**
+```
+Loop Player: Starting playback
+Decoding loop1... Success
+Decoding loop2... Success
+Decoding fill1... Success
+Decoding fill2... Success
+Decoding loop3... Failed to decode loop3: EncodingError: Unable to decode audio data
+💥 [Crash - app frozen]
+```
+
+**Root Cause Analysis:**
+
+The bug occurred in the `_decodeAudioData()` method which uses Web Audio API's `decodeAudioData()`. The error handling was:
+
+```javascript
+// BEFORE (BUGGY):
+try {
+    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    this.audioBuffers.set(name, audioBuffer);
+    console.log(`Decoded ${name} successfully`);
+} catch (error) {
+    console.error(`Failed to decode ${name}:`, error);
+    throw error;  // ❌ This crashes the app!
+}
+```
+
+The `throw error` statement caused:
+1. Promise rejection that propagated to caller
+2. Uncaught exception in async function
+3. App freeze/crash with no recovery
+4. All loop playback stopped, even for valid files
+
+**Solution:**
+
+Changed error handling to log warnings instead of throwing, allowing app to continue with partial loop set:
+
+```javascript
+// AFTER (FIXED):
+try {
+    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    this.audioBuffers.set(name, audioBuffer);
+} catch (error) {
+    console.warn(`Failed to decode ${name}:`, error.message);
+    // Don't throw - continue with other files
+    // UI will disable pads for failed files
+}
+```
+
+**Behavior After Fix:**
+- Corrupt files log warnings but don't crash app
+- Valid files decode successfully and are playable
+- App continues with 4/6 files in example scenario
+- Users can play loops that work, corrupt ones are skipped
+
+**Files Modified:**
+- [loop-player-pad.js](loop-player-pad.js#L115-L121) - Changed `throw error` to warning log in `_decodeAudioData()`
+
+**Testing:**
+```javascript
+// Test scenario: 6 files, 2 corrupt (loop3, fill3)
+Result:
+✅ loop1 decoded - playable
+✅ loop2 decoded - playable  
+⚠️ loop3 failed - warning logged, skipped
+✅ fill1 decoded - playable
+✅ fill2 decoded - playable
+⚠️ fill3 failed - warning logged, skipped
+✅ App continues running with 4/6 files
+```
+
+**Lessons Learned:**
+1. **Graceful Degradation**: Don't crash entire feature if one component fails
+2. **Partial Functionality**: Better to work with 4/6 files than crash with 0/6
+3. **User Experience**: Warnings in console are better than app crashes
+4. **Audio Validation**: Consider pre-upload validation to catch corrupt files early
+
+**Future Improvements:**
+- [ ] Add UI indicator showing which files loaded vs failed
+- [ ] Disable pads for files that failed to decode (not just missing files)
+- [ ] Add server-side audio validation during upload
+- [ ] Show status like "Loaded 4/6 loops" in UI
 
 ### Bug #1: Back Button Not Showing Sidebar on Mobile (Setlist View)
 **Date Discovered:** February 15, 2026  

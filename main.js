@@ -41,7 +41,7 @@ try {
 }
 
 const GENRES = [
-    "New", "Old", "Mid", "Hindi", "Marathi", "English", "RD Pattern","Acoustic", "Qawalli", "Classical", "Ghazal", "Sufi", "Rock",
+    "New", "Old", "Mid", "Hindi", "Marathi", "English", "RD Pattern","Acoustic", "Qawalli", "Classical", "Ghazal", "Sufi", "Rock","Drum Fast","Drum Slow","Folk","Dholak","Tabla", "Bhangra", "Garba", "Bollywood", "Patriotic", "Dance", "Instrumental",
     "Blues", "Female", "Male", "Duet"
 ];
 
@@ -55,7 +55,7 @@ const KEYS = [
 const CATEGORIES = ["New", "Old"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
-    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow",  "EkTaal", "JhapTaal", "TeenTaal","Rupak", "Deepchandi", "Garba","RD Pattern","Desi Drum", "Western", "Waltz", "Rock", "Jazz", "March Rhythm"
+    "Keherwa", "Keherwa Slow", "Dadra", "Dadra Slow",  "EkTaal", "JhapTaal", "TeenTaal","Rupak", "Deepchandi", "Garba","RD Pattern","Desi Drum", "Western", "Waltz", "Rock","Drum Fast","Drum Slow","Folk","Dholak","Tabla", "Bhangra", "Garba", "Bollywood"
 ];
 
 const MOODS = [
@@ -8326,6 +8326,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     : '')
             }
         </div>
+
+        ${typeof getLoopPlayerHTML === 'function' ? getLoopPlayerHTML(song.id) : ''}
         
         <div class="song-lyrics" id="preview-lyrics-container">Loading lyrics...</div>
     </div>
@@ -8349,6 +8351,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     // Handle case where lyrics might be undefined or stored in different fields
                     const lyricsText = song.lyrics || song.editSongLyrics || song.content || song.text || 'No lyrics available';
                     lyricsContainer.innerHTML = formatLyricsWithChords(lyricsText, transposeLevel);
+                }
+
+                // Initialize loop player for this song
+                if (typeof initializeLoopPlayer === 'function') {
+                    initializeLoopPlayer(song.id);
                 }
             }, 10);
             

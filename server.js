@@ -2,11 +2,51 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 let db;
 let songsCollection;
 let deletedSongsCollection;
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads', 'loops');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for audio file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Create unique filename: songId_loopType_timestamp.ext
+    const songId = req.params.id || 'temp';
+    const loopType = req.body.loopType || 'main';
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `${songId}_${loopType}_${uniqueSuffix}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit per file
+  },
+  fileFilter: function (req, file, cb) {
+    //Accept only audio files
+    const allowedMimes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/x-m4a', 'audio/mp4'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only audio files (MP3, WAV, M4A) are allowed'));
+    }
+  }
+});
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -773,6 +813,662 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ===== LOOP PLAYER ENDPOINTS =====
+
+// Upload loop audio file for a song
+app.post('/api/songs/:id/loops/upload', authMiddleware, upload.single('audioFile'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { loopType } = req.body; // 'main', 'variation1', 'variation2', 'variation3', 'fillin'
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No audio file uploaded' });
+    }
+    
+    if (!['main', 'variation1', 'variation2', 'variation3', 'fillin'].includes(loopType)) {
+      return res.status(400).json({ error: 'Invalid loop type' });
+    }
+    
+    // Get the song to update
+    const song = await songsCollection.findOne({ id: parseInt(id) });
+    if (!song) {
+      // Clean up uploaded file if song doesn't exist
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: 'Song not found' });
+    }
+    
+    // Initialize loopPlayer object if it doesn't exist
+    const loopPlayer = song.loopPlayer || {
+      loops: {},
+      pattern: ['main', 'variation1', 'variation2', 'variation3', 'fillin'],
+      enabled: false
+    };
+    
+    // Delete old file if it exists
+    if (loopPlayer.loops[loopType]) {
+      const oldFilePath = path.join(__dirname, loopPlayer.loops[loopType]);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+    
+    // Store relative path for the new file
+    const relativePath = `/uploads/loops/${req.file.filename}`;
+    loopPlayer.loops[loopType] = relativePath;
+    
+    // Update  song in database
+    const result = await songsCollection.updateOne(
+      { id: parseInt(id) },
+      { 
+        $set: { 
+          loopPlayer: loopPlayer,
+          updatedAt: new Date().toISOString(),
+          updatedBy: req.user.firstName || req.user.username
+        }
+      }
+    );
+    
+    res.json({
+      success: true,
+      loopType,
+      filePath: relativePath,
+      filename: req.file.filename,
+      size: req.file.size
+    });
+    
+  } catch (err) {
+    // Clean up file on error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    console.error('Loop upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get loop player data for a song
+app.get('/api/songs/:id/loops', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const song = await songsCollection.findOne({ id: parseInt(id) });
+    
+    if (!song) {
+      return res.status(404).json({ error: 'Song not found' });
+    }
+    
+    const loopPlayer = song.loopPlayer || {
+      loops: {},
+      pattern: ['main', 'variation1', 'variation2', 'variation3', 'fillin'],
+      enabled: false
+    };
+    
+    res.json(loopPlayer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update loop player configuration (pattern, enabled status)
+app.put('/api/songs/:id/loops/config', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pattern, enabled } = req.body;
+    
+    const song = await songsCollection.findOne({ id: parseInt(id) });
+    if (!song) {
+      return res.status(404).json({ error: 'Song not found' });
+    }
+    
+    const loopPlayer = song.loopPlayer || { loops: {}, pattern: [], enabled: false };
+    
+    if (pattern !== undefined) {
+      // Validate pattern array
+      if (!Array.isArray(pattern)) {
+        return res.status(400).json({ error: 'Pattern must be an array' });
+      }
+      const validTypes = ['main', 'variation1', 'variation2', 'variation3', 'fillin'];
+      for (const type of pattern) {
+        if (!validTypes.includes(type)) {
+          return res.status(400).json({ error: `Invalid loop type in pattern: ${type}` });
+        }
+      }
+      loopPlayer.pattern = pattern;
+    }
+    
+    if (enabled !== undefined) {
+      loopPlayer.enabled = Boolean(enabled);
+    }
+    
+    await songsCollection.updateOne(
+      { id: parseInt(id) },
+      { 
+        $set: { 
+          loopPlayer: loopPlayer,
+          updatedAt: new Date().toISOString(),
+          updatedBy: req.user.firstName || req.user.username
+        }
+      }
+    );
+    
+    res.json({ success: true, loopPlayer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a specific loop file
+app.delete('/api/songs/:id/loops/:loopType', authMiddleware, async (req, res) => {
+  try {
+    const { id, loopType } = req.params;
+    
+    const song = await songsCollection.findOne({ id: parseInt(id) });
+    if (!song) {
+      return res.status(404).json({ error: 'Song not found' });
+    }
+    
+    if (!song.loopPlayer || !song.loopPlayer.loops[loopType]) {
+      return res.status(404).json({ error: 'Loop file not found' });
+    }
+    
+    // Delete the file
+    const filePath = path.join(__dirname, song.loopPlayer.loops[loopType]);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    
+    // Remove from database
+    delete song.loopPlayer.loops[loopType];
+    
+    await songsCollection.updateOne(
+      { id: parseInt(id) },
+      { 
+        $set: { 
+          loopPlayer: song.loopPlayer,
+          updatedAt: new Date().toISOString(),
+          updatedBy: req.user.firstName || req.user.username
+        }
+      }
+    );
+    
+    res.json({ success: true, message: 'Loop file deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Serve loop files from /loops/ folder
+const loopsDir = path.join(__dirname, 'loops');
+app.use('/loops', express.static(loopsDir));
+
+// Serve uploaded loop files (legacy)
+app.use('/uploads/loops', express.static(uploadsDir));
+
+// ============================================================================
+// LOOP MANAGER API ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/song-metadata
+ * Get song metadata arrays (taals, times, genres) from frontend
+ * This syncs with main.js automatically
+ */
+app.get('/api/song-metadata', (req, res) => {
+  try {
+    // Read main.js and extract the arrays
+    const mainJsPath = path.join(__dirname, 'main.js');
+    const mainJsContent = fs.readFileSync(mainJsPath, 'utf8');
+
+    // Extract GENRES array
+    const genresMatch = mainJsContent.match(/const GENRES = \[([\s\S]*?)\];/);
+    const genres = genresMatch ? 
+      genresMatch[1]
+        .split(',')
+        .map(g => g.trim().replace(/['"]/g, ''))
+        .filter(g => g) : 
+      [];
+
+    // Extract TAALS array
+    const taalsMatch = mainJsContent.match(/const TAALS = \[([\s\S]*?)\];/);
+    const taals = taalsMatch ? 
+      taalsMatch[1]
+        .split(',')
+        .map(t => t.trim().replace(/['"]/g, ''))
+        .filter(t => t) : 
+      [];
+
+    // Extract TIMES array
+    const timesMatch = mainJsContent.match(/const TIMES = \[([\s\S]*?)\];/);
+    const times = timesMatch ? 
+      timesMatch[1]
+        .split(',')
+        .map(t => t.trim().replace(/['"]/g, ''))
+        .filter(t => t) : 
+      [];
+
+    // Extract TIME_GENRE_MAP
+    const timeGenreMapMatch = mainJsContent.match(/const TIME_GENRE_MAP = \{([\s\S]*?)\n\};/);
+    let timeGenreMap = {};
+    if (timeGenreMapMatch) {
+      const mapContent = timeGenreMapMatch[1];
+      const lines = mapContent.split('\n');
+      
+      for (const line of lines) {
+        const match = line.match(/"([^"]+)":\s*\[([\s\S]*?)\]/);
+        if (match) {
+          const timeSignature = match[1];
+          const taalsList = match[2]
+            .split(',')
+            .map(t => t.trim().replace(/['"]/g, ''))
+            .filter(t => t);
+          timeGenreMap[timeSignature] = taalsList;
+        }
+      }
+    }
+
+    // Categorize genres for loop system
+    const musicalGenres = genres.filter(g => 
+      !['New', 'Old', 'Mid', 'Hindi', 'Marathi', 'English', 'Female', 'Male', 'Duet'].includes(g)
+    );
+
+    res.json({
+      genres: genres,
+      musicalGenres: musicalGenres,
+      taals: taals,
+      times: times,
+      timeGenreMap: timeGenreMap,
+      vocalTags: ['Male', 'Female', 'Duet'],
+      languageTags: ['Hindi', 'Marathi', 'English'],
+      eraSettings: ['New', 'Old', 'Mid']
+    });
+  } catch (error) {
+    console.error('Error reading song metadata:', error);
+    res.status(500).json({ error: 'Failed to read song metadata' });
+  }
+});
+
+/**
+ * GET /api/loops/metadata
+ * Get loops metadata JSON
+ */
+app.get('/api/loops/metadata', async (req, res) => {
+  try {
+    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+    
+    if (!fs.existsSync(metadataPath)) {
+      // Get song metadata to populate defaults
+      const mainJsPath = path.join(__dirname, 'main.js');
+      const mainJsContent = fs.readFileSync(mainJsPath, 'utf8');
+
+      // Extract TAALS
+      const taalsMatch = mainJsContent.match(/const TAALS = \[([\s\S]*?)\];/);
+      const taals = taalsMatch ? 
+        taalsMatch[1]
+          .split(',')
+          .map(t => t.trim().replace(/['"]/g, '').toLowerCase())
+          .filter(t => t) : 
+        ['keherwa', 'dadra', 'rupak', 'jhaptal', 'teental', 'ektaal'];
+
+      // Extract GENRES (musical ones only)
+      const genresMatch = mainJsContent.match(/const GENRES = \[([\s\S]*?)\];/);
+      const allGenres = genresMatch ? 
+        genresMatch[1]
+          .split(',')
+          .map(g => g.trim().replace(/['"]/g, ''))
+          .filter(g => g) : 
+        [];
+      
+      const musicalGenres = allGenres
+        .filter(g => !['New', 'Old', 'Mid', 'Hindi', 'Marathi', 'English', 'Female', 'Male', 'Duet'].includes(g))
+        .map(g => g.toLowerCase());
+
+      // Extract TIMES
+      const timesMatch = mainJsContent.match(/const TIMES = \[([\s\S]*?)\];/);
+      const times = timesMatch ? 
+        timesMatch[1]
+          .split(',')
+          .map(t => t.trim().replace(/['"]/g, ''))
+          .filter(t => t) : 
+        ['4/4', '3/4', '6/8', '7/8'];
+
+      // Return default empty structure with dynamic values
+      return res.json({
+        version: '2.0',
+        loops: [],
+        tempoRanges: {
+          slow: { min: 0, max: 80, label: 'Slow' },
+          medium: { min: 80, max: 120, label: 'Medium' },
+          fast: { min: 120, max: 999, label: 'Fast' }
+        },
+        supportedTaals: taals,
+        supportedGenres: musicalGenres.length > 0 ? musicalGenres : ['acoustic', 'rock', 'rd pattern', 'qawalli', 'blues'],
+        supportedTimeSignatures: times
+      });
+    }
+
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    
+    // Sync supported arrays with main.js if they don't exist or are outdated
+    if (!metadata.supportedTaals || metadata.supportedTaals.length === 0) {
+      const mainJsPath = path.join(__dirname, 'main.js');
+      const mainJsContent = fs.readFileSync(mainJsPath, 'utf8');
+
+      // Extract and update arrays
+      const taalsMatch = mainJsContent.match(/const TAALS = \[([\s\S]*?)\];/);
+      if (taalsMatch) {
+        metadata.supportedTaals = taalsMatch[1]
+          .split(',')
+          .map(t => t.trim().replace(/['"]/g, '').toLowerCase())
+          .filter(t => t);
+      }
+
+      const genresMatch = mainJsContent.match(/const GENRES = \[([\s\S]*?)\];/);
+      if (genresMatch) {
+        const allGenres = genresMatch[1]
+          .split(',')
+          .map(g => g.trim().replace(/['"]/g, ''))
+          .filter(g => g);
+        
+        metadata.supportedGenres = allGenres
+          .filter(g => !['New', 'Old', 'Mid', 'Hindi', 'Marathi', 'English', 'Female', 'Male', 'Duet'].includes(g))
+          .map(g => g.toLowerCase());
+      }
+
+      const timesMatch = mainJsContent.match(/const TIMES = \[([\s\S]*?)\];/);
+      if (timesMatch) {
+        metadata.supportedTimeSignatures = timesMatch[1]
+          .split(',')
+          .map(t => t.trim().replace(/['"]/g, ''))
+          .filter(t => t);
+      }
+
+      // Save updated metadata
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    }
+
+    res.json(metadata);
+  } catch (error) {
+    console.error('Error loading loops metadata:', error);
+    res.status(500).json({ error: 'Failed to load loops metadata' });
+  }
+});
+
+/**
+ * Multer configuration for loop uploads
+ */
+const loopUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, loopsDir);
+    },
+    filename: (req, file, cb) => {
+      // Keep original filename (should already be in correct format)
+      cb(null, file.originalname);
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'audio/wav' || file.mimetype === 'audio/x-wav') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only WAV files are allowed'));
+    }
+  }
+});
+
+app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), async (req, res) => {
+  try {
+    const { taal, timeSignature, tempo, genre, description } = req.body;
+    const files = req.files;
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    if (files.length !== 6) {
+      return res.status(400).json({ error: 'Expected 6 files (3 loops + 3 fills)' });
+    }
+
+    // Load existing metadata
+    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+    let metadata;
+
+    if (fs.existsSync(metadataPath)) {
+      metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    } else {
+      metadata = {
+        version: '2.0',
+        loops: [],
+        tempoRanges: {
+          slow: { min: 0, max: 80, label: 'Slow' },
+          medium: { min: 80, max: 120, label: 'Medium' },
+          fast: { min: 120, max: 999, label: 'Fast' }
+        },
+        supportedTaals: ['keherwa', 'dadra', 'rupak', 'jhaptal', 'teental', 'ektaal'],
+        supportedGenres: ['acoustic', 'rock', 'rd', 'qawalli', 'blues'],
+        supportedTimeSignatures: ['4/4', '3/4', '6/8', '7/8']
+      };
+    }
+
+    // Generate expected filename pattern
+    const timeFormatted = timeSignature.replace('/', '_');
+    const basePattern = `${taal}_${timeFormatted}_${tempo}_${genre}`;
+
+    // Rename uploaded files to correct format and add to metadata
+    const uploadedFiles = [];
+    
+    for (const file of files) {
+      // Determine type and number from original filename
+      const originalName = file.originalname;
+      let type, number;
+
+      if (originalName.toUpperCase().includes('LOOP')) {
+        type = 'loop';
+        const match = originalName.match(/LOOP(\d+)/i);
+        number = match ? parseInt(match[1]) : 1;
+      } else if (originalName.toUpperCase().includes('FILL')) {
+        type = 'fill';
+        const match = originalName.match(/FILL(\d+)/i);
+        number = match ? parseInt(match[1]) : 1;
+      } else {
+        continue; // Skip invalid files
+      }
+
+      const correctFilename = `${basePattern}_${type.toUpperCase()}${number}.wav`;
+      const oldPath = file.path;
+      const newPath = path.join(loopsDir, correctFilename);
+
+      // Rename file
+      if (oldPath !== newPath) {
+        fs.renameSync(oldPath, newPath);
+      }
+
+      // Create metadata entry
+      const loopEntry = {
+        id: `${basePattern}_${type}${number}`,
+        filename: correctFilename,
+        type: type,
+        number: number,
+        conditions: {
+          taal: taal,
+          timeSignature: timeSignature,
+          tempo: tempo,
+          genre: genre
+        },
+        metadata: {
+          duration: 0,
+          uploadedAt: new Date().toISOString(),
+          description: description || ''
+        }
+      };
+
+      // Remove existing entry with same ID if exists
+      metadata.loops = metadata.loops.filter(loop => loop.id !== loopEntry.id);
+      
+      // Add new entry
+      metadata.loops.push(loopEntry);
+      uploadedFiles.push(correctFilename);
+    }
+
+    // Save updated metadata
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+
+    res.json({
+      success: true,
+      uploaded: uploadedFiles.length,
+      files: uploadedFiles,
+      pattern: basePattern
+    });
+  } catch (error) {
+    console.error('Error uploading loops:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/loops/upload-single
+ * Upload a single loop/fill file with automatic renaming
+ */
+app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), async (req, res) => {
+  try {
+    const { taal, timeSignature, tempo, genre, type, number, description } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Validate required fields
+    if (!taal || !timeSignature || !tempo || !genre || !type || !number) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Load existing metadata
+    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+    let metadata;
+
+    if (fs.existsSync(metadataPath)) {
+      metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    } else {
+      metadata = {
+        version: '2.0',
+        loops: [],
+        tempoRanges: {
+          slow: { min: 0, max: 80, label: 'Slow' },
+          medium: { min: 80, max: 120, label: 'Medium' },
+          fast: { min: 120, max: 999, label: 'Fast' }
+        },
+        supportedTaals: ['keherwa', 'dadra', 'rupak', 'jhaptal', 'teental', 'ektaal'],
+        supportedGenres: ['acoustic', 'rock', 'rd', 'qawalli', 'blues'],
+        supportedTimeSignatures: ['4/4', '3/4', '6/8', '7/8']
+      };
+    }
+
+    // Generate correct filename based on naming convention v2.0
+    const timeFormatted = timeSignature.replace('/', '_');
+    const basePattern = `${taal}_${timeFormatted}_${tempo}_${genre}`;
+    const typeUpper = type.toUpperCase();
+    const correctFilename = `${basePattern}_${typeUpper}${number}.wav`;
+
+    // Rename uploaded file
+    const oldPath = file.path;
+    const newPath = path.join(loopsDir, correctFilename);
+
+    // If file with same name exists, delete it first
+    if (fs.existsSync(newPath) && oldPath !== newPath) {
+      fs.unlinkSync(newPath);
+    }
+
+    // Rename file
+    if (oldPath !== newPath) {
+      fs.renameSync(oldPath, newPath);
+    }
+
+    // Create metadata entry
+    const loopId = `${basePattern}_${type}${number}`;
+    const loopEntry = {
+      id: loopId,
+      filename: correctFilename,
+      type: type,
+      number: parseInt(number),
+      conditions: {
+        taal: taal,
+        timeSignature: timeSignature,
+        tempo: tempo,
+        genre: genre
+      },
+      metadata: {
+        duration: 0,
+        uploadedAt: new Date().toISOString(),
+        description: description || ''
+      },
+      files: {
+        [`${type}${number}`]: correctFilename
+      }
+    };
+
+    // Remove existing entry with same ID if exists
+    metadata.loops = metadata.loops.filter(loop => loop.id !== loopId);
+    
+    // Add new entry
+    metadata.loops.push(loopEntry);
+
+    // Save updated metadata
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+
+    res.json({
+      success: true,
+      filename: correctFilename,
+      id: loopId,
+      pattern: basePattern
+    });
+  } catch (error) {
+    console.error('Error uploading single loop:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/loops/:loopId
+ * Delete a loop file and its metadata
+ */
+app.delete('/api/loops/:loopId', authMiddleware, async (req, res) => {
+  try {
+    const { loopId } = req.params;
+    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+
+    if (!fs.existsSync(metadataPath)) {
+      return res.status(404).json({ error: 'Metadata file not found' });
+    }
+
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    const loopEntry = metadata.loops.find(loop => loop.id === loopId);
+
+    if (!loopEntry) {
+      return res.status(404).json({ error: 'Loop not found' });
+    }
+
+    // Delete actual file
+    const filePath = path.join(loopsDir, loopEntry.filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // Remove from metadata
+    metadata.loops = metadata.loops.filter(loop => loop.id !== loopId);
+
+    // Save updated metadata
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+
+    res.json({ success: true, deleted: loopEntry.filename });
+  } catch (error) {
+    console.error('Error deleting loop:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// END LOOP MANAGER API
+// ============================================================================
 
 app.get('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;

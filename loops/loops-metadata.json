@@ -1,0 +1,61 @@
+{
+  "version": "2.0",
+  "description": "Loop file metadata and matching conditions",
+  "loops": [],
+  "tempoRanges": {
+    "slow": {
+      "min": 0,
+      "max": 80,
+      "label": "Slow"
+    },
+    "medium": {
+      "min": 80,
+      "max": 120,
+      "label": "Medium"
+    },
+    "fast": {
+      "min": 120,
+      "max": 999,
+      "label": "Fast"
+    }
+  },
+  "supportedTaals": [
+    "keherwa",
+    "keherwa slow",
+    "dadra",
+    "dadra slow",
+    "ektaal",
+    "jhaptaal",
+    "teentaal",
+    "rupak",
+    "deepchandi",
+    "garba",
+    "rd pattern",
+    "desi drum",
+    "western",
+    "waltz",
+    "rock",
+    "jazz",
+    "march rhythm"
+  ],
+  "supportedGenres": [
+    "acoustic",
+    "rd pattern",
+    "qawalli",
+    "classical",
+    "ghazal",
+    "sufi",
+    "rock",
+    "blues"
+  ],
+  "supportedTimeSignatures": [
+    "4/4",
+    "3/4",
+    "2/4",
+    "6/8",
+    "5/4",
+    "7/8",
+    "12/8",
+    "14/8"
+  ]
+}
