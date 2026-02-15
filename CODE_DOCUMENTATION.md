@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 15, 2026 - 11:00 PM  
-**Version:** 1.12
+**Last Updated:** February 15, 2026 - 11:30 PM  
+**Version:** 1.13
 
 ---
 
@@ -434,6 +434,27 @@ Before marking vulnerabilities as fixed:
      ]
      ```
    - **Impact**: API requests now work on production, app can fetch songs and data successfully
+
+23. **✅ Loop Player: Fixed Duplicate API_BASE_URL Declaration**
+   - **Problem**: `Uncaught SyntaxError: Identifier 'API_BASE_URL' has already been declared` error on production
+   - **Root Cause**: Both main.js and loop-player-pad-ui.js declared `const API_BASE_URL` in global scope
+   - **Conflict**: index.html loads both scripts, causing duplicate const declaration error
+   - **Fix**: Removed API_BASE_URL declaration from loop-player-pad-ui.js
+   - **Location**: [loop-player-pad-ui.js](loop-player-pad-ui.js#L1-L20)
+   - **Solution**:
+     ```javascript
+     // Before (CONFLICTED):
+     const API_BASE_URL = (window.location.hostname === 'localhost'...)
+     
+     // After (FIXED):
+     // Uses API_BASE_URL from main.js (loaded first on index.html)
+     ```
+   - **Why It Works**:
+     - main.js is loaded first (line 1239 in index.html)
+     - loop-player-pad-ui.js is loaded after (line 1241 in index.html)
+     - Global variables from main.js are accessible to loop-player-pad-ui.js
+     - loop-manager.js keeps its own API_BASE_URL (separate page, no conflict)
+   - **Impact**: No more duplicate declaration errors, loop player loads correctly
 
 ### Completed Fixes - Session 5 (February 15, 2026 - Midnight)
 

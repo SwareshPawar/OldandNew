@@ -8,12 +8,9 @@
  * - Transition FROM loop1 → uses fill1
  * - Transition FROM loop2 → uses fill2
  * - Transition FROM loop3 → uses fill3
+ * 
+ * Note: Uses API_BASE_URL from main.js (loaded first on index.html)
  */
-
-// Dynamic API base URL for local/dev/prod
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:3001'
-    : 'https://oldand-new.vercel.app';
 
 // Global instance
 let loopPlayerInstance = null;
