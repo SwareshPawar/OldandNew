@@ -201,6 +201,126 @@
       "files": {
         "fill2": "deepchandi_14_8_slow_classical_FILL2.wav"
       }
+    },
+    {
+      "id": "keherwa_4_4_medium_dholak_loop1",
+      "filename": "keherwa_4_4_medium_dholak_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-17T08:52:23.758Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "keherwa_4_4_medium_dholak_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_dholak_loop2",
+      "filename": "keherwa_4_4_medium_dholak_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-17T08:52:44.687Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "keherwa_4_4_medium_dholak_LOOP2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_dholak_loop3",
+      "filename": "keherwa_4_4_medium_dholak_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-17T08:53:17.901Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "keherwa_4_4_medium_dholak_LOOP3.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_dholak_fill1",
+      "filename": "keherwa_4_4_medium_dholak_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-17T08:53:35.996Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "keherwa_4_4_medium_dholak_FILL1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_dholak_fill2",
+      "filename": "keherwa_4_4_medium_dholak_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-17T08:53:46.452Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "keherwa_4_4_medium_dholak_FILL2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_dholak_fill3",
+      "filename": "keherwa_4_4_medium_dholak_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-17T08:54:24.711Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "keherwa_4_4_medium_dholak_FILL3.wav"
+      }
     }
   ],
   "tempoRanges": {
