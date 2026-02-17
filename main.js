@@ -2019,18 +2019,18 @@ async function performInitialization() {
 
 // --- JWT expiry helpers: must be at the very top ---
 // ===== GENRE MULTISELECT LOGIC =====
-// Helper to update Taal dropdowns based on selected time signature
+// Helper to update Taal dropdowns - shows ALL taals regardless of time signature
 function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     const timeSelect = document.getElementById(timeSelectId);
     const taalSelect = document.getElementById(taalSelectId);
     if (!timeSelect || !taalSelect) return;
-    const selectedTime = timeSelect.value;
-    const taals = TIME_GENRE_MAP[selectedTime] || [];
+    // Show ALL taals from TAALS constant, not just filtered by time signature
+    const taals = TAALS;
     taalSelect.innerHTML = '';
     // Add default option
     const defaultOpt = document.createElement('option');
     defaultOpt.value = '';
-    defaultOpt.textContent = 'Select Genre or Taal';
+    defaultOpt.textContent = 'Select Taal/Genre';
     defaultOpt.disabled = true;
     defaultOpt.selected = !selectedTaal;
     taalSelect.appendChild(defaultOpt);
