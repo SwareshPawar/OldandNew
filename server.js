@@ -65,17 +65,27 @@ const client = new MongoClient(uri, {
   },
 });
 
+const allowedOrigins = new Set([
+  'http://localhost:3000',
+  'http://127.0.0.1:5501',
+  'http://localhost:5501',
+  'https://oldandnew.onrender.com',
+  'https://swareshpawar.github.io',
+  'https://oldand-new.vercel.app'
+]);
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://127.0.0.1:5501',
-    'http://localhost:5501',
-    'https://oldandnew.onrender.com',
-    'https://swareshpawar.github.io',
-    'https://oldand-new.vercel.app' // Vercel production URL
-  ],
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'], // <-- Add 'Authorization' if not present
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit for Smart Setlists
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Also increase URL-encoded limit
@@ -1493,6 +1503,89 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
 });
 
 /**
+ * PUT /api/loops/:loopId/replace
+ * Replace a loop file while keeping the same metadata 
+ */
+app.put('/api/loops/:loopId/replace', authMiddleware, requireAdmin, (req, res) => {
+  upload.single('file')(req, res, async function (err) {
+    if (err instanceof multer.MulterError) {
+      console.error('Multer error:', err);
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      console.error('Upload error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    const { loopId } = req.params;
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    try {
+      const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+      
+      if (!fs.existsSync(metadataPath)) {
+        // Clean up uploaded file
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({ error: 'Metadata file not found' });
+      }
+      
+      const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+      const loopEntry = metadata.loops.find(loop => loop.id === loopId);
+      
+      if (!loopEntry) {
+        // Clean up uploaded file
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({ error: 'Loop not found' });
+      }
+      
+      const oldFilePath = path.join(loopsDir, loopEntry.filename);
+      const newFilePath = path.join(loopsDir, loopEntry.filename); // Keep same filename
+      
+      // Delete old file if it exists
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+        console.log(`🗑️ Deleted old loop file: ${loopEntry.filename}`);
+      }
+      
+      // Move uploaded file to proper location with correct name
+      fs.renameSync(req.file.path, newFilePath);
+      
+      // Update metadata with replacement info
+      loopEntry.replacedAt = new Date().toISOString();
+      loopEntry.replacedBy = req.user.email || req.user.username;
+      loopEntry.fileSize = req.file.size;
+      
+      // Save updated metadata
+      try {
+        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      } catch (err) {
+        console.warn('Could not write metadata (serverless mode):', err.message);
+      }
+      
+      console.log(`🔄 Replaced loop file: ${loopEntry.filename}`);
+      res.json({ 
+        message: 'Loop replaced successfully',
+        filename: loopEntry.filename
+      });
+      
+    } catch (error) {
+      console.error('Replace loop error:', error);
+      // Clean up uploaded file on error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ error: 'Failed to replace loop file' });
+    }
+  });
+});
+
+/**
  * DELETE /api/loops/:loopId
  * Delete a loop file and its metadata
  */
@@ -1554,22 +1647,24 @@ const melodicLoopsDir = path.join(loopsDir, 'melodies');
 const atmosphereDir = path.join(melodicLoopsDir, 'atmosphere');
 const tanpuraDir = path.join(melodicLoopsDir, 'tanpura');
 
-// Ensure melodic loops directories exist
-[melodicLoopsDir, atmosphereDir, tanpuraDir].forEach(dir => {
+// Ensure melodic loops directories exist (skip write attempts on serverless read-only FS)
+if (!isServerless) {
+  [melodicLoopsDir, atmosphereDir, tanpuraDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      fs.mkdirSync(dir, { recursive: true });
     }
-});
+  });
+}
 
 /**
  * Multer configuration for melodic uploads
  */
 const melodicUpload = multer({
     storage: multer.diskStorage({
-        destination: (req, file, cb) => {
-            // Use a temporary directory, we'll move to correct location later
-            cb(null, './loops');
-        },
+      destination: (req, file, cb) => {
+        // Use uploads directory (serverless-safe)
+        cb(null, uploadsDir);
+      },
         filename: (req, file, cb) => {
             // Use a temporary filename, we'll rename based on form data later
             const tempFilename = `temp_melodic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.wav`;
@@ -1746,6 +1841,81 @@ app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file
             details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
+});
+
+/**
+ * PUT /api/melodic-loops/:id/replace
+ * Replace a melodic loop file by ID (format: type_key)
+ */
+app.put('/api/melodic-loops/:id/replace', authMiddleware, requireAdmin, (req, res) => {
+    melodicUpload.single('file')(req, res, async function (err) {
+        if (err instanceof multer.MulterError) {
+            console.error('Multer error:', err);
+            return res.status(400).json({ error: err.message });
+        } else if (err) {
+            console.error('Upload error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+
+        const { id } = req.params;
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        try {
+            // Parse ID (format: type_key) 
+            const [type, key] = id.split('_');
+
+            // Validate type
+            if (!['atmosphere', 'tanpura'].includes(type)) {
+                // Clean up uploaded file
+                if (fs.existsSync(req.file.path)) {
+                    fs.unlinkSync(req.file.path);
+                }
+                return res.status(400).json({ error: 'Invalid file ID format' });
+            }
+
+            // Validate key
+            const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            if (!validKeys.includes(key)) {
+                // Clean up uploaded file
+                if (fs.existsSync(req.file.path)) {
+                    fs.unlinkSync(req.file.path);
+                }
+                return res.status(400).json({ error: 'Invalid file ID format' });
+            }
+
+            const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
+            const filename = `${type}_${key}.wav`;
+            const filePath = path.join(targetDir, filename);
+
+            // Delete old file if it exists
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+                console.log(`🗑️ Deleted old melodic file: ${filename}`);
+            }
+
+            // Move uploaded file to correct location with correct name
+            fs.renameSync(req.file.path, filePath);
+
+            console.log(`🔄 Replaced melodic file: ${filename}`);
+            res.json({ 
+                message: `Replaced ${type} pad for key ${key}`,
+                filename: filename,
+                type: type,
+                key: key
+            });
+
+        } catch (error) {
+            console.error('Replace melodic file error:', error);
+            // Clean up uploaded file on error
+            if (req.file && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            res.status(500).json({ error: 'Failed to replace melodic file' });
+        }
+    });
 });
 
 /**

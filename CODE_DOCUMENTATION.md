@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** December 19, 2024 - 2:45 AM  
-**Version:** 1.16
+**Last Updated:** February 17, 2026 - 11:15 AM  
+**Version:** 1.16.1
 
 ---
 
@@ -1467,6 +1467,78 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 ## 8. BUGS ENCOUNTERED & RESOLVED
 
 This section documents production bugs discovered during development and testing, along with their root causes and solutions. Each entry includes reproduction steps, debugging process, and lessons learned.
+
+### Bug #3: Vercel Production API Requests Failing After Replace Uploads
+**Date Discovered:** February 17, 2026  
+**Severity:** Critical  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+On Vercel deployments, app initialization failed at "Loading songs..." with `TypeError: Failed to fetch` from `/api/songs`. Local development worked normally.
+
+**Affected Components:**
+- CORS configuration ([server.js](server.js))
+- Melodic loops directory initialization (serverless)
+- Melodic upload temp storage
+
+**Reproduction Steps:**
+1. Deploy to Vercel
+2. Load the app homepage
+3. Observe console failure during song loading
+
+**Error Message:**
+```
+TypeError: Failed to fetch
+        at authFetch (main.js:482:32)
+```
+
+**Root Cause Analysis:**
+1. The CORS allowlist only permitted a single Vercel production URL, so preview/custom domains were blocked and surfaced as a network error in the browser.
+2. Serverless init attempted to create `/loops/melodies` on a read-only filesystem, causing module initialization failures in some deployments.
+
+**Solution Implemented:**
+- Added a dynamic CORS origin function that allows known origins and `*.vercel.app`.
+- Skipped directory creation on serverless environments and used `uploadsDir` for melodic temp files.
+
+**Code Changes:**
+```javascript
+// CORS: allow known origins + vercel.app
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    }
+}));
+```
+
+```javascript
+// Serverless-safe directory handling
+if (!isServerless) {
+    [melodicLoopsDir, atmosphereDir, tanpuraDir].forEach(dir => {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+    });
+}
+```
+
+**Files Modified:**
+- `server.js` lines 70-95 (CORS origin handling)
+- `server.js` lines 1650-1670 (serverless-safe directory creation)
+- `server.js` line ~1662 (melodic upload temp storage)
+
+**Testing:**
+- Deployed to Vercel and loaded `/api/songs` directly in browser (200 OK)
+- App initialization completes with songs loaded
+- Local dev unchanged (localhost still permitted)
+
+**Lessons Learned:**
+1. Serverless deployments require explicit handling for read-only filesystems.
+2. CORS allowlists must include preview and custom domains in CI/CD workflows.
+3. Production failures can present as `Failed to fetch` even when the API is up but blocked.
 
 ### Bug #2: Loop Player Crashing on Corrupt Audio Files
 **Date Discovered:** February 15, 2026  
@@ -5101,7 +5173,7 @@ function checkForActivePlayback() {
 
 ---
 
-**Document End - Last Updated: December 19, 2024, 2:45 AM - Version 1.16 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: February 17, 2026, 11:15 AM - Version 1.16.1 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
@@ -5129,3 +5201,7 @@ function checkForActivePlayback() {
   * Seamless integration with existing floating stop button functionality
   * Default 30% volume levels appropriate for atmospheric/background content
   * Key-based file organization (C, C#, D, etc.) with atmosphere/tanpura sample types
+- Documented Bug #3: Vercel Production API Requests Failing After Replace Uploads
+    * Allowed `*.vercel.app` CORS origins and preview domains
+    * Avoided serverless filesystem writes during init
+    * Used serverless-safe temp directory for melodic uploads

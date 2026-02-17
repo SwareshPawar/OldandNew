@@ -324,9 +324,8 @@ const CHORD_TYPES = [
 
         // Dynamic API base URL for local/dev/prod
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-
             ? 'http://localhost:3001'
-            : 'https://oldand-new.vercel.app'; // Backend server on Vercel
+            : window.location.origin; // Same-origin API in production
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';
@@ -8942,11 +8941,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 }
             }
 
-            // Determine if this is a global setlist or personal setlist
-            let apiEndpoint;
-            const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:3001' 
-    : 'https://oldand-new.vercel.app'; // or your actual backend URL
+                // Determine if this is a global setlist or personal setlist
+                let apiEndpoint;
             
             if (setlistId.startsWith('global_')) {
                 apiEndpoint = `${API_BASE_URL}/api/global-setlists/add-song`;
