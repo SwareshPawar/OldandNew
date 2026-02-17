@@ -429,6 +429,11 @@ function displayLoops() {
             const tdActions = document.createElement('td');
             tdActions.innerHTML = `
                 <div class="action-btns">
+                    <input type="file" id="replaceFile-${loop.id}" accept="audio/*" style="display: none;" 
+                           onchange="handleReplaceFile('${loop.id}', this)">
+                    <button class="btn btn-warning btn-icon" onclick="document.getElementById('replaceFile-${loop.id}').click()" title="Replace">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                     <button class="btn btn-danger btn-icon" onclick="deleteLoop('${loop.id}')" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -465,6 +470,62 @@ function playAudio(url, button) {
         currentAudio.addEventListener('ended', () => {
             icon.className = 'fas fa-play';
         });
+    }
+}
+
+/**
+ * Handle replace file selection
+ */
+function handleReplaceFile(loopId, fileInput) {
+    const file = fileInput.files[0];
+    if (!file) return;
+    
+    if (!confirm(`Replace this loop with "${file.name}"? The original file will be permanently deleted.`)) {
+        fileInput.value = ''; // Clear the selection
+        return;
+    }
+    
+    replaceLoop(loopId, file);
+}
+
+/**
+ * Replace loop file
+ */
+async function replaceLoop(loopId, file) {
+    try {
+        // Show loading state
+        showAlert('loopsAlert', 'Replacing loop file...', 'info');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${API_BASE_URL}/api/loops/${loopId}/replace`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            },
+            body: formData
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showAlert('loopsAlert', `Loop replaced successfully: ${result.filename}`, 'success');
+            await loadLoopsMetadata();
+            updateStats();
+        } else {
+            if (response.status === 401) {
+                showAlert('loopsAlert', 'Session expired. Please login again.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            } else {
+                const result = await response.json();
+                showAlert('loopsAlert', result.error || 'Failed to replace loop', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Replace error:', error);
+        showAlert('loopsAlert', 'Replace error: ' + error.message, 'error');
     }
 }
 
