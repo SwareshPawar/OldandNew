@@ -6,7 +6,9 @@
 // Dynamic API base URL for local/dev/prod
 const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3001'
-    : window.location.origin;
+    : (window.location.hostname.endsWith('github.io')
+        ? 'https://oldand-new.vercel.app'
+        : window.location.origin);
 
 let loopsMetadata = null;
 let songMetadata = null;

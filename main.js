@@ -325,7 +325,9 @@ const CHORD_TYPES = [
         // Dynamic API base URL for local/dev/prod
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? 'http://localhost:3001'
-            : window.location.origin; // Same-origin API in production
+            : (window.location.hostname.endsWith('github.io')
+                ? 'https://oldand-new.vercel.app'
+                : window.location.origin); // Same-origin API for Vercel, fallback to backend for GitHub Pages
         
         
         // const API_BASE_URL = 'https://oldand-new.vercel.app';

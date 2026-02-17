@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 17, 2026 - 11:15 AM  
-**Version:** 1.16.1
+**Last Updated:** February 17, 2026 - 11:45 AM  
+**Version:** 1.16.2
 
 ---
 
@@ -1539,6 +1539,51 @@ if (!isServerless) {
 1. Serverless deployments require explicit handling for read-only filesystems.
 2. CORS allowlists must include preview and custom domains in CI/CD workflows.
 3. Production failures can present as `Failed to fetch` even when the API is up but blocked.
+
+### Bug #4: GitHub Pages Login 405 (Method Not Allowed)
+**Date Discovered:** February 17, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+When the app was served from GitHub Pages, login POST requests were sent to the static GitHub Pages origin, returning `405 Method Not Allowed`.
+
+**Affected Components:**
+- API base URL routing ([main.js](main.js))
+- Loop admin interfaces ([loop-manager.js](loop-manager.js), [melodic-loops-manager.js](melodic-loops-manager.js))
+
+**Reproduction Steps:**
+1. Open the site on `https://swareshpawar.github.io`
+2. Attempt to log in
+3. Observe failed POST to `/api/login` (405)
+
+**Root Cause Analysis:**
+The API base URL was set to same-origin for production, which is correct for Vercel but not for GitHub Pages (static hosting). GitHub Pages does not proxy `/api/*`.
+
+**Solution Implemented:**
+- Route GitHub Pages traffic to the Vercel backend (`https://oldand-new.vercel.app`) while keeping same-origin for Vercel.
+
+**Code Changes:**
+```javascript
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3001'
+    : (window.location.hostname.endsWith('github.io')
+        ? 'https://oldand-new.vercel.app'
+        : window.location.origin);
+```
+
+**Files Modified:**
+- `main.js` lines 326-335
+- `loop-manager.js` lines 6-10
+- `melodic-loops-manager.js` lines 6-10
+
+**Testing:**
+- GitHub Pages login posts to Vercel API (200/401 expected)
+- Vercel deployment continues using same-origin API
+
+**Lessons Learned:**
+1. Static hosting requires explicit API routing to a backend origin.
+2. Same-origin API routing only works when the frontend and backend are co-hosted.
 
 ### Bug #2: Loop Player Crashing on Corrupt Audio Files
 **Date Discovered:** February 15, 2026  
@@ -5173,7 +5218,7 @@ function checkForActivePlayback() {
 
 ---
 
-**Document End - Last Updated: February 17, 2026, 11:15 AM - Version 1.16.1 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: February 17, 2026, 11:45 AM - Version 1.16.2 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
@@ -5205,3 +5250,6 @@ function checkForActivePlayback() {
     * Allowed `*.vercel.app` CORS origins and preview domains
     * Avoided serverless filesystem writes during init
     * Used serverless-safe temp directory for melodic uploads
+- Documented Bug #4: GitHub Pages Login 405 (Method Not Allowed)
+    * Routed GitHub Pages traffic to Vercel API backend
+    * Preserved same-origin API routing for Vercel deployments
