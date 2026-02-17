@@ -23,15 +23,33 @@ class LoopPlayerPad {
         
         // Playback state
         this.isPlaying = false;
+        this.isInitializing = false;
         this.currentLoop = 'loop1';
         this.nextLoop = null;
         this.nextFill = null;
         this.loopTimeout = null;
         
+        // Melodic pads state
+        this.melodicPads = {
+            atmosphere: {
+                isPlaying: false,
+                source: null,
+                gainNode: null
+            },
+            tanpura: {
+                isPlaying: false,
+                source: null,
+                gainNode: null
+            }
+        };
+        this.currentSongKey = null;
+        this.currentTranspose = 0;
+        
         // Settings
-        this.autoFill = false;
+        this.autoFill = true;
         this.volumeLevel = 0.8;
         this.playbackRate = 1.0; // 0.5-2.0
+        this.melodicVolume = 0.3; // 30% volume for melodic pads
         
         // Timing
         this.loopDuration = 0;
@@ -39,6 +57,8 @@ class LoopPlayerPad {
         // Callbacks
         this.onLoopChange = null;
         this.onPadActive = null;
+        this.onMelodicPadToggle = null;
+        this.onMelodicError = null;
         this.onError = null;
     }
 
@@ -52,11 +72,53 @@ class LoopPlayerPad {
             this.gainNode.connect(this.audioContext.destination);
             this.gainNode.gain.value = this.volumeLevel;
             
-            console.log('Web Audio API initialized');
+            // Create gain nodes for melodic pads
+            this.melodicPads.atmosphere.gainNode = this.audioContext.createGain();
+            this.melodicPads.atmosphere.gainNode.connect(this.audioContext.destination);
+            this.melodicPads.atmosphere.gainNode.gain.value = this.melodicVolume;
+            
+            this.melodicPads.tanpura.gainNode = this.audioContext.createGain();
+            this.melodicPads.tanpura.gainNode.connect(this.audioContext.destination);
+            this.melodicPads.tanpura.gainNode.gain.value = this.melodicVolume;
+            
+            console.log('Web Audio API initialized with melodic pad support');
+            
+            // Decode any already-loaded samples (both rhythmic and melodic)
+            await this._decodeLoadedSamples();
         }
         
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
+        }
+    }
+
+    /**
+     * Decode all loaded raw audio data
+     * @private
+     */
+    async _decodeLoadedSamples() {
+        if (!this.audioContext) return;
+        
+        const decodePromises = [];
+        
+        // Decode all raw audio data that hasn't been decoded yet
+        for (const [name, rawData] of this.rawAudioData) {
+            if (!this.audioBuffers.has(name)) {
+                const decodePromise = this.audioContext.decodeAudioData(rawData.slice())
+                    .then(audioBuffer => {
+                        this.audioBuffers.set(name, audioBuffer);
+                        console.log(`Decoded sample: ${name}, duration: ${audioBuffer.duration.toFixed(2)}s`);
+                    })
+                    .catch(error => {
+                        console.warn(`Failed to decode sample ${name}:`, error);
+                    });
+                decodePromises.push(decodePromise);
+            }
+        }
+        
+        if (decodePromises.length > 0) {
+            await Promise.all(decodePromises);
+            console.log(`✅ Decoded ${decodePromises.length} samples`);
         }
     }
 
@@ -141,22 +203,124 @@ class LoopPlayerPad {
     async play() {
         if (this.isPlaying) return;
         
-        // Initialize Web Audio API NOW (after user gesture)
-        await this.initialize();
+        // Set loading state
+        this.isInitializing = true;
         
-        // Decode audio data if not already decoded
+        try {
+            // Initialize everything silently first
+            await this._initializeAllSamples();
+            
+            // Check if loops are loaded
+            if (this.audioBuffers.size === 0) {
+                if (this.onError) this.onError(new Error('No loops loaded'));
+                return;
+            }
+            
+            // Now start actual playback
+            this.isPlaying = true;
+            this.isInitializing = false;
+            this._playLoop(this.currentLoop, true);
+            
+        } catch (error) {
+            this.isInitializing = false;
+            console.error('Error during audio initialization:', error);
+            if (this.onError) this.onError(error);
+        }
+    }
+
+    /**
+     * Initialize all available audio samples silently
+     * @private
+     */
+    async _initializeAllSamples() {
+        console.log('🔄 Initializing all audio samples...');
+        
+        // Initialize Web Audio API with silent gain
+        await this._initializeSilent();
+        
+        // Initialize all rhythm loops
+        await this._initializeRhythmSamples();
+        
+        // Initialize available melodic samples
+        await this._initializeMelodicSamples();
+        
+        // Restore proper volume levels
+        this._restoreVolumeFromSilent();
+        
+        console.log('✅ All audio samples initialized and ready');
+    }
+
+    /**
+     * Initialize Web Audio API with silent output
+     * @private
+     */
+    async _initializeSilent() {
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create gain nodes with ZERO volume initially
+            this.gainNode = this.audioContext.createGain();
+            this.gainNode.connect(this.audioContext.destination);
+            this.gainNode.gain.value = 0; // Silent during initialization
+            
+            // Create melodic gain nodes (also silent)
+            this.melodicPads.atmosphere.gainNode = this.audioContext.createGain();
+            this.melodicPads.atmosphere.gainNode.connect(this.audioContext.destination);
+            this.melodicPads.atmosphere.gainNode.gain.value = 0;
+            
+            this.melodicPads.tanpura.gainNode = this.audioContext.createGain();
+            this.melodicPads.tanpura.gainNode.connect(this.audioContext.destination);
+            this.melodicPads.tanpura.gainNode.gain.value = 0;
+            
+            console.log('🔇 Web Audio API initialized silently');
+        }
+        
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+    }
+
+    /**
+     * Initialize and decode all rhythm samples
+     * @private
+     */
+    async _initializeRhythmSamples() {
+        // Decode rhythm loops if not already decoded
         if (this.audioBuffers.size === 0 && this.rawAudioData.size > 0) {
             await this._decodeAudioData();
         }
+    }
+
+    /**
+     * Initialize available melodic samples for current key
+     * @private
+     */
+    async _initializeMelodicSamples() {
+        // Check which melodic samples are available
+        const availability = await this.checkMelodicAvailability(['atmosphere', 'tanpura']);
+        const availableTypes = Object.keys(availability).filter(type => availability[type]);
         
-        // Check if loops are loaded
-        if (this.audioBuffers.size === 0) {
-            if (this.onError) this.onError(new Error('No loops loaded'));
-            return;
+        if (availableTypes.length > 0) {
+            console.log(`🎵 Loading melodic samples: ${availableTypes.join(', ')}`);
+            await this.loadMelodicSamples(false, availableTypes);
         }
-        
-        this.isPlaying = true;
-        this._playLoop(this.currentLoop, true);
+    }
+
+    /**
+     * Restore proper volume levels after silent initialization
+     * @private
+     */
+    _restoreVolumeFromSilent() {
+        if (this.gainNode) {
+            this.gainNode.gain.value = this.volumeLevel;
+        }
+        if (this.melodicPads.atmosphere.gainNode) {
+            this.melodicPads.atmosphere.gainNode.gain.value = this.melodicVolume;
+        }
+        if (this.melodicPads.tanpura.gainNode) {
+            this.melodicPads.tanpura.gainNode.gain.value = this.melodicVolume;
+        }
+        console.log('🔊 Volume levels restored');
     }
 
     /**
@@ -176,6 +340,9 @@ class LoopPlayerPad {
             }
             this.currentSource = null;
         }
+        
+        // Stop all melodic pads
+        this._stopAllMelodicPads();
         
         // Clear any scheduled loops
         if (this.loopTimeout) {
@@ -234,6 +401,58 @@ class LoopPlayerPad {
     }
 
     /**
+     * Set melodic pads volume (0-1)
+     * @param {number} vol - Volume level 0-1
+     */
+    setMelodicVolume(vol) {
+        this.melodicVolume = Math.max(0, Math.min(1, vol));
+        if (this.melodicPads.atmosphere.gainNode) {
+            this.melodicPads.atmosphere.gainNode.gain.value = this.melodicVolume;
+        }
+        if (this.melodicPads.tanpura.gainNode) {
+            this.melodicPads.tanpura.gainNode.gain.value = this.melodicVolume;
+        }
+    }
+
+    /**
+     * Set current song key and transpose for melodic pads
+     * @param {string} key - Song key (e.g., 'C', 'D#', 'F')
+     * @param {number} transpose - Transpose level (+/- semitones)
+     */
+    setSongKeyAndTranspose(key, transpose = 0) {
+        this.currentSongKey = key;
+        this.currentTranspose = transpose;
+        console.log(`Set song key: ${key}, transpose: ${transpose}`);
+    }
+
+    /**
+     * Calculate the final key for melodic samples based on song key + transpose
+     * @private
+     * @returns {string} - Key name for sample file (e.g., 'C', 'C#', 'D')
+     */
+    _getEffectiveKey() {
+        if (!this.currentSongKey) {
+            return 'C'; // Default key
+        }
+
+        const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        let baseIndex = keys.indexOf(this.currentSongKey);
+        
+        if (baseIndex === -1) {
+            // Handle alternate notation (Db, Eb, etc.)
+            const alternateMap = {
+                'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
+            };
+            const alternate = alternateMap[this.currentSongKey];
+            baseIndex = alternate ? keys.indexOf(alternate) : 0;
+        }
+
+        // Apply transpose (wrapping around the 12-tone scale)
+        const finalIndex = (baseIndex + this.currentTranspose + 12) % 12;
+        return keys[finalIndex];
+    }
+
+    /**
      * Set playback rate (tempo) - Note: pitch changes slightly with tempo
      * Range: 0.9-1.1 (90-110%) - minimal pitch change for percussion
      * @param {number} rate - Playback speed multiplier
@@ -241,6 +460,289 @@ class LoopPlayerPad {
     setPlaybackRate(rate) {
         this.playbackRate = Math.max(0.9, Math.min(1.1, rate));
         // Rate will be applied to next loop cycle
+    }
+
+    /**
+     * Check if melodic samples exist for current key (lightweight check)
+     * @param {string[]} sampleTypes - Types to check ['atmosphere', 'tanpura']
+     * @returns {Object} - Object with availability status for each type
+     */
+    async checkMelodicAvailability(sampleTypes = ['atmosphere', 'tanpura']) {
+        const effectiveKey = this._getEffectiveKey();
+        const availability = {};
+        
+        const checkPromises = sampleTypes.map(async (sampleType) => {
+            const url = `/loops/melodies/${sampleType}/${sampleType}_${effectiveKey}.wav`;
+            try {
+                // Use HEAD request to check existence without downloading
+                const response = await fetch(url, { method: 'HEAD' });
+                availability[sampleType] = response.ok;
+                console.log(`${sampleType}_${effectiveKey}.wav: ${response.ok ? 'Available' : 'Not Found'}`);
+            } catch (error) {
+                availability[sampleType] = false;
+                console.log(`${sampleType}_${effectiveKey}.wav: Not Available (${error.message})`);
+            }
+        });
+        
+        await Promise.all(checkPromises);
+        return availability;
+    }
+
+    /**
+     * Load melodic samples for current key
+     * @param {boolean} force - Force reload even if already loaded
+     * @param {string[]} sampleTypes - Specific sample types to load ['atmosphere', 'tanpura'], defaults to both
+     */
+    async loadMelodicSamples(force = false, sampleTypes = ['atmosphere', 'tanpura']) {
+        const effectiveKey = this._getEffectiveKey();
+        const atmosphereKey = `atmosphere_${effectiveKey}`;
+        const tanpuraKey = `tanpura_${effectiveKey}`;
+
+        console.log(`Loading melodic samples for key: ${effectiveKey}, types: ${sampleTypes.join(', ')}`);
+
+        // Build sample map for only requested types
+        const sampleMap = {};
+        if (sampleTypes.includes('atmosphere')) {
+            // Only include if not already loaded or force is true
+            if (force || !this.rawAudioData.has(atmosphereKey)) {
+                sampleMap[atmosphereKey] = `/loops/melodies/atmosphere/atmosphere_${effectiveKey}.wav`;
+            }
+        }
+        if (sampleTypes.includes('tanpura')) {
+            // Only include if not already loaded or force is true
+            if (force || !this.rawAudioData.has(tanpuraKey)) {
+                sampleMap[tanpuraKey] = `/loops/melodies/tanpura/tanpura_${effectiveKey}.wav`;
+            }
+        }
+
+        // If nothing to load, return early
+        if (Object.keys(sampleMap).length === 0) {
+            console.log('Requested melodic samples already loaded for this key');
+            return;
+        }
+
+        // Fetch raw audio data for melodic samples
+        const loadPromises = Object.entries(sampleMap).map(async ([name, url]) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                this.rawAudioData.set(name, arrayBuffer);
+                console.log(`Fetched melodic sample: ${name}, size: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`);
+                return { success: true, name };
+            } catch (error) {
+                console.warn(`Failed to fetch melodic sample ${name}:`, error);
+                // Determine sample type from name (atmosphere_C -> atmosphere)
+                const sampleType = name.split('_')[0];
+                if (this.onMelodicError) {
+                    this.onMelodicError(sampleType, error);
+                }
+                return { success: false, name, error };
+            }
+        });
+
+        const results = await Promise.all(loadPromises);
+        
+        // Log summary
+        const successful = results.filter(r => r.success);
+        const failed = results.filter(r => !r.success);
+        if (successful.length > 0) {
+            console.log(`✅ Successfully loaded ${successful.length} melodic samples`);
+        }
+        if (failed.length > 0) {
+            console.log(`❌ Failed to load ${failed.length} melodic samples:`, failed.map(f => f.name));
+        }
+        
+        // If audio context is initialized, decode immediately
+        if (this.audioContext && this.rawAudioData.has(atmosphereKey)) {
+            await this._decodeMelodicSample(atmosphereKey);
+        }
+        if (this.audioContext && this.rawAudioData.has(tanpuraKey)) {
+            await this._decodeMelodicSample(tanpuraKey);
+        }
+    }
+
+    /**
+     * Decode a single melodic sample
+     * @private
+     */
+    async _decodeMelodicSample(sampleName) {
+        if (this.audioBuffers.has(sampleName)) {
+            return; // Already decoded
+        }
+
+        const rawData = this.rawAudioData.get(sampleName);
+        if (!rawData) return;
+
+        try {
+            const audioBuffer = await this.audioContext.decodeAudioData(rawData);
+            this.audioBuffers.set(sampleName, audioBuffer);
+            console.log(`Decoded melodic sample: ${sampleName}, duration: ${audioBuffer.duration.toFixed(2)}s`);
+        } catch (error) {
+            console.warn(`Failed to decode melodic sample ${sampleName}:`, error.message);
+        }
+    }
+
+    /**
+     * Stop all melodic pads
+     * @private
+     */
+    _stopAllMelodicPads() {
+        // Stop atmosphere pad if playing
+        const atmospherePad = this.melodicPads.atmosphere;
+        if (atmospherePad.isPlaying && atmospherePad.source) {
+            try {
+                atmospherePad.source.stop();
+            } catch (e) {
+                // Already stopped
+            }
+            atmospherePad.source = null;
+            atmospherePad.isPlaying = false;
+            
+            if (this.onMelodicPadToggle) {
+                this.onMelodicPadToggle('atmosphere', false);
+            }
+            console.log(`Stopped atmosphere pad`);
+        }
+        
+        // Stop tanpura pad if playing
+        const tanpuraPad = this.melodicPads.tanpura;
+        if (tanpuraPad.isPlaying && tanpuraPad.source) {
+            try {
+                tanpuraPad.source.stop();
+            } catch (e) {
+                // Already stopped
+            }
+            tanpuraPad.source = null;
+            tanpuraPad.isPlaying = false;
+            
+            if (this.onMelodicPadToggle) {
+                this.onMelodicPadToggle('tanpura', false);
+            }
+            console.log(`Stopped tanpura pad`);
+        }
+    }
+
+    /**
+     * Stop all melodic pads (public method)
+     */
+    stopAllMelodicPads() {
+        this._stopAllMelodicPads();
+    }
+
+    /**
+     * Toggle atmosphere pad
+     */
+    async toggleAtmosphere() {
+        await this._toggleMelodicPad('atmosphere');
+    }
+
+    /**
+     * Toggle tanpura pad
+     */
+    async toggleTanpura() {
+        await this._toggleMelodicPad('tanpura');
+    }
+
+    /**
+     * Toggle a melodic pad on/off
+     * @private
+     * @param {string} padType - 'atmosphere' or 'tanpura'
+     */
+    async _toggleMelodicPad(padType) {
+        if (!['atmosphere', 'tanpura'].includes(padType)) {
+            return;
+        }
+
+        const pad = this.melodicPads[padType];
+        
+        if (pad.isPlaying) {
+            // Stop the pad
+            this._stopMelodicPad(padType);
+        } else {
+            // Start the pad
+            await this._startMelodicPad(padType);
+        }
+
+        if (this.onMelodicPadToggle) {
+            this.onMelodicPadToggle(padType, pad.isPlaying);
+        }
+    }
+
+    /**
+     * Start a melodic pad
+     * @private
+     * @param {string} padType - 'atmosphere' or 'tanpura'
+     */
+    async _startMelodicPad(padType) {
+        // Initialize Web Audio API silently if needed
+        await this._initializeSilent();
+        
+        // Load and decode only the specific melodic sample needed
+        await this.loadMelodicSamples(false, [padType]);
+        
+        const effectiveKey = this._getEffectiveKey();
+        const sampleName = `${padType}_${effectiveKey}`;
+        const buffer = this.audioBuffers.get(sampleName);
+        
+        if (!buffer) {
+            console.warn(`Melodic sample ${sampleName} not found`);
+            if (this.onMelodicError) {
+                this.onMelodicError(padType, new Error(`Melodic sample ${sampleName} not available`));
+            }
+            return;
+        }
+
+        const pad = this.melodicPads[padType];
+        
+        // Ensure proper volume is set now that we're ready to play
+        if (pad.gainNode) {
+            pad.gainNode.gain.value = this.melodicVolume;
+        }
+        
+        // Stop any existing source
+        if (pad.source) {
+            try {
+                pad.source.stop();
+            } catch (e) {
+                // Already stopped
+            }
+        }
+
+        // Create new looping source
+        pad.source = this.audioContext.createBufferSource();
+        pad.source.buffer = buffer;
+        pad.source.loop = true; // Enable looping
+        pad.source.connect(pad.gainNode);
+        
+        // Start playback
+        pad.source.start();
+        pad.isPlaying = true;
+        
+        console.log(`Started ${padType} pad (key: ${effectiveKey})`);
+    }
+
+    /**
+     * Stop a melodic pad
+     * @private
+     * @param {string} padType - 'atmosphere' or 'tanpura'
+     */
+    _stopMelodicPad(padType) {
+        const pad = this.melodicPads[padType];
+        
+        if (pad.source) {
+            try {
+                pad.source.stop();
+            } catch (e) {
+                // Already stopped
+            }
+            pad.source = null;
+        }
+        
+        pad.isPlaying = false;
+        console.log(`Stopped ${padType} pad`);
     }
 
     /**
@@ -297,7 +799,7 @@ class LoopPlayerPad {
                     const fill = this.nextFill;
                     this.nextFill = null;
                     
-                    if (this.onPadActive) this.onPadActive(fill);
+                    if (this.onPadActive && fill) this.onPadActive(fill);
                     if (this.onLoopChange) this.onLoopChange(fill);
                     
                     // Play fill (not continuing sequence)
@@ -313,7 +815,7 @@ class LoopPlayerPad {
                             this.currentLoop = targetLoop;
                             this.nextLoop = null;
                             
-                            if (this.onPadActive) this.onPadActive(targetLoop);
+                            if (this.onPadActive && targetLoop) this.onPadActive(targetLoop);
                             if (this.onLoopChange) this.onLoopChange(targetLoop);
                             
                             this._playLoop(targetLoop, true);
@@ -325,7 +827,7 @@ class LoopPlayerPad {
                     this.currentLoop = this.nextLoop;
                     this.nextLoop = null;
                     
-                    if (this.onPadActive) this.onPadActive(this.currentLoop);
+                    if (this.onPadActive && this.currentLoop) this.onPadActive(this.currentLoop);
                     if (this.onLoopChange) this.onLoopChange(this.currentLoop);
                     
                     this._playLoop(this.currentLoop, true);
@@ -350,9 +852,21 @@ class LoopPlayerPad {
             nextFill: this.nextFill,
             autoFill: this.autoFill,
             volume: this.volumeLevel,
+            melodicVolume: this.melodicVolume,
             playbackRate: this.playbackRate,
             loopsLoaded: this.audioBuffers.size,
-            loopsFetched: this.rawAudioData.size
+            loopsFetched: this.rawAudioData.size,
+            currentSongKey: this.currentSongKey,
+            currentTranspose: this.currentTranspose,
+            effectiveKey: this._getEffectiveKey(),
+            melodicPads: {
+                atmosphere: {
+                    isPlaying: this.melodicPads.atmosphere.isPlaying
+                },
+                tanpura: {
+                    isPlaying: this.melodicPads.tanpura.isPlaying
+                }
+            }
         };
     }
 
@@ -361,6 +875,8 @@ class LoopPlayerPad {
      */
     destroy() {
         this.pause();
+        
+        // Clean up rhythm loop resources
         if (this.currentSource) {
             this.currentSource.disconnect();
             this.currentSource = null;
@@ -369,6 +885,20 @@ class LoopPlayerPad {
             this.gainNode.disconnect();
             this.gainNode = null;
         }
+        
+        // Clean up melodic pad resources
+        this._stopMelodicPad('atmosphere');
+        this._stopMelodicPad('tanpura');
+        
+        if (this.melodicPads.atmosphere.gainNode) {
+            this.melodicPads.atmosphere.gainNode.disconnect();
+            this.melodicPads.atmosphere.gainNode = null;
+        }
+        if (this.melodicPads.tanpura.gainNode) {
+            this.melodicPads.tanpura.gainNode.disconnect();
+            this.melodicPads.tanpura.gainNode = null;
+        }
+        
         this.audioBuffers.clear();
     }
 }

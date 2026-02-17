@@ -24,6 +24,12 @@ let smartSetlists = []; // Global smart setlists array - loaded from server
 let currentlyPlayingSongs = new Set(); // Track which songs are currently playing
 let currentPlayingSongId = null; // Track the main currently playing song
 
+// Navigation history variables - declared early to prevent initialization errors
+let navigationHistory = [];
+let currentHistoryPosition = -1;
+let isNavigatingHistory = false;
+let currentModal = null;
+
 // Recommendation weights: loaded from backend or localStorage fallback
 let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
     language: 20,
@@ -2317,45 +2323,71 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     }
     
     function showAdminPanelModal() {
+        if (!document.getElementById('adminPanelModal')) {
+            console.error('Admin panel modal element not found');
+            return;
+        }
+        
         document.getElementById('adminPanelModal').style.display = 'flex';
         
         // Set active tab
-        document.getElementById('userMgmtTab').classList.add('active');
-        document.getElementById('userMgmtTabContent').classList.add('active');
+        const userMgmtTab = document.getElementById('userMgmtTab');
+        const userMgmtTabContent = document.getElementById('userMgmtTabContent');
+        const weightsTab = document.getElementById('weightsTab');
+        const weightsTabContent = document.getElementById('weightsTabContent');
+        
+        if (userMgmtTab) userMgmtTab.classList.add('active');
+        if (userMgmtTabContent) userMgmtTabContent.classList.add('active');
         
         // Hide other tabs
-        document.getElementById('weightsTab').classList.remove('active');
-        document.getElementById('weightsTabContent').classList.remove('active');
+        if (weightsTab) weightsTab.classList.remove('active');
+        if (weightsTabContent) weightsTabContent.classList.remove('active');
         
         // Load users and set up functions
         loadUsers();
         window.markAdmin = markAdmin;
     }
     const adminPanelBtn = document.getElementById('adminPanelBtn');
-    adminPanelBtn.onclick = () => showAdminPanelModal();
+    if (adminPanelBtn) {
+        adminPanelBtn.onclick = () => showAdminPanelModal();
+    }
 
     // Tab switching logic for admin panel
-    document.getElementById('userMgmtTab').onclick = function() {
-        // Set active tab
-        document.getElementById('userMgmtTab').classList.add('active');
-        document.getElementById('userMgmtTabContent').classList.add('active');
-        
-        // Remove active from other tabs
-        document.getElementById('weightsTab').classList.remove('active');
-        document.getElementById('weightsTabContent').classList.remove('active');
-    };
-    document.getElementById('weightsTab').onclick = function() {
-        // Set active tab
-        document.getElementById('weightsTab').classList.add('active');
-        document.getElementById('weightsTabContent').classList.add('active');
-        
-        // Remove active from other tabs
-        document.getElementById('userMgmtTab').classList.remove('active');
-        document.getElementById('userMgmtTabContent').classList.remove('active');
-        
-        // Load weights when switching to weights tab
-        loadWeightsToForm();
-    };
+    const userMgmtTab = document.getElementById('userMgmtTab');
+    if (userMgmtTab) {
+        userMgmtTab.onclick = function() {
+            // Set active tab
+            const userMgmtTabContent = document.getElementById('userMgmtTabContent');
+            const weightsTab = document.getElementById('weightsTab');
+            const weightsTabContent = document.getElementById('weightsTabContent');
+            
+            userMgmtTab.classList.add('active');
+            if (userMgmtTabContent) userMgmtTabContent.classList.add('active');
+            
+            // Remove active from other tabs
+            if (weightsTab) weightsTab.classList.remove('active');
+            if (weightsTabContent) weightsTabContent.classList.remove('active');
+        };
+    }
+    
+    const weightsTab = document.getElementById('weightsTab');
+    if (weightsTab) {
+        weightsTab.onclick = function() {
+            // Set active tab
+            const weightsTabContent = document.getElementById('weightsTabContent');
+            const userMgmtTabContent = document.getElementById('userMgmtTabContent');
+            
+            weightsTab.classList.add('active');
+            if (weightsTabContent) weightsTabContent.classList.add('active');
+            
+            // Remove active from other tabs
+            if (userMgmtTab) userMgmtTab.classList.remove('active');
+            if (userMgmtTabContent) userMgmtTabContent.classList.remove('active');
+            
+            // Load weights when switching to weights tab
+            loadWeightsToForm();
+        };
+    }
 
     // --- String Similarity Helper (used for duplicate detection during song addition) ---
     function stringSimilarity(str1, str2) {
@@ -6399,14 +6431,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     let isUserScrolling = false;
     // Use global CHORDS, CHORD_REGEX, CHORD_LINE_REGEX, INLINE_CHORD_REGEX
         
-        let navigationHistory = [];
-        let currentHistoryPosition = -1;
-        let isNavigatingHistory = false;
-        let currentModal = null;
-        let userDataSaveQueue = Promise.resolve();
-
-        // Search history
-        let searchHistory = [];
+        // Navigation history variables moved to top of file
         try {
             searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
         } catch (e) {
@@ -11650,8 +11675,12 @@ function stopCurrentlyPlayingSong() {
     if (currentPlayingSongId) {
         // Get the loop player instance and stop it directly
         const loopPlayer = window.getLoopPlayerInstance && window.getLoopPlayerInstance();
-        if (loopPlayer && loopPlayer.isPlaying) {
-            loopPlayer.pause();
+        if (loopPlayer) {
+            if (loopPlayer.isPlaying) {
+                loopPlayer.pause(); // This stops rhythmic loops and calls _stopAllMelodicPads()
+            }
+            // Also explicitly stop melodic pads to ensure UI updates
+            loopPlayer.stopAllMelodicPads();
         } else {
             // Fallback: try to click the play button
             const loopContainer = document.querySelector(`#loopPlayerContainer-${currentPlayingSongId}`);

@@ -1543,6 +1543,312 @@ app.delete('/api/loops/:loopId', authMiddleware, async (req, res) => {
 // END LOOP MANAGER API
 // ============================================================================
 
+// ============================================================================
+// MELODIC LOOPS MANAGEMENT API
+// ============================================================================
+
+/**
+ * Melodic loops storage paths
+ */
+const melodicLoopsDir = path.join(loopsDir, 'melodies');
+const atmosphereDir = path.join(melodicLoopsDir, 'atmosphere');
+const tanpuraDir = path.join(melodicLoopsDir, 'tanpura');
+
+// Ensure melodic loops directories exist
+[melodicLoopsDir, atmosphereDir, tanpuraDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
+
+/**
+ * Multer configuration for melodic uploads
+ */
+const melodicUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            // Use a temporary directory, we'll move to correct location later
+            cb(null, './loops');
+        },
+        filename: (req, file, cb) => {
+            // Use a temporary filename, we'll rename based on form data later
+            const tempFilename = `temp_melodic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.wav`;
+            cb(null, tempFilename);
+        }
+    }),
+    fileFilter: (req, file, cb) => {
+        // Accept common audio formats like the main upload configuration
+        const allowedMimes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/x-m4a', 'audio/mp4'];
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only audio files (MP3, WAV, M4A) are allowed'));
+        }
+    },
+    limits: {
+        fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+});
+
+/**
+ * GET /api/melodic-loops
+ * Get all melodic loops as array with unique IDs
+ */
+app.get('/api/melodic-loops', async (req, res) => {
+    try {
+        const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const result = [];
+        
+        keys.forEach(key => {
+            const atmosphereFile = path.join(atmosphereDir, `atmosphere_${key}.wav`);
+            const tanpuraFile = path.join(tanpuraDir, `tanpura_${key}.wav`);
+            
+            if (fs.existsSync(atmosphereFile)) {
+                const stats = fs.statSync(atmosphereFile);
+                result.push({
+                    id: `atmosphere_${key}`,
+                    type: 'atmosphere',
+                    key: key,
+                    filename: `atmosphere_${key}.wav`,
+                    size: stats.size,
+                    uploadedAt: stats.mtime.toISOString()
+                });
+            }
+            
+            if (fs.existsSync(tanpuraFile)) {
+                const stats = fs.statSync(tanpuraFile);
+                result.push({
+                    id: `tanpura_${key}`,
+                    type: 'tanpura',
+                    key: key,
+                    filename: `tanpura_${key}.wav`,
+                    size: stats.size,
+                    uploadedAt: stats.mtime.toISOString()
+                });
+            }
+        });
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting melodic loops:', error);
+        res.status(500).json({ error: 'Failed to get melodic loops' });
+    }
+});
+
+/**
+ * GET /api/melodic-loops/key/:key
+ * Get melodic loops for a specific key
+ */
+app.get('/api/melodic-loops/key/:key', authMiddleware, async (req, res) => {
+    try {
+        const { key } = req.params;
+        
+        // Validate key
+        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        if (!validKeys.includes(key)) {
+            return res.status(400).json({ error: 'Invalid key' });
+        }
+        
+        const result = {
+            key: key,
+            atmosphere: fs.existsSync(path.join(atmosphereDir, `atmosphere_${key}.wav`)),
+            tanpura: fs.existsSync(path.join(tanpuraDir, `tanpura_${key}.wav`))
+        };
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Error checking melodic loops for key:', error);
+        res.status(500).json({ error: 'Failed to check melodic loops' });
+    }
+});
+
+/**
+ * POST /api/melodic-loops/upload
+ * Upload a melodic loop file (atmosphere or tanpura)
+ */
+app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file'), async (req, res) => {
+    try {
+        const { type, key } = req.body;
+        const file = req.file;
+        
+        if (!file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
+        // Validate required fields
+        if (!type || !key) {
+            return res.status(400).json({ error: 'Missing required fields: type and key' });
+        }
+        
+        // Validate type
+        if (!['atmosphere', 'tanpura'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid type. Must be atmosphere or tanpura' });
+        }
+        
+        // Validate key
+        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        if (!validKeys.includes(key)) {
+            return res.status(400).json({ error: 'Invalid key' });
+        }
+        
+        // Handle serverless environment limitations
+        if (process.env.VERCEL) {
+            // Clean up temp file
+            if (fs.existsSync(file.path)) {
+                fs.unlinkSync(file.path);
+            }
+            return res.status(501).json({ 
+                error: 'File uploads are not supported in serverless environment',
+                message: 'Melodic loop uploads require a persistent file system. Please use the local development server for uploading files.',
+                suggestion: 'Upload files locally, then commit them to your repository'
+            });
+        }
+        
+        // Determine target directory and filename
+        const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
+        const expectedFilename = `${type}_${key}.wav`;
+        const targetPath = path.join(targetDir, expectedFilename);
+        
+        // Ensure target directory exists
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+        
+        // Move file from temp location to target location
+        fs.renameSync(file.path, targetPath);
+        
+        console.log(`Uploaded melodic file: ${expectedFilename}, size: ${(file.size / 1024).toFixed(2)} KB`);
+        
+        res.json({
+            success: true,
+            filename: expectedFilename,
+            type: type,
+            key: key,
+            size: file.size
+        });
+        
+    } catch (error) {
+        console.error('Error uploading melodic file:', error);
+        
+        // Clean up temp file if it exists
+        if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+                console.log('Cleaned up temporary file:', req.file.path);
+            } catch (cleanupErr) {
+                console.error('Error cleaning up uploaded file:', cleanupErr);
+            }
+        }
+        
+        res.status(500).json({ 
+            error: 'Internal server error',
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+/**
+ * DELETE /api/melodic-loops/:id
+ * Delete a melodic loop file by ID (format: type_key)
+ */
+app.delete('/api/melodic-loops/:id', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Parse ID (format: type_key)
+        const [type, key] = id.split('_');
+        
+        // Validate type
+        if (!['atmosphere', 'tanpura'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid file ID format' });
+        }
+        
+        // Validate key
+        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        if (!validKeys.includes(key)) {
+            return res.status(400).json({ error: 'Invalid file ID format' });
+        }
+        
+        const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
+        const filename = `${type}_${key}.wav`;
+        const filePath = path.join(targetDir, filename);
+        
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(filePath);
+        
+        console.log(`Deleted melodic file: ${filename}`);
+        
+        res.json({
+            success: true,
+            message: `Deleted ${type} sample for key ${key}`,
+            filename: filename
+        });
+        
+    } catch (error) {
+        console.error('Error deleting melodic file:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete melodic file',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * DELETE /api/melodic-loops/:type/:key
+ * Delete a specific melodic loop file (legacy endpoint)
+ */
+app.delete('/api/melodic-loops/:type/:key', authMiddleware, async (req, res) => {
+    try {
+        const { type, key } = req.params;
+        
+        // Validate type
+        if (!['atmosphere', 'tanpura'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid type. Must be atmosphere or tanpura' });
+        }
+        
+        // Validate key
+        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        if (!validKeys.includes(key)) {
+            return res.status(400).json({ error: 'Invalid key' });
+        }
+        
+        const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
+        const filename = `${type}_${key}.wav`;
+        const filePath = path.join(targetDir, filename);
+        
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(filePath);
+        
+        console.log(`Deleted melodic file: ${filename}`);
+        
+        res.json({
+            success: true,
+            message: `Deleted ${type} sample for key ${key}`,
+            filename: filename
+        });
+        
+    } catch (error) {
+        console.error('Error deleting melodic file:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete melodic file',
+            message: error.message
+        });
+    }
+});
+
+// ============================================================================
+// END MELODIC LOOPS MANAGEMENT API
+// ============================================================================
+
 app.get('/api/userdata', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const doc = await db.collection('UserData').findOne({ _id: userId });

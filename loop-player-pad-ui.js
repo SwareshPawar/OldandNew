@@ -52,6 +52,74 @@ function getTempoCategory(bpm) {
 }
 
 /**
+ * Calculate transpose level for a song (similar to main.js logic)
+ * @param {Object} song - Song object with id
+ * @returns {number} - Transpose level in semitones
+ */
+function getTransposeLevel(song) {
+    if (!song || !song.id) return 0;
+    
+    let transposeLevel = 0;
+    
+    // Priority: Global setlist transpose > User transpose
+    if (typeof currentSetlistType !== 'undefined' && currentSetlistType === 'global' && 
+        typeof currentViewingSetlist !== 'undefined' && currentViewingSetlist && 
+        currentViewingSetlist.songTransposes && song.id in currentViewingSetlist.songTransposes) {
+        // Use global setlist transpose (admin-set)
+        transposeLevel = currentViewingSetlist.songTransposes[song.id] || 0;
+    } else {
+        // Use user's personal transpose
+        try {
+            const localTranspose = JSON.parse(localStorage.getItem('transposeCache') || '{}');
+            if (song.id && typeof localTranspose[song.id] === 'number') {
+                transposeLevel = localTranspose[song.id];
+            } else if (typeof window.userData !== 'undefined' && window.userData && window.userData.transpose && song.id in window.userData.transpose) {
+                transposeLevel = window.userData.transpose[song.id] || 0;
+            }
+        } catch (e) {
+            console.warn('Error reading transpose cache:', e);
+            transposeLevel = 0;
+        }
+    }
+    
+    return transposeLevel;
+}
+
+/**
+ * Calculate the effective key for a song including transpose
+ * @param {Object} song - Song object with key property
+ * @param {number} transposeLevel - Number of semitones to transpose
+ * @returns {string} - Final key (e.g., 'C', 'D#', 'F')
+ */
+function getEffectiveKey(song, transposeLevel = 0) {
+    if (!song || !song.key) {
+        return 'C'; // Default key
+    }
+    
+    // Use transposeChord function from main.js if available
+    if (typeof transposeChord === 'function' && transposeLevel !== 0) {
+        return transposeChord(song.key, transposeLevel);
+    }
+    
+    // Fallback: simple key calculation
+    const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    let baseIndex = keys.indexOf(song.key);
+    
+    if (baseIndex === -1) {
+        // Handle alternate notation (Db, Eb, etc.)
+        const alternateMap = {
+            'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
+        };
+        const alternate = alternateMap[song.key];
+        baseIndex = alternate ? keys.indexOf(alternate) : 0;
+    }
+    
+    // Apply transpose (wrapping around the 12-tone scale)
+    const finalIndex = (baseIndex + transposeLevel + 12) % 12;
+    return keys[finalIndex];
+}
+
+/**
  * Check if two time signatures are equivalent
  * Examples: 6/8 ≡ 3/4, 9/8 ≡ 3/4, 12/8 ≡ 4/4
  */
@@ -249,6 +317,27 @@ function getLoopPlayerHTML(songId) {
                     <span class="pad-label">Fill 3</span>
                 </button>
             </div>
+
+            <!-- Melodic Pads Row -->
+            <div class="loop-pads-row melodic-pads-row">
+                <button class="loop-pad loop-pad-melodic" data-melodic="atmosphere" id="pad-atmosphere-${songId}">
+                    <span class="pad-number">ATM</span>
+                    <span class="pad-label">Atmosphere</span>
+                    <span class="pad-key-indicator" id="atmosphere-key-${songId}">C</span>
+                </button>
+                <button class="loop-pad loop-pad-melodic" data-melodic="tanpura" id="pad-tanpura-${songId}">
+                    <span class="pad-number">TAN</span>
+                    <span class="pad-label">Tanpura</span>
+                    <span class="pad-key-indicator" id="tanpura-key-${songId}">C</span>
+                </button>
+                <div class="melodic-controls">
+                    <label for="melodic-volume-${songId}" class="melodic-volume-label">
+                        <i class="fas fa-volume-up"></i> Melodic
+                    </label>
+                    <input type="range" id="melodic-volume-${songId}" class="melodic-volume-slider" 
+                           min="0" max="100" value="30" title="Melodic Pads Volume">
+                </div>
+            </div>
         </div>
         
         <!-- Controls -->
@@ -258,9 +347,9 @@ function getLoopPlayerHTML(songId) {
                 <span>Play</span>
             </button>
             
-            <button class="loop-control-btn loop-autofill-btn" id="loopAutoFillBtn-${songId}">
+            <button class="loop-control-btn loop-autofill-btn active" id="loopAutoFillBtn-${songId}">
                 <i class="fas fa-magic"></i>
-                <span>Auto-Fill: OFF</span>
+                <span>Auto-Fill: ON</span>
             </button>
             
             <div class="loop-control-group">
@@ -327,6 +416,27 @@ async function initializeLoopPlayer(songId) {
     
     console.log('✅ Found matching loop set with score:', matchResult.score);
     
+    // Calculate effective key for melodic pads
+    const transposeLevel = getTransposeLevel(song);
+    const effectiveKey = getEffectiveKey(song, transposeLevel);
+    
+    console.log('🎹 Key calculation:', {
+        originalKey: song.key || 'unknown',
+        transposeLevel: transposeLevel,
+        effectiveKey: effectiveKey
+    });
+    
+    // Update key indicators in UI
+    const atmosphereKeyIndicator = document.getElementById(`atmosphere-key-${songId}`);
+    const tanpuraKeyIndicator = document.getElementById(`tanpura-key-${songId}`);
+    
+    if (atmosphereKeyIndicator) {
+        atmosphereKeyIndicator.textContent = effectiveKey;
+    }
+    if (tanpuraKeyIndicator) {
+        tanpuraKeyIndicator.textContent = effectiveKey;
+    }
+    
     const { loopSet, score } = matchResult;
     
     // Show the container
@@ -343,6 +453,9 @@ async function initializeLoopPlayer(songId) {
         loopPlayerInstance = new LoopPlayerPad();
     }
     
+    // Set song key and transpose for melodic pads
+    loopPlayerInstance.setSongKeyAndTranspose(song.key, transposeLevel);
+    
     // Set up callbacks
     loopPlayerInstance.onLoopChange = (loopName) => {
         const status = document.getElementById(`loopStatus-${songId}`);
@@ -357,15 +470,40 @@ async function initializeLoopPlayer(songId) {
         // Update active state on pads
         const allPads = container.querySelectorAll('.loop-pad');
         allPads.forEach(pad => {
-            if (pad.dataset.loop === padName) {
+            if (padName && pad.dataset.loop === padName) {
                 pad.classList.add('loop-pad-active');
-            } else if (!padName.startsWith('fill')) {
+            } else if (padName && !padName.startsWith('fill')) {
                 // Don't remove active from loops when fill is playing
-                if (pad.dataset.loop.startsWith('loop')) {
+                if (pad.dataset.loop && pad.dataset.loop.startsWith('loop')) {
                     pad.classList.remove('loop-pad-active');
                 }
             }
         });
+    };
+
+    loopPlayerInstance.onMelodicPadToggle = (padType, isPlaying) => {
+        // Update melodic pad visual state
+        const melodicPad = container.querySelector(`[data-melodic="${padType}"]`);
+        if (melodicPad) {
+            if (isPlaying) {
+                melodicPad.classList.add('loop-pad-active');
+                melodicPad.title = `${padType} playing in key ${effectiveKey}`;
+            } else {
+                melodicPad.classList.remove('loop-pad-active');
+                melodicPad.title = `${padType} in key ${effectiveKey} (click to play)`;
+            }
+        }
+    };
+    
+    loopPlayerInstance.onMelodicError = (padType, error) => {
+        // Disable pad if it failed to load
+        const melodicPad = container.querySelector(`[data-melodic="${padType}"]`);
+        if (melodicPad) {
+            melodicPad.disabled = true;
+            melodicPad.classList.add('loop-pad-disabled');
+            melodicPad.title = `${padType}_${effectiveKey}.wav not available`;
+        }
+        console.warn(`Melodic pad ${padType} disabled due to error:`, error);
     };
     
     loopPlayerInstance.onError = (error) => {
@@ -399,38 +537,63 @@ async function initializeLoopPlayer(songId) {
         
         await loopPlayerInstance.loadLoops(loopMap);
         
+        // Check availability of melodic samples for the effective key
+        const melodicAvailability = await loopPlayerInstance.checkMelodicAvailability(['atmosphere', 'tanpura']);
+        
         // Enable/disable pads based on successful fetch (ready for on-demand decode)
         const pads = container.querySelectorAll('.loop-pad');
         pads.forEach(pad => {
             const loopName = pad.dataset.loop;
-            const loopFile = loopSet.files[loopName];
-            const isLoaded = loopPlayerInstance.rawAudioData && loopPlayerInstance.rawAudioData.has(loopName);
+            const melodicType = pad.dataset.melodic;
             
-            // Enable pad if file exists and was successfully fetched
-            if (loopFile && isLoaded) {
-                pad.disabled = false;
-                pad.classList.remove('loop-pad-disabled');
-                pad.title = '';
-            } else {
-                pad.disabled = true;
-                pad.classList.add('loop-pad-disabled');
-                if (!loopFile) {
-                    pad.title = `${loopName} not available`;
+            if (melodicType) {
+                // Handle melodic pads (atmosphere/tanpura)
+                const isAvailable = melodicAvailability[melodicType];
+                
+                if (isAvailable) {
+                    pad.disabled = false;
+                    pad.classList.remove('loop-pad-disabled');
+                    pad.title = `${melodicType} in key ${effectiveKey} (click to play)`;
                 } else {
-                    pad.title = `${loopName} failed to load`;
+                    pad.disabled = true;
+                    pad.classList.add('loop-pad-disabled');
+                    pad.title = `${melodicType}_${effectiveKey}.wav not available`;
+                }
+            } else if (loopName) {
+                // Handle rhythm pads
+                const loopFile = loopSet.files[loopName];
+                const isLoaded = loopPlayerInstance.rawAudioData && loopPlayerInstance.rawAudioData.has(loopName);
+                
+                // Enable pad if file exists and was successfully fetched
+                if (loopFile && isLoaded) {
+                    pad.disabled = false;
+                    pad.classList.remove('loop-pad-disabled');
+                    pad.title = '';
+                } else {
+                    pad.disabled = true;
+                    pad.classList.add('loop-pad-disabled');
+                    if (!loopFile) {
+                        pad.title = `${loopName} not available`;
+                    } else {
+                        pad.title = `${loopName} failed to load`;
+                    }
                 }
             }
         });
         
         // Update status and play button
         const loadedCount = loopPlayerInstance.rawAudioData ? loopPlayerInstance.rawAudioData.size : 0;
+        const melodicCount = Object.values(melodicAvailability).filter(available => available).length;
+        const totalMelodic = Object.keys(melodicAvailability).length;
+        
         if (status) {
-            if (loadedCount === 6) {
+            if (loadedCount >= 6) {
                 const matchInfo = getMatchQuality(score);
-                status.textContent = `Ready - ${matchInfo.label} (Click Play to initialize audio)`;
+                const melodicStatus = melodicCount > 0 ? ` | Melodic: ${melodicCount}/${totalMelodic}` : ' | No melodic samples';
+                status.textContent = `Ready - ${matchInfo.label}${melodicStatus} (Click Play to initialize audio)`;
                 status.title = matchInfo.description;
             } else {
-                status.textContent = `Loaded ${loadedCount}/6 loops`;
+                status.textContent = `Loaded ${loadedCount}/6 loops | Melodic: ${melodicCount}/${totalMelodic}`;
             }
         }
         
@@ -456,11 +619,22 @@ async function initializeLoopPlayer(songId) {
             if (pad.disabled) return; // Prevent clicks on disabled pads
             
             const loopName = pad.dataset.loop;
+            const melodicType = pad.dataset.melodic;
             
-            if (loopName.startsWith('loop')) {
-                loopPlayerInstance.switchToLoop(loopName);
-            } else if (loopName.startsWith('fill')) {
-                loopPlayerInstance.playFill(loopName);
+            if (melodicType) {
+                // Handle melodic pad clicks
+                if (melodicType === 'atmosphere') {
+                    loopPlayerInstance.toggleAtmosphere();
+                } else if (melodicType === 'tanpura') {
+                    loopPlayerInstance.toggleTanpura();
+                }
+            } else if (loopName) {
+                // Handle traditional rhythm pad clicks
+                if (loopName.startsWith('loop')) {
+                    loopPlayerInstance.switchToLoop(loopName);
+                } else if (loopName.startsWith('fill')) {
+                    loopPlayerInstance.playFill(loopName);
+                }
             }
         });
     });
@@ -481,34 +655,39 @@ async function initializeLoopPlayer(songId) {
                 }
             } else {
                 try {
-                    // Check if this is the first play (audio not initialized yet)
-                    const isFirstPlay = !loopPlayerInstance.audioContext && loopPlayerInstance.rawAudioData.size > 0;
-                    
-                    if (isFirstPlay) {
-                        // Show loading during first-time audio initialization
-                        playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Initializing...</span>';
-                        playBtn.disabled = true;
-                        if (status) status.textContent = 'Initializing audio & decoding buffers...';
-                    }
-                    
-                    await loopPlayerInstance.play();
-                    
-                    // Update UI after successful play
+                    // Immediately update UI to show "playing" state
                     playBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                     playBtn.classList.add('playing');
                     playBtn.disabled = false;
                     
-                    // Show floating stop button when song starts playing
+                    // Show immediate status - user sees "Playing: LOOP 1" right away
+                    if (status) {
+                        status.textContent = 'Playing: LOOP 1';
+                    }
+                    
+                    // Show floating stop button immediately
                     if (typeof window.showFloatingStopButton === 'function') {
                         const song = songs?.find(s => s.id === songId);
                         const songTitle = song ? song.title : `Song ${songId}`;
                         window.showFloatingStopButton(songId, songTitle);
                     }
                     
-                    if (isFirstPlay && status) {
-                        const matchInfo = getMatchQuality(score);
-                        status.textContent = `Playing - ${matchInfo.label} (Audio cached for instant playback)`;
-                    }
+                    // Start background initialization and playback (non-blocking)
+                    loopPlayerInstance.play().catch(error => {
+                        // Handle any background initialization errors
+                        console.error('Error during background initialization:', error);
+                        
+                        // Revert UI state on error
+                        playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                        playBtn.classList.remove('playing');
+                        if (status) status.textContent = `Error: ${error.message}`;
+                        
+                        // Hide floating stop button
+                        if (typeof window.hideFloatingStopButton === 'function') {
+                            window.hideFloatingStopButton(songId);
+                        }
+                    });
+                    
                 } catch (error) {
                     console.error('Error playing loops:', error);
                     const status = document.getElementById(`loopStatus-${songId}`);
@@ -567,6 +746,16 @@ async function initializeLoopPlayer(songId) {
                 loopPlayerInstance.setPlaybackRate(1.0);
                 if (tempoValue) tempoValue.textContent = '100%';
             }
+        });
+    }
+    
+    // Melodic volume slider
+    const melodicVolumeSlider = document.getElementById(`melodic-volume-${songId}`);
+    if (melodicVolumeSlider) {
+        melodicVolumeSlider.addEventListener('input', (e) => {
+            const volumePercent = parseInt(e.target.value);
+            const volume = volumePercent / 100;
+            loopPlayerInstance.setMelodicVolume(volume);
         });
     }
     
@@ -1021,6 +1210,167 @@ const loopPlayerStyles = `
 
 .loop-tempo-reset-btn:active {
     transform: scale(0.95);
+}
+
+/* ===== MELODIC PADS STYLES ===== */
+
+.melodic-pads-row {
+    border-top: 2px solid rgba(197, 177, 148, 0.3);
+    padding-top: 12px;
+    margin-top: 8px;
+    position: relative;
+}
+
+.melodic-pads-row::before {
+    content: '♫ MELODIC PADS ♫';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, 
+        rgba(197, 177, 148, 0.9) 0%, 
+        rgba(125, 141, 134, 0.9) 100%);
+    color: var(--primary-color);
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-size: 0.7em;
+    font-weight: 700;
+    border: 1px solid var(--accent-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    letter-spacing: 1px;
+}
+
+.loop-pad-melodic {
+    background: linear-gradient(135deg, 
+        rgba(138, 43, 226, 0.15) 0%, 
+        rgba(75, 0, 130, 0.15) 50%, 
+        rgba(123, 104, 238, 0.15) 100%);
+    border: 2px solid rgba(138, 43, 226, 0.4);
+    color: #e6b3ff;
+    position: relative;
+    overflow: visible;
+}
+
+.loop-pad-melodic:hover {
+    background: linear-gradient(135deg, 
+        rgba(138, 43, 226, 0.3) 0%, 
+        rgba(75, 0, 130, 0.3) 50%, 
+        rgba(123, 104, 238, 0.3) 100%);
+    border-color: rgba(186, 85, 211, 0.8);
+    color: #fff;
+    box-shadow: 
+        0 6px 20px rgba(138, 43, 226, 0.4),
+        inset 0 1px 0 rgba(186, 85, 211, 0.2);
+}
+
+.loop-pad-melodic.loop-pad-active {
+    background: linear-gradient(135deg, 
+        rgba(138, 43, 226, 0.4) 0%, 
+        rgba(75, 0, 130, 0.4) 50%, 
+        rgba(123, 104, 238, 0.4) 100%);
+    border-color: #ba55d3;
+    color: #fff;
+    box-shadow: 
+        0 0 25px rgba(138, 43, 226, 0.6),
+        0 4px 8px rgba(0,0,0,0.3);
+    animation: melodicPadGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes melodicPadGlow {
+    0% { 
+        box-shadow: 
+            0 0 25px rgba(138, 43, 226, 0.6),
+            0 4px 8px rgba(0,0,0,0.3);
+    }
+    100% { 
+        box-shadow: 
+            0 0 35px rgba(186, 85, 211, 0.8),
+            0 6px 12px rgba(0,0,0,0.4);
+    }
+}
+
+.pad-key-indicator {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 0.6em;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    letter-spacing: 0.5px;
+    z-index: 10;
+}
+
+.loop-pad-melodic .pad-key-indicator {
+    background: linear-gradient(135deg, rgba(138, 43, 226, 0.9), rgba(75, 0, 130, 0.9));
+    border-color: rgba(186, 85, 211, 0.6);
+    color: #fff;
+}
+
+.melodic-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, 
+        rgba(62, 63, 41, 0.3) 0%, 
+        rgba(45, 44, 40, 0.3) 100%);
+    border: 2px solid rgba(197, 177, 148, 0.3);
+    border-radius: 10px;
+    padding: 10px;
+    gap: 8px;
+}
+
+.melodic-volume-label {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--accent-color);
+    text-align: center;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.melodic-volume-label i {
+    font-size: 1em;
+    color: #ba55d3;
+}
+
+.melodic-volume-slider {
+    width: 80px;
+    height: 4px;
+    background: rgba(197, 177, 148, 0.3);
+    outline: none;
+    border-radius: 2px;
+    accent-color: #ba55d3;
+    cursor: pointer;
+}
+
+.melodic-volume-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, #ba55d3, #9932cc);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.melodic-volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, #ba55d3, #9932cc);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 @media (max-width: 768px) {
