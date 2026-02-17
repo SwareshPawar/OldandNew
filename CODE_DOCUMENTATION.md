@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 17, 2026 - 11:45 AM  
-**Version:** 1.16.2
+**Last Updated:** February 17, 2026 - 12:15 PM  
+**Version:** 1.16.3
 
 ---
 
@@ -1584,6 +1584,108 @@ const API_BASE_URL = (window.location.hostname === 'localhost' || window.locatio
 **Lessons Learned:**
 1. Static hosting requires explicit API routing to a backend origin.
 2. Same-origin API routing only works when the frontend and backend are co-hosted.
+
+### Bug #5: Local Development 500 Error on Login (CORS Rejection)
+**Date Discovered:** February 17, 2026 - 12:10 PM  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+When attempting to login from a local development server, the CORS middleware was rejecting requests from `localhost` origins that didn't match specific hardcoded ports, resulting in "Not allowed by CORS" error and causing the login endpoint to return 500 Internal Server Error.
+
+**Affected Components:**
+- CORS middleware ([server.js](server.js) lines 77-90)
+- Local development workflow
+- All localhost development on non-standard ports (5500, 8000, 3000, etc.)
+
+**Reproduction Steps:**
+1. Start local development server on any port (e.g., `http://localhost:5500` via VS Code LiveServer)
+2. Attempt to log in to the application
+3. Observe network error: POST `/api/login` returns 500
+4. Check server logs: "Error: Not allowed by CORS"
+
+**Root Cause Analysis:**
+
+The CORS middleware was configured to only allow specific hardcoded ports:
+
+```javascript
+// BEFORE (RESTRICTIVE):
+const allowedOrigins = new Set([
+  'http://127.0.0.1:5501',    // ← Only these specific ports
+  'http://localhost:5501',    // ← allowed
+  'https://oldandnew.onrender.com',
+  'https://swareshpawar.github.io',
+  'https://oldand-new.vercel.app'
+]);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);  // Only exact matches
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  // ...
+}));
+```
+
+This was too restrictive for local development where developers use various ports:
+- VS Code LiveServer: port 5500
+- Node.js dev servers: ports 3000, 8000, 8080
+- Other local servers: random ports
+
+**Solution Implemented:**
+
+Changed CORS validation to accept **any localhost or 127.0.0.1 port** while keeping strict validation for production origins:
+
+```javascript
+// AFTER (FLEXIBLE FOR LOCAL):
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+    // Allow localhost on ANY port for local development
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);  // ← Any localhost port allowed
+    }
+    // Allow specific production/deployment origins
+    if (allowedOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+```
+
+**Files Modified:**
+- `server.js` lines 77-93 (CORS middleware configuration)
+
+**Testing Results:**
+- ✅ Local login on `http://localhost:3001` - PASS
+- ✅ Local login on `http://localhost:5500` - PASS
+- ✅ Local login on `http://127.0.0.1:8000` - PASS
+- ✅ Production Vercel login - PASS
+- ✅ GitHub Pages routing to Vercel - PASS
+- ✅ No CORS errors in server logs
+
+**Production Safety:**
+- ✅ Production origins still strictly validated
+- ✅ GitHub Pages origin explicitly whitelisted
+- ✅ Vercel preview deploys (*.vercel.app) accepted
+- ✅ Unknown production origins still rejected
+
+**Lessons Learned:**
+1. Hardcoding ports in CORS allowlist breaks developer workflow for different tools/configurations
+2. Flexible hostname patterns (localhost:*) are safer than strict port lists
+3. Distinguish between development (flexible) and production (strict) CORS policies
+
+**Future Improvements:**
+- [ ] Consider separate CORS config for development vs production via NODE_ENV
+- [ ] Add CORS_DEVELOPMENT_MODE environment variable for even more flexibility during dev
 
 ### Bug #2: Loop Player Crashing on Corrupt Audio Files
 **Date Discovered:** February 15, 2026  
@@ -5218,7 +5320,7 @@ function checkForActivePlayback() {
 
 ---
 
-**Document End - Last Updated: February 17, 2026, 11:45 AM - Version 1.16.2 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: February 17, 2026, 12:15 PM - Version 1.16.3 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
@@ -5253,3 +5355,7 @@ function checkForActivePlayback() {
 - Documented Bug #4: GitHub Pages Login 405 (Method Not Allowed)
     * Routed GitHub Pages traffic to Vercel API backend
     * Preserved same-origin API routing for Vercel deployments
+- Documented Bug #5: Local Development 500 Error on Login (CORS Rejection)
+    * Changed CORS middleware to allow any localhost port for development
+    * Maintains strict validation for production origins
+    * Resolved "Not allowed by CORS" errors on local dev servers
