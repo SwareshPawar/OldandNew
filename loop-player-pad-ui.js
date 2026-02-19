@@ -1404,8 +1404,8 @@ const loopPlayerStyles = `
     }
     
     .loop-player-container {
-        padding: 15px;
-        margin: 15px 0;
+        padding: 6px;
+        margin: 8px 0;
     }
 }
 </style>

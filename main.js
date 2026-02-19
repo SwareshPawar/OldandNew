@@ -8089,6 +8089,28 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         function attachPreviewEventListeners(song) {
             // Favorite button event listener is attached after rendering preview HTML, not here.
 
+            // Metadata toggle button
+            const toggleMetaBtn = document.getElementById('toggleMetaBtn');
+            const secondaryMetaInfo = document.getElementById('secondaryMetaInfo');
+            if (toggleMetaBtn && secondaryMetaInfo) {
+                toggleMetaBtn.addEventListener('click', () => {
+                    const isCollapsed = secondaryMetaInfo.classList.contains('collapsed');
+                    if (isCollapsed) {
+                        secondaryMetaInfo.classList.remove('collapsed');
+                        toggleMetaBtn.classList.add('expanded');
+                        toggleMetaBtn.querySelector('.toggle-text').textContent = 'Less Info';
+                        toggleMetaBtn.querySelector('i').classList.remove('fa-chevron-down');
+                        toggleMetaBtn.querySelector('i').classList.add('fa-chevron-up');
+                    } else {
+                        secondaryMetaInfo.classList.add('collapsed');
+                        toggleMetaBtn.classList.remove('expanded');
+                        toggleMetaBtn.querySelector('.toggle-text').textContent = 'More Info';
+                        toggleMetaBtn.querySelector('i').classList.remove('fa-chevron-up');
+                        toggleMetaBtn.querySelector('i').classList.add('fa-chevron-down');
+                    }
+                });
+            }
+
             // Transpose controls
             document.getElementById('transpose-up')?.addEventListener('click', () => {
                 let currentLevel = parseInt(document.getElementById('transpose-level').textContent);
@@ -8356,55 +8378,57 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             songPreviewEl.innerHTML = `
 <div class="song-preview-container">
     <div class="song-slide">
+        <!-- HEADER SECTION -->
         <div class="song-preview-header">
             <h2 class="song-preview-title">${song.title}</h2>
+            <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}" title="${isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}">
+                <i class="fas fa-heart"></i>
+            </button>
         </div>
 
+        <!-- METADATA SECTION -->
         <div class="song-preview-metadata">
-            <div class="preview-meta-line first-line">
-                <div class="preview-meta-row">
-                    <span class="preview-meta-label">Key:</span>
-                    <span class="preview-meta-value preview-key" id="current-key">${displayKey}</span>
-                    ${chordsDisplay ? `<span class="preview-meta-value" style="margin-left: 8px;">Chords: ${chordsDisplay}</span>` : ''}
-                </div>
-                ${song.tempo ? `
-                <div class="preview-meta-row">
-                    <span class="preview-meta-label">Tempo:</span>
-                    <span class="preview-meta-value">${song.tempo}</span>
-                </div>` : ''}
-                ${(song.time || song.timeSignature) ? `
-                <div class="preview-meta-row">
-                    <span class="preview-meta-label">Time:</span>
-                    <span class="preview-meta-value">${song.time || song.timeSignature}</span>
-                </div>` : ''}
-                ${song.taal ? `
-                <div class="preview-meta-row">
-                    <span class="preview-meta-label">Taal:</span>
-                    <span class="preview-meta-value">${song.taal}</span>
+            <div class="preview-meta-group primary-info">
+                <span class="preview-meta-label">Key</span>
+                <span class="preview-meta-value preview-key" id="current-key">${displayKey}</span>
+                ${song.tempo ? `<span class="preview-meta-chip"><i class="fas fa-drum"></i> ${song.tempo}</span>` : ''}
+                ${(song.time || song.timeSignature) ? `<span class="preview-meta-chip"><i class="fas fa-clock"></i> ${song.time || song.timeSignature}</span>` : ''}
+                ${song.taal ? `<span class="preview-meta-chip"><i class="fas fa-music"></i> ${song.taal}</span>` : ''}
+            </div>
+            ${chordsDisplay || song.artistDetails || song.mood || song.genres || song.genre ? `
+            <button class="preview-meta-toggle" id="toggleMetaBtn">
+                <span class="toggle-text">More Info</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="preview-meta-group secondary-info collapsed" id="secondaryMetaInfo">
+                ${chordsDisplay ? `
+                <div class="preview-meta-row chords-row">
+                    <span class="preview-meta-label">Chords</span>
+                    <span class="preview-meta-value chords-display">${chordsDisplay}</span>
                 </div>` : ''}
                 ${song.artistDetails ? `
                 <div class="preview-meta-row">
-                    <span class="preview-meta-label">Artist:</span>
+                    <span class="preview-meta-label">Artist</span>
                     <span class="preview-meta-value">${song.artistDetails}</span>
                 </div>` : ''}
-            </div>
-            <div class="preview-meta-line second-line">
                 ${song.mood ? `
                 <div class="preview-meta-row">
-                    <span class="preview-meta-label">Mood:</span>
-                    <span class="preview-meta-value">${song.mood}</span>
+                    <span class="preview-meta-label">Mood</span>
+                    <span class="preview-meta-value preview-mood">${song.mood}</span>
                 </div>` : ''}
                 ${song.genres ? `
                 <div class="preview-meta-row">
-                    <span class="preview-meta-label">Genres:</span>
+                    <span class="preview-meta-label">Genres</span>
                     <span class="preview-meta-value">${song.genres.join(', ')}</span>
                 </div>` : song.genre ? `
                 <div class="preview-meta-row">
-                    <span class="preview-meta-label">Genre:</span>
+                    <span class="preview-meta-label">Genre</span>
                     <span class="preview-meta-value">${song.genre}</span>
                 </div>` : ''}
+            </div>` : ''}
         </div>
 
+        <!-- ACTIONS SECTION -->
         <div class="song-preview-actions">
             <button class="preview-action-btn preview-setlist-btn ${isInSetlist ? 'remove' : 'add'}" id="previewSetlistBtn">
                 <i class="fas ${isInSetlist ? 'fa-check' : 'fa-plus'}"></i>
@@ -8420,48 +8444,47 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             </button>` : ''}
         </div>
 
+        <!-- TRANSPOSE SECTION -->
         <div class="song-preview-transpose">
             <div class="preview-transpose-label">
                 <i class="fas fa-music"></i>
                 <span>Transpose</span>
             </div>
-            <div class="preview-transpose-controls">
-                <button class="preview-transpose-btn" id="transpose-down">
-                    <i class="fas fa-minus"></i>
-                </button>
-                <span class="preview-transpose-display" id="transpose-level">${transposeLevel}</span>
-                <button class="preview-transpose-btn" id="transpose-up">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <button class="preview-transpose-btn preview-reset" id="transposeReset">
-                    <i class="fas fa-undo"></i>
-                </button>
-                <button class="preview-transpose-btn preview-save" id="saveTransposeBtn">
-                    <i class="fas fa-save"></i>
-                </button>
-                <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}" title="Add to Favorites">
-                    <i class="fas fa-heart"></i>
-                </button>
-            </div>
+            <button class="preview-transpose-btn transpose-down" id="transpose-down" title="Transpose Down">
+                <i class="fas fa-minus"></i>
+            </button>
+            <span class="preview-transpose-display" id="transpose-level">${transposeLevel}</span>
+            <button class="preview-transpose-btn transpose-up" id="transpose-up" title="Transpose Up">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="preview-transpose-btn preview-reset" id="transposeReset" title="Reset Transpose">
+                <i class="fas fa-undo"></i>
+                <span>Reset</span>
+            </button>
+            <button class="preview-transpose-btn preview-save" id="saveTransposeBtn" title="Save Transpose">
+                <i class="fas fa-save"></i>
+                <span>Save</span>
+            </button>
         </div>
 
+        <!-- AUDIT SECTION -->
+        ${song.updatedAt && song.updatedBy || song.createdBy && song.createdAt ? `
         <div class="song-preview-audit">
             ${song.updatedAt && song.updatedBy
                 ? `<div class="preview-audit-info">
                     <i class="fas fa-edit"></i>
                     <span>Updated by <strong>${getDisplayName(song.updatedBy)}</strong> on ${new Date(song.updatedAt).toLocaleDateString()}</span>
                    </div>`
-                : (song.createdBy && song.createdAt
-                    ? `<div class="preview-audit-info">
-                        <i class="fas fa-plus"></i>
-                        <span>Added by <strong>${getDisplayName(song.createdBy)}</strong> on ${new Date(song.createdAt).toLocaleDateString()}</span>
-                       </div>`
-                    : '')
+                : `<div class="preview-audit-info">
+                    <i class="fas fa-plus"></i>
+                    <span>Added by <strong>${getDisplayName(song.createdBy)}</strong> on ${new Date(song.createdAt).toLocaleDateString()}</span>
+                   </div>`
             }
-        </div>
+        </div>` : ''}
 
         ${typeof getLoopPlayerHTML === 'function' ? getLoopPlayerHTML(song.id) : ''}
         
+        <!-- LYRICS SECTION -->
         <div class="song-lyrics" id="preview-lyrics-container">Loading lyrics...</div>
     </div>
 </div>
