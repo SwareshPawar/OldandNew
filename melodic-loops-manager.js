@@ -343,7 +343,7 @@ function displayFiles() {
                         </div>
                     </div>
                     <div class="file-actions">
-                        <button class="play-btn" onclick="playAudio('/loops/melodies/${type}/${file.filename}', this)" title="Play/Pause">
+                        <button class="play-btn" onclick="playAudio('${API_BASE_URL}/loops/melodies/${type}/${file.filename}', this)" title="Play/Pause">
                             <i class="fas fa-play"></i>
                         </button>
                         <input type="file" id="replaceFile-${file.id}" accept="audio/*" style="display: none;" 

@@ -426,6 +426,34 @@ class LoopPlayerPad {
     }
 
     /**
+     * Resolve the base URL for melodic samples (supports GitHub Pages + Vercel)
+     * @private
+     */
+    _getMelodicBaseUrl() {
+        if (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
+            return API_BASE_URL.replace(/\/$/, '');
+        }
+        if (typeof window !== 'undefined' && window.location && window.location.origin) {
+            return window.location.origin.replace(/\/$/, '');
+        }
+        return '';
+    }
+
+    /**
+     * Normalize key so major/minor share the same pads (e.g., Cm -> C)
+     * @private
+     */
+    _normalizeKeyName(key) {
+        if (!key) return '';
+        const trimmed = String(key).trim();
+        const minorMatch = trimmed.match(/^([A-Ga-g])([#b]?)(m)$/);
+        if (minorMatch) {
+            return `${minorMatch[1].toUpperCase()}${minorMatch[2] || ''}`;
+        }
+        return trimmed;
+    }
+
+    /**
      * Calculate the final key for melodic samples based on song key + transpose
      * @private
      * @returns {string} - Key name for sample file (e.g., 'C', 'C#', 'D')
@@ -436,14 +464,15 @@ class LoopPlayerPad {
         }
 
         const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        let baseIndex = keys.indexOf(this.currentSongKey);
+        const normalizedKey = this._normalizeKeyName(this.currentSongKey);
+        let baseIndex = keys.indexOf(normalizedKey);
         
         if (baseIndex === -1) {
             // Handle alternate notation (Db, Eb, etc.)
             const alternateMap = {
                 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
             };
-            const alternate = alternateMap[this.currentSongKey];
+            const alternate = alternateMap[normalizedKey];
             baseIndex = alternate ? keys.indexOf(alternate) : 0;
         }
 
@@ -470,12 +499,13 @@ class LoopPlayerPad {
     async checkMelodicAvailability(sampleTypes = ['atmosphere', 'tanpura']) {
         const effectiveKey = this._getEffectiveKey();
         const availability = {};
+        const baseUrl = this._getMelodicBaseUrl();
         
         const checkPromises = sampleTypes.map(async (sampleType) => {
-            const url = `/loops/melodies/${sampleType}/${sampleType}_${effectiveKey}.wav`;
+            const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${effectiveKey}.wav`;
             try {
-                // Use HEAD request to check existence without downloading
-                const response = await fetch(url, { method: 'HEAD' });
+                // Use GET to avoid HEAD restrictions on some CDNs
+                const response = await fetch(url);
                 availability[sampleType] = response.ok;
                 console.log(`${sampleType}_${effectiveKey}.wav: ${response.ok ? 'Available' : 'Not Found'}`);
             } catch (error) {
@@ -497,6 +527,7 @@ class LoopPlayerPad {
         const effectiveKey = this._getEffectiveKey();
         const atmosphereKey = `atmosphere_${effectiveKey}`;
         const tanpuraKey = `tanpura_${effectiveKey}`;
+        const baseUrl = this._getMelodicBaseUrl();
 
         console.log(`Loading melodic samples for key: ${effectiveKey}, types: ${sampleTypes.join(', ')}`);
 
@@ -505,13 +536,13 @@ class LoopPlayerPad {
         if (sampleTypes.includes('atmosphere')) {
             // Only include if not already loaded or force is true
             if (force || !this.rawAudioData.has(atmosphereKey)) {
-                sampleMap[atmosphereKey] = `/loops/melodies/atmosphere/atmosphere_${effectiveKey}.wav`;
+                sampleMap[atmosphereKey] = `${baseUrl}/loops/melodies/atmosphere/atmosphere_${effectiveKey}.wav`;
             }
         }
         if (sampleTypes.includes('tanpura')) {
             // Only include if not already loaded or force is true
             if (force || !this.rawAudioData.has(tanpuraKey)) {
-                sampleMap[tanpuraKey] = `/loops/melodies/tanpura/tanpura_${effectiveKey}.wav`;
+                sampleMap[tanpuraKey] = `${baseUrl}/loops/melodies/tanpura/tanpura_${effectiveKey}.wav`;
             }
         }
 

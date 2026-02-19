@@ -95,22 +95,32 @@ function getEffectiveKey(song, transposeLevel = 0) {
     if (!song || !song.key) {
         return 'C'; // Default key
     }
+
+    const normalizeKeyName = (key) => {
+        const trimmed = String(key || '').trim();
+        const minorMatch = trimmed.match(/^([A-Ga-g])([#b]?)(m)$/);
+        if (minorMatch) {
+            return `${minorMatch[1].toUpperCase()}${minorMatch[2] || ''}`;
+        }
+        return trimmed;
+    };
     
     // Use transposeChord function from main.js if available
     if (typeof transposeChord === 'function' && transposeLevel !== 0) {
-        return transposeChord(song.key, transposeLevel);
+        return normalizeKeyName(transposeChord(song.key, transposeLevel));
     }
     
     // Fallback: simple key calculation
     const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    let baseIndex = keys.indexOf(song.key);
+    const normalizedKey = normalizeKeyName(song.key);
+    let baseIndex = keys.indexOf(normalizedKey);
     
     if (baseIndex === -1) {
         // Handle alternate notation (Db, Eb, etc.)
         const alternateMap = {
             'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
         };
-        const alternate = alternateMap[song.key];
+        const alternate = alternateMap[normalizedKey];
         baseIndex = alternate ? keys.indexOf(alternate) : 0;
     }
     

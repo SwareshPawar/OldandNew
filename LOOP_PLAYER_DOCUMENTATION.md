@@ -39,6 +39,12 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
    - `/api/loops/upload-single` - Upload individual file with auto-rename (v2.0)
    - `/api/loops/:id` - Delete loop
 
+7. **Melodic Pads** (`loop-player-pad.js` + `melodic-loops-manager.html`)
+   - Atmosphere and tanpura pads per key
+   - Samples served from `/loops/melodies/{type}/{type}_{key}.wav`
+   - Uses `API_BASE_URL` for production-safe loading
+   - Minor/major keys share pads (e.g., Cm -> C)
+
 ## File Naming Convention v2.0
 
 ### Format
@@ -115,6 +121,23 @@ When a song is played, the system:
 3. `dadra_6_8_medium_acoustic_*` → **Filtered out** (wrong taal/time)
 
 **Result**: System loads `keherwa_4_4_medium_acoustic_*` loops
+
+## Melodic Pads (Atmosphere/Tanpura)
+
+### How Melodic Pads Load
+
+- Samples are fetched from `${API_BASE_URL}/loops/melodies/{type}/{type}_{key}.wav`.
+- Availability checks use GET requests to avoid HEAD restrictions on some CDNs.
+- Major and minor keys share the same pad samples (for example, Cm uses C).
+
+### Sample Naming
+
+```
+atmosphere_C.wav
+tanpura_C.wav
+atmosphere_C#.wav
+tanpura_C#.wav
+```
 
 ## Using the Loop Manager
 
@@ -433,11 +456,13 @@ For issues or questions:
 ---
 
 **Version**: 2.0.1  
-**Last Updated**: February 15, 2026 - 9:00 PM  
+**Last Updated**: February 19, 2026 - 10:30 AM  
 **Author**: Loop Player System Team  
-**Changes in v2.0.1**:
+**Changes in v2.0.2**:
 - Individual file upload system with auto-renaming
 - Tempo reset button added
 - Graceful error handling for corrupt audio files
 - Admin panel integration (Loop Manager link)
 - Clarified compulsory vs optional matching conditions
+- Melodic pads use API_BASE_URL and GET checks for production support
+- Major/minor key normalization for melodic pads

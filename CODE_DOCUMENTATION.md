@@ -3862,13 +3862,16 @@ Created dedicated melodic-loops-manager.html/js with key-based file organization
 Implemented silent initialization system to eliminate audio artifacts during startup and sample loading.
 
 **Real-time Availability:**
-Added HEAD request-based availability checking for instant UI state updates.
+Switched to GET-based availability checking with API_BASE_URL to avoid HEAD restrictions and ensure production playback.
 
 **Enhanced Upload System:**
 Upgraded backend to handle multiple audio formats with proper temp file management and path corrections.
 
 **Seamless Integration:**
 Integrated with existing floating stop button and rhythm pad systems for unified user experience.
+
+**Key Normalization:**
+Major/minor keys share the same melodic pads (e.g., Cm uses C samples) to prevent missing-pad issues.
 
 ---
 
