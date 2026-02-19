@@ -1,5 +1,19 @@
 /**
- * Loop Player UI Integration
+ * ⚠️⚠️⚠️ DEPRECATED - DO NOT USE ⚠️⚠️⚠️
+ * 
+ * This file has been REPLACED by loop-player-pad-ui.js (v2.0)
+ * 
+ * Date Deprecated: February 19, 2026
+ * Reason: Migrated to modern pad-based interface with better UX
+ * 
+ * This file is kept for reference only and is NOT loaded in index.html
+ * Use loop-player-pad-ui.js instead for all loop player functionality
+ * 
+ * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+ */
+
+/**
+ * Loop Player UI Integration (OLD VERSION)
  * 
  * This file contains the UI components and integration code for the Loop Player feature.
  * Add this to your main.js file and include loop-player.js in your HTML.

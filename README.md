@@ -136,24 +136,46 @@ See CODE_DOCUMENTATION.md Section 9, Session #1 for details.
 - Smart setlist generation
 - Chord transposition
 - Auto-scroll for lyrics
+- **Loop Player System:**
+  - Automatic loop matching (Taal, Time Signature, Genre, Tempo)
+  - Rhythm loops with fills and variations
+  - Melodic pads (Tanpura, Atmosphere) organized by musical key
+  - Tempo control with SoundTouch.js
+  - Admin interfaces for uploading/managing loops
+- Floating stop button for global playback control
 - Admin panel
 - PWA support (offline use)
 - Delta sync (90%+ faster loads)
+- Mobile-optimized UI with collapsible sections
 
 ### File Structure
 ```
-├── main.js                 # Core application (~11,400 lines)
-├── server.js              # Backend API
-├── index.html             # Main HTML
-├── styles.css             # Styles
-├── service-worker.js      # PWA functionality
-├── spinner.html           # Loading overlay
-├── CODE_DOCUMENTATION.md  # 📝 SINGLE SOURCE OF TRUTH
+├── main.js                        # Core application (~11,700 lines)
+├── server.js                      # Backend API
+├── index.html                     # Main HTML
+├── styles.css                     # Styles (~6,700 lines)
+├── service-worker.js              # PWA functionality
+├── spinner.html                   # Loading overlay
+├── CODE_DOCUMENTATION.md          # 📝 SINGLE SOURCE OF TRUTH
+├── loop-player-pad.js             # Loop player audio engine (Web Audio API)
+├── loop-player-pad-ui.js          # Loop player UI (v2.0 - pad-based interface)
+├── loop-player-pad-soundtouch.js  # SoundTouch.js integration for tempo control
+├── loop-player-pad-tonejs.js      # Tone.js integration (alternative)
+├── loop-player-ui.DEPRECATED.js   # ⚠️ Old loop player UI (deprecated Feb 2026)
+├── melodic-loops-manager.html     # Admin interface for melodic samples
+├── melodic-loops-manager.js       # Melodic sample upload/management
+├── loop-manager.html              # Admin interface for rhythm loops
+├── loop-manager.js                # Rhythm loop upload/management
 ├── api/
-│   └── index.js          # Vercel serverless functions
+│   └── index.js                   # Vercel serverless functions
 ├── utils/
-│   └── auth.js           # JWT utilities
-└── backups/              # Code backups
+│   └── auth.js                    # JWT utilities
+├── loops/
+│   ├── loops-metadata.json        # Loop metadata (taal, tempo, genre)
+│   └── melodies/                  # Melodic samples by key (tanpura/atmosphere)
+├── uploads/
+│   └── loops/                     # Uploaded rhythm loop audio files
+└── backups/                       # Code backups
 ```
 
 ---

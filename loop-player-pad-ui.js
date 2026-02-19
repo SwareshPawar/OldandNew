@@ -855,7 +855,7 @@ const loopPlayerStyles = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 1px;
     color: var(--accent-color);
     position: relative;
     z-index: 1;

@@ -1,6 +1,24 @@
 # Loop Player - Integration Guide
 
-## 🎵 What's Been Built
+> ⚠️ **DEPRECATION NOTICE** ⚠️
+> 
+> This guide is **OUTDATED** and refers to the deprecated `loop-player-ui.js` file.
+> 
+> **Current Implementation:** The application now uses `loop-player-pad-ui.js` (v2.0)
+> with a modern pad-based interface that includes:
+> - Automatic loop matching based on Taal/Time/Genre/Tempo
+> - Visual pad-based controls
+> - Melodic loops (atmosphere/tanpura) integration
+> - Enhanced UI with collapsible sections
+> 
+> **Date Deprecated:** February 19, 2026
+> 
+> This guide is kept for reference only. The new system is automatically integrated
+> and does not require manual setup steps described below.
+> 
+> ---
+
+## 🎵 What's Been Built (DEPRECATED VERSION)
 
 A complete audio loop player system with:
 - **Backend**: File upload, storage, and retrieval APIs

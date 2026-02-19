@@ -6104,18 +6104,32 @@ body.dark-mode .song-preview-header .favorite-btn.favorited {
 
 ### File Structure
 ```
-├── main.js                 # Core application logic (~11,185 lines)
-├── server.js              # Backend API server  
-├── index.html             # Main HTML structure
-├── styles.css             # Application styles
-├── service-worker.js      # PWA service worker
-├── manifest.json          # PWA manifest
-├── spinner.html           # Loading overlay
+├── main.js                        # Core application logic (~11,700 lines)
+├── server.js                      # Backend API server  
+├── index.html                     # Main HTML structure
+├── styles.css                     # Application styles (~6,700 lines)
+├── service-worker.js              # PWA service worker
+├── manifest.json                  # PWA manifest
+├── spinner.html                   # Loading overlay
+├── loop-player-pad.js             # Loop player audio engine (Web Audio API)
+├── loop-player-pad-ui.js          # Loop player UI (v2.0 - pad-based interface)
+├── loop-player-pad-soundtouch.js  # SoundTouch.js integration for tempo control
+├── loop-player-pad-tonejs.js      # Tone.js integration (alternative)
+├── loop-player-ui.DEPRECATED.js   # ⚠️ Old loop player UI (deprecated Feb 19, 2026)
+├── melodic-loops-manager.html     # Admin interface for melodic samples
+├── melodic-loops-manager.js       # Melodic sample upload/management
+├── loop-manager.html              # Admin interface for rhythm loops
+├── loop-manager.js                # Rhythm loop upload/management
 ├── api/
-│   └── index.js          # Vercel API routes
+│   └── index.js                   # Vercel API routes
 ├── utils/
-│   └── auth.js           # Authentication utilities
-└── backups/              # Code backups
+│   └── auth.js                    # Authentication utilities
+├── loops/
+│   ├── loops-metadata.json        # Loop metadata (taal, tempo, genre)
+│   └── melodies/                  # Melodic samples by key (tanpura/atmosphere)
+├── uploads/
+│   └── loops/                     # Uploaded rhythm loop audio files
+└── backups/                       # Code backups
 ```
 
 ---
@@ -6177,3 +6191,9 @@ body.dark-mode .song-preview-header .favorite-btn.favorited {
     * Fixed rhythm loop gain node stuck at 0 when melodic pads toggled first
     * Added volume restoration call after silent initialization in melodic pad start
     * Ensures all gain nodes (rhythm + melodic) properly restored to audible levels
+- **File Deprecation:** loop-player-ui.js renamed to loop-player-ui.DEPRECATED.js (Feb 19, 2026)
+    * Old upload-based loop player UI replaced by modern pad-based interface (loop-player-pad-ui.js v2.0)
+    * Original file renamed with .DEPRECATED extension to avoid conflicts
+    * Added deprecation warnings in file header and LOOP_PLAYER_GUIDE.md
+    * No runtime conflicts - only loop-player-pad-ui.js loaded in index.html
+    * Kept for reference/comparison purposes only
