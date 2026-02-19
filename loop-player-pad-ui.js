@@ -534,14 +534,21 @@ async function initializeLoopPlayer(songId) {
     try {
         // Create loop map from matched files
         // Use API_BASE_URL for GitHub Pages compatibility (loops are served from Vercel backend)
-        const loopMap = {
-            loop1: `${API_BASE_URL}/loops/${loopSet.files.loop1}`,
-            loop2: `${API_BASE_URL}/loops/${loopSet.files.loop2}`,
-            loop3: `${API_BASE_URL}/loops/${loopSet.files.loop3}`,
-            fill1: `${API_BASE_URL}/loops/${loopSet.files.fill1}`,
-            fill2: `${API_BASE_URL}/loops/${loopSet.files.fill2}`,
-            fill3: `${API_BASE_URL}/loops/${loopSet.files.fill3}`
-        };
+        const loopMap = Object.entries({
+            loop1: loopSet.files.loop1,
+            loop2: loopSet.files.loop2,
+            loop3: loopSet.files.loop3,
+            fill1: loopSet.files.fill1,
+            fill2: loopSet.files.fill2,
+            fill3: loopSet.files.fill3
+        }).reduce((acc, [name, filename]) => {
+            if (filename) {
+                acc[name] = `${API_BASE_URL}/loops/${filename}`;
+            } else {
+                console.warn(`⚠️ Missing loop file in metadata: ${name}`);
+            }
+            return acc;
+        }, {});
         
         console.log('🔊 Loading loops from:', loopMap);
         
