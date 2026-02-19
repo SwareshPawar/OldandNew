@@ -164,8 +164,13 @@ class LoopPlayerPad {
      * @private
      */
     async _decodeAudioData() {
-        if (this.audioBuffers.size > 0) {
-            return; // Already decoded
+        // Check if rhythm loops specifically are decoded (not just any audio buffers)
+        const hasRhythmLoops = this.audioBuffers.has('loop1') || 
+                               this.audioBuffers.has('loop2') || 
+                               this.audioBuffers.has('loop3');
+        
+        if (hasRhythmLoops) {
+            return; // Rhythm loops already decoded
         }
         
         if (!this.audioContext) {
@@ -286,7 +291,13 @@ class LoopPlayerPad {
      */
     async _initializeRhythmSamples() {
         // Decode rhythm loops if not already decoded
-        if (this.audioBuffers.size === 0 && this.rawAudioData.size > 0) {
+        // Check if any rhythm loops exist rather than checking if audioBuffers is empty
+        // (melodic samples may already be in audioBuffers)
+        const hasRhythmLoops = this.audioBuffers.has('loop1') || 
+                               this.audioBuffers.has('loop2') || 
+                               this.audioBuffers.has('loop3');
+        
+        if (!hasRhythmLoops && this.rawAudioData.size > 0) {
             await this._decodeAudioData();
         }
     }
@@ -710,6 +721,10 @@ class LoopPlayerPad {
     async _startMelodicPad(padType) {
         // Initialize Web Audio API silently if needed
         await this._initializeSilent();
+        
+        // Restore volume levels immediately after silent initialization
+        // This ensures rhythm loop gain is not left at 0 when melodic pads are toggled first
+        this._restoreVolumeFromSilent();
         
         // Load and decode only the specific melodic sample needed
         await this.loadMelodicSamples(false, [padType]);

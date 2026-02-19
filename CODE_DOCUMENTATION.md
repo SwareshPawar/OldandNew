@@ -5323,7 +5323,7 @@ function checkForActivePlayback() {
 
 ---
 
-**Document End - Last Updated: February 19, 2026, 11:45 AM - Version 1.16.4 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: February 19, 2026, 12:00 PM - Version 1.16.5 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
@@ -5364,4 +5364,7 @@ function checkForActivePlayback() {
     * Resolved "Not allowed by CORS" errors on local dev servers
 - Documented Loop Player LoopMap Guard
     * Prevented `/loops/undefined` fetches by filtering missing loop filenames
-    * Added warnings when loop metadata is incomplete
+    * Added warnings when loop metadata is incomplete- Documented Bug #6: Rhythm Loops Silent After Melodic Pad Toggle
+    * Fixed rhythm loop gain node stuck at 0 when melodic pads toggled first
+    * Added volume restoration call after silent initialization in melodic pad start
+    * Ensures all gain nodes (rhythm + melodic) properly restored to audible levels
