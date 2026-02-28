@@ -162,7 +162,9 @@ async function findMatchingLoopSet(song) {
 
     const songTaal = (song.taal || '').toLowerCase().trim();
     const songTime = (song.time || song.timeSignature || '').trim();
-    const songGenre = (song.genre || '').toLowerCase().trim();
+    // Handle genres array (multi-select) or legacy single genre string
+    const songGenres = (song.genres || (song.genre ? [song.genre] : []))
+        .map(g => String(g).toLowerCase().trim());
     const songTempo = getTempoCategory(song.bpm || song.tempo);
 
     console.log('🔍 Loop matching for song:', {
@@ -170,7 +172,7 @@ async function findMatchingLoopSet(song) {
         title: song.title,
         songTaal,
         songTime, 
-        songGenre,
+        songGenres,
         songTempo,
         availableLoops: metadata.loops.length
     });
@@ -229,7 +231,13 @@ async function findMatchingLoopSet(song) {
         // **OPTIONAL**: Score based on genre and tempo
         let score = 10; // Base score for taal + time match
         
-        if (songGenre && cond.genre.toLowerCase() === songGenre) {
+        // Check if ANY of the song's genres match the loop genre
+        const genreMatch = songGenres.some(g => 
+            g.includes(cond.genre.toLowerCase()) || 
+            cond.genre.toLowerCase().includes(g)
+        );
+        
+        if (genreMatch) {
             score += 5; // Genre match bonus
         }
         

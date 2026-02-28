@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 28, 2026 - 02:15 PM  
-**Version:** 1.17.2
+**Last Updated:** February 28, 2026 - 11:50 PM  
+**Version:** 1.17.3
 
 ---
 
@@ -1467,6 +1467,270 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 ## 8. BUGS ENCOUNTERED & RESOLVED
 
 This section documents production bugs discovered during development and testing, along with their root causes and solutions. Each entry includes reproduction steps, debugging process, and lessons learned.
+
+### Bug #8: Loop Player Expand/Collapse Button Not Working After Song Switch
+**Date Discovered:** February 28, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+When switching between songs while loop player was active, the expand/collapse button (and other loop player controls) stopped responding to clicks. The loop player would remain in its current state (expanded or collapsed) regardless of user interaction.
+
+**Affected Components:**
+- Loop player UI controls (`loop-player-pad-ui.js`)
+- All interactive elements: expand/collapse, play/pause, pads, sliders
+- State persistence (localStorage)
+
+**Reproduction Steps:**
+1. Load a song with loop player
+2. Click expand/collapse button (works)
+3. Switch to a different song
+4. Try clicking expand/collapse button
+5. Button doesn't respond
+
+**Root Cause Analysis:**
+Event listeners were being added inside `initializeLoopPlayer()` each time a song loaded, but:
+1. **Multiple Listeners**: Old event listeners accumulated without being removed
+2. **Stale References**: Listeners had references to previous song IDs/DOM elements
+3. **No Cleanup**: When song changed, old listeners remained attached, causing conflicts
+
+**Solution Implemented:**
+
+Used **clone-replace pattern** to remove all event listeners before attaching new ones:
+
+```javascript
+// BEFORE (BROKEN):
+const toggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+        toggleLoopPlayer(songId);
+    });
+}
+
+// AFTER (FIXED):
+const toggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
+if (toggleBtn) {
+    // Clone node to remove ALL event listeners
+    const newToggleBtn = toggleBtn.cloneNode(true);
+    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+    
+    // Add fresh event listener
+    newToggleBtn.addEventListener('click', () => {
+        toggleLoopPlayer(songId);
+    });
+}
+```
+
+**How Clone-Replace Works:**
+1. `cloneNode(true)` - Creates exact copy of element with all children but NO event listeners
+2. `replaceChild()` - Swaps old element (with stale listeners) with new clean element
+3. Fresh listener added to clean element
+
+**Controls Fixed:**
+1. ✅ Expand/collapse toggle button
+2. ✅ Play/pause button
+3. ✅ Loop/fill pads (all 6 pads)
+4. ✅ Auto-fill toggle
+5. ✅ Volume slider
+6. ✅ Tempo slider
+7. ✅ Tempo reset button
+8. ✅ Melodic volume slider
+
+**Additional Feature - State Persistence:**
+
+Also added localStorage persistence for expand/collapse state:
+
+```javascript
+function toggleLoopPlayer(songId) {
+    const content = document.getElementById(`loopPlayerContent-${songId}`);
+    const icon = document.getElementById(`loopToggleIcon-${songId}`);
+    
+    const isExpanded = !content.classList.contains('collapsed');
+    
+    if (isExpanded) {
+        content.classList.add('collapsed');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    } else {
+        content.classList.remove('collapsed');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    }
+    
+    // Save state to localStorage
+    localStorage.setItem('loopPlayerExpanded', isExpanded ? 'false' : 'true');
+}
+
+// Restore state when new song loads
+function restoreLoopPlayerState(songId) {
+    const isExpanded = localStorage.getItem('loopPlayerExpanded') === 'true';
+    const content = document.getElementById(`loopPlayerContent-${songId}`);
+    const icon = document.getElementById(`loopToggleIcon-${songId}`);
+    
+    if (isExpanded && content) {
+        content.classList.remove('collapsed');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    }
+}
+```
+
+**Files Modified:**
+- `loop-player-pad-ui.js` lines 856-1000: Added clone-replace pattern for all controls
+- `loop-player-pad-ui.js` lines 903-931: Added toggleLoopPlayer with localStorage
+- `loop-player-pad-ui.js` lines 527-547: Added restoreLoopPlayerState
+
+**Testing:**
+1. Load song 1, expand loop player ✅
+2. Switch to song 2, player stays expanded ✅
+3. Click expand/collapse, works correctly ✅
+4. Switch to song 3, all controls responsive ✅
+5. Reload page, expand state restored ✅
+
+**Impact:**
+- 🎯 **HIGH** - All loop player controls now work reliably across song switches
+- ✅ User experience vastly improved (no "stuck" UI elements)
+- ✅ State persists across sessions
+- ✅ No memory leaks from accumulated event listeners
+
+**Lessons Learned:**
+1. Always remove old event listeners before adding new ones
+2. Clone-replace pattern is clean way to clear all listeners
+3. localStorage excellent for UI state persistence
+4. Test dynamic UI across multiple state changes, not just first load
+
+---
+
+### Bug #5: Loop Player Genre Array Not Handled - Critical Matching Failure
+**Date Discovered:** February 28, 2026  
+**Severity:** Critical  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+Loop player was never matching songs that had multi-select genres (array) with loop files that required specific genres. Songs with `genres: ['Qawalli', 'Hindi']` were not matching loops named `*_qawalli_*.wav`, resulting in missing or suboptimal loop recommendations.
+
+**Affected Components:**
+- Loop matching logic (`loop-player-pad-ui.js`)
+- Genre scoring system
+- All songs using multi-select genre field
+
+**Reproduction Steps:**
+1. Create song with `genres: ['Old', 'Hindi', 'Qawalli']` (array)
+2. Create loop files: `keherwa_4_4_fast_qawalli_*.wav`
+3. Load song and observe loop player
+4. Genre match bonus (+5 points) never applied
+5. Console showed `songGenre: ""` (empty)
+
+**Error Pattern:**
+```javascript
+// Console output:
+🔍 Loop matching for song: {
+  songGenre: "",  // ❌ Empty because song.genre was undefined
+  songGenres: undefined
+}
+```
+
+**Root Cause Analysis:**
+1. Songs store genres as **array**: `genres: ['Old', 'Hindi', 'Qawalli']`
+2. Matching code expected **string**: `song.genre`
+3. Code did: `const songGenre = (song.genre || '').toLowerCase()`
+4. Result: `songGenre = ""` because `song.genre` was undefined
+5. Genre matching always failed: `if (songGenre && ...) { score += 5 }` never executed
+6. Impact: Songs lost +5 genre bonus, got suboptimal loop matches
+
+**Data Structure Mismatch:**
+```javascript
+// What songs actually have (database):
+{
+  genres: ["Old", "Mid", "Hindi", "Qawalli", "Female"]  // Array
+}
+
+// What code expected:
+{
+  genre: "Qawalli"  // Single string
+}
+```
+
+**Solution Implemented:**
+
+**Changed**: `loop-player-pad-ui.js` lines 163-176, 232-242
+
+```javascript
+// BEFORE (BROKEN):
+const songGenre = (song.genre || '').toLowerCase().trim();
+// ...
+if (songGenre && cond.genre.toLowerCase() === songGenre) {
+    score += 5;
+}
+
+// AFTER (FIXED):
+// Handle genres array (multi-select) or legacy single genre string
+const songGenres = (song.genres || (song.genre ? [song.genre] : []))
+    .map(g => String(g).toLowerCase().trim());
+// ...
+// Check if ANY of the song's genres match the loop genre
+const genreMatch = songGenres.some(g => 
+    g.includes(cond.genre.toLowerCase()) || 
+    cond.genre.toLowerCase().includes(g)
+);
+
+if (genreMatch) {
+    score += 5; // Genre match bonus
+}
+```
+
+**Key Improvements:**
+1. ✅ Handles `song.genres` array (current data structure)
+2. ✅ Backward compatible with old songs having `song.genre` string
+3. ✅ Flexible matching: "Qawalli" contains "qawalli" ✅
+4. ✅ Case-insensitive comparison
+5. ✅ Array matching: checks if ANY genre matches
+
+**Example Fix Result:**
+```javascript
+// Song 805 before fix:
+Score: 13 (taal + time + tempo, no genre bonus)
+
+// Song 805 after fix:
+Score: 18 (taal + time + tempo + genre) = Perfect Match! 🌟
+```
+
+**Files Modified:**
+- `loop-player-pad-ui.js` line 163-168: Changed genre extraction to handle array
+- `loop-player-pad-ui.js` line 170: Updated console log to show `songGenres`
+- `loop-player-pad-ui.js` line 232-242: Changed genre matching to use array comparison
+- `LOOP_PLAYER_DOCUMENTATION.md`: Updated documentation with data structure and matching logic
+- `normalize-loop-data.js`: Created script to fix data inconsistencies in database
+
+**Related Documentation:**
+- See `LOOP_PLAYER_DOCUMENTATION.md` section "Song Data Structure" for complete explanation
+- See `LOOP_PLAYER_DOCUMENTATION.md` section "Tempo BPM-to-Category Conversion" for tempo handling
+
+**Testing:**
+1. Load song 805 with `genres: ['Qawalli']`
+2. Check console: `songGenres: ['qawalli']` ✅
+3. Matching score: 18 (Perfect Match) ✅
+4. Loop player loads with correct files ✅
+
+**Additional Discovery:**
+While fixing this bug, also clarified the tempo system:
+- Songs store **numeric BPM** (e.g., `bpm: 121`)
+- Loop filenames use **categories** (`slow`, `medium`, `fast`)
+- System auto-converts: BPM < 80 → "slow", 80-120 → "medium", >120 → "fast"
+- Updated documentation to prevent confusion about tempo storage
+
+**Lessons Learned:**
+1. Always verify actual data structure in database before writing matching logic
+2. Multi-select fields require array handling, not string comparison
+3. Console logging should show actual data types during matching
+4. Genre matching should be flexible (substring/contains) for better UX
+5. Document data structures at the top of technical docs to prevent confusion
+
+**Impact:**
+- 🎯 **HIGH** - All songs with multi-select genres now get proper loop matching
+- ✅ Genre bonus scoring now works correctly (+5 points)
+- ✅ Better loop recommendations for all users
+- ✅ System handles both old (string) and new (array) genre formats
 
 ### Bug #3: Vercel Production API Requests Failing After Replace Uploads
 **Date Discovered:** February 17, 2026  
@@ -6366,6 +6630,100 @@ body.dark-mode .song-preview-header .favorite-btn.favorited {
 2. **Rate Limiting**: Client-side request throttling
 3. **Input Validation**: Enhanced client-side validation
 4. **CSRF Protection**: Cross-site request forgery prevention
+
+---
+
+### Session #6: Loop Auto-Reload on Song Change
+**Date:** February 2026 (integrated with v2.0)
+**Status:** ✅ IMPLEMENTED
+
+**Objective:**
+Automatically reload loop and melodic samples when switching to a song that requires different loops (different taal, time, tempo, genre, or key).
+
+**Problem:**
+When switching between songs, the loop player would keep playing loops from the previous song, causing rhythm/key mismatches. User had to manually stop and restart loops, or reload the page.
+
+**Solution:**
+Implemented intelligent reload detection system in `loop-player-pad.js`:
+
+**1. Change Detection** (`needsLoopReload()` method - lines 128-158):
+- Compares new song ID with currently loaded song
+- Compares loop URLs to detect if different loop set needed
+- Returns `true` if reload required
+
+**2. Reload Queue System** (`pendingLoopReload` flag):
+- If loops currently playing when reload needed → marks reload as pending
+- When playback stops → automatically triggers queued reload  
+- Prevents jarring audio cuts during active playback
+- Ensures loops reload at appropriate time
+
+**3. Smart Loading** (`loadLoops()` method - lines 161-231):
+- Checks if already loading (prevents race conditions)
+- Checks if reload needed before fetching
+- Resets playback state and clears old buffers
+- Loads new loop set and reinitializes UI
+
+**Files Modified:**
+- `loop-player-pad.js` lines 128-158: Added `needsLoopReload()` method
+- `loop-player-pad.js` lines 161-231: Enhanced `loadLoops()` with reload detection
+- `loop-player-pad.js` line 54: Added `pendingLoopReload` property
+- `loop-player-pad.js` line 56: Added `isLoadingLoops` flag
+- `loop-player-pad-ui.js`: Calls `loadLoops()` when song changes
+
+**Impact:**
+- ✅ Loops automatically match current song (taal, time, tempo, genre)
+- ✅ Melodic pads automatically match current key (transposed)
+- ✅ No manual reload needed
+- ✅ Smooth transitions (waits for stop if playing)
+- ✅ Prevents wrong loops/wrong key from playing
+- ✅ Eliminates race conditions with concurrent load attempts
+
+**User Experience:**
+- Before: User switches song → loop player plays wrong rhythm → user must stop and restart manually
+- After: User switches song → loop player detects change → loops automatically reload → correct rhythm ready
+
+---
+
+### Session #7: Loop Metadata Auto-Sync with main.js
+**Date:** February 2026 (integrated with loop manager v2.0)
+**Status:** ✅ IMPLEMENTED
+
+**Objective:**
+Make loop manager automatically sync with TAALS, GENRES, and TIMES arrays in main.js, eliminating manual metadata updates across multiple files.
+
+**Problem:**
+When adding new taals/genres/time signatures to main.js for song forms, developer had to manually update:
+1. `loops/loops-metadata.json` → supportedTaals array
+2. Loop manager dropdowns → hardcoded options
+3. Multiple validation functions
+
+This caused sync issues, maintenance burden, and human errors.
+
+**Solution:**
+Created **single source of truth in main.js** with automatic synchronization via `/api/song-metadata` endpoint.
+
+**Files Modified:**
+- `server.js` ~line 1230: Added `/api/song-metadata` endpoint (reads main.js, extracts arrays)
+- `loop-manager.html`: Added `loadSongMetadata()` function (fetches from API)
+- `loop-manager.html`: Updated dropdown population to use API data
+- `server.js` `/api/loops/metadata`: Enhanced with auto-sync from main.js
+
+**Benefits:**
+- ✅ **Single source of truth**: main.js is the only place to update
+- ✅ **Zero manual sync**: Loop manager automatically shows new values
+- ✅ **Always current**: Dropdowns reflect actual main.js arrays
+- ✅ **Reduces errors**: No more forgotten updates
+- ✅ **Less maintenance**: One change propagates everywhere
+
+**Workflow After Implementation:**
+1. Update `main.js` → Add "Bhangra" to TAALS array  
+2. Done! Loop manager shows "Bhangra" automatically
+
+**Impact:**
+- 🎯 **HIGH** - Dramatically simplifies metadata management
+- ✅ Developers only update one location (main.js)
+- ✅ Loop manager always in sync with song forms
+- ✅ Scales easily as more taals/genres added
 
 ---
 

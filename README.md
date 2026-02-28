@@ -80,12 +80,35 @@ See the **"DOCUMENTATION MAINTENANCE HOOK"** section at the top of `CODE_DOCUMEN
 
 ---
 
-## 📚 Key Documentation Files
+## 📚 Documentation
 
-- **`CODE_DOCUMENTATION.md`** - Single source of truth for ALL code changes
-- **`CONTRIBUTING.md`** - How to contribute (includes documentation workflow)
-- **`MIGRATION_SONG_ID_FIX.md`** - Song ID standardization migration
-- **`MULTISELECT_ANALYSIS.md`** - Multiselect consolidation analysis
+### Core Documentation (6 Files)
+
+1. **`CODE_DOCUMENTATION.md`** - Single Source of Truth
+   - Complete change history (all bugs, features, sessions)
+   - Section 8: All bugs encountered and resolved
+   - Section 9: Development sessions and features
+   - **Update this after every code change**
+
+2. **`LOOP_PLAYER_DOCUMENTATION.md`** - Loop System Reference
+   - Technical documentation for loop matching system
+   - Song data structures and matching logic
+   - API reference and troubleshooting
+
+3. **`CONTRIBUTING.md`** - Development Guidelines
+   - Git workflow and documentation requirements
+   - How to contribute to the project
+
+4. **`README.md`** - This File
+   - Getting started guide and project overview
+
+5. **`MIGRATION_SONG_ID_FIX.md`** - Historical Reference
+   - Completed code migrations (read-only)
+
+6. **`DOCUMENTATION_AI_GUIDE.md`** - For AI Assistants
+   - How to maintain and use documentation
+
+**All documentation consolidated from 33 files to 6 for easier maintenance!**
 
 ---
 
