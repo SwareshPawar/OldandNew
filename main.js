@@ -8127,6 +8127,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const tanpuraKeyIndicator = document.getElementById(`tanpura-key-${song.id}`);
                     if (atmosphereKeyIndicator) atmosphereKeyIndicator.textContent = newEffectiveKey;
                     if (tanpuraKeyIndicator) tanpuraKeyIndicator.textContent = newEffectiveKey;
+                    
+                    // Re-check availability and update pad enable/disable states
+                    if (typeof updateMelodicPadAvailability === 'function') {
+                        await updateMelodicPadAvailability(song.id, newEffectiveKey);
+                    }
                 }
                 
                 updatePreviewWithTransposition(newLevel);
@@ -8147,6 +8152,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const tanpuraKeyIndicator = document.getElementById(`tanpura-key-${song.id}`);
                     if (atmosphereKeyIndicator) atmosphereKeyIndicator.textContent = newEffectiveKey;
                     if (tanpuraKeyIndicator) tanpuraKeyIndicator.textContent = newEffectiveKey;
+                    
+                    // Re-check availability and update pad enable/disable states
+                    if (typeof updateMelodicPadAvailability === 'function') {
+                        await updateMelodicPadAvailability(song.id, newEffectiveKey);
+                    }
                 }
                 
                 updatePreviewWithTransposition(newLevel);
@@ -8165,6 +8175,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const tanpuraKeyIndicator = document.getElementById(`tanpura-key-${song.id}`);
                     if (atmosphereKeyIndicator) atmosphereKeyIndicator.textContent = newEffectiveKey;
                     if (tanpuraKeyIndicator) tanpuraKeyIndicator.textContent = newEffectiveKey;
+                    
+                    // Re-check availability and update pad enable/disable states
+                    if (typeof updateMelodicPadAvailability === 'function') {
+                        await updateMelodicPadAvailability(song.id, newEffectiveKey);
+                    }
                 }
                 
                 updatePreviewWithTransposition(newLevel);

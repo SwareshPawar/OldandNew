@@ -402,6 +402,57 @@ ${loopPlayerStyles}
 }
 
 /**
+ * Update melodic pad availability and enable/disable states
+ * @param {number} songId - Song ID
+ * @param {string} effectiveKey - Current effective key
+ */
+async function updateMelodicPadAvailability(songId, effectiveKey) {
+    if (!loopPlayerInstance) {
+        console.warn('Loop player instance not available');
+        return;
+    }
+    
+    console.log(`🔄 Updating melodic pad availability for song ${songId}, key ${effectiveKey}`);
+    
+    // Check availability for current key
+    const melodicAvailability = await loopPlayerInstance.checkMelodicAvailability(['atmosphere', 'tanpura']);
+    
+    // Update pad states
+    const container = document.getElementById(`loopPlayerContainer-${songId}`);
+    if (!container) {
+        console.warn(`Container not found for song ${songId}`);
+        return;
+    }
+    
+    const pads = container.querySelectorAll('.loop-pad[data-melodic]');
+    pads.forEach(pad => {
+        const melodicType = pad.dataset.melodic;
+        
+        if (melodicType) {
+            const isAvailable = melodicAvailability[melodicType];
+            
+            if (isAvailable) {
+                pad.disabled = false;
+                pad.classList.remove('loop-pad-disabled');
+                pad.title = `${melodicType} in key ${effectiveKey} (click to play)`;
+                console.log(`✅ Enabled ${melodicType} pad for key ${effectiveKey}`);
+            } else {
+                pad.disabled = true;
+                pad.classList.add('loop-pad-disabled');
+                pad.title = `${melodicType}_${effectiveKey}.wav not available`;
+                console.log(`❌ Disabled ${melodicType} pad - file not available for key ${effectiveKey}`);
+            }
+        }
+    });
+    
+    // Return availability for status updates
+    return melodicAvailability;
+}
+
+// Make the function globally accessible for transpose handlers
+window.updateMelodicPadAvailability = updateMelodicPadAvailability;
+
+/**
  * Initialize loop player for a song
  */
 async function initializeLoopPlayer(songId) {
@@ -479,7 +530,8 @@ async function initializeLoopPlayer(songId) {
     }
     
     // Set song key and transpose for melodic pads
-    loopPlayerInstance.setSongKeyAndTranspose(song.key, transposeLevel);
+    // Note: We reload samples (3rd param = true) when song changes to ensure correct key samples are loaded
+    await loopPlayerInstance.setSongKeyAndTranspose(song.key, transposeLevel, true);
     
     // Set up callbacks
     loopPlayerInstance.onLoopChange = (loopName) => {
