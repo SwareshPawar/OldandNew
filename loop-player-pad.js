@@ -539,8 +539,8 @@ class LoopPlayerPad {
                 const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${encodedKey}.wav`;
                 console.log(`  🔗 Trying URL: ${url}`);
                 try {
-                    // Use GET to avoid HEAD restrictions on some CDNs
-                    const response = await fetch(url);
+                    // Use HEAD for lightweight check
+                    const response = await fetch(url, { method: 'HEAD' });
                     if (response.ok) {
                         availability[sampleType] = true;
                         console.log(`  ✅ ${sampleType}_${keyToCheck}.wav: Available (effective key: ${effectiveKey})`);
