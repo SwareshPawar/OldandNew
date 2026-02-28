@@ -559,6 +559,126 @@
       "files": {
         "loop1": "rd pattern_3_4_slow_acoustic_LOOP1.wav"
       }
+    },
+    {
+      "id": "3_4_3_4_slow_drum_slow_loop1",
+      "filename": "3_4_3_4_slow_drum_slow_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "3/4",
+        "timeSignature": "3/4",
+        "tempo": "slow",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T12:16:58.330Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "3_4_3_4_slow_drum_slow_LOOP1.wav"
+      }
+    },
+    {
+      "id": "3_4_3_4_slow_drum_slow_loop2",
+      "filename": "3_4_3_4_slow_drum_slow_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "conditions": {
+        "taal": "3/4",
+        "timeSignature": "3/4",
+        "tempo": "slow",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T12:17:11.811Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "3_4_3_4_slow_drum_slow_LOOP2.wav"
+      }
+    },
+    {
+      "id": "3_4_3_4_slow_drum_slow_loop3",
+      "filename": "3_4_3_4_slow_drum_slow_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "conditions": {
+        "taal": "3/4",
+        "timeSignature": "3/4",
+        "tempo": "slow",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T12:17:17.947Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "3_4_3_4_slow_drum_slow_LOOP3.wav"
+      }
+    },
+    {
+      "id": "3_4_3_4_slow_drum_slow_fill1",
+      "filename": "3_4_3_4_slow_drum_slow_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "conditions": {
+        "taal": "3/4",
+        "timeSignature": "3/4",
+        "tempo": "slow",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T12:17:24.266Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "3_4_3_4_slow_drum_slow_FILL1.wav"
+      }
+    },
+    {
+      "id": "3_4_3_4_slow_drum_slow_fill2",
+      "filename": "3_4_3_4_slow_drum_slow_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "conditions": {
+        "taal": "3/4",
+        "timeSignature": "3/4",
+        "tempo": "slow",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T12:17:29.484Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "3_4_3_4_slow_drum_slow_FILL2.wav"
+      }
+    },
+    {
+      "id": "3_4_3_4_slow_drum_slow_fill3",
+      "filename": "3_4_3_4_slow_drum_slow_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "conditions": {
+        "taal": "3/4",
+        "timeSignature": "3/4",
+        "tempo": "slow",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T12:17:34.642Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "3_4_3_4_slow_drum_slow_FILL3.wav"
+      }
     }
   ],
   "tempoRanges": {
