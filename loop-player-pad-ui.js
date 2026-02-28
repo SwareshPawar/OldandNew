@@ -524,6 +524,26 @@ async function initializeLoopPlayer(songId) {
     container.style.display = 'block';
     console.log('✅ Loop player container shown for song:', songId);
     
+    // Restore expand/collapse state from localStorage
+    const isExpanded = localStorage.getItem('loopPlayerExpanded') === 'true';
+    const loopContent = document.getElementById(`loopPlayerContent-${songId}`);
+    const loopToggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
+    const loopToggleIcon = document.getElementById(`loopToggleIcon-${songId}`);
+    
+    if (loopContent && loopToggleBtn && loopToggleIcon) {
+        if (isExpanded) {
+            // Restore to expanded state
+            loopContent.classList.remove('collapsed');
+            loopToggleBtn.classList.add('expanded');
+            loopToggleIcon.className = 'fas fa-chevron-up';
+            loopToggleBtn.title = 'Collapse Rhythm Pads';
+            console.log('🔓 Loop player restored to expanded state');
+        } else {
+            // Keep collapsed (default state from HTML)
+            console.log('🔒 Loop player remains collapsed');
+        }
+    }
+    
     // Create or reuse player instance
     if (!loopPlayerInstance) {
         loopPlayerInstance = new LoopPlayerPad();
@@ -913,12 +933,16 @@ function toggleLoopPlayer(songId) {
             toggleBtn.classList.add('expanded');
             toggleIcon.className = 'fas fa-chevron-up';
             toggleBtn.title = 'Collapse Rhythm Pads';
+            // Save expanded state to localStorage
+            localStorage.setItem('loopPlayerExpanded', 'true');
         } else {
             // Collapse
             content.classList.add('collapsed');
             toggleBtn.classList.remove('expanded');
             toggleIcon.className = 'fas fa-chevron-down';
             toggleBtn.title = 'Expand Rhythm Pads';
+            // Save collapsed state to localStorage
+            localStorage.setItem('loopPlayerExpanded', 'false');
         }
     }
 }
