@@ -8112,23 +8112,62 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             }
 
             // Transpose controls
-            document.getElementById('transpose-up')?.addEventListener('click', () => {
+            document.getElementById('transpose-up')?.addEventListener('click', async () => {
                 let currentLevel = parseInt(document.getElementById('transpose-level').textContent);
                 currentLevel = isNaN(currentLevel) ? 0 : currentLevel;
-                document.getElementById('transpose-level').textContent = currentLevel + 1;
-                updatePreviewWithTransposition(currentLevel + 1);
+                const newLevel = currentLevel + 1;
+                document.getElementById('transpose-level').textContent = newLevel;
+                
+                // Update loop player melodic samples for new key
+                if (typeof loopPlayerInstance !== 'undefined' && loopPlayerInstance) {
+                    const newEffectiveKey = await loopPlayerInstance.setSongKeyAndTranspose(song.key, newLevel, true);
+                    
+                    // Update key indicators in UI
+                    const atmosphereKeyIndicator = document.getElementById(`atmosphere-key-${song.id}`);
+                    const tanpuraKeyIndicator = document.getElementById(`tanpura-key-${song.id}`);
+                    if (atmosphereKeyIndicator) atmosphereKeyIndicator.textContent = newEffectiveKey;
+                    if (tanpuraKeyIndicator) tanpuraKeyIndicator.textContent = newEffectiveKey;
+                }
+                
+                updatePreviewWithTransposition(newLevel);
             });
 
-            document.getElementById('transpose-down')?.addEventListener('click', () => {
+            document.getElementById('transpose-down')?.addEventListener('click', async () => {
                 let currentLevel = parseInt(document.getElementById('transpose-level').textContent);
                 currentLevel = isNaN(currentLevel) ? 0 : currentLevel;
-                document.getElementById('transpose-level').textContent = currentLevel - 1;
-                updatePreviewWithTransposition(currentLevel - 1);
+                const newLevel = currentLevel - 1;
+                document.getElementById('transpose-level').textContent = newLevel;
+                
+                // Update loop player melodic samples for new key
+                if (typeof loopPlayerInstance !== 'undefined' && loopPlayerInstance) {
+                    const newEffectiveKey = await loopPlayerInstance.setSongKeyAndTranspose(song.key, newLevel, true);
+                    
+                    // Update key indicators in UI
+                    const atmosphereKeyIndicator = document.getElementById(`atmosphere-key-${song.id}`);
+                    const tanpuraKeyIndicator = document.getElementById(`tanpura-key-${song.id}`);
+                    if (atmosphereKeyIndicator) atmosphereKeyIndicator.textContent = newEffectiveKey;
+                    if (tanpuraKeyIndicator) tanpuraKeyIndicator.textContent = newEffectiveKey;
+                }
+                
+                updatePreviewWithTransposition(newLevel);
             });
 
-            document.getElementById('transposeReset').addEventListener('click', () => {
-                document.getElementById('transpose-level').textContent = 0;
-                updatePreviewWithTransposition(0);
+            document.getElementById('transposeReset').addEventListener('click', async () => {
+                const newLevel = 0;
+                document.getElementById('transpose-level').textContent = newLevel;
+                
+                // Update loop player melodic samples for new key
+                if (typeof loopPlayerInstance !== 'undefined' && loopPlayerInstance) {
+                    const newEffectiveKey = await loopPlayerInstance.setSongKeyAndTranspose(song.key, newLevel, true);
+                    
+                    // Update key indicators in UI
+                    const atmosphereKeyIndicator = document.getElementById(`atmosphere-key-${song.id}`);
+                    const tanpuraKeyIndicator = document.getElementById(`tanpura-key-${song.id}`);
+                    if (atmosphereKeyIndicator) atmosphereKeyIndicator.textContent = newEffectiveKey;
+                    if (tanpuraKeyIndicator) tanpuraKeyIndicator.textContent = newEffectiveKey;
+                }
+                
+                updatePreviewWithTransposition(newLevel);
             });
 
             // Save transpose button event listener

@@ -567,7 +567,8 @@ async function initializeLoopPlayer(songId) {
         
         console.log('🔊 Loading loops from:', loopMap);
         
-        await loopPlayerInstance.loadLoops(loopMap);
+        // Load loops with song ID for tracking
+        await loopPlayerInstance.loadLoops(loopMap, songId);
         
         // Check availability of melodic samples for the effective key
         const melodicAvailability = await loopPlayerInstance.checkMelodicAvailability(['atmosphere', 'tanpura']);
@@ -619,13 +620,19 @@ async function initializeLoopPlayer(songId) {
         const totalMelodic = Object.keys(melodicAvailability).length;
         
         if (status) {
-            if (loadedCount >= 6) {
+            // Check if there's a pending reload
+            if (loopPlayerInstance.pendingLoopReload) {
+                status.textContent = `🔄 New song selected - Stop and Play to load new loops`;
+                status.style.color = '#ffc107'; // Warning color
+            } else if (loadedCount >= 6) {
                 const matchInfo = getMatchQuality(score);
                 const melodicStatus = melodicCount > 0 ? ` | Melodic: ${melodicCount}/${totalMelodic}` : ' | No melodic samples';
                 status.textContent = `Ready - ${matchInfo.label}${melodicStatus} (Click Play to initialize audio)`;
                 status.title = matchInfo.description;
+                status.style.color = ''; // Reset color
             } else {
                 status.textContent = `Loaded ${loadedCount}/6 loops | Melodic: ${melodicCount}/${totalMelodic}`;
+                status.style.color = ''; // Reset color
             }
         }
         

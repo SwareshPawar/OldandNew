@@ -45,6 +45,11 @@ class LoopPlayerPad {
         this.currentSongKey = null;
         this.currentTranspose = 0;
         
+        // Song/loop tracking for reload detection
+        this.currentSongId = null;
+        this.currentLoopSet = null;
+        this.pendingLoopReload = null;
+        
         // Settings
         this.autoFill = true;
         this.volumeLevel = 0.8;
@@ -123,12 +128,44 @@ class LoopPlayerPad {
     }
 
     /**
+     * Check if loops need to be reloaded for a new song
+     * @param {number} songId
+     * @param {object} loopMap
+     * @returns {boolean}
+     */
+    needsLoopReload(songId, loopMap) {
+        // Always reload if song ID changed
+        if (this.currentSongId !== songId) {
+            console.log('🔄 Song ID changed:', this.currentSongId, '→', songId);
+            return true;
+        }
+        
+        // Check if loop files changed
+        if (!this.currentLoopSet) {
+            console.log('🔄 No previous loop set');
+            return true;
+        }
+        
+        // Compare loop file URLs
+        const currentUrls = Object.values(this.currentLoopSet || {}).sort().join('|');
+        const newUrls = Object.values(loopMap || {}).sort().join('|');
+        
+        const changed = currentUrls !== newUrls;
+        if (changed) {
+            console.log('🔄 Loop set changed:', currentUrls, '→', newUrls);
+        }
+        
+        return changed;
+    }
+
+    /**
      * Load loop samples from the /loops/ folder (fetch only, decode later after user gesture)
      * @param {Object} loopMap - Optional map of loop names to URLs
+     * @param {number} songId - Optional song ID for tracking
      * Uses new naming convention v2.0: {taal}_{time}_{tempo}_{genre}_{TYPE}{num}.wav
      * Falls back to keherwa_4_4 files if no map provided (backward compatibility)
      */
-    async loadLoops(loopMap = null) {
+    async loadLoops(loopMap = null, songId = null) {
         // Default to keherwa_4_4 files if no map provided (backward compatibility)
         if (!loopMap) {
             loopMap = {
@@ -139,6 +176,34 @@ class LoopPlayerPad {
                 'fill2': '/loops/keherwa_4_4_FILL2.wav',
                 'fill3': '/loops/keherwa_4_4_FILL3.wav'
             };
+        }
+
+        // Check if reload is needed
+        const needsReload = this.needsLoopReload(songId, loopMap);
+        
+        if (!needsReload && this.rawAudioData.size > 0) {
+            console.log('✅ Loops already loaded for this song');
+            return;
+        }
+        
+        // If currently playing, queue reload for next play
+        if (needsReload && this.isPlaying) {
+            console.log('🔄 Different song/loops detected - queueing reload for next play');
+            this.pendingLoopReload = { loopMap, songId };
+            // Don't interrupt current playback
+            return;
+        }
+        
+        // Update tracking
+        this.currentSongId = songId;
+        this.currentLoopSet = loopMap ? { ...loopMap } : null;
+        this.pendingLoopReload = null;
+        
+        // Clear old data if reloading
+        if (needsReload) {
+            console.log('🗑️ Clearing old loop data');
+            this.rawAudioData.clear();
+            this.audioBuffers.clear();
         }
 
         // Only fetch raw audio data (don't decode yet - requires user gesture)
@@ -156,7 +221,7 @@ class LoopPlayerPad {
 
         await Promise.all(loadPromises);
         
-        console.log(`Successfully fetched ${this.rawAudioData.size} loop files`);
+        console.log(`Successfully fetched ${this.rawAudioData.size} loop files for song ${songId}`);
     }
     
     /**
@@ -203,10 +268,57 @@ class LoopPlayerPad {
     }
 
     /**
+     * Apply pending loop reload if any
+     * @private
+     */
+    async _applyPendingReload() {
+        if (!this.pendingLoopReload) {
+            return false;
+        }
+        
+        console.log('🔄 Applying pending loop reload');
+        const { loopMap, songId } = this.pendingLoopReload;
+        this.pendingLoopReload = null;
+        
+        // Update tracking
+        this.currentSongId = songId;
+        this.currentLoopSet = loopMap ? { ...loopMap } : null;
+        
+        // Clear old samples
+        console.log('🗑️ Clearing old loop data for reload');
+        this.rawAudioData.clear();
+        this.audioBuffers.clear();
+        
+        // Fetch new loops
+        const loadPromises = Object.entries(loopMap).map(async ([name, url]) => {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                this.rawAudioData.set(name, arrayBuffer);
+                console.log(`Fetched: ${name}, size: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`);
+            } catch (error) {
+                console.error(`Failed to fetch ${name}:`, error);
+                throw error;
+            }
+        });
+        
+        await Promise.all(loadPromises);
+        console.log(`✅ Reloaded ${this.rawAudioData.size} loop files for song ${songId}`);
+        
+        return true;
+    }
+
+    /**
      * Start playing the current loop
      */
     async play() {
         if (this.isPlaying) return;
+        
+        // Check and apply pending reload first
+        if (this.pendingLoopReload) {
+            console.log('🔄 Detected pending reload - applying before play');
+            await this._applyPendingReload();
+        }
         
         // Set loading state
         this.isInitializing = true;
@@ -429,12 +541,41 @@ class LoopPlayerPad {
      * Set current song key and transpose for melodic pads
      * @param {string} key - Song key (e.g., 'C', 'D#', 'F')
      * @param {number} transpose - Transpose level (+/- semitones)
+     * @param {boolean} reloadSamples - Whether to reload melodic samples immediately
      */
-    setSongKeyAndTranspose(key, transpose = 0) {
+    async setSongKeyAndTranspose(key, transpose = 0, reloadSamples = false) {
+        const oldKey = this._getEffectiveKey();
         this.currentSongKey = key;
         this.currentTranspose = transpose;
-        const effectiveKey = this._getEffectiveKey();
-        console.log(`🎹 Set song key: ${key}, transpose: ${transpose} → Effective key: ${effectiveKey}`);
+        const newKey = this._getEffectiveKey();
+        
+        console.log(`🎹 Set song key: ${key}, transpose: ${transpose} → Effective key: ${newKey}`);
+        
+        // If key changed and samples should be reloaded
+        if (reloadSamples && oldKey !== newKey) {
+            console.log(`🔄 Key changed from ${oldKey} to ${newKey} - reloading melodic samples`);
+            
+            // Stop all melodic pads
+            this._stopAllMelodicPads();
+            
+            // Clear old melodic samples from cache
+            const oldAtmosphereKey = `atmosphere_${oldKey}`;
+            const oldTanpuraKey = `tanpura_${oldKey}`;
+            this.rawAudioData.delete(oldAtmosphereKey);
+            this.rawAudioData.delete(oldTanpuraKey);
+            this.audioBuffers.delete(oldAtmosphereKey);
+            this.audioBuffers.delete(oldTanpuraKey);
+            
+            // Reload samples for new key (availability check will happen in UI)
+            try {
+                await this.loadMelodicSamples(true, ['atmosphere', 'tanpura']);
+                console.log(`✅ Reloaded melodic samples for key ${newKey}`);
+            } catch (error) {
+                console.warn(`Failed to reload melodic samples:`, error);
+            }
+        }
+        
+        return newKey;
     }
 
     /**
