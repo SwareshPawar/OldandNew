@@ -220,7 +220,10 @@
       },
       "files": {
         "loop1": "keherwa_4_4_medium_dholak_LOOP1.wav"
-      }
+      },
+      "replacedAt": "2026-02-28T06:38:09.010Z",
+      "replacedBy": "swareshpawar@gmail.com",
+      "fileSize": 483198
     },
     {
       "id": "keherwa_4_4_medium_dholak_loop2",
@@ -240,7 +243,10 @@
       },
       "files": {
         "loop2": "keherwa_4_4_medium_dholak_LOOP2.wav"
-      }
+      },
+      "replacedAt": "2026-02-28T06:38:29.859Z",
+      "replacedBy": "swareshpawar@gmail.com",
+      "fileSize": 483198
     },
     {
       "id": "keherwa_4_4_medium_dholak_loop3",
@@ -260,7 +266,10 @@
       },
       "files": {
         "loop3": "keherwa_4_4_medium_dholak_LOOP3.wav"
-      }
+      },
+      "replacedAt": "2026-02-28T06:39:01.972Z",
+      "replacedBy": "swareshpawar@gmail.com",
+      "fileSize": 483198
     },
     {
       "id": "keherwa_4_4_medium_dholak_fill1",
@@ -280,7 +289,10 @@
       },
       "files": {
         "fill1": "keherwa_4_4_medium_dholak_FILL1.wav"
-      }
+      },
+      "replacedAt": "2026-02-28T06:41:27.515Z",
+      "replacedBy": "swareshpawar@gmail.com",
+      "fileSize": 483198
     },
     {
       "id": "keherwa_4_4_medium_dholak_fill2",
@@ -300,7 +312,10 @@
       },
       "files": {
         "fill2": "keherwa_4_4_medium_dholak_FILL2.wav"
-      }
+      },
+      "replacedAt": "2026-02-28T06:39:40.500Z",
+      "replacedBy": "swareshpawar@gmail.com",
+      "fileSize": 483196
     },
     {
       "id": "keherwa_4_4_medium_dholak_fill3",
@@ -321,9 +336,29 @@
       "files": {
         "fill3": "keherwa_4_4_medium_dholak_FILL3.wav"
       },
-      "replacedAt": "2026-02-17T09:18:53.084Z",
+      "replacedAt": "2026-02-28T06:39:50.553Z",
       "replacedBy": "swareshpawar@gmail.com",
-      "fileSize": 240592
+      "fileSize": 483200
+    },
+    {
+      "id": "dadra_3_4_slow_ghazal_loop1",
+      "filename": "dadra_3_4_slow_ghazal_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "3/4",
+        "tempo": "slow",
+        "genre": "ghazal"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T06:45:28.446Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "dadra_3_4_slow_ghazal_LOOP1.wav"
+      }
     }
   ],
   "tempoRanges": {
