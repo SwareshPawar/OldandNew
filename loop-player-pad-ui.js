@@ -365,8 +365,8 @@ function getLoopPlayerHTML(songId) {
                         <i class="fas fa-volume-up"></i> Melodic Volume
                     </label>
                     <input type="range" id="melodic-volume-${songId}" class="volume-slider" 
-                           min="0" max="100" value="30" title="Melodic Pads Volume">
-                    <span class="volume-value" id="melodicVolumeValue-${songId}">30%</span>
+                           min="0" max="100" value="50" title="Melodic Pads Volume (Atmosphere at 100%, Tanpura at 40%)">
+                    <span class="volume-value" id="melodicVolumeValue-${songId}">50%</span>
                 </div>
             </div>
         </div>

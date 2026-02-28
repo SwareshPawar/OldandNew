@@ -54,7 +54,8 @@ class LoopPlayerPad {
         this.autoFill = true;
         this.volumeLevel = 0.8;
         this.playbackRate = 1.0; // 0.5-2.0
-        this.melodicVolume = 0.3; // 30% volume for melodic pads
+        this.atmosphereVolume = 0.5; // 50% volume for atmosphere pad (increased for prominence)
+        this.tanpuraVolume = 0.2; // 20% volume for tanpura pad (subtle but audible background drone)
         
         // Timing
         this.loopDuration = 0;
@@ -80,11 +81,11 @@ class LoopPlayerPad {
             // Create gain nodes for melodic pads
             this.melodicPads.atmosphere.gainNode = this.audioContext.createGain();
             this.melodicPads.atmosphere.gainNode.connect(this.audioContext.destination);
-            this.melodicPads.atmosphere.gainNode.gain.value = this.melodicVolume;
+            this.melodicPads.atmosphere.gainNode.gain.value = this.atmosphereVolume;
             
             this.melodicPads.tanpura.gainNode = this.audioContext.createGain();
             this.melodicPads.tanpura.gainNode.connect(this.audioContext.destination);
-            this.melodicPads.tanpura.gainNode.gain.value = this.melodicVolume;
+            this.melodicPads.tanpura.gainNode.gain.value = this.tanpuraVolume;
             
             console.log('Web Audio API initialized with melodic pad support');
             
@@ -438,10 +439,10 @@ class LoopPlayerPad {
             this.gainNode.gain.value = this.volumeLevel;
         }
         if (this.melodicPads.atmosphere.gainNode) {
-            this.melodicPads.atmosphere.gainNode.gain.value = this.melodicVolume;
+            this.melodicPads.atmosphere.gainNode.gain.value = this.atmosphereVolume;
         }
         if (this.melodicPads.tanpura.gainNode) {
-            this.melodicPads.tanpura.gainNode.gain.value = this.melodicVolume;
+            this.melodicPads.tanpura.gainNode.gain.value = this.tanpuraVolume;
         }
         console.log('🔊 Volume levels restored');
     }
@@ -528,12 +529,20 @@ class LoopPlayerPad {
      * @param {number} vol - Volume level 0-1
      */
     setMelodicVolume(vol) {
-        this.melodicVolume = Math.max(0, Math.min(1, vol));
+        // Keep the shared volume setter for backward compatibility
+        // but apply different volumes to each pad
+        const normalizedVol = Math.max(0, Math.min(1, vol));
+        
+        // Set atmosphere to the provided volume
+        this.atmosphereVolume = normalizedVol;
         if (this.melodicPads.atmosphere.gainNode) {
-            this.melodicPads.atmosphere.gainNode.gain.value = this.melodicVolume;
+            this.melodicPads.atmosphere.gainNode.gain.value = this.atmosphereVolume;
         }
+        
+        // Set tanpura to 40% of atmosphere volume (audible but not overpowering)
+        this.tanpuraVolume = normalizedVol * 0.4;
         if (this.melodicPads.tanpura.gainNode) {
-            this.melodicPads.tanpura.gainNode.gain.value = this.melodicVolume;
+            this.melodicPads.tanpura.gainNode.gain.value = this.tanpuraVolume;
         }
     }
 
@@ -957,7 +966,7 @@ class LoopPlayerPad {
         
         // Ensure proper volume is set now that we're ready to play
         if (pad.gainNode) {
-            pad.gainNode.gain.value = this.melodicVolume;
+            pad.gainNode.gain.value = padType === 'atmosphere' ? this.atmosphereVolume : this.tanpuraVolume;
         }
         
         // Stop any existing source
@@ -1110,7 +1119,8 @@ class LoopPlayerPad {
             nextFill: this.nextFill,
             autoFill: this.autoFill,
             volume: this.volumeLevel,
-            melodicVolume: this.melodicVolume,
+            atmosphereVolume: this.atmosphereVolume,
+            tanpuraVolume: this.tanpuraVolume,
             playbackRate: this.playbackRate,
             loopsLoaded: this.audioBuffers.size,
             loopsFetched: this.rawAudioData.size,
