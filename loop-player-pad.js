@@ -433,7 +433,8 @@ class LoopPlayerPad {
     setSongKeyAndTranspose(key, transpose = 0) {
         this.currentSongKey = key;
         this.currentTranspose = transpose;
-        console.log(`Set song key: ${key}, transpose: ${transpose}`);
+        const effectiveKey = this._getEffectiveKey();
+        console.log(`🎹 Set song key: ${key}, transpose: ${transpose} → Effective key: ${effectiveKey}`);
     }
 
     /**
@@ -512,20 +513,54 @@ class LoopPlayerPad {
         const availability = {};
         const baseUrl = this._getMelodicBaseUrl();
         
+        console.log(`🔍 Checking melodic availability for key: ${effectiveKey}`);
+        
+        // Map to check enharmonic equivalents (e.g., Eb = D#)
+        const enharmonicMap = {
+            'C#': 'Db', 'Db': 'C#',
+            'D#': 'Eb', 'Eb': 'D#',
+            'F#': 'Gb', 'Gb': 'F#',
+            'G#': 'Ab', 'Ab': 'G#',
+            'A#': 'Bb', 'Bb': 'A#'
+        };
+        
         const checkPromises = sampleTypes.map(async (sampleType) => {
-            const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${effectiveKey}.wav`;
-            try {
-                // Use GET to avoid HEAD restrictions on some CDNs
-                const response = await fetch(url);
-                availability[sampleType] = response.ok;
-                console.log(`${sampleType}_${effectiveKey}.wav: ${response.ok ? 'Available' : 'Not Found'}`);
-            } catch (error) {
-                availability[sampleType] = false;
-                console.log(`${sampleType}_${effectiveKey}.wav: Not Available (${error.message})`);
+            // Try the effective key first, then its enharmonic equivalent
+            const keysToTry = [effectiveKey];
+            if (enharmonicMap[effectiveKey]) {
+                keysToTry.push(enharmonicMap[effectiveKey]);
             }
+            
+            console.log(`  Checking ${sampleType}: trying keys [${keysToTry.join(', ')}]`);
+            
+            for (const keyToCheck of keysToTry) {
+                // URL encode the key to handle # symbol (e.g., D# becomes D%23)
+                const encodedKey = encodeURIComponent(keyToCheck);
+                const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${encodedKey}.wav`;
+                console.log(`  🔗 Trying URL: ${url}`);
+                try {
+                    // Use GET to avoid HEAD restrictions on some CDNs
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        availability[sampleType] = true;
+                        console.log(`  ✅ ${sampleType}_${keyToCheck}.wav: Available (effective key: ${effectiveKey})`);
+                        return; // Found it, stop trying other keys
+                    } else {
+                        console.log(`  ⚠️ ${sampleType}_${keyToCheck}.wav: ${response.status} ${response.statusText}`);
+                    }
+                } catch (error) {
+                    console.log(`  ❌ ${sampleType}_${keyToCheck}.wav: Error - ${error.message}`);
+                    // Continue to next key
+                }
+            }
+            
+            // If we get here, neither key worked
+            availability[sampleType] = false;
+            console.log(`  ❌ ${sampleType}: Not Available (tried all enharmonic equivalents)`);
         });
         
         await Promise.all(checkPromises);
+        console.log(`📊 Melodic availability result:`, availability);
         return availability;
     }
 
@@ -542,24 +577,60 @@ class LoopPlayerPad {
 
         console.log(`Loading melodic samples for key: ${effectiveKey}, types: ${sampleTypes.join(', ')}`);
 
+        // Map to check enharmonic equivalents (e.g., Eb = D#)
+        const enharmonicMap = {
+            'C#': 'Db', 'Db': 'C#',
+            'D#': 'Eb', 'Eb': 'D#',
+            'F#': 'Gb', 'Gb': 'F#',
+            'G#': 'Ab', 'Ab': 'G#',
+            'A#': 'Bb', 'Bb': 'A#'
+        };
+
         // Build sample map for only requested types
         const sampleMap = {};
-        if (sampleTypes.includes('atmosphere')) {
-            // Only include if not already loaded or force is true
-            if (force || !this.rawAudioData.has(atmosphereKey)) {
-                sampleMap[atmosphereKey] = `${baseUrl}/loops/melodies/atmosphere/atmosphere_${effectiveKey}.wav`;
+        
+        for (const sampleType of sampleTypes) {
+            const key = `${sampleType}_${effectiveKey}`;
+            
+            // Skip if already loaded and not forcing reload
+            if (!force && this.rawAudioData.has(key)) {
+                continue;
             }
-        }
-        if (sampleTypes.includes('tanpura')) {
-            // Only include if not already loaded or force is true
-            if (force || !this.rawAudioData.has(tanpuraKey)) {
-                sampleMap[tanpuraKey] = `${baseUrl}/loops/melodies/tanpura/tanpura_${effectiveKey}.wav`;
+            
+            // Try to find the file with effective key, then enharmonic equivalent
+            const keysToTry = [effectiveKey];
+            if (enharmonicMap[effectiveKey]) {
+                keysToTry.push(enharmonicMap[effectiveKey]);
+            }
+            
+            let foundUrl = null;
+            for (const keyToCheck of keysToTry) {
+                // URL encode the key to handle # symbol (e.g., D# becomes D%23)
+                const encodedKey = encodeURIComponent(keyToCheck);
+                const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${encodedKey}.wav`;
+                try {
+                    // Quick HEAD check to see if file exists
+                    const response = await fetch(url, { method: 'HEAD' });
+                    if (response.ok) {
+                        foundUrl = url;
+                        console.log(`Found melodic sample: ${sampleType}_${keyToCheck}.wav (for effective key: ${effectiveKey})`);
+                        break;
+                    }
+                } catch (error) {
+                    // Continue to next key
+                }
+            }
+            
+            if (foundUrl) {
+                sampleMap[key] = foundUrl;
+            } else {
+                console.warn(`Melodic sample ${key} not found (also tried enharmonic equivalent)`);
             }
         }
 
         // If nothing to load, return early
         if (Object.keys(sampleMap).length === 0) {
-            console.log('Requested melodic samples already loaded for this key');
+            console.log('Requested melodic samples already loaded or not available for this key');
             return;
         }
 

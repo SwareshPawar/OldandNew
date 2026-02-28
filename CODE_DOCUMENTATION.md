@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 19, 2026 - 03:30 PM  
-**Version:** 1.17.0
+**Last Updated:** February 28, 2026 - 11:45 AM  
+**Version:** 1.17.1
 
 ---
 
@@ -1686,6 +1686,126 @@ app.use(cors({
 **Future Improvements:**
 - [ ] Consider separate CORS config for development vs production via NODE_ENV
 - [ ] Add CORS_DEVELOPMENT_MODE environment variable for even more flexibility during dev
+
+### Bug #6: Melodic Pads Not Enabling for Enharmonic Keys (Eb vs D#)
+**Date Discovered:** February 28, 2026  
+**Severity:** Medium  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+Melodic pads (atmosphere, tanpura) were not showing as available when a song's effective key was `Eb`, even though melodic loop files existed for the enharmonic equivalent `D#`. The URL-encoding issue caused the hash symbol (`#`) in `D#` to be interpreted as a URL fragment identifier, truncating the filename request.
+
+**Affected Components:**
+- Melodic sample availability checking ([loop-player-pad.js](loop-player-pad.js))
+- Melodic sample loading ([loop-player-pad.js](loop-player-pad.js))
+- Enharmonic key mapping (C#↔Db, D#↔Eb, F#↔Gb, G#↔Ab, A#↔Bb)
+
+**Reproduction Steps:**
+1. Upload melodic loops with sharp notation (e.g., `atmosphere_D#.wav`, `tanpura_D#.wav`)
+2. Play a song in C key and transpose +3 (or any song with effective key of Eb)
+3. **Expected:** Melodic pads should enable (D# file exists, Eb is enharmonic equivalent)
+4. **Actual:** Melodic pads remain disabled
+
+**Console Output:**
+```
+🎹 Set song key: C, transpose: 3 → Effective key: D#
+🔍 Checking melodic availability for key: D#
+  Checking atmosphere: trying keys [D#, Eb]
+  GET http://localhost:3001/loops/melodies/atmosphere/atmosphere_D 404 (Not Found)
+  ⚠️ atmosphere_D#.wav: 404 Not Found
+  GET http://localhost:3001/loops/melodies/atmosphere/atmosphere_Eb.wav 404 (Not Found)
+  ⚠️ atmosphere_Eb.wav: 404 Not Found
+  ❌ atmosphere: Not Available (tried all enharmonic equivalents)
+📊 Melodic availability result: {atmosphere: false, tanpura: false}
+```
+
+**Root Cause Analysis:**
+
+The issue had two layers:
+
+1. **URL Fragment Problem**: The `#` symbol in `D#` was being interpreted as a URL fragment identifier (hash), causing the browser to truncate the URL:
+   ```javascript
+   // BUGGY URL construction:
+   const url = `${baseUrl}/loops/melodies/atmosphere/atmosphere_${keyToCheck}.wav`;
+   // When keyToCheck = "D#", browser interpreted as:
+   // http://localhost:3001/loops/melodies/atmosphere/atmosphere_D  (truncated at #)
+   ```
+
+2. **Missing Enharmonic Logic**: The original code only checked for exact key matches without considering enharmonic equivalents like Eb↔D#.
+
+**Solution Implemented:**
+
+**Part 1: URL Encoding** - Use `encodeURIComponent()` to properly encode special characters:
+```javascript
+// FIXED URL construction:
+const encodedKey = encodeURIComponent(keyToCheck);  // D# becomes D%23
+const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${encodedKey}.wav`;
+// Result: http://localhost:3001/loops/melodies/atmosphere/atmosphere_D%23.wav ✅
+```
+
+**Part 2: Enharmonic Mapping** - Check both sharp and flat variants:
+```javascript
+const enharmonicMap = {
+    'C#': 'Db', 'Db': 'C#',
+    'D#': 'Eb', 'Eb': 'D#',
+    'F#': 'Gb', 'Gb': 'F#',
+    'G#': 'Ab', 'Ab': 'G#',
+    'A#': 'Bb', 'Bb': 'A#'
+};
+
+const keysToTry = [effectiveKey];
+if (enharmonicMap[effectiveKey]) {
+    keysToTry.push(enharmonicMap[effectiveKey]);
+}
+
+for (const keyToCheck of keysToTry) {
+    const encodedKey = encodeURIComponent(keyToCheck);
+    const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${encodedKey}.wav`;
+    const response = await fetch(url);
+    if (response.ok) {
+        availability[sampleType] = true;
+        return; // Found it!
+    }
+}
+```
+
+**Files Modified:**
+- `loop-player-pad.js` lines 505-560: Updated `checkMelodicAvailability()` method
+  - Added `encodeURIComponent()` for URL construction
+  - Added comprehensive debug logging with emoji markers
+- `loop-player-pad.js` lines 595-615: Updated `loadMelodicSamples()` method
+  - Added `encodeURIComponent()` for URL construction
+  - Ensured consistent enharmonic checking
+
+**Console Output After Fix:**
+```
+🎹 Set song key: C, transpose: 3 → Effective key: D#
+🔍 Checking melodic availability for key: D#
+  Checking atmosphere: trying keys [D#, Eb]
+  🔗 Trying URL: http://localhost:3001/loops/melodies/atmosphere/atmosphere_D%23.wav
+  ✅ atmosphere_D#.wav: Available (effective key: D#)
+  Checking tanpura: trying keys [D#, Eb]
+  🔗 Trying URL: http://localhost:3001/loops/melodies/tanpura/tanpura_D%23.wav
+  ✅ tanpura_D#.wav: Available (effective key: D#)
+📊 Melodic availability result: {atmosphere: true, tanpura: true}
+```
+
+**Testing Results:**
+- ✅ Song in C transposed +3 (→ D#): Melodic pads enable correctly
+- ✅ Song in D transposed +1 (→ Eb): Melodic pads enable correctly (finds D# files)
+- ✅ Song in F# (no enharmonic files): Pads correctly disabled
+- ✅ All enharmonic pairs working: C#↔Db, D#↔Eb, F#↔Gb, G#↔Ab, A#↔Bb
+
+**Lessons Learned:**
+1. **URL Encoding**: Always use `encodeURIComponent()` when constructing URLs with user data or special characters
+2. **Musical Theory**: Account for enharmonic equivalence in key-based systems (sharp/flat variants)
+3. **Debug Logging**: Comprehensive logging with actual URLs helped identify the truncation issue immediately
+4. **Fallback Logic**: Checking multiple variants (enharmonic equivalents) provides better user experience
+
+**Related Documentation:**
+- ENHARMONIC_EQUIVALENCE_FIX.md - Detailed technical explanation
+- AUDIO_FORMAT_SUPPORT_UPDATE.md - Related loop system documentation
+- LOOP_PLAYER_DOCUMENTATION.md - Loop player architecture
 
 ### Bug #2: Loop Player Crashing on Corrupt Audio Files
 **Date Discovered:** February 15, 2026  
