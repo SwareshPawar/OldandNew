@@ -703,14 +703,18 @@ async function initializeLoopPlayer(songId) {
         return;
     }
     
-    // Set up pad click handlers
+    // Set up pad click handlers - remove old listeners first by cloning nodes
     const pads = container.querySelectorAll('.loop-pad');
     pads.forEach(pad => {
-        pad.addEventListener('click', () => {
-            if (pad.disabled) return; // Prevent clicks on disabled pads
+        // Clone node to remove all old event listeners
+        const newPad = pad.cloneNode(true);
+        pad.parentNode.replaceChild(newPad, pad);
+        
+        newPad.addEventListener('click', () => {
+            if (newPad.disabled) return; // Prevent clicks on disabled pads
             
-            const loopName = pad.dataset.loop;
-            const melodicType = pad.dataset.melodic;
+            const loopName = newPad.dataset.loop;
+            const melodicType = newPad.dataset.melodic;
             
             if (melodicType) {
                 // Handle melodic pad clicks
@@ -730,15 +734,18 @@ async function initializeLoopPlayer(songId) {
         });
     });
     
-    // Play/Pause button (reusing playBtn from above)
+    // Play/Pause button - remove old listener by cloning
     if (playBtn) {
-        playBtn.addEventListener('click', async () => {
-            if (playBtn.disabled) return; // Prevent clicks while loading
+        const newPlayBtn = playBtn.cloneNode(true);
+        playBtn.parentNode.replaceChild(newPlayBtn, playBtn);
+        
+        newPlayBtn.addEventListener('click', async () => {
+            if (newPlayBtn.disabled) return; // Prevent clicks while loading
             
             if (loopPlayerInstance.isPlaying) {
                 loopPlayerInstance.pause();
-                playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
-                playBtn.classList.remove('playing');
+                newPlayBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                newPlayBtn.classList.remove('playing');
                 // Hide floating stop button when song stops
                 if (typeof window.hideFloatingStopButton === 'function') {
                     const song = songs?.find(s => s.id === songId);
@@ -747,9 +754,9 @@ async function initializeLoopPlayer(songId) {
             } else {
                 try {
                     // Immediately update UI to show "playing" state
-                    playBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
-                    playBtn.classList.add('playing');
-                    playBtn.disabled = false;
+                    newPlayBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                    newPlayBtn.classList.add('playing');
+                    newPlayBtn.disabled = false;
                     
                     // Show immediate status - user sees "Playing: LOOP 1" right away
                     if (status) {
@@ -769,8 +776,8 @@ async function initializeLoopPlayer(songId) {
                         console.error('Error during background initialization:', error);
                         
                         // Revert UI state on error
-                        playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
-                        playBtn.classList.remove('playing');
+                        newPlayBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                        newPlayBtn.classList.remove('playing');
                         if (status) status.textContent = `Error: ${error.message}`;
                         
                         // Hide floating stop button
@@ -785,44 +792,53 @@ async function initializeLoopPlayer(songId) {
                     if (status) status.textContent = `Error: ${error.message}`;
                     
                     // Reset button state on error
-                    playBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
-                    playBtn.classList.remove('playing');
-                    playBtn.disabled = false;
+                    newPlayBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    newPlayBtn.classList.remove('playing');
+                    newPlayBtn.disabled = false;
                 }
             }
         });
     }
     
-    // Auto-fill toggle
+    // Auto-fill toggle - remove old listener
     const autoFillBtn = document.getElementById(`loopAutoFillBtn-${songId}`);
     if (autoFillBtn) {
-        autoFillBtn.addEventListener('click', () => {
+        const newAutoFillBtn = autoFillBtn.cloneNode(true);
+        autoFillBtn.parentNode.replaceChild(newAutoFillBtn, autoFillBtn);
+        
+        newAutoFillBtn.addEventListener('click', () => {
             const newState = !loopPlayerInstance.autoFill;
             loopPlayerInstance.setAutoFill(newState);
             
-            autoFillBtn.innerHTML = `<i class="fas fa-magic"></i><span>Auto-Fill: ${newState ? 'ON' : 'OFF'}</span>`;
-            autoFillBtn.classList.toggle('active', newState);
+            newAutoFillBtn.innerHTML = `<i class="fas fa-magic"></i><span>Auto-Fill: ${newState ? 'ON' : 'OFF'}</span>`;
+            newAutoFillBtn.classList.toggle('active', newState);
         });
     }
     
-    // Volume slider
+    // Volume slider - remove old listener
     const volumeSlider = document.getElementById(`loopVolume-${songId}`);
     const volumeValue = document.getElementById(`loopVolumeValue-${songId}`);
     if (volumeSlider) {
-        volumeSlider.addEventListener('input', (e) => {
+        const newVolumeSlider = volumeSlider.cloneNode(true);
+        volumeSlider.parentNode.replaceChild(newVolumeSlider, volumeSlider);
+        
+        newVolumeSlider.addEventListener('input', (e) => {
             const vol = parseInt(e.target.value) / 100;
             loopPlayerInstance.setVolume(vol);
             if (volumeValue) volumeValue.textContent = `${e.target.value}%`;
         });
     }
     
-    // Tempo slider
+    // Tempo slider - remove old listeners
     const tempoSlider = document.getElementById(`loopTempo-${songId}`);
     const tempoValue = document.getElementById(`loopTempoValue-${songId}`);
     const tempoResetBtn = document.getElementById(`loopTempoReset-${songId}`);
     
     if (tempoSlider) {
-        tempoSlider.addEventListener('input', (e) => {
+        const newTempoSlider = tempoSlider.cloneNode(true);
+        tempoSlider.parentNode.replaceChild(newTempoSlider, tempoSlider);
+        
+        newTempoSlider.addEventListener('input', (e) => {
             const tempoPercent = parseInt(e.target.value);
             const rate = tempoPercent / 100;
             loopPlayerInstance.setPlaybackRate(rate);
@@ -831,20 +847,27 @@ async function initializeLoopPlayer(songId) {
     }
     
     if (tempoResetBtn) {
-        tempoResetBtn.addEventListener('click', () => {
-            if (tempoSlider) {
-                tempoSlider.value = '100';
+        const newTempoResetBtn = tempoResetBtn.cloneNode(true);
+        tempoResetBtn.parentNode.replaceChild(newTempoResetBtn, tempoResetBtn);
+        
+        newTempoResetBtn.addEventListener('click', () => {
+            const currentTempoSlider = document.getElementById(`loopTempo-${songId}`);
+            if (currentTempoSlider) {
+                currentTempoSlider.value = '100';
                 loopPlayerInstance.setPlaybackRate(1.0);
                 if (tempoValue) tempoValue.textContent = '100%';
             }
         });
     }
     
-    // Melodic volume slider
+    // Melodic volume slider - remove old listener
     const melodicVolumeSlider = document.getElementById(`melodic-volume-${songId}`);
     const melodicVolumeValue = document.getElementById(`melodicVolumeValue-${songId}`);
     if (melodicVolumeSlider) {
-        melodicVolumeSlider.addEventListener('input', (e) => {
+        const newMelodicVolumeSlider = melodicVolumeSlider.cloneNode(true);
+        melodicVolumeSlider.parentNode.replaceChild(newMelodicVolumeSlider, melodicVolumeSlider);
+        
+        newMelodicVolumeSlider.addEventListener('input', (e) => {
             const volumePercent = parseInt(e.target.value);
             const volume = volumePercent / 100;
             loopPlayerInstance.setMelodicVolume(volume);
@@ -852,10 +875,13 @@ async function initializeLoopPlayer(songId) {
         });
     }
     
-    // Toggle button (expand/collapse)
+    // Toggle button (expand/collapse) - remove old listener
     const toggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
     if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
+        const newToggleBtn = toggleBtn.cloneNode(true);
+        toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+        
+        newToggleBtn.addEventListener('click', () => {
             toggleLoopPlayer(songId);
         });
     }

@@ -1420,8 +1420,13 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     }
 
     // Generate correct filename based on naming convention v2.0
-    const timeFormatted = timeSignature.replace('/', '_');
-    const basePattern = `${taal}_${timeFormatted}_${tempo}_${genre}`;
+    // Sanitize all inputs to remove invalid path characters and trim spaces
+    const taalSanitized = taal.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    const timeFormatted = timeSignature.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    const tempoSanitized = tempo.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    const genreSanitized = genre.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    
+    const basePattern = `${taalSanitized}_${timeFormatted}_${tempoSanitized}_${genreSanitized}`;
     const typeUpper = type.toUpperCase();
     const correctFilename = `${basePattern}_${typeUpper}${number}.wav`;
 
