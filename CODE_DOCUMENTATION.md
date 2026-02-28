@@ -988,6 +988,61 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 | `getVocalMatchScore(genres1, genres2)` | genres1: Array, genres2: Array | Number | Calculate vocal type similarity (0-1) | getSuggestedSongs |
 | `getCurrentFilterValues()` | None | Object | Get current filter values from UI | renderSongs |
 
+### H. Loop Player Functions ([loop-player-pad.js](loop-player-pad.js), [loop-player-pad-ui.js](loop-player-pad-ui.js))
+
+#### Core Loop Player Engine ([loop-player-pad.js](loop-player-pad.js))
+
+| Function | Parameters | Return Type | Purpose | Called From |
+|----------|------------|-------------|---------|-------------|
+| `loadLoops(loopMap, songId)` | loopMap: Object, songId: Number | Promise<void> | Load and decode loop audio files | initializeLoopPlayer |
+| `needsLoopReload(songId, newLoopMap)` | songId: Number, newLoopMap: Object | Boolean | Check if loops need reloading | loadLoops |
+| `play(loopKey)` | loopKey: String | void | Start playing a specific loop | Pad click handlers |
+| `stop()` | None | void | Stop all loops | Stop button click |
+| `switchLoop(newLoopKey, useAutoFill)` | newLoopKey: String, useAutoFill?: Boolean | void | Switch to different loop with optional fill | Loop pad clicks |
+| `setVolume(value)` | value: Number (0-1) | void | Set rhythm loops volume | Volume slider |
+| `setMelodicVolume(value)` | value: Number (0-1) | void | Set melodic pads volume (atmosphere/tanpura) | Volume slider |
+| `setTempo(tempoMultiplier)` | tempoMultiplier: Number | void | Adjust playback tempo | Tempo slider |
+| `_decodeAudioData(url, loopKey)` | url: String, loopKey: String | Promise<AudioBuffer> | Decode loop audio file | loadLoops |
+| `_startLoop(loopKey)` | loopKey: String | void | Start playing a loop with Web Audio API | play, switchLoop |
+| `_stopLoop()` | None | void | Stop current loop playback | stop, switchLoop |
+| `_playFill(fillKey, onEndedCallback)` | fillKey: String, onEndedCallback?: Function | void | Play fill transition | switchLoop |
+| `playMelodicPad(type, key)` | type: String ('atmosphere'\|'tanpura'), key: String | Promise<void> | Play melodic pad sample | Melodic pad clicks |
+| `stopMelodicPad(type)` | type: String | void | Stop melodic pad | Melodic pad clicks |
+| `checkMelodicAvailability(type, key)` | type: String, key: String | Promise<Boolean> | Check if melodic sample exists | Pad availability check |
+| `getMelodicUrl(type, key)` | type: String, key: String | String | Get URL for melodic sample | playMelodicPad |
+| `normalizeKeyForMelodic(key)` | key: String | String | Normalize key (handle enharmonic equivalents) | Melodic functions |
+| `_initializeSilent()` | None | void | Initialize AudioContext silently | Pad availability check |
+| `_restoreVolumeFromSilent()` | None | void | Restore volumes after silent init | After successful decode |
+
+#### Loop Player UI and Matching ([loop-player-pad-ui.js](loop-player-pad-ui.js))
+
+| Function | Parameters | Return Type | Purpose | Called From |
+|----------|------------|-------------|---------|-------------|
+| `initializeLoopPlayer(songId)` | songId: Number | Promise<void> | Initialize loop player for a song | showPreview (main.js) |
+| `getLoopsMetadata()` | None | Promise<Object> | Load loops metadata (cached) | findMatchingLoopSet |
+| `getTempoCategory(bpm)` | bpm: Number\|String | String | Convert BPM to tempo category (slow/medium/fast) | findMatchingLoopSet |
+| `findMatchingLoopSet(song)` | song: Object | Promise<Object\|null> | Find best matching loop set for song | initializeLoopPlayer |
+| `areTimeSignaturesEquivalent(time1, time2)` | time1: String, time2: String | Boolean | Check if time signatures are equivalent (6/8 ≡ 3/4) | findMatchingLoopSet |
+| `getMatchQuality(score)` | score: Number | Object | Get match quality label and description | UI display |
+| `shouldShowLoopPlayer(song)` | song: Object | Promise<Boolean> | Check if song has matching loops | initializeLoopPlayer |
+| `getLoopPlayerHTML(songId)` | songId: Number | String | Generate loop player HTML structure | initializeLoopPlayer |
+| `toggleLoopPlayer(songId)` | songId: Number | void | Toggle expand/collapse loop player UI | Toggle button click |
+| `cleanupLoopPlayer()` | None | void | Clean up loop player state and stop all playback | Song change/cleanup |
+| `getTransposeLevel(song)` | song: Object | Number | Get transpose level for song | Melodic pad key calculation |
+| `getEffectiveKey(song, transposeLevel)` | song: Object, transposeLevel: Number | String | Calculate effective key with transpose | Melodic pad display |
+| `updateMelodicPadAvailability(songId)` | songId: Number | Promise<void> | Check and update melodic pad availability | After transpose changes |
+| `setupLoopPlayerEventListeners(songId, loopMap)` | songId: Number, loopMap: Object | void | Setup all loop player event listeners | initializeLoopPlayer |
+| `hideLoopPlayer(songId)` | songId: Number | void | Hide loop player (no matching loops) | initializeLoopPlayer |
+| `showLoopPlayer(songId)` | songId: Number | void | Show loop player UI | initializeLoopPlayer |
+
+#### Global Loop Player Variables
+
+| Variable | Type | Purpose | Defined In |
+|----------|------|---------|-----------|
+| `loopPlayerInstance` | Object\|null | Singleton loop player engine instance | loop-player-pad-ui.js |
+| `loopsMetadataCache` | Object\|null | Cached loops metadata from API | loop-player-pad-ui.js |
+| `window.getLoopPlayerInstance()` | Function | Global accessor for loop player instance | loop-player-pad-ui.js |
+
 ---
 
 ## 4. EVENT LISTENERS

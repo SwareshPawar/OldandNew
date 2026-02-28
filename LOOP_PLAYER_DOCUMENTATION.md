@@ -1,5 +1,17 @@
 # Loop Player System v2.0 - Documentation
 
+**Version**: 2.0.4  
+**Last Updated**: December 19, 2024
+
+**Changelog**:
+- v2.0.4: Added comprehensive Function Reference section
+- v2.0.3: Added tempo BPM-to-category conversion details and genre array documentation
+- v2.0.2: Updated with matching algorithm details
+- v2.0.1: Added troubleshooting and admin sections
+- v2.0.0: Complete rewrite with technical matching logic
+
+---
+
 ## Overview
 
 The Loop Player System provides dynamic rhythm accompaniment for songs using pre-recorded audio loops. The system intelligently matches loops to songs based on **Taal** (rhythmic cycle), **Time Signature**, **Tempo**, and **Genre** characteristics.
@@ -387,6 +399,103 @@ Delete a loop file
   "deleted": "keherwa_4_4_medium_acoustic_LOOP1.wav"
 }
 ```
+
+## Function Reference
+
+### Core Loop Player Engine Functions
+
+**File**: `loop-player-pad.js`
+
+#### Audio Playback Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `loadLoops(loopMap, songId)` | loopMap: Object, songId: Number | Promise<void> | Load and decode loop audio files for a song. Checks if reload is needed before loading. |
+| `needsLoopReload(songId, newLoopMap)` | songId: Number, newLoopMap: Object | Boolean | Determines if loops need reloading by comparing song ID and loop URLs. |
+| `play(loopKey)` | loopKey: String | void | Start playing a specific loop (loop1, loop2, loop3). |
+| `stop()` | None | void | Stop all loop playback. |
+| `switchLoop(newLoopKey, useAutoFill)` | newLoopKey: String, useAutoFill: Boolean | void | Switch to a different loop with optional auto-fill transition. |
+| `setVolume(value)` | value: Number (0-1) | void | Set volume for rhythm loops. |
+| `setTempo(tempoMultiplier)` | tempoMultiplier: Number | void | Adjust playback tempo (0.9-1.1 = 90%-110%). |
+
+#### Internal Audio Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `_decodeAudioData(url, loopKey)` | url: String, loopKey: String | Promise<AudioBuffer> | Decode WAV file into AudioBuffer. |
+| `_startLoop(loopKey)` | loopKey: String | void | Start Web Audio API loop playback. |
+| `_stopLoop()` | None | void | Stop current loop source node. |
+| `_playFill(fillKey, onEndedCallback)` | fillKey: String, callback: Function | void | Play fill transition, call callback when done. |
+
+#### Melodic Pad Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `playMelodicPad(type, key)` | type: 'atmosphere'\|'tanpura', key: String | Promise<void> | Play melodic pad sample (e.g., atmosphere_C.wav). |
+| `stopMelodicPad(type)` | type: String | void | Stop melodic pad playback. |
+| `setMelodicVolume(value)` | value: Number (0-1) | void | Set volume for atmosphere and tanpura pads (with 0.4x ratio between them). |
+| `checkMelodicAvailability(type, key)` | type: String, key: String | Promise<Boolean> | Check if melodic sample file exists on server. |
+| `getMelodicUrl(type, key)` | type: String, key: String | String | Get URL for melodic sample file. |
+| `normalizeKeyForMelodic(key)` | key: String | String | Normalize key to handle enharmonic equivalents (G# → Ab). |
+
+#### Utility Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `_initializeSilent()` | None | void | Initialize AudioContext without playing sound (for availability checks). |
+| `_restoreVolumeFromSilent()` | None | void | Restore proper volume levels after silent initialization. |
+
+---
+
+### Loop Player UI and Matching Functions
+
+**File**: `loop-player-pad-ui.js`
+
+#### Initialization Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `initializeLoopPlayer(songId)` | songId: Number | Promise<void> | Main initialization function. Finds matching loops and sets up UI. |
+| `getLoopsMetadata()` | None | Promise<Object> | Load loops metadata from API (cached). |
+| `setupLoopPlayerEventListeners(songId, loopMap)` | songId: Number, loopMap: Object | void | Setup all event listeners with clone-replace pattern to prevent duplicates. |
+
+#### Matching Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `findMatchingLoopSet(song)` | song: Object | Promise<{loopSet, score}\|null> | Find best matching loop set for song based on taal, time, tempo, genre. |
+| `getTempoCategory(bpm)` | bpm: Number\|String | String | Convert BPM number to tempo category: <80="slow", 80-120="medium", >120="fast". |
+| `areTimeSignaturesEquivalent(time1, time2)` | time1: String, time2: String | Boolean | Check if time signatures are equivalent (e.g., 6/8 ≡ 3/4). |
+| `getMatchQuality(score)` | score: Number | Object | Get match quality label and description from score (0-20 points). |
+| `shouldShowLoopPlayer(song)` | song: Object | Promise<Boolean> | Check if song has matching loops available. |
+
+#### UI Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `getLoopPlayerHTML(songId)` | songId: Number | String | Generate complete loop player HTML structure. |
+| `toggleLoopPlayer(songId)` | songId: Number | void | Toggle expand/collapse state (saves to localStorage). |
+| `cleanupLoopPlayer()` | None | void | Clean up loop player state and stop all playback. |
+| `showLoopPlayer(songId)` | songId: Number | void | Show loop player UI. |
+| `hideLoopPlayer(songId)` | songId: Number | void | Hide loop player (no matching loops found). |
+
+#### Melodic Pad Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `getTransposeLevel(song)` | song: Object | Number | Get transpose level from global/user settings. |
+| `getEffectiveKey(song, transposeLevel)` | song: Object, transposeLevel: Number | String | Calculate effective key after transposing. |
+| `updateMelodicPadAvailability(songId)` | songId: Number | Promise<void> | Check and update availability status of melodic pads. |
+
+#### Global Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `loopPlayerInstance` | Object\|null | Singleton instance of loop player engine. |
+| `loopsMetadataCache` | Object\|null | Cached loops metadata from `/api/loops/metadata`. |
+| `window.getLoopPlayerInstance()` | Function | Global accessor function for loop player instance. |
+
+---
 
 ## Deployment Considerations
 
