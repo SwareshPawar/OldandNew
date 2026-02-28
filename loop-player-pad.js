@@ -55,7 +55,7 @@ class LoopPlayerPad {
         this.volumeLevel = 0.8;
         this.playbackRate = 1.0; // 0.5-2.0
         this.atmosphereVolume = 0.5; // 50% volume for atmosphere pad (increased for prominence)
-        this.tanpuraVolume = 0.2; // 20% volume for tanpura pad (subtle but audible background drone)
+        this.tanpuraVolume = 0.22; // 20% volume for tanpura pad (subtle but audible background drone)
         
         // Timing
         this.loopDuration = 0;
