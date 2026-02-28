@@ -679,6 +679,372 @@
       "files": {
         "fill3": "rock_4_4_medium_rock_FILL3.wav"
       }
+    },
+    {
+      "id": "keherwa_4_4_slow_bollywood_loop1",
+      "filename": "keherwa_4_4_slow_bollywood_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "bollywood"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T13:54:36.826Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "keherwa_4_4_slow_bollywood_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_bollywood_loop2",
+      "filename": "keherwa_4_4_slow_bollywood_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "bollywood"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T13:54:42.274Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "keherwa_4_4_slow_bollywood_LOOP2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_bollywood_loop3",
+      "filename": "keherwa_4_4_slow_bollywood_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "bollywood"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T13:54:47.922Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "keherwa_4_4_slow_bollywood_LOOP3.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_bollywood_fill1",
+      "filename": "keherwa_4_4_slow_bollywood_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "bollywood"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T13:54:53.841Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "keherwa_4_4_slow_bollywood_FILL1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_bollywood_fill2",
+      "filename": "keherwa_4_4_slow_bollywood_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "bollywood"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T13:54:59.684Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "keherwa_4_4_slow_bollywood_FILL2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_bollywood_fill3",
+      "filename": "keherwa_4_4_slow_bollywood_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "bollywood"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T13:55:03.444Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "keherwa_4_4_slow_bollywood_FILL3.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_fast_dholak_loop1",
+      "filename": "keherwa_4_4_fast_dholak_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T14:12:26.667Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "keherwa_4_4_fast_dholak_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_fast_dholak_loop2",
+      "filename": "keherwa_4_4_fast_dholak_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T14:12:35.535Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "keherwa_4_4_fast_dholak_LOOP2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_fast_dholak_loop3",
+      "filename": "keherwa_4_4_fast_dholak_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T14:12:40.480Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "keherwa_4_4_fast_dholak_LOOP3.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_fast_dholak_fill1",
+      "filename": "keherwa_4_4_fast_dholak_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T14:12:47.576Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "keherwa_4_4_fast_dholak_FILL1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_fast_dholak_fill2",
+      "filename": "keherwa_4_4_fast_dholak_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T14:12:54.713Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "keherwa_4_4_fast_dholak_FILL2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_fast_dholak_fill3",
+      "filename": "keherwa_4_4_fast_dholak_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T14:13:12.569Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "keherwa_4_4_fast_dholak_FILL3.wav"
+      }
+    },
+    {
+      "id": "congo_6_8_slow_acoustic_loop1",
+      "filename": "congo_6_8_slow_acoustic_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "conditions": {
+        "taal": "congo",
+        "timeSignature": "6/8",
+        "tempo": "slow",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T15:01:47.977Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "congo_6_8_slow_acoustic_LOOP1.wav"
+      }
+    },
+    {
+      "id": "congo_6_8_slow_acoustic_loop2",
+      "filename": "congo_6_8_slow_acoustic_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "conditions": {
+        "taal": "congo",
+        "timeSignature": "6/8",
+        "tempo": "slow",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T15:01:48.575Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "congo_6_8_slow_acoustic_LOOP2.wav"
+      },
+      "replacedAt": "2026-02-28T15:06:12.359Z",
+      "replacedBy": "swareshpawar@gmail.com",
+      "fileSize": 230144
+    },
+    {
+      "id": "congo_6_8_slow_acoustic_loop3",
+      "filename": "congo_6_8_slow_acoustic_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "conditions": {
+        "taal": "congo",
+        "timeSignature": "6/8",
+        "tempo": "slow",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T15:01:49.246Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "congo_6_8_slow_acoustic_LOOP3.wav"
+      },
+      "replacedAt": "2026-02-28T15:06:21.674Z",
+      "replacedBy": "swareshpawar@gmail.com",
+      "fileSize": 226448
+    },
+    {
+      "id": "congo_6_8_slow_acoustic_fill1",
+      "filename": "congo_6_8_slow_acoustic_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "conditions": {
+        "taal": "congo",
+        "timeSignature": "6/8",
+        "tempo": "slow",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T15:01:49.639Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "congo_6_8_slow_acoustic_FILL1.wav"
+      }
+    },
+    {
+      "id": "congo_6_8_slow_acoustic_fill2",
+      "filename": "congo_6_8_slow_acoustic_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "conditions": {
+        "taal": "congo",
+        "timeSignature": "6/8",
+        "tempo": "slow",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T15:01:50.256Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "congo_6_8_slow_acoustic_FILL2.wav"
+      }
+    },
+    {
+      "id": "congo_6_8_slow_acoustic_fill3",
+      "filename": "congo_6_8_slow_acoustic_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "conditions": {
+        "taal": "congo",
+        "timeSignature": "6/8",
+        "tempo": "slow",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-02-28T15:01:50.703Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "congo_6_8_slow_acoustic_FILL3.wav"
+      }
     }
   ],
   "tempoRanges": {
