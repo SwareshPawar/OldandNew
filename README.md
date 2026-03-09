@@ -84,6 +84,7 @@ See the **"DOCUMENTATION MAINTENANCE HOOK"** section at the top of `CODE_DOCUMEN
 
 - **`CODE_DOCUMENTATION.md`** - Single source of truth for ALL code changes
 - **`CONTRIBUTING.md`** - How to contribute (includes documentation workflow)
+- **`CHORD_ACCIDENTAL_NORMALIZATION.md`** - Eb/Bb accidental policy implementation and reversal guide (D#/A# rollback map)
 - **`MIGRATION_SONG_ID_FIX.md`** - Song ID standardization migration
 - **`MULTISELECT_ANALYSIS.md`** - Multiselect consolidation analysis
 

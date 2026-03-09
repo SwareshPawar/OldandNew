@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** February 19, 2026 - 03:30 PM  
-**Version:** 1.17.0
+**Last Updated:** March 9, 2026 - 11:40 PM  
+**Version:** 1.18.0
 
 ---
 
@@ -6134,7 +6134,7 @@ body.dark-mode .song-preview-header .favorite-btn.favorited {
 
 ---
 
-**Document End - Last Updated: February 19, 2026, 03:30 PM - Version 1.17.0 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: March 9, 2026, 11:40 PM - Version 1.18.0 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
@@ -6173,6 +6173,12 @@ body.dark-mode .song-preview-header .favorite-btn.favorited {
   * 60% scroll reduction for mobile users
   * Complete dark mode support for all new styles
   * Added 4 new CSS classes, removed 2 obsolete classes
+- Documented Session #6: Chord Accidental Canonicalization (Eb/Bb)
+    * Frontend (`main.js`) now normalizes keys/chords and transposes legacy spellings correctly (including `Ab`)
+    * Backend (`server.js`) now normalizes song payloads and key filters, plus setlist/manual song key handling
+    * Manual key UI updated in `index.html` from `D#`/`A#` to `Eb`/`Bb`
+    * Added migration script `migrate-chord-accidentals.js` and executed dry/live/dry verification
+    * Added complete implementation + rollback guide in `CHORD_ACCIDENTAL_NORMALIZATION.md`
 - Documented Bug #3: Vercel Production API Requests Failing After Replace Uploads
     * Allowed `*.vercel.app` CORS origins and preview domains
     * Avoided serverless filesystem writes during init

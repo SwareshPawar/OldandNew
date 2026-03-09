@@ -374,6 +374,77 @@ async function saveRecommendationWeightsToBackend(weights) {
 
 // --- CHORD REGEXES: always use CHORD_TYPES ---
 const CHORDS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
+const NOTE_TO_SEMITONE = {
+    C: 0,
+    'C#': 1,
+    Db: 1,
+    D: 2,
+    'D#': 3,
+    Eb: 3,
+    E: 4,
+    Fb: 4,
+    'E#': 5,
+    F: 5,
+    'F#': 6,
+    Gb: 6,
+    G: 7,
+    'G#': 8,
+    Ab: 8,
+    A: 9,
+    'A#': 10,
+    Bb: 10,
+    B: 11,
+    Cb: 11
+};
+
+function normalizeBaseNote(note) {
+    if (!note || typeof note !== 'string') return note;
+    const normalizedInput = note.charAt(0).toUpperCase() + note.slice(1);
+    const semitone = NOTE_TO_SEMITONE[normalizedInput];
+    if (semitone === undefined) return note;
+    const canonical = CHORDS[semitone];
+    return note === note.toLowerCase() ? canonical.toLowerCase() : canonical;
+}
+
+function normalizeKeySignature(key) {
+    if (!key || typeof key !== 'string') return key;
+    const match = key.trim().match(/^([A-Ga-g][#b]?)(m?)$/);
+    if (!match) return key;
+    return `${normalizeBaseNote(match[1])}${match[2] || ''}`;
+}
+
+function normalizeSingleChordToken(chordToken) {
+    if (!chordToken || typeof chordToken !== 'string') return chordToken;
+    const match = chordToken.match(/^([A-Ga-g][#b]?)(.*)$/);
+    if (!match) return chordToken;
+    return `${normalizeBaseNote(match[1])}${match[2] || ''}`;
+}
+
+function normalizeChordAccidentals(chord) {
+    if (!chord || typeof chord !== 'string') return chord;
+    if (!chord.includes('/')) return normalizeSingleChordToken(chord);
+    const [baseChord, bassNote] = chord.split('/');
+    const normalizedBase = normalizeSingleChordToken(baseChord);
+    const normalizedBass = bassNote ? normalizeSingleChordToken(bassNote) : '';
+    return normalizedBass ? `${normalizedBase}/${normalizedBass}` : normalizedBase;
+}
+
+function normalizeSongAccidentals(song) {
+    if (!song || typeof song !== 'object') return song;
+    const normalizedSong = { ...song };
+    if (typeof normalizedSong.key === 'string') {
+        normalizedSong.key = normalizeKeySignature(normalizedSong.key);
+    }
+    if (typeof normalizedSong.manualChords === 'string' && normalizedSong.manualChords.trim()) {
+        normalizedSong.manualChords = normalizedSong.manualChords
+            .split(',')
+            .map(c => normalizeChordAccidentals(c.trim()))
+            .filter(Boolean)
+            .join(', ');
+    }
+    return normalizedSong;
+}
+
 const CHORD_TYPE_REGEX = CHORD_TYPES.join("|");
 const CHORD_REGEX = new RegExp(`([A-G](?:#|b)?)(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?`, "gi");
 const CHORD_LINE_REGEX = new RegExp(`^(\\s*[A-G](?:#|b)?(?:${CHORD_TYPE_REGEX})?(?:\\/[A-G](?:#|b)?)?[\\s\\-\\/\\|]*)+$`, "i");
@@ -442,7 +513,7 @@ try {
 
     if (storedSongs && storedSongsTimestamp) {
         if (isCacheFresh('songs', storedSongsTimestamp)) {
-            window.dataCache.songs = JSON.parse(storedSongs);
+            window.dataCache.songs = JSON.parse(storedSongs).map(normalizeSongAccidentals);
             window.dataCache.lastFetch.songs = parseInt(storedSongsTimestamp);
             // Load last sync timestamp for delta sync
             if (storedSyncTimestamp) {
@@ -586,6 +657,8 @@ function updateSongInCache(song, isNewSong = false) {
         console.error(`❌ Cannot update cache - invalid song data:`, song);
         return false;
     }
+
+    song = normalizeSongAccidentals(song);
     
     // Update window.dataCache.songs
     if (!window.dataCache.songs) {
@@ -826,7 +899,8 @@ async function loadSongsWithProgress(forceRefresh = false) {
             console.log(`📊 Delta sync since: ${lastSyncTime}`);
             
             // Use cached songs immediately for faster rendering
-            songs = window.dataCache.songs;
+            songs = (window.dataCache.songs || []).map(normalizeSongAccidentals);
+            window.dataCache.songs = songs;
             
             updateProgress('fetchSongs', 20);
             
@@ -844,7 +918,7 @@ async function loadSongsWithProgress(forceRefresh = false) {
                     updateProgress('fetchSongs');
                     updateProgress('processSongs');
                 } else {
-                    const deltaSongs = await deltaSongsResponse.json();
+                    const deltaSongs = (await deltaSongsResponse.json()).map(normalizeSongAccidentals);
                     const deletedIds = await deletedIdsResponse.json();
                     
                     console.log(`✨ Delta sync: ${deltaSongs.length} updated, ${deletedIds.length} deleted`);
@@ -928,7 +1002,7 @@ async function loadSongsWithProgress(forceRefresh = false) {
                 updateProgress('processSongs', 20);
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
-                allSongs = await response.json();
+                allSongs = (await response.json()).map(normalizeSongAccidentals);
                 
                 updateProgress('processSongs', 60);
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -4884,7 +4958,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         e.preventDefault();
         
         const title = document.getElementById('manualSongTitle').value.trim();
-        const key = document.getElementById('manualSongKey').value;
+        const key = normalizeKeySignature(document.getElementById('manualSongKey').value);
         const timeSignature = document.getElementById('manualSongTime').value;
         const tempo = document.getElementById('manualSongTempo').value;
         const category = document.getElementById('manualSongCategory').value;
@@ -4903,7 +4977,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 let cleanChord = chord.trim();
                 // Remove 'maj' from chord names to make them more compact
                 cleanChord = cleanChord.replace(/maj(?=\d)|maj$/g, '');
-                return cleanChord;
+                return normalizeChordAccidentals(cleanChord);
             }).filter(chord => chord.length > 0);
             
             processedChords = chordArray.join(', ');
@@ -8302,7 +8376,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             songPreviewEl.innerHTML = '';
             songPreviewEl.dataset.songId = song.id;
             songPreviewEl.dataset.originalLyrics = song.lyrics || song.editSongLyrics || song.content || song.text || '';
-            songPreviewEl.dataset.originalKey = song.key;
+            songPreviewEl.dataset.originalKey = normalizeKeySignature(song.key);
             songPreviewEl.dataset.openingContext = openingContext;
 
             // Check if song is in current setlist and favorites
@@ -8372,7 +8446,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
             
             // Calculate transposed key for display
-            const displayKey = transposeLevel !== 0 ? transposeChord(song.key, transposeLevel) : song.key;
+            const canonicalSongKey = normalizeKeySignature(song.key);
+            const displayKey = transposeLevel !== 0 ? transposeChord(canonicalSongKey, transposeLevel) : canonicalSongKey;
             
             // Build the preview HTML
             songPreviewEl.innerHTML = `
@@ -8661,49 +8736,45 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 
         function hasInlineChords(line) {
             // Use only the defined constant for inline chord detection
+            INLINE_CHORD_REGEX.lastIndex = 0;
             return INLINE_CHORD_REGEX.test(line);
         }
     
         function transposeChord(chord, steps) {
-            if (steps === 0 || !chord) return chord;
+            if (!chord) return chord;
+            const safeSteps = Number.isFinite(steps) ? steps : 0;
     
             if (chord.includes('/')) {
                 const [baseChord, bassNote] = chord.split('/');
-                const transposedBase = transposeSingleChord(baseChord, steps);
-                const transposedBass = bassNote ? transposeSingleChord(bassNote, steps) : '';
+                const transposedBase = transposeSingleChord(baseChord, safeSteps);
+                const transposedBass = bassNote ? transposeSingleChord(bassNote, safeSteps) : '';
                 return transposedBase + (transposedBass ? '/' + transposedBass : '');
             }
     
-            return transposeSingleChord(chord, steps);
+            return transposeSingleChord(chord, safeSteps);
         }
     
         function transposeSingleChord(chord, steps) {
-            if (steps === 0 || !chord) return chord;
+            if (!chord) return chord;
 
             const match = chord.match(/^([A-G][#b]?)(.*)$/i);
             if (!match) return chord;
 
             const baseNote = match[1];
             const quality = match[2] || '';
+            const normalizedBaseNote = normalizeBaseNote(baseNote);
 
-            // Chromatic scale using preferred notation (Eb and Bb as flats, others as sharps)
-            const chromaticScale = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
-            
-            // Find current position (check both sharp and flat versions)
-            let currentIndex = chromaticScale.indexOf(baseNote);
-            if (currentIndex === -1) {
-                // Try sharp notation for legacy compatibility
-                const sharpToFlat = { 'D#': 'Eb', 'A#': 'Bb' };
-                const flatEquivalent = sharpToFlat[baseNote];
-                if (flatEquivalent) {
-                    currentIndex = chromaticScale.indexOf(flatEquivalent);
-                }
-            }
+            // Chromatic scale using canonical notation (Eb and Bb as flats, others as sharps)
+            const chromaticScale = CHORDS;
+
+            // Always resolve via canonical base note to support legacy spellings like Ab/Db/Gb/D#/A#
+            let currentIndex = chromaticScale.indexOf(normalizedBaseNote);
             if (currentIndex === -1) return chord;
 
             // Calculate new position
-            const newIndex = (currentIndex + steps + 12) % 12;
-            const newBaseNote = chromaticScale[newIndex];
+            const shift = Number.isFinite(steps) ? steps : 0;
+            const newIndex = (currentIndex + shift + 12) % 12;
+            let newBaseNote = chromaticScale[newIndex];
 
             // Maintain case
             if (baseNote === baseNote.toLowerCase()) {
@@ -8826,9 +8897,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 
                 if (rootA !== rootB) {
                     // Sort by chromatic order
-                    const chromaticOrder = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
-                    const indexA = chromaticOrder.indexOf(rootA);
-                    const indexB = chromaticOrder.indexOf(rootB);
+                    const chromaticOrder = CHORDS;
+                    const indexA = chromaticOrder.indexOf(normalizeBaseNote(rootA));
+                    const indexB = chromaticOrder.indexOf(normalizeBaseNote(rootB));
                     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
                 }
                 
@@ -10067,7 +10138,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const newSong = {
                         title: title,
                         category: document.getElementById('songCategory').value,
-                        key: document.getElementById('songKey').value,
+                        key: normalizeKeySignature(document.getElementById('songKey').value),
                         artistDetails: selectedArtists.length > 0 ? selectedArtists.join(', ') : '',
                         mood: selectedMoods.length > 0 ? selectedMoods.join(', ') : '',
                         tempo: document.getElementById('songTempo').value,
@@ -10180,7 +10251,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     id: Number(id),
                     title: title,
                     category: document.getElementById('editSongCategory').value,
-                    key: document.getElementById('editSongKey').value,
+                    key: normalizeKeySignature(document.getElementById('editSongKey').value),
                     artistDetails: selectedArtists.length > 0 ? selectedArtists.join(', ') : '',
                     mood: selectedMoods.length > 0 ? selectedMoods.join(', ') : '',
                     tempo: document.getElementById('editSongTempo').value,

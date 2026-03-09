@@ -11,6 +11,140 @@ let db;
 let songsCollection;
 let deletedSongsCollection;
 
+const CANONICAL_CHROMATIC = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
+const NOTE_TO_INDEX = {
+  C: 0,
+  'C#': 1,
+  Db: 1,
+  D: 2,
+  'D#': 3,
+  Eb: 3,
+  E: 4,
+  Fb: 4,
+  'E#': 5,
+  F: 5,
+  'F#': 6,
+  Gb: 6,
+  G: 7,
+  'G#': 8,
+  Ab: 8,
+  A: 9,
+  'A#': 10,
+  Bb: 10,
+  B: 11,
+  Cb: 11
+};
+const KEY_VARIANTS_BY_CANONICAL = {
+  C: ['C'],
+  'C#': ['C#', 'Db'],
+  D: ['D'],
+  Eb: ['Eb', 'D#'],
+  E: ['E', 'Fb'],
+  F: ['F', 'E#'],
+  'F#': ['F#', 'Gb'],
+  G: ['G'],
+  'G#': ['G#', 'Ab'],
+  A: ['A'],
+  Bb: ['Bb', 'A#'],
+  B: ['B', 'Cb']
+};
+const CHORD_LINE_REGEX = /^(\s*[A-G](?:#|b)?(?:[a-zA-Z0-9+#]*)?(?:\/[A-G](?:#|b)?)?[\s\-\/\|]*)+$/i;
+const CHORD_TOKEN_REGEX = /([A-G](?:#|b)?(?:[a-zA-Z0-9+#]*)?(?:\/[A-G](?:#|b)?)?)/gi;
+const INLINE_CHORD_REGEX = /([\[(])([A-G](?:#|b)?(?:[a-zA-Z0-9+#]*)?(?:\/[A-G](?:#|b)?)?)([\])])/gi;
+
+function normalizeBaseNote(note) {
+  if (!note || typeof note !== 'string') return note;
+  const normalizedInput = note.charAt(0).toUpperCase() + note.slice(1);
+  const index = NOTE_TO_INDEX[normalizedInput];
+  return index === undefined ? note : CANONICAL_CHROMATIC[index];
+}
+
+function normalizeKeySignature(key) {
+  if (!key || typeof key !== 'string') return key;
+  const match = key.trim().match(/^([A-Ga-g][#b]?)(m?)$/);
+  if (!match) return key;
+  return `${normalizeBaseNote(match[1])}${match[2] || ''}`;
+}
+
+function normalizeChordToken(chordToken) {
+  if (!chordToken || typeof chordToken !== 'string') return chordToken;
+
+  if (chordToken.includes('/')) {
+    const [base, bass] = chordToken.split('/');
+    const normalizedBase = normalizeChordToken(base);
+    const normalizedBass = bass ? normalizeChordToken(bass) : '';
+    return normalizedBass ? `${normalizedBase}/${normalizedBass}` : normalizedBase;
+  }
+
+  const match = chordToken.match(/^([A-Ga-g][#b]?)(.*)$/);
+  if (!match) return chordToken;
+  return `${normalizeBaseNote(match[1])}${match[2] || ''}`;
+}
+
+function normalizeManualChords(manualChords) {
+  if (!manualChords || typeof manualChords !== 'string') return manualChords;
+  return manualChords
+    .split(',')
+    .map(chord => normalizeChordToken(chord.trim()))
+    .filter(Boolean)
+    .join(', ');
+}
+
+function normalizeLyricsChords(lyrics) {
+  if (!lyrics || typeof lyrics !== 'string') return lyrics;
+  return lyrics
+    .split('\n')
+    .map(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+
+      if (CHORD_LINE_REGEX.test(trimmed)) {
+        return line.replace(CHORD_TOKEN_REGEX, chord => normalizeChordToken(chord));
+      }
+
+      return line.replace(INLINE_CHORD_REGEX, (match, open, chord, close) => {
+        return `${open}${normalizeChordToken(chord)}${close}`;
+      });
+    })
+    .join('\n');
+}
+
+function normalizeSongAccidentals(song) {
+  if (!song || typeof song !== 'object') return song;
+  const normalizedSong = { ...song };
+
+  if (typeof normalizedSong.key === 'string') {
+    normalizedSong.key = normalizeKeySignature(normalizedSong.key);
+  }
+  if (typeof normalizedSong.manualChords === 'string') {
+    normalizedSong.manualChords = normalizeManualChords(normalizedSong.manualChords);
+  }
+  if (typeof normalizedSong.lyrics === 'string') {
+    normalizedSong.lyrics = normalizeLyricsChords(normalizedSong.lyrics);
+  }
+
+  return normalizedSong;
+}
+
+function expandKeyFilterVariants(keys) {
+  const expanded = new Set();
+  (Array.isArray(keys) ? keys : []).forEach(key => {
+    if (typeof key !== 'string' || !key.trim()) return;
+    const normalizedKey = normalizeKeySignature(key);
+    const match = normalizedKey.match(/^([A-G][#b]?)(m?)$/);
+    if (!match) {
+      expanded.add(normalizedKey);
+      return;
+    }
+
+    const root = match[1];
+    const suffix = match[2] || '';
+    const variants = KEY_VARIANTS_BY_CANONICAL[root] || [root];
+    variants.forEach(variantRoot => expanded.add(`${variantRoot}${suffix}`));
+  });
+  return Array.from(expanded);
+}
+
 // Create uploads directory (use /tmp in serverless environments)
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 const uploadsDir = isServerless 
@@ -450,7 +584,7 @@ app.get('/api/songs', authMiddleware, async (req, res) => {
         ]
       };
     }
-    const songs = await songsCollection.find(query).toArray();
+    const songs = (await songsCollection.find(query).toArray()).map(normalizeSongAccidentals);
     
     // Validate all songs have numeric IDs (log warning if not)
     const songsWithoutId = songs.filter(s => typeof s.id !== 'number');
@@ -468,6 +602,7 @@ app.get('/api/songs', authMiddleware, async (req, res) => {
 // Protected: only logged-in users can add, update, or delete songs
 app.post('/api/songs', authMiddleware, async (req, res) => {
   try {
+    req.body = normalizeSongAccidentals(req.body);
     
     // Ensure song has a numeric ID
     if (typeof req.body.id !== 'number') {
@@ -510,7 +645,7 @@ app.post('/api/songs', authMiddleware, async (req, res) => {
     }
     
     const result = await songsCollection.insertOne(req.body);
-    const insertedSong = await songsCollection.findOne({ _id: result.insertedId });
+    const insertedSong = normalizeSongAccidentals(await songsCollection.findOne({ _id: result.insertedId }));
     res.status(201).json(insertedSong);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -521,6 +656,7 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
   console.log('DEBUG /api/songs/:id req.user:', req.user);
   try {
     const { id } = req.params;
+    req.body = normalizeSongAccidentals(req.body);
     // Always set updatedAt to now on edit
     req.body.updatedAt = new Date().toISOString();
     if (req.user && req.user.firstName) {
@@ -538,7 +674,7 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Song not found' });
     }
     // Fetch and return the updated song object
-    const updatedSong = await songsCollection.findOne({ id: parseInt(id) });
+    const updatedSong = normalizeSongAccidentals(await songsCollection.findOne({ id: parseInt(id) }));
     res.json(updatedSong);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -604,7 +740,7 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
     
     // Handle array conditions (use $in for matching any)
     if (keys && keys.length > 0) {
-      query.key = { $in: keys };
+      query.key = { $in: expandKeyFilterVariants(keys) };
     }
     
     // Use 'time' field (not 'timeSignature')
@@ -750,11 +886,13 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
       }
       
       // Only return essential fields to reduce payload size for Smart Setlists
-      songs = songs.map(song => ({
+      songs = songs.map(song => {
+        const normalizedSong = normalizeSongAccidentals(song);
+        return {
         id: song.id,
         title: song.title,
         songNumber: song.songNumber,
-        key: song.key,
+        key: normalizedSong.key,
         mood: song.mood,
         tempo: song.tempo,
         artistDetails: song.artistDetails,
@@ -765,7 +903,8 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
         taal: song.taal,
         time: song.time,
         timeSignature: song.timeSignature
-      }));
+        };
+      });
       
       // Sort by song number
       songs.sort((a, b) => {
@@ -786,11 +925,13 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
     let songs = await songsCollection.find(query).toArray();
     
     // Only return essential fields to reduce payload size for Smart Setlists
-    songs = songs.map(song => ({
+    songs = songs.map(song => {
+      const normalizedSong = normalizeSongAccidentals(song);
+      return {
       id: song.id,
       title: song.title,
       songNumber: song.songNumber,
-      key: song.key,
+      key: normalizedSong.key,
       mood: song.mood,
       tempo: song.tempo,
       artistDetails: song.artistDetails,
@@ -801,7 +942,8 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
       taal: song.taal,
       time: song.time,
       timeSignature: song.timeSignature
-    }));
+      };
+    });
     
     // Sort by song number
     songs.sort((a, b) => {
@@ -1651,6 +1793,31 @@ app.delete('/api/loops/:loopId', authMiddleware, async (req, res) => {
 const melodicLoopsDir = path.join(loopsDir, 'melodies');
 const atmosphereDir = path.join(melodicLoopsDir, 'atmosphere');
 const tanpuraDir = path.join(melodicLoopsDir, 'tanpura');
+const MELODIC_KEYS = CANONICAL_CHROMATIC;
+
+function normalizeMelodicKey(key) {
+  if (typeof key !== 'string' || !key.trim()) return null;
+  const normalized = normalizeBaseNote(key.trim());
+  return MELODIC_KEYS.includes(normalized) ? normalized : null;
+}
+
+function findExistingMelodicFile(type, key) {
+  const normalizedKey = normalizeMelodicKey(key);
+  if (!normalizedKey) return null;
+
+  const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
+  const variants = KEY_VARIANTS_BY_CANONICAL[normalizedKey] || [normalizedKey];
+
+  for (const variantKey of variants) {
+    const filename = `${type}_${variantKey}.wav`;
+    const filePath = path.join(targetDir, filename);
+    if (fs.existsSync(filePath)) {
+      return { filename, filePath, key: normalizedKey, legacyKey: variantKey };
+    }
+  }
+
+  return null;
+}
 
 // Ensure melodic loops directories exist (skip write attempts on serverless read-only FS)
 if (!isServerless) {
@@ -1696,32 +1863,31 @@ const melodicUpload = multer({
  */
 app.get('/api/melodic-loops', async (req, res) => {
     try {
-        const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         const result = [];
         
-        keys.forEach(key => {
-            const atmosphereFile = path.join(atmosphereDir, `atmosphere_${key}.wav`);
-            const tanpuraFile = path.join(tanpuraDir, `tanpura_${key}.wav`);
+    MELODIC_KEYS.forEach(key => {
+      const atmosphereFile = findExistingMelodicFile('atmosphere', key);
+      const tanpuraFile = findExistingMelodicFile('tanpura', key);
             
-            if (fs.existsSync(atmosphereFile)) {
-                const stats = fs.statSync(atmosphereFile);
+      if (atmosphereFile) {
+        const stats = fs.statSync(atmosphereFile.filePath);
                 result.push({
                     id: `atmosphere_${key}`,
                     type: 'atmosphere',
                     key: key,
-                    filename: `atmosphere_${key}.wav`,
+          filename: atmosphereFile.filename,
                     size: stats.size,
                     uploadedAt: stats.mtime.toISOString()
                 });
             }
             
-            if (fs.existsSync(tanpuraFile)) {
-                const stats = fs.statSync(tanpuraFile);
+      if (tanpuraFile) {
+        const stats = fs.statSync(tanpuraFile.filePath);
                 result.push({
                     id: `tanpura_${key}`,
                     type: 'tanpura',
                     key: key,
-                    filename: `tanpura_${key}.wav`,
+          filename: tanpuraFile.filename,
                     size: stats.size,
                     uploadedAt: stats.mtime.toISOString()
                 });
@@ -1741,18 +1907,15 @@ app.get('/api/melodic-loops', async (req, res) => {
  */
 app.get('/api/melodic-loops/key/:key', authMiddleware, async (req, res) => {
     try {
-        const { key } = req.params;
-        
-        // Validate key
-        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        if (!validKeys.includes(key)) {
+    const canonicalKey = normalizeMelodicKey(req.params.key);
+    if (!canonicalKey) {
             return res.status(400).json({ error: 'Invalid key' });
         }
         
         const result = {
-            key: key,
-            atmosphere: fs.existsSync(path.join(atmosphereDir, `atmosphere_${key}.wav`)),
-            tanpura: fs.existsSync(path.join(tanpuraDir, `tanpura_${key}.wav`))
+      key: canonicalKey,
+      atmosphere: Boolean(findExistingMelodicFile('atmosphere', canonicalKey)),
+      tanpura: Boolean(findExistingMelodicFile('tanpura', canonicalKey))
         };
         
         res.json(result);
@@ -1768,7 +1931,8 @@ app.get('/api/melodic-loops/key/:key', authMiddleware, async (req, res) => {
  */
 app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file'), async (req, res) => {
     try {
-        const { type, key } = req.body;
+    const { type } = req.body;
+    const canonicalKey = normalizeMelodicKey(req.body.key);
         const file = req.file;
         
         if (!file) {
@@ -1776,19 +1940,13 @@ app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file
         }
         
         // Validate required fields
-        if (!type || !key) {
+        if (!type || !canonicalKey) {
             return res.status(400).json({ error: 'Missing required fields: type and key' });
         }
         
         // Validate type
         if (!['atmosphere', 'tanpura'].includes(type)) {
             return res.status(400).json({ error: 'Invalid type. Must be atmosphere or tanpura' });
-        }
-        
-        // Validate key
-        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        if (!validKeys.includes(key)) {
-            return res.status(400).json({ error: 'Invalid key' });
         }
         
         // Handle serverless environment limitations
@@ -1806,7 +1964,7 @@ app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file
         
         // Determine target directory and filename
         const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
-        const expectedFilename = `${type}_${key}.wav`;
+        const expectedFilename = `${type}_${canonicalKey}.wav`;
         const targetPath = path.join(targetDir, expectedFilename);
         
         // Ensure target directory exists
@@ -1823,7 +1981,7 @@ app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file
             success: true,
             filename: expectedFilename,
             type: type,
-            key: key,
+            key: canonicalKey,
             size: file.size
         });
         
@@ -1870,7 +2028,8 @@ app.put('/api/melodic-loops/:id/replace', authMiddleware, requireAdmin, (req, re
 
         try {
             // Parse ID (format: type_key) 
-            const [type, key] = id.split('_');
+            const [type, rawKey] = id.split('_');
+            const canonicalKey = normalizeMelodicKey(rawKey);
 
             // Validate type
             if (!['atmosphere', 'tanpura'].includes(type)) {
@@ -1882,8 +2041,7 @@ app.put('/api/melodic-loops/:id/replace', authMiddleware, requireAdmin, (req, re
             }
 
             // Validate key
-            const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-            if (!validKeys.includes(key)) {
+            if (!canonicalKey) {
                 // Clean up uploaded file
                 if (fs.existsSync(req.file.path)) {
                     fs.unlinkSync(req.file.path);
@@ -1892,13 +2050,14 @@ app.put('/api/melodic-loops/:id/replace', authMiddleware, requireAdmin, (req, re
             }
 
             const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
-            const filename = `${type}_${key}.wav`;
+      const filename = `${type}_${canonicalKey}.wav`;
             const filePath = path.join(targetDir, filename);
 
-            // Delete old file if it exists
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-                console.log(`🗑️ Deleted old melodic file: ${filename}`);
+      // Delete any existing file for this key, including legacy names
+      const existingFile = findExistingMelodicFile(type, canonicalKey);
+      if (existingFile) {
+        fs.unlinkSync(existingFile.filePath);
+        console.log(`🗑️ Deleted old melodic file: ${existingFile.filename}`);
             }
 
             // Move uploaded file to correct location with correct name
@@ -1906,10 +2065,10 @@ app.put('/api/melodic-loops/:id/replace', authMiddleware, requireAdmin, (req, re
 
             console.log(`🔄 Replaced melodic file: ${filename}`);
             res.json({ 
-                message: `Replaced ${type} pad for key ${key}`,
+              message: `Replaced ${type} pad for key ${canonicalKey}`,
                 filename: filename,
                 type: type,
-                key: key
+              key: canonicalKey
             });
 
         } catch (error) {
@@ -1932,7 +2091,8 @@ app.delete('/api/melodic-loops/:id', authMiddleware, async (req, res) => {
         const { id } = req.params;
         
         // Parse ID (format: type_key)
-        const [type, key] = id.split('_');
+      const [type, rawKey] = id.split('_');
+      const canonicalKey = normalizeMelodicKey(rawKey);
         
         // Validate type
         if (!['atmosphere', 'tanpura'].includes(type)) {
@@ -1940,28 +2100,24 @@ app.delete('/api/melodic-loops/:id', authMiddleware, async (req, res) => {
         }
         
         // Validate key
-        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        if (!validKeys.includes(key)) {
+        if (!canonicalKey) {
             return res.status(400).json({ error: 'Invalid file ID format' });
         }
-        
-        const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
-        const filename = `${type}_${key}.wav`;
-        const filePath = path.join(targetDir, filename);
-        
-        if (!fs.existsSync(filePath)) {
+
+        const existingFile = findExistingMelodicFile(type, canonicalKey);
+        if (!existingFile) {
             return res.status(404).json({ error: 'File not found' });
         }
         
         // Delete the file
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(existingFile.filePath);
         
-        console.log(`Deleted melodic file: ${filename}`);
+        console.log(`Deleted melodic file: ${existingFile.filename}`);
         
         res.json({
             success: true,
-            message: `Deleted ${type} sample for key ${key}`,
-            filename: filename
+          message: `Deleted ${type} sample for key ${canonicalKey}`,
+          filename: existingFile.filename
         });
         
     } catch (error) {
@@ -1979,36 +2135,32 @@ app.delete('/api/melodic-loops/:id', authMiddleware, async (req, res) => {
  */
 app.delete('/api/melodic-loops/:type/:key', authMiddleware, async (req, res) => {
     try {
-        const { type, key } = req.params;
+    const { type } = req.params;
+    const canonicalKey = normalizeMelodicKey(req.params.key);
         
         // Validate type
         if (!['atmosphere', 'tanpura'].includes(type)) {
             return res.status(400).json({ error: 'Invalid type. Must be atmosphere or tanpura' });
         }
         
-        // Validate key
-        const validKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        if (!validKeys.includes(key)) {
+        if (!canonicalKey) {
             return res.status(400).json({ error: 'Invalid key' });
         }
-        
-        const targetDir = type === 'atmosphere' ? atmosphereDir : tanpuraDir;
-        const filename = `${type}_${key}.wav`;
-        const filePath = path.join(targetDir, filename);
-        
-        if (!fs.existsSync(filePath)) {
+
+        const existingFile = findExistingMelodicFile(type, canonicalKey);
+        if (!existingFile) {
             return res.status(404).json({ error: 'File not found' });
         }
         
         // Delete the file
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(existingFile.filePath);
         
-        console.log(`Deleted melodic file: ${filename}`);
+        console.log(`Deleted melodic file: ${existingFile.filename}`);
         
         res.json({
             success: true,
-            message: `Deleted ${type} sample for key ${key}`,
-            filename: filename
+          message: `Deleted ${type} sample for key ${canonicalKey}`,
+          filename: existingFile.filename
         });
         
     } catch (error) {
@@ -2130,6 +2282,7 @@ app.put('/api/global-setlists/:id/transpose', authMiddleware, requireAdmin, asyn
   try {
     const { id } = req.params;
     const { songId, transpose, newKey } = req.body;
+    const normalizedNewKey = typeof newKey === 'string' ? normalizeKeySignature(newKey) : newKey;
     
     if (!songId || typeof transpose !== 'number') {
       return res.status(400).json({ error: 'Song ID and transpose value are required' });
@@ -2156,7 +2309,7 @@ app.put('/api/global-setlists/:id/transpose', authMiddleware, requireAdmin, asyn
       message: 'Transpose saved for global setlist',
       songId,
       transpose,
-      newKey
+      newKey: normalizedNewKey
     });
   } catch (err) {
     console.error('Error saving global setlist transpose:', err);
@@ -2256,8 +2409,8 @@ app.post('/api/global-setlists/add-song', authMiddleware, requireAdmin, async (r
       return res.status(400).json({ error: 'Setlist ID and song ID are required' });
     }
     
-    // If it's a manual song, store the full song object, otherwise just the ID
-    const songToAdd = manualSong ? manualSong : songId;
+    // If it's a manual song, store a normalized song object, otherwise just the ID
+    const songToAdd = manualSong ? normalizeSongAccidentals(manualSong) : songId;
     
     const result = await db.collection('GlobalSetlists').updateOne(
       { _id: new (require('mongodb').ObjectId)(setlistId) },
@@ -2341,8 +2494,8 @@ app.post('/api/my-setlists/add-song', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Setlist ID and song ID are required' });
     }
     
-    // If it's a manual song, store the full song object, otherwise just the ID
-    const songToAdd = manualSong ? manualSong : songId;
+    // If it's a manual song, store a normalized song object, otherwise just the ID
+    const songToAdd = manualSong ? normalizeSongAccidentals(manualSong) : songId;
     
     const result = await db.collection('MySetlists').updateOne(
       { 
