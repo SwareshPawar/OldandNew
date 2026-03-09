@@ -1,8 +1,8 @@
 /**
  * Loop Player UI - Pad-based rhythm controller interface v2.0
  * 
- * Shows rhythm pads for songs that match available loops
- * Matching: Taal + Time required, Genre + Tempo boost ranking
+ * Shows rhythm pads for songs mapped to an explicit rhythm set
+ * Selection: strict song.rhythmSetId resolution (no condition-based fallback)
  * 
  * Auto-fill behavior: Uses fill matching the SOURCE loop
  * - Transition FROM loop1 → uses fill1
@@ -150,40 +150,50 @@ function areTimeSignaturesEquivalent(time1, time2) {
 }
 
 /**
- * Find best matching loop set for a song
- * Returns: {loopSet, score} or null
+ * Resolve loop set deterministically from song.rhythmSetId
+ * Returns: { loopSet, rhythmSetId } or null
  */
 async function findMatchingLoopSet(song) {
     const metadata = await getLoopsMetadata();
     if (!metadata || !metadata.loops || metadata.loops.length === 0) {
-        console.log('🔍 Loop matching: No metadata or loops available');
+        console.log('🔍 Loop resolve: No metadata or loops available');
         return null;
     }
 
-    const songTaal = (song.taal || '').toLowerCase().trim();
-    const songTime = (song.time || song.timeSignature || '').trim();
-    // Handle genres array (multi-select) or legacy single genre string
-    const songGenres = (song.genres || (song.genre ? [song.genre] : []))
-        .map(g => String(g).toLowerCase().trim());
-    const songTempo = getTempoCategory(song.bpm || song.tempo);
+    const rhythmSetId = String(song?.rhythmSetId || '').trim().toLowerCase();
+    if (!rhythmSetId) {
+        console.log('🔍 Loop resolve: Song has no rhythmSetId, player will stay hidden', {
+            songId: song?.id,
+            title: song?.title
+        });
+        return null;
+    }
 
-    console.log('🔍 Loop matching for song:', {
+    const parseLoopRhythmSetId = (loop) => {
+        if (loop?.rhythmSetId) {
+            return String(loop.rhythmSetId).trim().toLowerCase();
+        }
+        const family = String(loop?.rhythmFamily || loop?.conditions?.taal || '').trim().toLowerCase().replace(/\s+/g, '_');
+        const setNo = parseInt(loop?.rhythmSetNo || loop?.setNo || 1, 10);
+        if (!family || !Number.isInteger(setNo) || setNo <= 0) return '';
+        return `${family}_${setNo}`;
+    };
+
+    console.log('🔍 Loop resolve for song:', {
         songId: song.id,
         title: song.title,
-        songTaal,
-        songTime, 
-        songGenres,
-        songTempo,
+        rhythmSetId,
         availableLoops: metadata.loops.length
     });
 
-    // Group loops by condition set
+    // Group loops by rhythm set id for strict deterministic resolution.
     const loopSets = {};
     metadata.loops.forEach(loop => {
-        const key = `${loop.conditions.taal}_${loop.conditions.timeSignature}_${loop.conditions.tempo}_${loop.conditions.genre}`;
+        const key = parseLoopRhythmSetId(loop);
+        if (!key) return;
         if (!loopSets[key]) {
             loopSets[key] = {
-                conditions: loop.conditions,
+                rhythmSetId: key,
                 loops: [],
                 files: {}
             };
@@ -195,83 +205,13 @@ async function findMatchingLoopSet(song) {
         loopSets[key].files[fileKey] = loop.filename;
     });
 
-    console.log('🔍 Available loop sets:', Object.keys(loopSets).map(key => {
-        const set = loopSets[key];
-        return {
-            key,
-            taal: set.conditions.taal,
-            time: set.conditions.timeSignature,
-            tempo: set.conditions.tempo,
-            genre: set.conditions.genre
-        };
-    }));
-
-    // Find matching loop sets and score them
-    let bestMatch = null;
-    let bestScore = 0;
-
-    for (const [key, loopSet] of Object.entries(loopSets)) {
-        const cond = loopSet.conditions;
-        
-        // **REQUIRED**: Taal and Time must match
-        const taalMatch = songTaal.includes(cond.taal.toLowerCase()) || cond.taal.toLowerCase().includes(songTaal);
-        const timeMatch = areTimeSignaturesEquivalent(cond.timeSignature, songTime);
-
-        console.log(`🔍 Testing loop set ${key}:`, {
-            taalMatch: `"${songTaal}" vs "${cond.taal.toLowerCase()}"`,
-            timeMatch: `"${songTime}" vs "${cond.timeSignature}" (equivalent: ${timeMatch})`,
-            taalResult: taalMatch,
-            timeResult: timeMatch
-        });
-
-        if (!taalMatch || !timeMatch) {
-            continue; // Skip if required conditions don't match
-        }
-
-        // **OPTIONAL**: Score based on genre and tempo
-        let score = 10; // Base score for taal + time match
-        
-        // Check if ANY of the song's genres match the loop genre
-        const genreMatch = songGenres.some(g => 
-            g.includes(cond.genre.toLowerCase()) || 
-            cond.genre.toLowerCase().includes(g)
-        );
-        
-        if (genreMatch) {
-            score += 5; // Genre match bonus
-        }
-        
-        if (songTempo && cond.tempo === songTempo) {
-            score += 3; // Tempo match bonus
-        }
-
-        // Ensure complete set (3 loops + 3 fills)
-        if (loopSet.loops.length === 6) {
-            score += 2; // Complete set bonus
-        }
-
-        if (score > bestScore) {
-            bestScore = score;
-            bestMatch = loopSet;
-        }
+    const resolvedSet = loopSets[rhythmSetId];
+    if (!resolvedSet) {
+        console.log(`❌ Loop resolve: rhythmSetId ${rhythmSetId} not found in metadata`);
+        return null;
     }
 
-    return bestMatch ? { loopSet: bestMatch, score: bestScore } : null;
-}
-
-/**
- * Get match quality description from score
- */
-function getMatchQuality(score) {
-    if (score >= 18) {
-        return { label: 'Perfect Match', description: 'All conditions match (Taal, Time, Tempo, Genre)' };
-    } else if (score >= 15) {
-        return { label: 'Excellent Match', description: 'Required conditions + 1 optional match' };
-    } else if (score >= 10) {
-        return { label: 'Good Match', description: 'Required conditions match (Taal + Time)' };
-    } else {
-        return { label: 'Partial Match', description: 'Some conditions match' };
-    }
+    return { loopSet: resolvedSet, rhythmSetId };
 }
 
 /**
@@ -479,13 +419,10 @@ async function initializeLoopPlayer(songId) {
         return;
     }
     
-    console.log('🎵 Found song for loop matching:', { 
+    console.log('🎵 Found song for loop resolve:', { 
         id: song.id, 
         title: song.title, 
-        taal: song.taal, 
-        time: song.time || song.timeSignature,
-        genre: song.genre,
-        bpm: song.bpm || song.tempo
+        rhythmSetId: song.rhythmSetId
     });
     
     // Find matching loop set for this song
@@ -498,7 +435,7 @@ async function initializeLoopPlayer(songId) {
         return;
     }
     
-    console.log('✅ Found matching loop set with score:', matchResult.score);
+    console.log('✅ Found mapped rhythm set:', matchResult.rhythmSetId);
     
     // Calculate effective key for melodic pads
     const transposeLevel = getTransposeLevel(song);
@@ -521,7 +458,7 @@ async function initializeLoopPlayer(songId) {
         tanpuraKeyIndicator.textContent = effectiveKey;
     }
     
-    const { loopSet, score } = matchResult;
+    const { loopSet, rhythmSetId } = matchResult;
     
     // Show the container
     const container = document.getElementById(`loopPlayerContainer-${songId}`);
@@ -566,7 +503,6 @@ async function initializeLoopPlayer(songId) {
         const status = document.getElementById(`loopStatus-${songId}`);
         if (status) {
             const displayName = loopName.replace(/(\d+)/, ' $1').toUpperCase();
-            const matchInfo = getMatchQuality(score);
             status.textContent = `Playing: ${displayName}`;
         }
     };
@@ -705,13 +641,12 @@ async function initializeLoopPlayer(songId) {
                 status.textContent = `🔄 New song selected - Stop and Play to load new loops`;
                 status.style.color = '#ffc107'; // Warning color
             } else if (loadedCount >= 6) {
-                const matchInfo = getMatchQuality(score);
                 const melodicStatus = melodicCount > 0 ? ` | Melodic: ${melodicCount}/${totalMelodic}` : ' | No melodic samples';
-                status.textContent = `Ready - ${matchInfo.label}${melodicStatus} (Click Play to initialize audio)`;
-                status.title = matchInfo.description;
+                status.textContent = `Ready - ${rhythmSetId}${melodicStatus} (Click Play to initialize audio)`;
+                status.title = `Mapped rhythm set: ${rhythmSetId}`;
                 status.style.color = ''; // Reset color
             } else {
-                status.textContent = `Loaded ${loadedCount}/6 loops | Melodic: ${melodicCount}/${totalMelodic}`;
+                status.textContent = `Loaded ${loadedCount}/6 loops for ${rhythmSetId} | Melodic: ${melodicCount}/${totalMelodic}`;
                 status.style.color = ''; // Reset color
             }
         }

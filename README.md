@@ -164,11 +164,13 @@ See CODE_DOCUMENTATION.md Section 9, Session #1 for details.
 - Chord transposition
 - Auto-scroll for lyrics
 - **Loop Player System:**
-  - Automatic loop matching (Taal, Time Signature, Genre, Tempo)
-  - Rhythm loops with fills and variations
-  - Melodic pads (Tanpura, Atmosphere) organized by musical key
-  - Tempo control with SoundTouch.js
-  - Admin interfaces for uploading/managing loops
+   - Deterministic loop resolution by `rhythmSetId` (`rhythmFamily_setNo`)
+   - Recommendation-assisted rhythm set assignment during song add/edit
+   - Rhythm loops with fills and variations
+   - Melodic pads (Tanpura, Atmosphere) organized by musical key
+   - Tempo control with SoundTouch.js
+   - Admin interfaces for loop uploads and rhythm mapping workflow
+- Standalone Rhythm Mapper page for song-to-rhythm-set assignment and preview
 - Floating stop button for global playback control
 - Admin panel
 - PWA support (offline use)
@@ -193,6 +195,8 @@ See CODE_DOCUMENTATION.md Section 9, Session #1 for details.
 ├── melodic-loops-manager.js       # Melodic sample upload/management
 ├── loop-manager.html              # Admin interface for rhythm loops
 ├── loop-manager.js                # Rhythm loop upload/management
+├── rhythm-sets-manager.html       # Standalone rhythm mapping workspace
+├── rhythm-sets-manager.js         # Rhythm Mapper logic
 ├── api/
 │   └── index.js                   # Vercel serverless functions
 ├── utils/

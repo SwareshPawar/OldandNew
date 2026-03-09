@@ -381,6 +381,9 @@
             <div class="admin-tabs">
                 <button class="admin-tab active" id="userMgmtTab" title="User Management - Manage user accounts and admin privileges" aria-label="User Management Tab">User Management</button>
                 <button class="admin-tab" id="weightsTab" title="Recommendation Weights - Configure song recommendation algorithm parameters" aria-label="Recommendation Weights Tab">Recommendation Weights</button>
+                <a href="rhythm-sets-manager.html" target="_blank" class="admin-tab admin-tab-link" title="Rhythm Mapper - Map songs to rhythm sets and preview loops" aria-label="Rhythm Mapper">
+                    <i class="fas fa-wave-square"></i> Rhythm Mapper
+                </a>
                 <a href="melodic-loops-manager.html" target="_blank" class="admin-tab admin-tab-link" title="Melodic Loops Manager - Upload and manage atmosphere & tanpura samples" aria-label="Melodic Loops Manager">
                     <i class="fas fa-music"></i> Melodic Loops
                 </a>
@@ -452,6 +455,48 @@
                 </form>
                 <div style="text-align:center; color:#888; font-size:0.98em; margin-top:4px;">Total should be 100 for best results.</div>
             </div>
+            <div class="admin-tab-content" id="rhythmSetsTabContent" style="display:none;">
+                <div class="notification" id="rhythmSetsNotification"></div>
+                <form id="rhythmSetCreateForm" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:flex-end;">
+                    <div style="display:flex; flex-direction:column; min-width:140px;">
+                        <label for="rhythmSetFamilyInput">Rhythm Family</label>
+                        <input type="text" id="rhythmSetFamilyInput" placeholder="e.g. keherwa" required>
+                    </div>
+                    <div style="display:flex; flex-direction:column; width:95px;">
+                        <label for="rhythmSetNoInput">Set No</label>
+                        <input type="number" id="rhythmSetNoInput" min="1" step="1" required>
+                    </div>
+                    <div style="display:flex; flex-direction:column; min-width:120px;">
+                        <label for="rhythmSetStatusInput">Status</label>
+                        <select id="rhythmSetStatusInput">
+                            <option value="active">active</option>
+                            <option value="inactive">inactive</option>
+                            <option value="archived">archived</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; flex-direction:column; flex:1 1 220px;">
+                        <label for="rhythmSetNotesInput">Notes</label>
+                        <input type="text" id="rhythmSetNotesInput" placeholder="Optional notes">
+                    </div>
+                    <button type="submit" class="btn" title="Create Rhythm Set" aria-label="Create Rhythm Set">Create</button>
+                </form>
+                <div style="overflow:auto; max-height:52vh;">
+                    <table id="rhythmSetsTable" style="width:100%; border-collapse:collapse; background:#fff;">
+                        <thead>
+                            <tr style="background:#f6f8fa; color:#3498db; font-weight:600;">
+                                <th style="padding:10px 8px; text-align:left;">Rhythm Set</th>
+                                <th style="padding:10px 8px; text-align:left;">Status</th>
+                                <th style="padding:10px 8px; text-align:left;">Mapped Songs</th>
+                                <th style="padding:10px 8px; text-align:left;">Files</th>
+                                <th style="padding:10px 8px; text-align:left;">Notes</th>
+                                <th style="padding:10px 8px; text-align:left;">Updated</th>
+                                <th style="padding:10px 8px; text-align:left;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -522,6 +567,14 @@
                     </div>
                     <div class="multiselect-selected" id="selectedGenres"></div>
                 </div>
+                <label for="songRhythmFamily">Rhythm Family:</label>
+                <select id="songRhythmFamily">
+                    <option value="">Auto-assign from recommendation</option>
+                </select>
+                <label for="songRhythmSetNo">Set No:</label>
+                <input type="number" id="songRhythmSetNo" min="1" step="1" placeholder="e.g., 1">
+                <label for="songRhythmSetIdPreview">Rhythm Set ID:</label>
+                <input type="text" id="songRhythmSetIdPreview" readonly placeholder="Auto-assigned by server">
                 <label for="songLyrics">Lyrics:</label>
                 <div class="song-structure-tags">
                     <div class="structure-tags-header">Quick Tags:</div>
@@ -595,6 +648,14 @@
                     </div>
                     <div class="multiselect-selected" id="editSelectedGenres"></div>
                 </div>
+                <label for="editSongRhythmFamily">Rhythm Family:</label>
+                <select id="editSongRhythmFamily">
+                    <option value="">Auto-assign from recommendation</option>
+                </select>
+                <label for="editSongRhythmSetNo">Set No:</label>
+                <input type="number" id="editSongRhythmSetNo" min="1" step="1" placeholder="e.g., 1">
+                <label for="editSongRhythmSetIdPreview">Rhythm Set ID:</label>
+                <input type="text" id="editSongRhythmSetIdPreview" readonly placeholder="Auto-assigned by server">
                 <label for="editSongLyrics">Lyrics:</label>
                 <div class="song-structure-tags">
                     <div class="structure-tags-header">Quick Tags:</div>

@@ -14,6 +14,22 @@ let loopsMetadata = null;
 let songMetadata = null;
 let currentAudio = null;
 
+function normalizeRhythmFamily(value) {
+    if (typeof value !== 'string') return '';
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_-]/g, '');
+}
+
+function buildRhythmSetId(rhythmFamily, rhythmSetNo) {
+    const family = normalizeRhythmFamily(rhythmFamily);
+    const setNo = parseInt(rhythmSetNo, 10);
+    if (!family || !Number.isInteger(setNo) || setNo <= 0) return '';
+    return `${family}_${setNo}`;
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication
@@ -25,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadSongMetadata();
     await loadLoopsMetadata();
     setupEventListeners();
+    updateFilenamePreview();
     updateStats();
 });
 
@@ -92,6 +109,20 @@ async function loadSongMetadata() {
 function populateDropdowns() {
     if (!songMetadata) return;
 
+    // Populate Rhythm Family dropdown (source-of-truth from metadata/rhythm sets)
+    const rhythmFamilySelect = document.getElementById('rhythmFamilyInput');
+    const rhythmFamilies = Array.isArray(songMetadata.rhythmFamilies) && songMetadata.rhythmFamilies.length
+        ? songMetadata.rhythmFamilies
+        : (songMetadata.taals || []).map(taal => normalizeRhythmFamily(taal)).filter(Boolean);
+
+    rhythmFamilySelect.innerHTML = '<option value="">Select Rhythm Family</option>';
+    Array.from(new Set(rhythmFamilies)).sort().forEach(family => {
+        const option = document.createElement('option');
+        option.value = family;
+        option.textContent = family;
+        rhythmFamilySelect.appendChild(option);
+    });
+
     // Populate Taal dropdown
     const taalSelect = document.getElementById('taalInput');
     taalSelect.innerHTML = '<option value="">Select Taal</option>';
@@ -149,6 +180,8 @@ async function loadLoopsMetadata() {
  */
 function setupEventListeners() {
     // Filename preview updater
+    document.getElementById('rhythmFamilyInput').addEventListener('change', updateFilenamePreview);
+    document.getElementById('rhythmSetNoInput').addEventListener('input', updateFilenamePreview);
     document.getElementById('taalInput').addEventListener('change', updateFilenamePreview);
     document.getElementById('timeInput').addEventListener('change', updateFilenamePreview);
     document.getElementById('tempoInput').addEventListener('change', updateFilenamePreview);
@@ -162,16 +195,20 @@ function setupEventListeners() {
  * Update filename preview as user selects conditions
  */
 function updateFilenamePreview() {
+    const rhythmFamily = document.getElementById('rhythmFamilyInput').value;
+    const rhythmSetNo = document.getElementById('rhythmSetNoInput').value;
     const taal = document.getElementById('taalInput').value;
     const time = document.getElementById('timeInput').value.replace('/', '_');
     const tempo = document.getElementById('tempoInput').value;
     const genre = document.getElementById('genreInput').value;
+    const rhythmSetId = buildRhythmSetId(rhythmFamily, rhythmSetNo);
 
     const preview = document.getElementById('filenamePreview');
     
-    if (taal && time && tempo && genre) {
+    if (rhythmSetId && taal && time && tempo && genre) {
         const pattern = `${taal}_${time}_${tempo}_${genre}`;
         preview.innerHTML = `
+            <div style="margin-bottom: 8px; color: #2d3748; font-size: 0.95em;">Rhythm Set: <strong>${rhythmSetId}</strong></div>
             <div style="margin-bottom: 10px; color: #667eea; font-size: 1.1em;">${pattern}_TYPE#.wav</div>
             <div style="font-size: 0.85em; color: #666;">
                 <div>• ${pattern}_LOOP1.wav</div>
@@ -192,7 +229,7 @@ function updateFilenamePreview() {
             }
         }
     } else {
-        preview.textContent = 'Select all conditions above';
+        preview.textContent = 'Select rhythm family, set number, and all loop conditions above';
         
         // Disable all upload buttons
         for (let i = 1; i <= 6; i++) {
@@ -214,16 +251,19 @@ function handleIndividualUpload(slotNumber, type) {
     
     if (fileInput.files.length > 0) {
         // Check if all conditions are selected
+        const rhythmFamily = document.getElementById('rhythmFamilyInput').value;
+        const rhythmSetNo = document.getElementById('rhythmSetNoInput').value;
         const taal = document.getElementById('taalInput').value;
         const time = document.getElementById('timeInput').value;
         const tempo = document.getElementById('tempoInput').value;
         const genre = document.getElementById('genreInput').value;
+        const rhythmSetId = buildRhythmSetId(rhythmFamily, rhythmSetNo);
         
-        if (taal && time && tempo && genre) {
+        if (rhythmSetId && taal && time && tempo && genre) {
             uploadBtn.disabled = false;
         } else {
             uploadBtn.disabled = true;
-            showAlert('uploadAlert', 'Please select taal, time signature, tempo, and genre first', 'warning');
+            showAlert('uploadAlert', 'Please select rhythm family, set no, taal, time signature, tempo, and genre first', 'warning');
         }
     } else {
         uploadBtn.disabled = true;
@@ -254,15 +294,18 @@ async function uploadSingleFile(slotNumber, type) {
     if (!file) return;
     
     // Get form values
+    const rhythmFamily = document.getElementById('rhythmFamilyInput').value;
+    const rhythmSetNo = document.getElementById('rhythmSetNoInput').value;
     const taal = document.getElementById('taalInput').value;
     const time = document.getElementById('timeInput').value;
     const tempo = document.getElementById('tempoInput').value;
     const genre = document.getElementById('genreInput').value;
     const description = document.getElementById('descriptionInput').value;
+    const rhythmSetId = buildRhythmSetId(rhythmFamily, rhythmSetNo);
     
     // Validate
-    if (!taal || !time || !tempo || !genre) {
-        showAlert('uploadAlert', 'Please select all conditions (taal, time, tempo, genre)', 'error');
+    if (!rhythmSetId || !taal || !time || !tempo || !genre) {
+        showAlert('uploadAlert', 'Please select rhythm family, set no, and all conditions (taal, time, tempo, genre)', 'error');
         return;
     }
     
@@ -275,6 +318,8 @@ async function uploadSingleFile(slotNumber, type) {
         // Create FormData
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('rhythmFamily', rhythmFamily);
+        formData.append('rhythmSetNo', rhythmSetNo);
         formData.append('taal', taal);
         formData.append('timeSignature', time);
         formData.append('tempo', tempo);
@@ -371,13 +416,23 @@ function displayLoops() {
         return;
     }
 
-    // Group loops by condition set
+    const resolveLoopRhythmSetId = (loop) => {
+        if (loop.rhythmSetId) return String(loop.rhythmSetId).toLowerCase();
+        const family = normalizeRhythmFamily(loop.rhythmFamily || loop.conditions?.taal || '');
+        const setNo = parseInt(loop.rhythmSetNo || loop.setNo || 1, 10);
+        return buildRhythmSetId(family, setNo) || 'unmapped';
+    };
+
+    // Group loops by rhythm set
     const loopSets = {};
     loopsMetadata.loops.forEach(loop => {
-        const key = `${loop.conditions.taal}_${loop.conditions.timeSignature}_${loop.conditions.tempo}_${loop.conditions.genre}`;
+        const key = resolveLoopRhythmSetId(loop);
         if (!loopSets[key]) {
             loopSets[key] = {
+                rhythmSetId: key,
                 conditions: loop.conditions,
+                rhythmFamily: loop.rhythmFamily || loop.conditions?.taal || '',
+                rhythmSetNo: loop.rhythmSetNo || loop.setNo || 1,
                 loops: []
             };
         }
@@ -406,6 +461,7 @@ function displayLoops() {
             if (index === 0) {
                 tdConditions.innerHTML = `
                     <div class="conditions-display">
+                        <span class="badge" style="background: #edf2f7; color: #1a202c;">${set.rhythmSetId}</span>
                         <span class="badge" style="background: #e6f2ff; color: #004085;">${set.conditions.taal}</span>
                         <span class="badge" style="background: #fff3cd; color: #856404;">${set.conditions.timeSignature}</span>
                         <span class="badge badge-tempo-${set.conditions.tempo}">${set.conditions.tempo}</span>
@@ -579,12 +635,12 @@ function updateStats() {
     // Total loop sets (groups of 6)
     const loopSets = new Set();
     loopsMetadata.loops.forEach(loop => {
-        const key = `${loop.conditions.taal}_${loop.conditions.timeSignature}_${loop.conditions.tempo}_${loop.conditions.genre}`;
+        const key = loop.rhythmSetId || buildRhythmSetId(loop.rhythmFamily || loop.conditions?.taal || '', loop.rhythmSetNo || loop.setNo || 1);
         loopSets.add(key);
     });
 
-    // Unique taals
-    const taals = new Set(loopsMetadata.loops.map(l => l.conditions.taal));
+    // Unique rhythm families
+    const taals = new Set(loopsMetadata.loops.map(l => normalizeRhythmFamily(l.rhythmFamily || l.conditions?.taal || '')).filter(Boolean));
 
     // Unique genres
     const genres = new Set(loopsMetadata.loops.map(l => l.conditions.genre));

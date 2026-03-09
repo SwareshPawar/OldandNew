@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** March 9, 2026 - 11:40 PM  
-**Version:** 1.18.0
+**Last Updated:** March 9, 2026 - 11:59 PM  
+**Version:** 1.19.0
 
 ---
 
@@ -747,6 +747,17 @@ WEIGHTS = {
 | DELETE | `/api/songs/:id` | Yes (Admin) | None | `{message}` | Delete song by ID |
 | DELETE | `/api/songs` | Yes (Admin) | None | `{message}` | Delete all songs |
 | POST | `/api/songs/scan` | No | `{keys, tempoMin, tempoMax, times, taals, moods, genres, categories}` | `Array<Song>` | Scan songs with conditions |
+| GET | `/api/song-metadata` | No | None | `{genres, moods, taals, times, categories, rhythmFamilies, rhythmSets}` | Song form metadata and rhythm family source of truth |
+
+### Rhythm Set Endpoints
+
+| Method | Route | Auth Required | Request Parameters | Response | Purpose |
+|--------|-------|---------------|-------------------|----------|---------|
+| GET | `/api/rhythm-sets` | Yes | None | `Array<RhythmSet>` | List rhythm sets merged from DB and loop metadata with live mapped song counts |
+| POST | `/api/rhythm-sets` | Yes (Admin) | `{rhythmFamily, rhythmSetNo, notes?, status?}` | Created rhythm set | Create canonical rhythm set document |
+| PUT | `/api/rhythm-sets/:rhythmSetId` | Yes (Admin) | `{status?, notes?, newRhythmSetId?, rhythmFamily?, rhythmSetNo?}` | Updated rhythm set + rename metadata | Update or rename rhythm set; cascades to songs and loop metadata |
+| POST | `/api/rhythm-sets/recommend` | Yes | Song-like metadata payload | `{rhythmSetId, rhythmFamily, rhythmSetNo, score, reason}` | Return top deterministic recommendation |
+| PUT | `/api/rhythm-sets/:rhythmSetId/recompute` | Yes (Admin) | None | Updated rhythm set | Recompute derived tags/counters from currently mapped songs |
 
 ### User Data Endpoints
 
@@ -6782,6 +6793,90 @@ Created **single source of truth in main.js** with automatic synchronization via
 
 ---
 
+### Session #8: Deterministic Rhythm Set Mapping + Rhythm Mapper Workspace
+**Date:** March 2026  
+**Status:** ✅ IMPLEMENTED (with runtime note below)
+
+**Objective:**
+Replace condition-only runtime loop matching with deterministic `rhythmSetId` mapping, and provide a practical admin workflow to create/manage sets, map songs, and preview loops from one dedicated page.
+
+**Problems Solved:**
+1. Mapped song counts in rhythm set admin were showing stale/zero values.
+2. Mapping songs to rhythm sets required multiple disconnected screens.
+3. Rhythm set rename support was missing and edits were hard to persist safely.
+4. Admin needed a workflow to assign songs and immediately listen to available loops.
+
+**Implemented Solution:**
+
+**1. Deterministic rhythm set backend foundation (`server.js`)**
+- Added canonical helpers: `parseRhythmSetId`, `buildRhythmSetId`, normalization routines.
+- Added/expanded `RhythmSets` API surface:
+    - `GET /api/rhythm-sets`
+    - `POST /api/rhythm-sets`
+    - `PUT /api/rhythm-sets/:rhythmSetId`
+    - `POST /api/rhythm-sets/recommend`
+    - `PUT /api/rhythm-sets/:rhythmSetId/recompute`
+- Added live mapped-song aggregation in `GET /api/rhythm-sets` using songs collection grouping by `rhythmSetId`.
+- Added rename cascade support in `PUT /api/rhythm-sets/:rhythmSetId`:
+    - conflict checks
+    - song remap (`songsCollection` updateMany)
+    - loops metadata propagation (`renameRhythmSetInLoopsMetadata`)
+    - derived metadata recompute after rename/update
+
+**2. Song lifecycle integration (`server.js`)**
+- Song create/update now resolve deterministic rhythm assignment through:
+    - recommendation (`recommendRhythmSetForSong`)
+    - selection resolver (`resolveSongRhythmSelection`)
+- Enforces valid rhythm assignment paths and recomputes affected rhythm set metadata when mappings change.
+
+**3. Standalone admin workflow page**
+- Added new page: `rhythm-sets-manager.html`
+- Added controller logic: `rhythm-sets-manager.js`
+- Features implemented:
+    - Select song -> recommend best rhythm set
+    - Assign selected rhythm set directly to song
+    - Create rhythm sets
+    - Save status/notes
+    - Rename set via `family_setNo` id format
+    - Recompute set metadata on demand
+    - Preview available loops for selected set
+
+**4. Main app/admin integration (`index.html`, `main.js`)**
+- Added admin launcher link to open standalone `rhythm-sets-manager.html` as "Rhythm Mapper".
+- Kept compatibility with existing admin popup tab logic while routing primary workflow to dedicated manager page.
+
+**5. Metadata source-of-truth clarification**
+- `Rhythm Family` dropdown values now documented as coming from `GET /api/song-metadata`.
+- Server computes this from normalized constants and available rhythm set records, then hydrates frontend forms.
+
+**Files Added:**
+- `rhythm-sets-manager.html`
+- `rhythm-sets-manager.js`
+
+**Files Modified:**
+- `server.js`
+- `index.html`
+- `main.js`
+- `loop-manager.js` (deterministic rhythm field usage alignment)
+
+**Validation Performed:**
+- Syntax checks on modified JS files via `node --check`.
+- Editor diagnostics showed no new syntax errors in touched files.
+
+**Known Runtime Note:**
+- During validation, one local run failed with `EADDRINUSE` on port `3001` due to an existing listener process.
+- Documentation includes this because stale running processes can make rename/mapping changes appear to "revert" when an old server instance is still active.
+
+**Operational Workflow (Current Recommended):**
+1. Create rhythm set in Rhythm Mapper (`family + setNo`).
+2. Upload/verify loop files for that set in loop manager.
+3. Map songs to `rhythmSetId` in Rhythm Mapper.
+4. Use recommendation + preview controls to verify musical fit.
+5. Rename set only via valid id format (`family_setNo`) when needed.
+6. Recompute metadata after bulk updates or migrations.
+
+---
+
 ## 15. PROJECT OVERVIEW
 
 ### Application Purpose
@@ -6795,6 +6890,8 @@ Created **single source of truth in main.js** with automatic synchronization via
 - **Auto-scroll**: Automated lyrics scrolling with speed control
 - **Admin Panel**: User management and system configuration
 - **PWA Support**: Offline functionality and mobile app experience
+- **Deterministic Rhythm Mapping**: Songs bind to canonical `rhythmSetId` (`family_setNo`) for predictable loop resolution
+- **Rhythm Mapper Workspace**: Standalone admin page for create/map/recommend/rename/recompute and loop preview
 - **Responsive Design**: Desktop and mobile optimized interface
 
 ### Technology Stack
@@ -6823,6 +6920,8 @@ Created **single source of truth in main.js** with automatic synchronization via
 ├── melodic-loops-manager.js       # Melodic sample upload/management
 ├── loop-manager.html              # Admin interface for rhythm loops
 ├── loop-manager.js                # Rhythm loop upload/management
+├── rhythm-sets-manager.html       # Standalone rhythm set mapping/admin workspace
+├── rhythm-sets-manager.js         # Rhythm Mapper logic (assign/recommend/rename/preview)
 ├── api/
 │   └── index.js                   # Vercel API routes
 ├── utils/
@@ -6837,7 +6936,7 @@ Created **single source of truth in main.js** with automatic synchronization via
 
 ---
 
-**Document End - Last Updated: March 9, 2026, 11:40 PM - Version 1.18.0 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: March 9, 2026, 11:59 PM - Version 1.19.0 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
@@ -6906,3 +7005,9 @@ Created **single source of truth in main.js** with automatic synchronization via
     * Added deprecation warnings in file header and LOOP_PLAYER_GUIDE.md
     * No runtime conflicts - only loop-player-pad-ui.js loaded in index.html
     * Kept for reference/comparison purposes only
+- Documented Session #8: Deterministic Rhythm Set Mapping + Rhythm Mapper Workspace
+    * Added canonical rhythm set APIs and deterministic song mapping flow
+    * Added standalone `rhythm-sets-manager.html/js` for assignment, recommendation, rename, recompute, and preview
+    * Fixed mapped-song counts by aggregating from songs collection in `GET /api/rhythm-sets`
+    * Added rename cascade across songs and loops metadata (`newRhythmSetId` support)
+    * Documented `Rhythm Family` dropdown source as `/api/song-metadata`

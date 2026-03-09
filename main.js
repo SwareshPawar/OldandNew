@@ -174,6 +174,74 @@ const MOODS = [
     "Love", "Evergreen", "Dance", "Patriotic"
 ];
 
+function normalizeRhythmFamilyValue(value) {
+    if (typeof value !== 'string') return '';
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_-]/g, '');
+}
+
+function buildRhythmSetIdValue(rhythmFamily, rhythmSetNo) {
+    const family = normalizeRhythmFamilyValue(rhythmFamily);
+    const setNo = parseInt(rhythmSetNo, 10);
+    if (!family || !Number.isInteger(setNo) || setNo <= 0) {
+        return '';
+    }
+    return `${family}_${setNo}`;
+}
+
+function updateRhythmSetIdPreview(familyInputId, setNoInputId, previewInputId) {
+    const familyEl = document.getElementById(familyInputId);
+    const setNoEl = document.getElementById(setNoInputId);
+    const previewEl = document.getElementById(previewInputId);
+    if (!familyEl || !setNoEl || !previewEl) return;
+
+    const previewValue = buildRhythmSetIdValue(familyEl.value, setNoEl.value);
+    previewEl.value = previewValue || '';
+}
+
+function populateRhythmFamilyDropdown(dropdownId, rhythmFamilies) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const selectedValue = dropdown.value;
+    dropdown.innerHTML = '<option value="">Auto-assign from recommendation</option>';
+
+    rhythmFamilies.forEach(family => {
+        const option = document.createElement('option');
+        option.value = family;
+        option.textContent = family;
+        dropdown.appendChild(option);
+    });
+
+    if (selectedValue && rhythmFamilies.includes(selectedValue)) {
+        dropdown.value = selectedValue;
+    }
+}
+
+async function hydrateRhythmFamilies() {
+    const fallbackFamilies = Array.from(new Set(TAALS.map(t => normalizeRhythmFamilyValue(t)).filter(Boolean))).sort();
+    populateRhythmFamilyDropdown('songRhythmFamily', fallbackFamilies);
+    populateRhythmFamilyDropdown('editSongRhythmFamily', fallbackFamilies);
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/api/song-metadata`);
+        if (!response.ok) return;
+        const metadata = await response.json();
+        const serverFamilies = Array.isArray(metadata.rhythmFamilies) && metadata.rhythmFamilies.length
+            ? metadata.rhythmFamilies.map(normalizeRhythmFamilyValue).filter(Boolean)
+            : fallbackFamilies;
+
+        const uniqueFamilies = Array.from(new Set(serverFamilies)).sort();
+        populateRhythmFamilyDropdown('songRhythmFamily', uniqueFamilies);
+        populateRhythmFamilyDropdown('editSongRhythmFamily', uniqueFamilies);
+    } catch (error) {
+        console.warn('Could not hydrate rhythm families from server metadata:', error);
+    }
+}
+
 const ARTISTS = [
   // Legendary Male Singers
   "Kishore Kumar", "Mohammed Rafi", "Mukesh", "Manna Dey", "Talat Mahmood",
@@ -1205,6 +1273,25 @@ document.addEventListener('DOMContentLoaded', () => {
     populateDropdown('editSongArtist', ARTISTS);
     populateDropdown('songMood', MOODS);
     populateDropdown('editSongMood', MOODS);
+
+    hydrateRhythmFamilies();
+    updateRhythmSetIdPreview('songRhythmFamily', 'songRhythmSetNo', 'songRhythmSetIdPreview');
+    updateRhythmSetIdPreview('editSongRhythmFamily', 'editSongRhythmSetNo', 'editSongRhythmSetIdPreview');
+
+    const rhythmFieldBindings = [
+        ['songRhythmFamily', 'songRhythmSetNo', 'songRhythmSetIdPreview'],
+        ['editSongRhythmFamily', 'editSongRhythmSetNo', 'editSongRhythmSetIdPreview']
+    ];
+    rhythmFieldBindings.forEach(([familyId, setNoId, previewId]) => {
+        const familyEl = document.getElementById(familyId);
+        const setNoEl = document.getElementById(setNoId);
+        if (familyEl) {
+            familyEl.addEventListener('change', () => updateRhythmSetIdPreview(familyId, setNoId, previewId));
+        }
+        if (setNoEl) {
+            setNoEl.addEventListener('input', () => updateRhythmSetIdPreview(familyId, setNoId, previewId));
+        }
+    });
 
     // Genre multiselect (lazy setup; only once each)
     setupSearchableMultiselect('songGenre', 'genreDropdown', 'selectedGenres', GENRES, true);
@@ -2396,6 +2483,218 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             bar.style.color = (total === 100) ? '#27ae60' : '#e74c3c';
         }
     }
+
+    const RHYTHM_SET_STATUS_OPTIONS = ['active', 'inactive', 'archived'];
+
+    function showRhythmSetsNotification(message, type = 'info') {
+        const notif = document.getElementById('rhythmSetsNotification');
+        if (!notif) return;
+
+        notif.textContent = message;
+        notif.style.display = 'block';
+        if (type === 'success') {
+            notif.style.background = '#e0ffe0';
+            notif.style.color = '#155724';
+        } else if (type === 'error') {
+            notif.style.background = '#ffe0e0';
+            notif.style.color = '#b30000';
+        } else {
+            notif.style.background = '';
+            notif.style.color = '';
+        }
+    }
+
+    function renderRhythmSetsTable(rhythmSets) {
+        const tbody = document.querySelector('#rhythmSetsTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!Array.isArray(rhythmSets) || !rhythmSets.length) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 7;
+            td.style.padding = '12px 8px';
+            td.textContent = 'No rhythm sets found.';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return;
+        }
+
+        rhythmSets.forEach(set => {
+            const tr = document.createElement('tr');
+            tr.dataset.rhythmSetId = set.rhythmSetId || '';
+
+            const idCell = document.createElement('td');
+            idCell.style.padding = '10px 8px';
+            const idStrong = document.createElement('strong');
+            idStrong.textContent = set.rhythmSetId || '-';
+            const idSub = document.createElement('div');
+            idSub.style.fontSize = '0.9em';
+            idSub.style.opacity = '0.85';
+            idSub.textContent = `${set.rhythmFamily || '-'} / ${set.rhythmSetNo || '-'}`;
+            idCell.appendChild(idStrong);
+            idCell.appendChild(idSub);
+
+            const statusCell = document.createElement('td');
+            statusCell.style.padding = '10px 8px';
+            const statusSelect = document.createElement('select');
+            statusSelect.className = 'rhythm-set-status-select';
+            const statusOptions = new Set(RHYTHM_SET_STATUS_OPTIONS);
+            if (set.status) statusOptions.add(String(set.status));
+            Array.from(statusOptions).forEach(status => {
+                const option = document.createElement('option');
+                option.value = status;
+                option.textContent = status;
+                if (String(set.status || 'active') === status) {
+                    option.selected = true;
+                }
+                statusSelect.appendChild(option);
+            });
+            statusCell.appendChild(statusSelect);
+
+            const mappedCell = document.createElement('td');
+            mappedCell.style.padding = '10px 8px';
+            mappedCell.textContent = String(set.mappedSongCount || 0);
+
+            const filesCell = document.createElement('td');
+            filesCell.style.padding = '10px 8px';
+            const files = Array.isArray(set.availableFiles) ? set.availableFiles : [];
+            const filesHeader = document.createElement('div');
+            filesHeader.textContent = `${files.length}/6 ${set.isComplete ? '(complete)' : '(incomplete)'}`;
+            const filesSub = document.createElement('div');
+            filesSub.style.fontSize = '0.9em';
+            filesSub.style.opacity = '0.85';
+            filesSub.textContent = files.length ? files.join(', ') : 'No files linked';
+            filesCell.appendChild(filesHeader);
+            filesCell.appendChild(filesSub);
+
+            const notesCell = document.createElement('td');
+            notesCell.style.padding = '10px 8px';
+            const notesInput = document.createElement('textarea');
+            notesInput.className = 'rhythm-set-notes-input';
+            notesInput.rows = 2;
+            notesInput.style.width = '100%';
+            notesInput.value = set.notes || '';
+            notesCell.appendChild(notesInput);
+
+            const updatedCell = document.createElement('td');
+            updatedCell.style.padding = '10px 8px';
+            updatedCell.textContent = set.updatedAt ? new Date(set.updatedAt).toLocaleString() : '-';
+
+            const actionsCell = document.createElement('td');
+            actionsCell.style.padding = '10px 8px';
+
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'btn rhythm-set-save-btn';
+            saveBtn.textContent = 'Save';
+
+            const recomputeBtn = document.createElement('button');
+            recomputeBtn.type = 'button';
+            recomputeBtn.className = 'btn rhythm-set-recompute-btn';
+            recomputeBtn.style.marginLeft = '6px';
+            recomputeBtn.textContent = 'Recompute';
+
+            actionsCell.appendChild(saveBtn);
+            actionsCell.appendChild(recomputeBtn);
+
+            tr.appendChild(idCell);
+            tr.appendChild(statusCell);
+            tr.appendChild(mappedCell);
+            tr.appendChild(filesCell);
+            tr.appendChild(notesCell);
+            tr.appendChild(updatedCell);
+            tr.appendChild(actionsCell);
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function loadRhythmSets() {
+        try {
+            const res = await authFetch(`${API_BASE_URL}/api/rhythm-sets`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Failed to load rhythm sets' }));
+                throw new Error(err.error || 'Failed to load rhythm sets');
+            }
+            const rhythmSets = await res.json();
+            renderRhythmSetsTable(rhythmSets);
+        } catch (error) {
+            showRhythmSetsNotification(error.message || 'Failed to load rhythm sets', 'error');
+        }
+    }
+
+    async function createRhythmSetFromForm() {
+        const rhythmFamilyInput = document.getElementById('rhythmSetFamilyInput');
+        const rhythmSetNoInput = document.getElementById('rhythmSetNoInput');
+        const rhythmSetStatusInput = document.getElementById('rhythmSetStatusInput');
+        const rhythmSetNotesInput = document.getElementById('rhythmSetNotesInput');
+
+        if (!rhythmFamilyInput || !rhythmSetNoInput || !rhythmSetStatusInput || !rhythmSetNotesInput) {
+            return;
+        }
+
+        const payload = {
+            rhythmFamily: rhythmFamilyInput.value,
+            rhythmSetNo: parseInt(rhythmSetNoInput.value, 10),
+            status: rhythmSetStatusInput.value,
+            notes: rhythmSetNotesInput.value
+        };
+
+        if (!payload.rhythmFamily || !payload.rhythmSetNo || payload.rhythmSetNo <= 0) {
+            showRhythmSetsNotification('Rhythm family and positive set number are required.', 'error');
+            return;
+        }
+
+        try {
+            showRhythmSetsNotification('Creating rhythm set...');
+            const res = await authFetch(`${API_BASE_URL}/api/rhythm-sets`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Failed to create rhythm set' }));
+                showRhythmSetsNotification(err.error || 'Failed to create rhythm set', 'error');
+                return;
+            }
+
+            rhythmSetNoInput.value = '';
+            rhythmSetNotesInput.value = '';
+            showRhythmSetsNotification('Rhythm set created successfully.', 'success');
+            await loadRhythmSets();
+        } catch (error) {
+            showRhythmSetsNotification(error.message || 'Failed to create rhythm set', 'error');
+        }
+    }
+
+    async function saveRhythmSetRow(rhythmSetId, status, notes) {
+        const res = await authFetch(`${API_BASE_URL}/api/rhythm-sets/${encodeURIComponent(rhythmSetId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, notes })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'Failed to save rhythm set' }));
+            throw new Error(err.error || 'Failed to save rhythm set');
+        }
+
+        return res.json();
+    }
+
+    async function recomputeRhythmSetRow(rhythmSetId) {
+        const res = await authFetch(`${API_BASE_URL}/api/rhythm-sets/${encodeURIComponent(rhythmSetId)}/recompute`, {
+            method: 'PUT'
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'Failed to recompute rhythm set' }));
+            throw new Error(err.error || 'Failed to recompute rhythm set');
+        }
+
+        return res.json();
+    }
     
     function showAdminPanelModal() {
         if (!document.getElementById('adminPanelModal')) {
@@ -2410,13 +2709,20 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         const userMgmtTabContent = document.getElementById('userMgmtTabContent');
         const weightsTab = document.getElementById('weightsTab');
         const weightsTabContent = document.getElementById('weightsTabContent');
+        const rhythmSetsTab = document.getElementById('rhythmSetsTab');
+        const rhythmSetsTabContent = document.getElementById('rhythmSetsTabContent');
         
         if (userMgmtTab) userMgmtTab.classList.add('active');
         if (userMgmtTabContent) userMgmtTabContent.classList.add('active');
+        if (userMgmtTabContent) userMgmtTabContent.style.display = '';
         
         // Hide other tabs
         if (weightsTab) weightsTab.classList.remove('active');
         if (weightsTabContent) weightsTabContent.classList.remove('active');
+        if (weightsTabContent) weightsTabContent.style.display = 'none';
+        if (rhythmSetsTab) rhythmSetsTab.classList.remove('active');
+        if (rhythmSetsTabContent) rhythmSetsTabContent.classList.remove('active');
+        if (rhythmSetsTabContent) rhythmSetsTabContent.style.display = 'none';
         
         // Load users and set up functions
         loadUsers();
@@ -2435,13 +2741,20 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             const userMgmtTabContent = document.getElementById('userMgmtTabContent');
             const weightsTab = document.getElementById('weightsTab');
             const weightsTabContent = document.getElementById('weightsTabContent');
+            const rhythmSetsTab = document.getElementById('rhythmSetsTab');
+            const rhythmSetsTabContent = document.getElementById('rhythmSetsTabContent');
             
             userMgmtTab.classList.add('active');
             if (userMgmtTabContent) userMgmtTabContent.classList.add('active');
+            if (userMgmtTabContent) userMgmtTabContent.style.display = '';
             
             // Remove active from other tabs
             if (weightsTab) weightsTab.classList.remove('active');
             if (weightsTabContent) weightsTabContent.classList.remove('active');
+            if (weightsTabContent) weightsTabContent.style.display = 'none';
+            if (rhythmSetsTab) rhythmSetsTab.classList.remove('active');
+            if (rhythmSetsTabContent) rhythmSetsTabContent.classList.remove('active');
+            if (rhythmSetsTabContent) rhythmSetsTabContent.style.display = 'none';
         };
     }
     
@@ -2451,16 +2764,46 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             // Set active tab
             const weightsTabContent = document.getElementById('weightsTabContent');
             const userMgmtTabContent = document.getElementById('userMgmtTabContent');
+            const rhythmSetsTab = document.getElementById('rhythmSetsTab');
+            const rhythmSetsTabContent = document.getElementById('rhythmSetsTabContent');
             
             weightsTab.classList.add('active');
             if (weightsTabContent) weightsTabContent.classList.add('active');
+            if (weightsTabContent) weightsTabContent.style.display = '';
             
             // Remove active from other tabs
             if (userMgmtTab) userMgmtTab.classList.remove('active');
             if (userMgmtTabContent) userMgmtTabContent.classList.remove('active');
+            if (userMgmtTabContent) userMgmtTabContent.style.display = 'none';
+            if (rhythmSetsTab) rhythmSetsTab.classList.remove('active');
+            if (rhythmSetsTabContent) rhythmSetsTabContent.classList.remove('active');
+            if (rhythmSetsTabContent) rhythmSetsTabContent.style.display = 'none';
             
             // Load weights when switching to weights tab
             loadWeightsToForm();
+        };
+    }
+
+    const rhythmSetsTab = document.getElementById('rhythmSetsTab');
+    if (rhythmSetsTab) {
+        rhythmSetsTab.onclick = function() {
+            const userMgmtTabContent = document.getElementById('userMgmtTabContent');
+            const weightsTab = document.getElementById('weightsTab');
+            const weightsTabContent = document.getElementById('weightsTabContent');
+            const rhythmSetsTabContent = document.getElementById('rhythmSetsTabContent');
+
+            rhythmSetsTab.classList.add('active');
+            if (rhythmSetsTabContent) rhythmSetsTabContent.classList.add('active');
+            if (rhythmSetsTabContent) rhythmSetsTabContent.style.display = '';
+
+            if (userMgmtTab) userMgmtTab.classList.remove('active');
+            if (userMgmtTabContent) userMgmtTabContent.classList.remove('active');
+            if (userMgmtTabContent) userMgmtTabContent.style.display = 'none';
+            if (weightsTab) weightsTab.classList.remove('active');
+            if (weightsTabContent) weightsTabContent.classList.remove('active');
+            if (weightsTabContent) weightsTabContent.style.display = 'none';
+
+            loadRhythmSets();
         };
     }
 
@@ -9657,6 +10000,25 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             document.getElementById('editSongTime').value = song.time || song.timeSignature;
             // Populate Taal dropdown with correct options for the song's time signature and select the song's taal
             updateTaalDropdown('editSongTime', 'editSongTaal', song.taal);
+
+            const parsedRhythmSetNo = song.rhythmSetNo || (() => {
+                if (!song.rhythmSetId) return '';
+                const match = String(song.rhythmSetId).match(/_([0-9]+)$/);
+                return match ? match[1] : '';
+            })();
+            const resolvedRhythmFamily = normalizeRhythmFamilyValue(song.rhythmFamily || song.taal || '');
+
+            const editRhythmFamilyEl = document.getElementById('editSongRhythmFamily');
+            const editRhythmSetNoEl = document.getElementById('editSongRhythmSetNo');
+            if (editRhythmFamilyEl) editRhythmFamilyEl.value = resolvedRhythmFamily;
+            if (editRhythmSetNoEl) editRhythmSetNoEl.value = parsedRhythmSetNo;
+            updateRhythmSetIdPreview('editSongRhythmFamily', 'editSongRhythmSetNo', 'editSongRhythmSetIdPreview');
+
+            const editRhythmPreviewEl = document.getElementById('editSongRhythmSetIdPreview');
+            if (editRhythmPreviewEl && song.rhythmSetId) {
+                editRhythmPreviewEl.value = song.rhythmSetId;
+            }
+
             // Initialize genre multiselect (options rendered later in setTimeout)
             setupSearchableMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres', GENRES, true);
             
@@ -9804,21 +10166,84 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             // Admin panel tab switching
             const userMgmtTab = document.getElementById('userMgmtTab');
             const weightsTab = document.getElementById('weightsTab');
+            const rhythmSetsTab = document.getElementById('rhythmSetsTab');
             const userMgmtTabContent = document.getElementById('userMgmtTabContent');
             const weightsTabContent = document.getElementById('weightsTabContent');
+            const rhythmSetsTabContent = document.getElementById('rhythmSetsTabContent');
             if (userMgmtTab && weightsTab && userMgmtTabContent && weightsTabContent) {
                 userMgmtTab.addEventListener('click', () => {
                     userMgmtTab.classList.add('active');
                     weightsTab.classList.remove('active');
+                    if (rhythmSetsTab) rhythmSetsTab.classList.remove('active');
                     userMgmtTabContent.style.display = '';
                     weightsTabContent.style.display = 'none';
+                    if (rhythmSetsTabContent) rhythmSetsTabContent.style.display = 'none';
                 });
                 weightsTab.addEventListener('click', () => {
                     userMgmtTab.classList.remove('active');
                     weightsTab.classList.add('active');
+                    if (rhythmSetsTab) rhythmSetsTab.classList.remove('active');
                     userMgmtTabContent.style.display = 'none';
                     weightsTabContent.style.display = '';
+                    if (rhythmSetsTabContent) rhythmSetsTabContent.style.display = 'none';
                     loadWeightsToForm();
+                });
+                if (rhythmSetsTab && rhythmSetsTabContent) {
+                    rhythmSetsTab.addEventListener('click', () => {
+                        userMgmtTab.classList.remove('active');
+                        weightsTab.classList.remove('active');
+                        rhythmSetsTab.classList.add('active');
+                        userMgmtTabContent.style.display = 'none';
+                        weightsTabContent.style.display = 'none';
+                        rhythmSetsTabContent.style.display = '';
+                        loadRhythmSets();
+                    });
+                }
+            }
+
+            const rhythmSetCreateForm = document.getElementById('rhythmSetCreateForm');
+            if (rhythmSetCreateForm && !rhythmSetCreateForm.dataset.bound) {
+                rhythmSetCreateForm.dataset.bound = 'true';
+                rhythmSetCreateForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await createRhythmSetFromForm();
+                });
+            }
+
+            const rhythmSetsTable = document.getElementById('rhythmSetsTable');
+            if (rhythmSetsTable && !rhythmSetsTable.dataset.bound) {
+                rhythmSetsTable.dataset.bound = 'true';
+                rhythmSetsTable.addEventListener('click', async (e) => {
+                    const target = e.target instanceof Element ? e.target : null;
+                    if (!target) return;
+                    const row = target.closest('tr[data-rhythm-set-id]');
+                    if (!row) return;
+
+                    const rhythmSetId = row.dataset.rhythmSetId;
+                    const statusSelect = row.querySelector('.rhythm-set-status-select');
+                    const notesInput = row.querySelector('.rhythm-set-notes-input');
+
+                    if (target.classList.contains('rhythm-set-save-btn')) {
+                        try {
+                            showRhythmSetsNotification(`Saving ${rhythmSetId}...`);
+                            await saveRhythmSetRow(rhythmSetId, statusSelect ? statusSelect.value : 'active', notesInput ? notesInput.value : '');
+                            showRhythmSetsNotification(`Saved ${rhythmSetId}.`, 'success');
+                            await loadRhythmSets();
+                        } catch (error) {
+                            showRhythmSetsNotification(error.message || `Failed to save ${rhythmSetId}.`, 'error');
+                        }
+                    }
+
+                    if (target.classList.contains('rhythm-set-recompute-btn')) {
+                        try {
+                            showRhythmSetsNotification(`Recomputing ${rhythmSetId}...`);
+                            await recomputeRhythmSetRow(rhythmSetId);
+                            showRhythmSetsNotification(`Recomputed ${rhythmSetId}.`, 'success');
+                            await loadRhythmSets();
+                        } catch (error) {
+                            showRhythmSetsNotification(error.message || `Failed to recompute ${rhythmSetId}.`, 'error');
+                        }
+                    }
                 });
             }
 
@@ -10188,6 +10613,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const artistDropdown = document.getElementById('artistDropdown');
                     const selectedMoods = Array.from(moodDropdown._allSelections || []);
                     const selectedArtists = Array.from(artistDropdown._allSelections || []);
+
+                    const rhythmFamilyInput = document.getElementById('songRhythmFamily')?.value || '';
+                    const rhythmSetNoInput = document.getElementById('songRhythmSetNo')?.value || '';
+                    const rhythmFamily = normalizeRhythmFamilyValue(rhythmFamilyInput);
+                    const rhythmSetNo = parseInt(rhythmSetNoInput, 10);
+                    const rhythmSetId = buildRhythmSetIdValue(rhythmFamily, rhythmSetNo);
                     
                     const newSong = {
                         title: title,
@@ -10199,6 +10630,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                         time: document.getElementById('songTime').value,
                         taal: document.getElementById('songTaal').value,
                         genres: selectedGenres,
+                        ...(rhythmFamily ? { rhythmFamily } : {}),
+                        ...(Number.isInteger(rhythmSetNo) && rhythmSetNo > 0 ? { rhythmSetNo } : {}),
+                        ...(rhythmSetId ? { rhythmSetId } : {}),
                         lyrics: lyrics,
                         createdBy: (currentUser && currentUser.username) ? currentUser.username : undefined,
                         createdAt: new Date().toISOString()
@@ -10259,6 +10693,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                             updateSelectedMultiselect('selectedGenres', 'genreDropdown', true, 'songGenre');
                             updateSelectedMultiselect('selectedMoods', 'moodDropdown', true, 'songMood');
                             updateSelectedMultiselect('selectedArtists', 'artistDropdown', true, 'songArtist');
+                            const songRhythmSetNoEl = document.getElementById('songRhythmSetNo');
+                            if (songRhythmSetNoEl) songRhythmSetNoEl.value = '';
+                            const songRhythmFamilyEl = document.getElementById('songRhythmFamily');
+                            if (songRhythmFamilyEl) songRhythmFamilyEl.value = '';
+                            updateRhythmSetIdPreview('songRhythmFamily', 'songRhythmSetNo', 'songRhythmSetIdPreview');
                             
                             // Update cache directly instead of invalidating
                             updateSongInCache(addedSong, true);
@@ -10299,6 +10738,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 const selectedMoods = Array.from(editMoodDropdown._allSelections || []);
                 const selectedArtists = Array.from(editArtistDropdown._allSelections || []);
 
+                const editRhythmFamilyInput = document.getElementById('editSongRhythmFamily')?.value || '';
+                const editRhythmSetNoInput = document.getElementById('editSongRhythmSetNo')?.value || '';
+                const editRhythmFamily = normalizeRhythmFamilyValue(editRhythmFamilyInput);
+                const editRhythmSetNo = parseInt(editRhythmSetNoInput, 10);
+                const editRhythmSetId = buildRhythmSetIdValue(editRhythmFamily, editRhythmSetNo);
+
                 // Find the original song for missing fields
                 const original = songs.find(s => s.id == id) || {};
                 const updatedSong = {
@@ -10312,6 +10757,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     time: document.getElementById('editSongTime').value,
                     taal: document.getElementById('editSongTaal').value,
                     genres: selectedGenres,
+                    ...(editRhythmFamily ? { rhythmFamily: editRhythmFamily } : {}),
+                    ...(Number.isInteger(editRhythmSetNo) && editRhythmSetNo > 0 ? { rhythmSetNo: editRhythmSetNo } : {}),
+                    ...(editRhythmSetId ? { rhythmSetId: editRhythmSetId } : {}),
                     lyrics: lyrics,
                     createdBy: original.createdBy || (currentUser && currentUser.username) || undefined,
                     createdAt: original.createdAt || new Date().toISOString()

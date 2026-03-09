@@ -1,9 +1,10 @@
-# Loop Player System v2.0 - Documentation
+# Loop Player System v3.0 - Documentation
 
-**Version**: 2.0.4  
-**Last Updated**: December 19, 2024
+**Version**: 3.0.0  
+**Last Updated**: March 9, 2026
 
 **Changelog**:
+- v3.0.0: Switched to deterministic `rhythmSetId` runtime flow, added Rhythm Mapper admin workspace, and documented rename/recompute lifecycle
 - v2.0.4: Added comprehensive Function Reference section
 - v2.0.3: Added tempo BPM-to-category conversion details and genre array documentation
 - v2.0.2: Updated with matching algorithm details
@@ -14,7 +15,7 @@
 
 ## Overview
 
-The Loop Player System provides dynamic rhythm accompaniment for songs using pre-recorded audio loops. The system intelligently matches loops to songs based on **Taal** (rhythmic cycle), **Time Signature**, **Tempo**, and **Genre** characteristics.
+The Loop Player System provides dynamic rhythm accompaniment for songs using pre-recorded audio loops. The current runtime resolves loops deterministically using `song.rhythmSetId` (`rhythmFamily_setNo`) instead of condition scoring at playback time.
 
 ## System Architecture
 
@@ -34,28 +35,45 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
    - Auto-generates filenames based on conditions
    - Visual preview and management
 
-4. **Player Engine** (`loop-player-pad.js`)
+4. **Rhythm Mapper** (`rhythm-sets-manager.html` + `rhythm-sets-manager.js`)
+   - Standalone admin workspace for rhythm set lifecycle
+   - Create, edit, rename, and recompute rhythm sets
+   - Map songs to rhythm sets and preview available loops
+
+5. **Player Engine** (`loop-player-pad.js`)
    - Web Audio API-based loop player
    - Seamless loop switching
    - Auto-fill feature for transitions
 
-5. **UI Integration** (`loop-player-pad-ui.js`)
+6. **UI Integration** (`loop-player-pad-ui.js`)
    - 6-pad interface (3 loops + 3 fills)
-   - Automated loop matching for songs
+   - Deterministic loop set resolution by `song.rhythmSetId`
    - Volume and tempo controls (90-110% range)
    - Tempo reset button for quick return to 100%
 
-6. **API Endpoints** (`server.js`)
+7. **API Endpoints** (`server.js`)
    - `/api/loops/metadata` - Get loops metadata
    - `/api/loops/upload` - Upload new loop set (legacy bulk upload)
    - `/api/loops/upload-single` - Upload individual file with auto-rename (v2.0)
    - `/api/loops/:id` - Delete loop
+   - `/api/rhythm-sets` - List/create/update rhythm sets
+   - `/api/rhythm-sets/recommend` - Recommendation endpoint for mapping
+   - `/api/rhythm-sets/:rhythmSetId/recompute` - Recompute derived metadata
+   - `/api/song-metadata` - Provides rhythm families used by dropdowns
 
-7. **Melodic Pads** (`loop-player-pad.js` + `melodic-loops-manager.html`)
+8. **Melodic Pads** (`loop-player-pad.js` + `melodic-loops-manager.html`)
    - Atmosphere and tanpura pads per key
    - Samples served from `/loops/melodies/{type}/{type}_{key}.wav`
    - Uses `API_BASE_URL` for production-safe loading
    - Minor/major keys share pads (e.g., Cm -> C)
+
+## Deterministic Rhythm Set Flow (Current)
+
+1. Songs are stored with `rhythmFamily`, `rhythmSetNo`, and canonical `rhythmSetId`.
+2. Loop uploads persist rhythm set fields in metadata and keep set definitions in sync.
+3. Runtime player resolves loop set by `song.rhythmSetId` only.
+4. If no valid set is available, the loop UI is hidden and deterministic mapping is required.
+5. Admin workflow: create/manage set -> upload/verify loops -> map songs -> preview -> recompute as needed.
 
 ## File Naming Convention v2.0
 
@@ -79,7 +97,9 @@ dadra_6_8_fast_rock_FILL2.wav
 teental_4_4_slow_qawalli_LOOP3.wav
 ```
 
-## Matching Logic
+## Matching Logic (Legacy Reference)
+
+This section documents the older condition-scoring model kept for historical context. Current playback behavior is deterministic by `rhythmSetId`.
 
 ### Song Data Structure
 
@@ -247,6 +267,7 @@ tanpura_C#.wav
 ### Accessing
 - Navigate to `/loop-manager.html` (requires admin authentication)
 - OR click "Loop Manager" link in Admin Panel popup (from main app)
+- For song mapping and set management, use `/rhythm-sets-manager.html` (Rhythm Mapper)
 
 ### Uploading a New Loop Set v2.0
 
