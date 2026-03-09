@@ -988,6 +988,61 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 | `getVocalMatchScore(genres1, genres2)` | genres1: Array, genres2: Array | Number | Calculate vocal type similarity (0-1) | getSuggestedSongs |
 | `getCurrentFilterValues()` | None | Object | Get current filter values from UI | renderSongs |
 
+### H. Loop Player Functions ([loop-player-pad.js](loop-player-pad.js), [loop-player-pad-ui.js](loop-player-pad-ui.js))
+
+#### Core Loop Player Engine ([loop-player-pad.js](loop-player-pad.js))
+
+| Function | Parameters | Return Type | Purpose | Called From |
+|----------|------------|-------------|---------|-------------|
+| `loadLoops(loopMap, songId)` | loopMap: Object, songId: Number | Promise<void> | Load and decode loop audio files | initializeLoopPlayer |
+| `needsLoopReload(songId, newLoopMap)` | songId: Number, newLoopMap: Object | Boolean | Check if loops need reloading | loadLoops |
+| `play(loopKey)` | loopKey: String | void | Start playing a specific loop | Pad click handlers |
+| `stop()` | None | void | Stop all loops | Stop button click |
+| `switchLoop(newLoopKey, useAutoFill)` | newLoopKey: String, useAutoFill?: Boolean | void | Switch to different loop with optional fill | Loop pad clicks |
+| `setVolume(value)` | value: Number (0-1) | void | Set rhythm loops volume | Volume slider |
+| `setMelodicVolume(value)` | value: Number (0-1) | void | Set melodic pads volume (atmosphere/tanpura) | Volume slider |
+| `setTempo(tempoMultiplier)` | tempoMultiplier: Number | void | Adjust playback tempo | Tempo slider |
+| `_decodeAudioData(url, loopKey)` | url: String, loopKey: String | Promise<AudioBuffer> | Decode loop audio file | loadLoops |
+| `_startLoop(loopKey)` | loopKey: String | void | Start playing a loop with Web Audio API | play, switchLoop |
+| `_stopLoop()` | None | void | Stop current loop playback | stop, switchLoop |
+| `_playFill(fillKey, onEndedCallback)` | fillKey: String, onEndedCallback?: Function | void | Play fill transition | switchLoop |
+| `playMelodicPad(type, key)` | type: String ('atmosphere'\|'tanpura'), key: String | Promise<void> | Play melodic pad sample | Melodic pad clicks |
+| `stopMelodicPad(type)` | type: String | void | Stop melodic pad | Melodic pad clicks |
+| `checkMelodicAvailability(type, key)` | type: String, key: String | Promise<Boolean> | Check if melodic sample exists | Pad availability check |
+| `getMelodicUrl(type, key)` | type: String, key: String | String | Get URL for melodic sample | playMelodicPad |
+| `normalizeKeyForMelodic(key)` | key: String | String | Normalize key (handle enharmonic equivalents) | Melodic functions |
+| `_initializeSilent()` | None | void | Initialize AudioContext silently | Pad availability check |
+| `_restoreVolumeFromSilent()` | None | void | Restore volumes after silent init | After successful decode |
+
+#### Loop Player UI and Matching ([loop-player-pad-ui.js](loop-player-pad-ui.js))
+
+| Function | Parameters | Return Type | Purpose | Called From |
+|----------|------------|-------------|---------|-------------|
+| `initializeLoopPlayer(songId)` | songId: Number | Promise<void> | Initialize loop player for a song | showPreview (main.js) |
+| `getLoopsMetadata()` | None | Promise<Object> | Load loops metadata (cached) | findMatchingLoopSet |
+| `getTempoCategory(bpm)` | bpm: Number\|String | String | Convert BPM to tempo category (slow/medium/fast) | findMatchingLoopSet |
+| `findMatchingLoopSet(song)` | song: Object | Promise<Object\|null> | Find best matching loop set for song | initializeLoopPlayer |
+| `areTimeSignaturesEquivalent(time1, time2)` | time1: String, time2: String | Boolean | Check if time signatures are equivalent (6/8 ≡ 3/4) | findMatchingLoopSet |
+| `getMatchQuality(score)` | score: Number | Object | Get match quality label and description | UI display |
+| `shouldShowLoopPlayer(song)` | song: Object | Promise<Boolean> | Check if song has matching loops | initializeLoopPlayer |
+| `getLoopPlayerHTML(songId)` | songId: Number | String | Generate loop player HTML structure | initializeLoopPlayer |
+| `toggleLoopPlayer(songId)` | songId: Number | void | Toggle expand/collapse loop player UI | Toggle button click |
+| `cleanupLoopPlayer()` | None | void | Clean up loop player state and stop all playback | Song change/cleanup |
+| `getTransposeLevel(song)` | song: Object | Number | Get transpose level for song | Melodic pad key calculation |
+| `getEffectiveKey(song, transposeLevel)` | song: Object, transposeLevel: Number | String | Calculate effective key with transpose | Melodic pad display |
+| `updateMelodicPadAvailability(songId)` | songId: Number | Promise<void> | Check and update melodic pad availability | After transpose changes |
+| `setupLoopPlayerEventListeners(songId, loopMap)` | songId: Number, loopMap: Object | void | Setup all loop player event listeners | initializeLoopPlayer |
+| `hideLoopPlayer(songId)` | songId: Number | void | Hide loop player (no matching loops) | initializeLoopPlayer |
+| `showLoopPlayer(songId)` | songId: Number | void | Show loop player UI | initializeLoopPlayer |
+
+#### Global Loop Player Variables
+
+| Variable | Type | Purpose | Defined In |
+|----------|------|---------|-----------|
+| `loopPlayerInstance` | Object\|null | Singleton loop player engine instance | loop-player-pad-ui.js |
+| `loopsMetadataCache` | Object\|null | Cached loops metadata from API | loop-player-pad-ui.js |
+| `window.getLoopPlayerInstance()` | Function | Global accessor for loop player instance | loop-player-pad-ui.js |
+
 ---
 
 ## 4. EVENT LISTENERS
@@ -1468,6 +1523,270 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 
 This section documents production bugs discovered during development and testing, along with their root causes and solutions. Each entry includes reproduction steps, debugging process, and lessons learned.
 
+### Bug #8: Loop Player Expand/Collapse Button Not Working After Song Switch
+**Date Discovered:** February 28, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+When switching between songs while loop player was active, the expand/collapse button (and other loop player controls) stopped responding to clicks. The loop player would remain in its current state (expanded or collapsed) regardless of user interaction.
+
+**Affected Components:**
+- Loop player UI controls (`loop-player-pad-ui.js`)
+- All interactive elements: expand/collapse, play/pause, pads, sliders
+- State persistence (localStorage)
+
+**Reproduction Steps:**
+1. Load a song with loop player
+2. Click expand/collapse button (works)
+3. Switch to a different song
+4. Try clicking expand/collapse button
+5. Button doesn't respond
+
+**Root Cause Analysis:**
+Event listeners were being added inside `initializeLoopPlayer()` each time a song loaded, but:
+1. **Multiple Listeners**: Old event listeners accumulated without being removed
+2. **Stale References**: Listeners had references to previous song IDs/DOM elements
+3. **No Cleanup**: When song changed, old listeners remained attached, causing conflicts
+
+**Solution Implemented:**
+
+Used **clone-replace pattern** to remove all event listeners before attaching new ones:
+
+```javascript
+// BEFORE (BROKEN):
+const toggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+        toggleLoopPlayer(songId);
+    });
+}
+
+// AFTER (FIXED):
+const toggleBtn = document.getElementById(`loopToggleBtn-${songId}`);
+if (toggleBtn) {
+    // Clone node to remove ALL event listeners
+    const newToggleBtn = toggleBtn.cloneNode(true);
+    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+    
+    // Add fresh event listener
+    newToggleBtn.addEventListener('click', () => {
+        toggleLoopPlayer(songId);
+    });
+}
+```
+
+**How Clone-Replace Works:**
+1. `cloneNode(true)` - Creates exact copy of element with all children but NO event listeners
+2. `replaceChild()` - Swaps old element (with stale listeners) with new clean element
+3. Fresh listener added to clean element
+
+**Controls Fixed:**
+1. ✅ Expand/collapse toggle button
+2. ✅ Play/pause button
+3. ✅ Loop/fill pads (all 6 pads)
+4. ✅ Auto-fill toggle
+5. ✅ Volume slider
+6. ✅ Tempo slider
+7. ✅ Tempo reset button
+8. ✅ Melodic volume slider
+
+**Additional Feature - State Persistence:**
+
+Also added localStorage persistence for expand/collapse state:
+
+```javascript
+function toggleLoopPlayer(songId) {
+    const content = document.getElementById(`loopPlayerContent-${songId}`);
+    const icon = document.getElementById(`loopToggleIcon-${songId}`);
+    
+    const isExpanded = !content.classList.contains('collapsed');
+    
+    if (isExpanded) {
+        content.classList.add('collapsed');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    } else {
+        content.classList.remove('collapsed');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    }
+    
+    // Save state to localStorage
+    localStorage.setItem('loopPlayerExpanded', isExpanded ? 'false' : 'true');
+}
+
+// Restore state when new song loads
+function restoreLoopPlayerState(songId) {
+    const isExpanded = localStorage.getItem('loopPlayerExpanded') === 'true';
+    const content = document.getElementById(`loopPlayerContent-${songId}`);
+    const icon = document.getElementById(`loopToggleIcon-${songId}`);
+    
+    if (isExpanded && content) {
+        content.classList.remove('collapsed');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    }
+}
+```
+
+**Files Modified:**
+- `loop-player-pad-ui.js` lines 856-1000: Added clone-replace pattern for all controls
+- `loop-player-pad-ui.js` lines 903-931: Added toggleLoopPlayer with localStorage
+- `loop-player-pad-ui.js` lines 527-547: Added restoreLoopPlayerState
+
+**Testing:**
+1. Load song 1, expand loop player ✅
+2. Switch to song 2, player stays expanded ✅
+3. Click expand/collapse, works correctly ✅
+4. Switch to song 3, all controls responsive ✅
+5. Reload page, expand state restored ✅
+
+**Impact:**
+- 🎯 **HIGH** - All loop player controls now work reliably across song switches
+- ✅ User experience vastly improved (no "stuck" UI elements)
+- ✅ State persists across sessions
+- ✅ No memory leaks from accumulated event listeners
+
+**Lessons Learned:**
+1. Always remove old event listeners before adding new ones
+2. Clone-replace pattern is clean way to clear all listeners
+3. localStorage excellent for UI state persistence
+4. Test dynamic UI across multiple state changes, not just first load
+
+---
+
+### Bug #5: Loop Player Genre Array Not Handled - Critical Matching Failure
+**Date Discovered:** February 28, 2026  
+**Severity:** Critical  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+Loop player was never matching songs that had multi-select genres (array) with loop files that required specific genres. Songs with `genres: ['Qawalli', 'Hindi']` were not matching loops named `*_qawalli_*.wav`, resulting in missing or suboptimal loop recommendations.
+
+**Affected Components:**
+- Loop matching logic (`loop-player-pad-ui.js`)
+- Genre scoring system
+- All songs using multi-select genre field
+
+**Reproduction Steps:**
+1. Create song with `genres: ['Old', 'Hindi', 'Qawalli']` (array)
+2. Create loop files: `keherwa_4_4_fast_qawalli_*.wav`
+3. Load song and observe loop player
+4. Genre match bonus (+5 points) never applied
+5. Console showed `songGenre: ""` (empty)
+
+**Error Pattern:**
+```javascript
+// Console output:
+🔍 Loop matching for song: {
+  songGenre: "",  // ❌ Empty because song.genre was undefined
+  songGenres: undefined
+}
+```
+
+**Root Cause Analysis:**
+1. Songs store genres as **array**: `genres: ['Old', 'Hindi', 'Qawalli']`
+2. Matching code expected **string**: `song.genre`
+3. Code did: `const songGenre = (song.genre || '').toLowerCase()`
+4. Result: `songGenre = ""` because `song.genre` was undefined
+5. Genre matching always failed: `if (songGenre && ...) { score += 5 }` never executed
+6. Impact: Songs lost +5 genre bonus, got suboptimal loop matches
+
+**Data Structure Mismatch:**
+```javascript
+// What songs actually have (database):
+{
+  genres: ["Old", "Mid", "Hindi", "Qawalli", "Female"]  // Array
+}
+
+// What code expected:
+{
+  genre: "Qawalli"  // Single string
+}
+```
+
+**Solution Implemented:**
+
+**Changed**: `loop-player-pad-ui.js` lines 163-176, 232-242
+
+```javascript
+// BEFORE (BROKEN):
+const songGenre = (song.genre || '').toLowerCase().trim();
+// ...
+if (songGenre && cond.genre.toLowerCase() === songGenre) {
+    score += 5;
+}
+
+// AFTER (FIXED):
+// Handle genres array (multi-select) or legacy single genre string
+const songGenres = (song.genres || (song.genre ? [song.genre] : []))
+    .map(g => String(g).toLowerCase().trim());
+// ...
+// Check if ANY of the song's genres match the loop genre
+const genreMatch = songGenres.some(g => 
+    g.includes(cond.genre.toLowerCase()) || 
+    cond.genre.toLowerCase().includes(g)
+);
+
+if (genreMatch) {
+    score += 5; // Genre match bonus
+}
+```
+
+**Key Improvements:**
+1. ✅ Handles `song.genres` array (current data structure)
+2. ✅ Backward compatible with old songs having `song.genre` string
+3. ✅ Flexible matching: "Qawalli" contains "qawalli" ✅
+4. ✅ Case-insensitive comparison
+5. ✅ Array matching: checks if ANY genre matches
+
+**Example Fix Result:**
+```javascript
+// Song 805 before fix:
+Score: 13 (taal + time + tempo, no genre bonus)
+
+// Song 805 after fix:
+Score: 18 (taal + time + tempo + genre) = Perfect Match! 🌟
+```
+
+**Files Modified:**
+- `loop-player-pad-ui.js` line 163-168: Changed genre extraction to handle array
+- `loop-player-pad-ui.js` line 170: Updated console log to show `songGenres`
+- `loop-player-pad-ui.js` line 232-242: Changed genre matching to use array comparison
+- `LOOP_PLAYER_DOCUMENTATION.md`: Updated documentation with data structure and matching logic
+- `normalize-loop-data.js`: Created script to fix data inconsistencies in database
+
+**Related Documentation:**
+- See `LOOP_PLAYER_DOCUMENTATION.md` section "Song Data Structure" for complete explanation
+- See `LOOP_PLAYER_DOCUMENTATION.md` section "Tempo BPM-to-Category Conversion" for tempo handling
+
+**Testing:**
+1. Load song 805 with `genres: ['Qawalli']`
+2. Check console: `songGenres: ['qawalli']` ✅
+3. Matching score: 18 (Perfect Match) ✅
+4. Loop player loads with correct files ✅
+
+**Additional Discovery:**
+While fixing this bug, also clarified the tempo system:
+- Songs store **numeric BPM** (e.g., `bpm: 121`)
+- Loop filenames use **categories** (`slow`, `medium`, `fast`)
+- System auto-converts: BPM < 80 → "slow", 80-120 → "medium", >120 → "fast"
+- Updated documentation to prevent confusion about tempo storage
+
+**Lessons Learned:**
+1. Always verify actual data structure in database before writing matching logic
+2. Multi-select fields require array handling, not string comparison
+3. Console logging should show actual data types during matching
+4. Genre matching should be flexible (substring/contains) for better UX
+5. Document data structures at the top of technical docs to prevent confusion
+
+**Impact:**
+- 🎯 **HIGH** - All songs with multi-select genres now get proper loop matching
+- ✅ Genre bonus scoring now works correctly (+5 points)
+- ✅ Better loop recommendations for all users
+- ✅ System handles both old (string) and new (array) genre formats
+
 ### Bug #3: Vercel Production API Requests Failing After Replace Uploads
 **Date Discovered:** February 17, 2026  
 **Severity:** Critical  
@@ -1686,6 +2005,296 @@ app.use(cors({
 **Future Improvements:**
 - [ ] Consider separate CORS config for development vs production via NODE_ENV
 - [ ] Add CORS_DEVELOPMENT_MODE environment variable for even more flexibility during dev
+
+### Bug #7: Loop Player UI Layout Issues - Controls Misaligned and Hidden on Small Screens
+**Date Discovered:** February 28, 2026  
+**Severity:** Medium  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+The loop player pad interface had multiple layout issues: melodic pad volume controls were misaligned, volume/tempo faders could overflow their containers, and the tempo reset button was hidden or cut off on smaller screen sizes. The responsive design was not properly handling different viewport sizes.
+
+**Affected Components:**
+- Loop player UI layout ([loop-player-pad-ui.js](loop-player-pad-ui.js) lines 825-1413)
+- Grid and flexbox CSS layouts
+- Responsive media queries
+- Volume and tempo control groups
+
+**Reproduction Steps:**
+1. Open app and view a song with loop player displayed
+2. Observe melodic pads row - volume slider and label misaligned
+3. Resize browser window to smaller sizes (< 768px)
+4. Observe tempo reset button disappearing or being cut off
+5. On mobile, notice control groups overflowing or elements cramped
+
+**Visual Issues:**
+- Melodic volume controls: Fader and label not properly centered/aligned
+- Control groups: Elements overflowing on smaller screens
+- Tempo reset button: Hidden or partially visible on short screens
+- Grid layout: Not using available space efficiently
+- Inconsistent spacing and sizing across different screen sizes
+
+**Root Cause Analysis:**
+
+1. **Grid Sizing Issue**: Using `grid-template-columns: auto auto` caused unpredictable sizing
+2. **No Flex Wrapping**: Control groups couldn't wrap when space was limited
+3. **Fixed Widths**: Sliders and buttons had fixed widths that didn't scale
+4. **Insufficient Media Queries**: Only one breakpoint at 768px, missing 480px and 1024px
+5. **No Shrink Prevention**: Critical elements could be compressed by flex containers
+6. **Overflow Hidden**: Prevented proper display of some UI elements
+
+**Solution Implemented:**
+
+**1. Grid Layout Fixes:**
+```css
+/* BEFORE */
+.loop-player-controls {
+    grid-template-columns: auto auto;
+    gap: 15px;
+}
+
+/* AFTER */
+.loop-player-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));  /* Responsive sizing */
+    gap: 12px;
+    align-items: stretch;
+}
+```
+
+**2. Control Group Improvements:**
+```css
+.loop-control-group {
+    flex-wrap: wrap;  /* Allow wrapping on overflow */
+    padding: 10px 12px;  /* Optimized padding */
+    min-width: 0;  /* Prevent grid blowout */
+}
+
+.loop-slider {
+    flex: 1;
+    min-width: 60px;  /* Reduced from 80px */
+}
+
+.loop-value,
+.loop-tempo-reset-btn {
+    flex-shrink: 0;  /* Prevent compression */
+}
+```
+
+**3. Melodic Controls Alignment:**
+```css
+.melodic-controls {
+    padding: 12px 8px;  /* Better spacing */
+    min-height: 100%;  /* Vertical alignment */
+}
+
+.melodic-volume-label {
+    font-size: 0.7em;  /* Compact sizing */
+    white-space: nowrap;  /* Prevent text wrap */
+    justify-content: center;  /* Center alignment */
+}
+
+.melodic-volume-slider {
+    width: 70px;  /* Reduced from 80px */
+}
+```
+
+**4. Comprehensive Responsive Design:**
+```css
+/* Small Mobile (< 480px) */
+- Single column layout
+- Compact padding: 6px 8px
+- Smaller fonts: 0.7-0.75em
+- Tempo reset: 22px × 22px
+- Melodic slider: 50px
+
+/* Mobile (480-768px) */
+- Single column layout
+- Medium padding: 8px 10px
+- Medium fonts: 0.75-0.8em  
+- Tempo reset: 24px × 24px
+- Melodic slider: 60px
+
+/* Tablet (769-1024px) */
+- Two column grid maintained
+- Balanced padding
+- Normal font sizes
+
+/* Desktop (> 1024px) */
+- Optimal spacing
+- Full-size controls
+```
+
+**5. Overflow and Display Fixes:**
+```css
+.loop-pads-grid {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;  /* Show key indicators */
+}
+
+.loop-player-content {
+    overflow: visible;  /* When expanded */
+}
+```
+
+**Files Modified:**
+- `loop-player-pad-ui.js` lines 825-1413: Complete CSS responsive overhaul
+  - Updated `.loop-player-controls` grid sizing
+  - Added flex-wrap to `.loop-control-group`
+  - Optimized slider and button sizes
+  - Improved `.melodic-controls` alignment
+  - Added 3 comprehensive media queries (480px, 768px, 1024px)
+  - Added flex-shrink prevention to critical elements
+
+**Testing Results:**
+- ✅ Desktop (> 1024px): All controls visible, properly aligned
+- ✅ Tablet (768-1024px): Two-column maintained, good spacing
+- ✅ Mobile (480-768px): Single column, all elements accessible
+- ✅ Small mobile (< 480px): Compact layout, tempo reset visible
+- ✅ Melodic pads: Volume slider centered and functional
+- ✅ Volume/Tempo: Faders stay within bounds, no overflow
+- ✅ Key indicators: Visible on all screen sizes
+- ✅ Tempo reset: Always accessible and clickable
+
+**Visual Improvements:**
+- Clean, properly aligned melodic controls with centered volume slider
+- Responsive faders that scale appropriately for screen size
+- Tempo reset button always visible and properly sized
+- Consistent spacing using minmax grid and flex properties
+- Better use of available space without overflow
+- Professional appearance across all device sizes
+
+**Lessons Learned:**
+1. **Grid Sizing**: Use `minmax(0, 1fr)` instead of `auto` for predictable responsive behavior
+2. **Flex Management**: Add `flex-shrink: 0` to prevent critical UI elements from being compressed
+3. **Responsive Strategy**: Need multiple breakpoints (480px, 768px, 1024px) for smooth scaling
+4. **Spacing Optimization**: Reduce padding/gaps progressively as screen size decreases
+5. **Overflow Control**: Use `overflow: visible` strategically for decorative elements
+6. **Testing**: Must test across full range of screen sizes, not just mobile/desktop
+
+**Related Documentation:**
+- LOOP_PLAYER_UI_FIX.md - Detailed CSS changes and visual comparison
+- LOOP_PLAYER_DOCUMENTATION.md - Loop player system architecture
+
+### Bug #6: Melodic Pads Not Enabling for Enharmonic Keys (Eb vs D#)
+**Date Discovered:** February 28, 2026  
+**Severity:** Medium  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+Melodic pads (atmosphere, tanpura) were not showing as available when a song's effective key was `Eb`, even though melodic loop files existed for the enharmonic equivalent `D#`. The URL-encoding issue caused the hash symbol (`#`) in `D#` to be interpreted as a URL fragment identifier, truncating the filename request.
+
+**Affected Components:**
+- Melodic sample availability checking ([loop-player-pad.js](loop-player-pad.js))
+- Melodic sample loading ([loop-player-pad.js](loop-player-pad.js))
+- Enharmonic key mapping (C#↔Db, D#↔Eb, F#↔Gb, G#↔Ab, A#↔Bb)
+
+**Reproduction Steps:**
+1. Upload melodic loops with sharp notation (e.g., `atmosphere_D#.wav`, `tanpura_D#.wav`)
+2. Play a song in C key and transpose +3 (or any song with effective key of Eb)
+3. **Expected:** Melodic pads should enable (D# file exists, Eb is enharmonic equivalent)
+4. **Actual:** Melodic pads remain disabled
+
+**Console Output:**
+```
+🎹 Set song key: C, transpose: 3 → Effective key: D#
+🔍 Checking melodic availability for key: D#
+  Checking atmosphere: trying keys [D#, Eb]
+  GET http://localhost:3001/loops/melodies/atmosphere/atmosphere_D 404 (Not Found)
+  ⚠️ atmosphere_D#.wav: 404 Not Found
+  GET http://localhost:3001/loops/melodies/atmosphere/atmosphere_Eb.wav 404 (Not Found)
+  ⚠️ atmosphere_Eb.wav: 404 Not Found
+  ❌ atmosphere: Not Available (tried all enharmonic equivalents)
+📊 Melodic availability result: {atmosphere: false, tanpura: false}
+```
+
+**Root Cause Analysis:**
+
+The issue had two layers:
+
+1. **URL Fragment Problem**: The `#` symbol in `D#` was being interpreted as a URL fragment identifier (hash), causing the browser to truncate the URL:
+   ```javascript
+   // BUGGY URL construction:
+   const url = `${baseUrl}/loops/melodies/atmosphere/atmosphere_${keyToCheck}.wav`;
+   // When keyToCheck = "D#", browser interpreted as:
+   // http://localhost:3001/loops/melodies/atmosphere/atmosphere_D  (truncated at #)
+   ```
+
+2. **Missing Enharmonic Logic**: The original code only checked for exact key matches without considering enharmonic equivalents like Eb↔D#.
+
+**Solution Implemented:**
+
+**Part 1: URL Encoding** - Use `encodeURIComponent()` to properly encode special characters:
+```javascript
+// FIXED URL construction:
+const encodedKey = encodeURIComponent(keyToCheck);  // D# becomes D%23
+const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${encodedKey}.wav`;
+// Result: http://localhost:3001/loops/melodies/atmosphere/atmosphere_D%23.wav ✅
+```
+
+**Part 2: Enharmonic Mapping** - Check both sharp and flat variants:
+```javascript
+const enharmonicMap = {
+    'C#': 'Db', 'Db': 'C#',
+    'D#': 'Eb', 'Eb': 'D#',
+    'F#': 'Gb', 'Gb': 'F#',
+    'G#': 'Ab', 'Ab': 'G#',
+    'A#': 'Bb', 'Bb': 'A#'
+};
+
+const keysToTry = [effectiveKey];
+if (enharmonicMap[effectiveKey]) {
+    keysToTry.push(enharmonicMap[effectiveKey]);
+}
+
+for (const keyToCheck of keysToTry) {
+    const encodedKey = encodeURIComponent(keyToCheck);
+    const url = `${baseUrl}/loops/melodies/${sampleType}/${sampleType}_${encodedKey}.wav`;
+    const response = await fetch(url);
+    if (response.ok) {
+        availability[sampleType] = true;
+        return; // Found it!
+    }
+}
+```
+
+**Files Modified:**
+- `loop-player-pad.js` lines 505-560: Updated `checkMelodicAvailability()` method
+  - Added `encodeURIComponent()` for URL construction
+  - Added comprehensive debug logging with emoji markers
+- `loop-player-pad.js` lines 595-615: Updated `loadMelodicSamples()` method
+  - Added `encodeURIComponent()` for URL construction
+  - Ensured consistent enharmonic checking
+
+**Console Output After Fix:**
+```
+🎹 Set song key: C, transpose: 3 → Effective key: D#
+🔍 Checking melodic availability for key: D#
+  Checking atmosphere: trying keys [D#, Eb]
+  🔗 Trying URL: http://localhost:3001/loops/melodies/atmosphere/atmosphere_D%23.wav
+  ✅ atmosphere_D#.wav: Available (effective key: D#)
+  Checking tanpura: trying keys [D#, Eb]
+  🔗 Trying URL: http://localhost:3001/loops/melodies/tanpura/tanpura_D%23.wav
+  ✅ tanpura_D#.wav: Available (effective key: D#)
+📊 Melodic availability result: {atmosphere: true, tanpura: true}
+```
+
+**Testing Results:**
+- ✅ Song in C transposed +3 (→ D#): Melodic pads enable correctly
+- ✅ Song in D transposed +1 (→ Eb): Melodic pads enable correctly (finds D# files)
+- ✅ Song in F# (no enharmonic files): Pads correctly disabled
+- ✅ All enharmonic pairs working: C#↔Db, D#↔Eb, F#↔Gb, G#↔Ab, A#↔Bb
+
+**Lessons Learned:**
+1. **URL Encoding**: Always use `encodeURIComponent()` when constructing URLs with user data or special characters
+2. **Musical Theory**: Account for enharmonic equivalence in key-based systems (sharp/flat variants)
+3. **Debug Logging**: Comprehensive logging with actual URLs helped identify the truncation issue immediately
+4. **Fallback Logic**: Checking multiple variants (enharmonic equivalents) provides better user experience
+
+**Related Documentation:**
+- ENHARMONIC_EQUIVALENCE_FIX.md - Detailed technical explanation
+- AUDIO_FORMAT_SUPPORT_UPDATE.md - Related loop system documentation
+- LOOP_PLAYER_DOCUMENTATION.md - Loop player architecture
 
 ### Bug #2: Loop Player Crashing on Corrupt Audio Files
 **Date Discovered:** February 15, 2026  
@@ -6076,6 +6685,100 @@ body.dark-mode .song-preview-header .favorite-btn.favorited {
 2. **Rate Limiting**: Client-side request throttling
 3. **Input Validation**: Enhanced client-side validation
 4. **CSRF Protection**: Cross-site request forgery prevention
+
+---
+
+### Session #6: Loop Auto-Reload on Song Change
+**Date:** February 2026 (integrated with v2.0)
+**Status:** ✅ IMPLEMENTED
+
+**Objective:**
+Automatically reload loop and melodic samples when switching to a song that requires different loops (different taal, time, tempo, genre, or key).
+
+**Problem:**
+When switching between songs, the loop player would keep playing loops from the previous song, causing rhythm/key mismatches. User had to manually stop and restart loops, or reload the page.
+
+**Solution:**
+Implemented intelligent reload detection system in `loop-player-pad.js`:
+
+**1. Change Detection** (`needsLoopReload()` method - lines 128-158):
+- Compares new song ID with currently loaded song
+- Compares loop URLs to detect if different loop set needed
+- Returns `true` if reload required
+
+**2. Reload Queue System** (`pendingLoopReload` flag):
+- If loops currently playing when reload needed → marks reload as pending
+- When playback stops → automatically triggers queued reload  
+- Prevents jarring audio cuts during active playback
+- Ensures loops reload at appropriate time
+
+**3. Smart Loading** (`loadLoops()` method - lines 161-231):
+- Checks if already loading (prevents race conditions)
+- Checks if reload needed before fetching
+- Resets playback state and clears old buffers
+- Loads new loop set and reinitializes UI
+
+**Files Modified:**
+- `loop-player-pad.js` lines 128-158: Added `needsLoopReload()` method
+- `loop-player-pad.js` lines 161-231: Enhanced `loadLoops()` with reload detection
+- `loop-player-pad.js` line 54: Added `pendingLoopReload` property
+- `loop-player-pad.js` line 56: Added `isLoadingLoops` flag
+- `loop-player-pad-ui.js`: Calls `loadLoops()` when song changes
+
+**Impact:**
+- ✅ Loops automatically match current song (taal, time, tempo, genre)
+- ✅ Melodic pads automatically match current key (transposed)
+- ✅ No manual reload needed
+- ✅ Smooth transitions (waits for stop if playing)
+- ✅ Prevents wrong loops/wrong key from playing
+- ✅ Eliminates race conditions with concurrent load attempts
+
+**User Experience:**
+- Before: User switches song → loop player plays wrong rhythm → user must stop and restart manually
+- After: User switches song → loop player detects change → loops automatically reload → correct rhythm ready
+
+---
+
+### Session #7: Loop Metadata Auto-Sync with main.js
+**Date:** February 2026 (integrated with loop manager v2.0)
+**Status:** ✅ IMPLEMENTED
+
+**Objective:**
+Make loop manager automatically sync with TAALS, GENRES, and TIMES arrays in main.js, eliminating manual metadata updates across multiple files.
+
+**Problem:**
+When adding new taals/genres/time signatures to main.js for song forms, developer had to manually update:
+1. `loops/loops-metadata.json` → supportedTaals array
+2. Loop manager dropdowns → hardcoded options
+3. Multiple validation functions
+
+This caused sync issues, maintenance burden, and human errors.
+
+**Solution:**
+Created **single source of truth in main.js** with automatic synchronization via `/api/song-metadata` endpoint.
+
+**Files Modified:**
+- `server.js` ~line 1230: Added `/api/song-metadata` endpoint (reads main.js, extracts arrays)
+- `loop-manager.html`: Added `loadSongMetadata()` function (fetches from API)
+- `loop-manager.html`: Updated dropdown population to use API data
+- `server.js` `/api/loops/metadata`: Enhanced with auto-sync from main.js
+
+**Benefits:**
+- ✅ **Single source of truth**: main.js is the only place to update
+- ✅ **Zero manual sync**: Loop manager automatically shows new values
+- ✅ **Always current**: Dropdowns reflect actual main.js arrays
+- ✅ **Reduces errors**: No more forgotten updates
+- ✅ **Less maintenance**: One change propagates everywhere
+
+**Workflow After Implementation:**
+1. Update `main.js` → Add "Bhangra" to TAALS array  
+2. Done! Loop manager shows "Bhangra" automatically
+
+**Impact:**
+- 🎯 **HIGH** - Dramatically simplifies metadata management
+- ✅ Developers only update one location (main.js)
+- ✅ Loop manager always in sync with song forms
+- ✅ Scales easily as more taals/genres added
 
 ---
 

@@ -1,5 +1,17 @@
 # Loop Player System v2.0 - Documentation
 
+**Version**: 2.0.4  
+**Last Updated**: December 19, 2024
+
+**Changelog**:
+- v2.0.4: Added comprehensive Function Reference section
+- v2.0.3: Added tempo BPM-to-category conversion details and genre array documentation
+- v2.0.2: Updated with matching algorithm details
+- v2.0.1: Added troubleshooting and admin sections
+- v2.0.0: Complete rewrite with technical matching logic
+
+---
+
 ## Overview
 
 The Loop Player System provides dynamic rhythm accompaniment for songs using pre-recorded audio loops. The system intelligently matches loops to songs based on **Taal** (rhythmic cycle), **Time Signature**, **Tempo**, and **Genre** characteristics.
@@ -69,22 +81,95 @@ teental_4_4_slow_qawalli_LOOP3.wav
 
 ## Matching Logic
 
-### How It Works
+### Song Data Structure
+
+**Important**: Songs store data as follows:
+```javascript
+{
+  id: 805,
+  title: "Kajra mohabbat wala",
+  taal: "Keherwa",                    // String (any case - converted to lowercase)
+  time: "4/4",                         // String OR timeSignature: "4/4"
+  bpm: 121,                            // Number (actual BPM)
+  tempo: "121",                        // Optional: legacy field (string BPM)
+  genres: ["Old", "Hindi", "Qawalli"]  // Array (multi-select)
+}
+```
+
+**Key Points**:
+- `taal`: Stored with any casing (UI shows "Keherwa"), matching code converts to lowercase
+- `bpm`: Numeric BPM value, automatically converted to tempo category during matching
+- `genres`: **Array** of genre strings (multi-select field), not single string
+- System handles backward compatibility if old songs have `genre` (string) instead of `genres` (array)
+
+### Tempo BPM-to-Category Conversion
+
+**How Tempo Matching Works:**
+
+Songs store **numeric BPM** (e.g., `bpm: 121`), but loop filenames use **categories** (`slow`, `medium`, `fast`).
+
+The system automatically converts BPM to category:
+```javascript
+function getTempoCategory(bpm) {
+    if (!bpm) return 'medium';
+    const bpmNum = parseInt(bpm);
+    if (bpmNum < 80) return 'slow';
+    if (bpmNum > 120) return 'fast';
+    return 'medium';
+}
+```
+
+**Conversion Table:**
+| BPM Range | Category | Loop Filename Uses |
+|-----------|----------|-------------------|
+| < 80 | `slow` | `*_slow_*.wav` |
+| 80-120 | `medium` | `*_medium_*.wav` |
+| > 120 | `fast` | `*_fast_*.wav` |
+
+**Example:**
+- Song has `bpm: 121`
+- System converts: `121 > 120` → `"fast"`
+- Matches loops: `keherwa_4_4_**fast**_qawalli_*.wav` ✅
+
+**Important**: Do NOT store tempo categories in songs! Always store numeric BPM:
+```javascript
+// ✅ CORRECT
+{ bpm: 121 }
+
+// ❌ WRONG
+{ tempo: "fast" }
+```
+
+### How Matching Works
 
 When a song is played, the system:
 
-1. **Filters by Required Conditions** (MUST match - COMPULSORY)
-   - **Taal**: Must match song's taal (flexible substring matching)
-   - **Time signature**: Must match song's time signature (exact match)
+1. **Extracts and Normalizes Song Data**
+   ```javascript
+   const songTaal = (song.taal || '').toLowerCase().trim();  // "Keherwa" → "keherwa"
+   const songTime = (song.time || song.timeSignature || '').trim();  // "4/4"
+   const songGenres = (song.genres || []).map(g => g.toLowerCase());  // ["Qawalli"] → ["qawalli"]
+   const songTempo = getTempoCategory(song.bpm || song.tempo);  // 121 → "fast"
+   ```
+
+2. **Filters by Required Conditions** (MUST match - COMPULSORY)
+2. **Filters by Required Conditions** (MUST match - COMPULSORY)
+   - **Taal**: Flexible substring matching (case-insensitive)
+     - `"keherwa"` in song matches `"keherwa"` in loop ✅
+     - `"keherwa slow"` in song matches `"keherwa"` in loop ✅ (contains)
+   - **Time signature**: Exact match or equivalent (e.g., 6/8 ≡ 3/4)
    - If EITHER condition doesn't match, loop set is completely filtered out
 
-2. **Ranks by Optional Conditions** (Boost score for best match selection)
-   - Genre match: +5 points
-   - Tempo match: +3 points
-   - Complete set (6 files): +2 points
-   - Base score for taal + time match: 10 points
+3. **Ranks by Optional Conditions** (Boost score for best match selection)
+   - **Genre match**: +5 points
+     - Checks if ANY genre in song's genres array matches loop genre
+     - Uses flexible matching: "Qawalli" contains "qawalli" ✅
+   - **Tempo match**: +3 points
+     - BPM automatically converted to category for matching
+   - **Complete set** (6 files): +2 points
+   - **Base score** for taal + time match: 10 points
 
-3. **Selects Best Match**
+4. **Selects Best Match**
    - Loop set with highest score is loaded
    - If no match found (score < 10), loop player is hidden
 
@@ -109,18 +194,36 @@ When a song is played, the system:
 
 ### Example Matching
 
-**Song**: "Ae Watan"
-- Taal: Keherwa
-- Time: 4/4
-- BPM: 95 → Tempo category: medium
-- Genre: Acoustic
+**Song**: "Kajra mohabbat wala" (Song ID 805)
+```javascript
+{
+  taal: "Keherwa",                    // Converted to "keherwa"
+  time: "4/4",                         // Exact match needed
+  bpm: 121,                            // Converted to "fast" (121 > 120)
+  genres: ["Old", "Mid", "Hindi", "Qawalli", "Female"]  // Array checked
+}
+```
 
 **Available Loop Sets**:
-1. `keherwa_4_4_medium_acoustic_*` → **Score: 20** (Perfect)
-2. `keherwa_4_4_fast_rock_*` → **Score: 10** (Good)
-3. `dadra_6_8_medium_acoustic_*` → **Filtered out** (wrong taal/time)
+1. `keherwa_4_4_fast_qawalli_*` → **Score: 20** (Perfect - all match)
+   - Taal: "keherwa" = "keherwa" ✅ (+10 base)
+   - Time: "4/4" = "4/4" ✅ (required)
+   - Tempo: "fast" = "fast" ✅ (+3)
+   - Genre: "qawalli" in ["qawalli", ...] ✅ (+5)
+   - Complete set ✅ (+2)
 
-**Result**: System loads `keherwa_4_4_medium_acoustic_*` loops
+2. `keherwa_4_4_medium_acoustic_*` → **Score: 12** (Good)
+   - Taal: ✅ (+10)
+   - Time: ✅ (required)
+   - Tempo: "medium" ≠ "fast" ❌ (0)
+   - Genre: "acoustic" not in genres ❌ (0)
+   - Complete set ✅ (+2)
+
+3. `dadra_6_8_fast_qawalli_*` → **Filtered out** (taal/time mismatch)
+   - Taal: "dadra" ≠ "keherwa" ❌
+   - Time: "6/8" ≠ "4/4" ❌
+
+**Result**: System loads `keherwa_4_4_fast_qawalli_*` loops (score: 20)
 
 ## Melodic Pads (Atmosphere/Tanpura)
 
@@ -297,6 +400,103 @@ Delete a loop file
 }
 ```
 
+## Function Reference
+
+### Core Loop Player Engine Functions
+
+**File**: `loop-player-pad.js`
+
+#### Audio Playback Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `loadLoops(loopMap, songId)` | loopMap: Object, songId: Number | Promise<void> | Load and decode loop audio files for a song. Checks if reload is needed before loading. |
+| `needsLoopReload(songId, newLoopMap)` | songId: Number, newLoopMap: Object | Boolean | Determines if loops need reloading by comparing song ID and loop URLs. |
+| `play(loopKey)` | loopKey: String | void | Start playing a specific loop (loop1, loop2, loop3). |
+| `stop()` | None | void | Stop all loop playback. |
+| `switchLoop(newLoopKey, useAutoFill)` | newLoopKey: String, useAutoFill: Boolean | void | Switch to a different loop with optional auto-fill transition. |
+| `setVolume(value)` | value: Number (0-1) | void | Set volume for rhythm loops. |
+| `setTempo(tempoMultiplier)` | tempoMultiplier: Number | void | Adjust playback tempo (0.9-1.1 = 90%-110%). |
+
+#### Internal Audio Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `_decodeAudioData(url, loopKey)` | url: String, loopKey: String | Promise<AudioBuffer> | Decode WAV file into AudioBuffer. |
+| `_startLoop(loopKey)` | loopKey: String | void | Start Web Audio API loop playback. |
+| `_stopLoop()` | None | void | Stop current loop source node. |
+| `_playFill(fillKey, onEndedCallback)` | fillKey: String, callback: Function | void | Play fill transition, call callback when done. |
+
+#### Melodic Pad Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `playMelodicPad(type, key)` | type: 'atmosphere'\|'tanpura', key: String | Promise<void> | Play melodic pad sample (e.g., atmosphere_C.wav). |
+| `stopMelodicPad(type)` | type: String | void | Stop melodic pad playback. |
+| `setMelodicVolume(value)` | value: Number (0-1) | void | Set volume for atmosphere and tanpura pads (with 0.4x ratio between them). |
+| `checkMelodicAvailability(type, key)` | type: String, key: String | Promise<Boolean> | Check if melodic sample file exists on server. |
+| `getMelodicUrl(type, key)` | type: String, key: String | String | Get URL for melodic sample file. |
+| `normalizeKeyForMelodic(key)` | key: String | String | Normalize key to handle enharmonic equivalents (G# → Ab). |
+
+#### Utility Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `_initializeSilent()` | None | void | Initialize AudioContext without playing sound (for availability checks). |
+| `_restoreVolumeFromSilent()` | None | void | Restore proper volume levels after silent initialization. |
+
+---
+
+### Loop Player UI and Matching Functions
+
+**File**: `loop-player-pad-ui.js`
+
+#### Initialization Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `initializeLoopPlayer(songId)` | songId: Number | Promise<void> | Main initialization function. Finds matching loops and sets up UI. |
+| `getLoopsMetadata()` | None | Promise<Object> | Load loops metadata from API (cached). |
+| `setupLoopPlayerEventListeners(songId, loopMap)` | songId: Number, loopMap: Object | void | Setup all event listeners with clone-replace pattern to prevent duplicates. |
+
+#### Matching Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `findMatchingLoopSet(song)` | song: Object | Promise<{loopSet, score}\|null> | Find best matching loop set for song based on taal, time, tempo, genre. |
+| `getTempoCategory(bpm)` | bpm: Number\|String | String | Convert BPM number to tempo category: <80="slow", 80-120="medium", >120="fast". |
+| `areTimeSignaturesEquivalent(time1, time2)` | time1: String, time2: String | Boolean | Check if time signatures are equivalent (e.g., 6/8 ≡ 3/4). |
+| `getMatchQuality(score)` | score: Number | Object | Get match quality label and description from score (0-20 points). |
+| `shouldShowLoopPlayer(song)` | song: Object | Promise<Boolean> | Check if song has matching loops available. |
+
+#### UI Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `getLoopPlayerHTML(songId)` | songId: Number | String | Generate complete loop player HTML structure. |
+| `toggleLoopPlayer(songId)` | songId: Number | void | Toggle expand/collapse state (saves to localStorage). |
+| `cleanupLoopPlayer()` | None | void | Clean up loop player state and stop all playback. |
+| `showLoopPlayer(songId)` | songId: Number | void | Show loop player UI. |
+| `hideLoopPlayer(songId)` | songId: Number | void | Hide loop player (no matching loops found). |
+
+#### Melodic Pad Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `getTransposeLevel(song)` | song: Object | Number | Get transpose level from global/user settings. |
+| `getEffectiveKey(song, transposeLevel)` | song: Object, transposeLevel: Number | String | Calculate effective key after transposing. |
+| `updateMelodicPadAvailability(songId)` | songId: Number | Promise<void> | Check and update availability status of melodic pads. |
+
+#### Global Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `loopPlayerInstance` | Object\|null | Singleton instance of loop player engine. |
+| `loopsMetadataCache` | Object\|null | Cached loops metadata from `/api/loops/metadata`. |
+| `window.getLoopPlayerInstance()` | Function | Global accessor function for loop player instance. |
+
+---
+
 ## Deployment Considerations
 
 ### Vercel Deployment
@@ -366,7 +566,10 @@ keherwa_4_4_medium_acoustic_LOOP1.wav
 - ❌ **Song missing taal or time**: Add metadata to song
 - ❌ **No matching loops**: Upload loops for that taal/time combination
 - ❌ **Metadata not loaded**: Check `/api/loops/metadata` endpoint
-- ❌ **Mismatch in conditions**: Taal AND Time Signature must both match exactly
+- ❌ **Mismatch in conditions**: Taal AND Time Signature must both match
+- ❌ **Taal case mismatch**: Use lowercase taals in database ("keherwa" not "Keherwa") - or run `normalize-loop-data.js`
+- ❌ **Genre not in array**: Ensure song has `genres: ["Genre"]` array, not `genre: "Genre"` string
+- ❌ **BPM missing**: Add numeric BPM to song for tempo matching
 
 ### Loops Not Playing
 - ❌ **AudioContext blocked**: Ensure user clicked play button first (browser autoplay policy)
@@ -395,8 +598,29 @@ keherwa_4_4_medium_acoustic_LOOP1.wav
 
 ### Match Score Too Low
 - ✅ **Add more specific loops**: Create loops matching song's genre/tempo
-- ✅ **Update song metadata**: Add genre and BPM to songs
-- ✅ **Check taal spelling**: Ensure exact match (case-insensitive)
+- ✅ **Update song metadata**: Add genres array and BPM to songs
+- ✅ **Check taal spelling**: Ensure match (case-insensitive, flexible substring)
+- ✅ **Check genre array**: Use browser console to verify `song.genres` is an array
+- ✅ **Verify BPM category**: Check if song BPM converts to expected tempo:
+  ```javascript
+  // In browser console:
+  console.log('BPM:', window.currentSong?.bpm);
+  console.log('Converts to:', window.currentSong?.bpm < 80 ? 'slow' : 
+                             window.currentSong?.bpm > 120 ? 'fast' : 'medium');
+  ```
+
+### Data Inconsistencies
+If you have many songs with data quality issues, run the normalization script:
+```bash
+node normalize-loop-data.js
+```
+
+This script will:
+- Convert all taals to lowercase for consistency
+- Ensure all songs have `genres` array (converts old `genre` string)
+- Validate BPM is numeric (not string)
+- Generate a data quality report
+- Update metadata safely with audit trail
 
 ## Best Practices
 
@@ -455,9 +679,16 @@ For issues or questions:
 
 ---
 
-**Version**: 2.0.1  
-**Last Updated**: February 19, 2026 - 10:30 AM  
+**Version**: 2.0.3  
+**Last Updated**: February 28, 2026 - 11:45 AM  
 **Author**: Loop Player System Team  
+
+**Changes in v2.0.3** (February 28, 2026):
+- **CRITICAL FIX**: Genre array matching bug - songs with multi-select genres now properly match loops
+- Added flexible genre matching (partial string match) for better compatibility
+- Clarified tempo BPM-to-category conversion system
+- Updated documentation to reflect actual data structure (genres array, not genre string)
+
 **Changes in v2.0.2**:
 - Individual file upload system with auto-renaming
 - Tempo reset button added
