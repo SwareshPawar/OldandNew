@@ -738,12 +738,16 @@ class LoopPlayerPad {
 
         // Build sample map for only requested types
         const sampleMap = {};
+        const needsDecode = [];
         
         for (const sampleType of sampleTypes) {
             const key = `${sampleType}_${effectiveKey}`;
             
-            // Skip if already loaded and not forcing reload
+            // If raw audio already exists, avoid refetch and ensure it gets decoded later.
             if (!force && this.rawAudioData.has(key)) {
+                if (!this.audioBuffers.has(key)) {
+                    needsDecode.push(key);
+                }
                 continue;
             }
             
@@ -780,6 +784,15 @@ class LoopPlayerPad {
 
         // If nothing to load, return early
         if (Object.keys(sampleMap).length === 0) {
+            // Important: cached raw samples may still need decoding (common when loaded before AudioContext init)
+            if (this.audioContext) {
+                const decodePromises = needsDecode.map(sampleName => this._decodeMelodicSample(sampleName));
+                if (decodePromises.length > 0) {
+                    await Promise.all(decodePromises);
+                    console.log(`Decoded ${decodePromises.length} cached melodic samples for key: ${effectiveKey}`);
+                }
+            }
+
             console.log('Requested melodic samples already loaded or not available for this key');
             return;
         }
@@ -952,7 +965,19 @@ class LoopPlayerPad {
         
         const effectiveKey = this._getEffectiveKey();
         const sampleName = `${padType}_${effectiveKey}`;
-        const buffer = this.audioBuffers.get(sampleName);
+        let buffer = this.audioBuffers.get(sampleName);
+
+        // Retry path 1: raw exists but decode may have been skipped/failed earlier.
+        if (!buffer && this.rawAudioData.has(sampleName)) {
+            await this._decodeMelodicSample(sampleName);
+            buffer = this.audioBuffers.get(sampleName);
+        }
+
+        // Retry path 2: force refetch + decode once before failing.
+        if (!buffer) {
+            await this.loadMelodicSamples(true, [padType]);
+            buffer = this.audioBuffers.get(sampleName);
+        }
         
         if (!buffer) {
             console.warn(`Melodic sample ${sampleName} not found`);
