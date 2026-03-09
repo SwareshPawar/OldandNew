@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** March 9, 2026 - 11:59 PM  
-**Version:** 1.19.0
+**Last Updated:** March 9, 2026 - 1:42 AM  
+**Version:** 1.20.0
 
 ---
 
@@ -685,6 +685,7 @@ Before marking vulnerabilities as fixed:
 | `VOCAL_TAGS` | Array | Vocal type tags | ['Male', 'Female', 'Duet'] |
 | `KEYS` | Array | Musical keys | ["C", "C#", "D", "Eb", "E", "F", ...] |
 | `CATEGORIES` | Array | Song categories | ["New", "Old"] |
+| `RHYTHM_CATEGORIES` | Array | Rhythm taxonomy for songs | ["Indian", "Western", "Others"] |
 | `TIMES` | Array | Time signatures | ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8", "12/8", "14/8"] |
 | `TAALS` | Array | Indian classical rhythm patterns | ["Keherwa", "Dadra", "EkTaal", ...] |
 | `MOODS` | Array | Song moods | ["Happy", "Sad", "Romantic", "Powerful", ...] |
@@ -706,7 +707,8 @@ WEIGHTS = {
     tempo: 5,           // Weight for tempo similarity (5 points)
     genre: 5,           // Weight for genre matching (5 points)
     vocal: 5,           // Weight for vocal type matching (5 points)
-    mood: 5             // Weight for mood matching (5 points)
+    mood: 5,            // Weight for mood matching (5 points)
+    rhythmCategory: 0   // Weight for Indian/Western/Others match (0 default for backward compatibility)
 }
 ```
 
@@ -747,7 +749,7 @@ WEIGHTS = {
 | DELETE | `/api/songs/:id` | Yes (Admin) | None | `{message}` | Delete song by ID |
 | DELETE | `/api/songs` | Yes (Admin) | None | `{message}` | Delete all songs |
 | POST | `/api/songs/scan` | No | `{keys, tempoMin, tempoMax, times, taals, moods, genres, categories}` | `Array<Song>` | Scan songs with conditions |
-| GET | `/api/song-metadata` | No | None | `{genres, moods, taals, times, categories, rhythmFamilies, rhythmSets}` | Song form metadata and rhythm family source of truth |
+| GET | `/api/song-metadata` | No | None | `{genres, moods, taals, times, categories, rhythmFamilies, rhythmSets, rhythmCategoryOptions}` | Song form metadata and rhythm family/category source of truth |
 
 ### Rhythm Set Endpoints
 
@@ -779,7 +781,7 @@ WEIGHTS = {
 | Method | Route | Auth Required | Request Parameters | Response | Purpose |
 |--------|-------|---------------|-------------------|----------|---------|
 | GET | `/api/recommendation-weights` | No | None | Weight configuration object | Get recommendation weights |
-| PUT | `/api/recommendation-weights` | Yes (Admin) | `{language, scale, timeSignature, taal, tempo, genre, vocal, mood}` | `{message, lastModified}` | Update recommendation weights |
+| PUT | `/api/recommendation-weights` | Yes (Admin) | `{language, scale, timeSignature, taal, tempo, genre, vocal, mood, rhythmCategory}` | `{message, lastModified}` | Update recommendation weights |
 
 ### Global Setlist Endpoints
 
@@ -6877,6 +6879,66 @@ Replace condition-only runtime loop matching with deterministic `rhythmSetId` ma
 
 ---
 
+### Session #9: Song Rhythm Category + Recommendation Weight Extension
+**Date:** March 2026  
+**Status:** ✅ IMPLEMENTED
+
+**Objective:**
+Add a separate song-level rhythm taxonomy (`Indian`, `Western`, `Others`) in add/edit workflows, keep legacy `category` (`New`/`Old`) intact, and make this taxonomy available in both frontend suggestions and backend rhythm-set recommendation logic.
+
+**Problems Solved:**
+1. Existing `category` field was already reserved for New/Old tabs and could not safely be reused.
+2. Admin recommendation weights could not tune rhythm-bifurcation signal.
+3. Rhythm-family and metadata consistency needed stronger documentation after recent deterministic changes.
+
+**Implemented Solution:**
+
+**1. Add/Edit Song UI and payload integration (`index.html`, `main.js`)**
+- Added `Rhythm Category` dropdowns to:
+    - Add Song modal (`songRhythmCategory`)
+    - Edit Song modal (`editSongRhythmCategory`)
+- Added frontend constants/helpers:
+    - `RHYTHM_CATEGORIES = ["Indian", "Western", "Others"]`
+    - `normalizeRhythmCategoryValue()`
+- Added form payload persistence for create/update requests:
+    - `rhythmCategory` is sent with add and edit submissions.
+- Edit modal now pre-fills existing `song.rhythmCategory`.
+
+**2. Admin Weights extension (`index.html`, `main.js`, `server.js`)**
+- Added Admin input: `weightRhythmCategory`.
+- Extended live total validation and save payload in frontend.
+- Extended backend validation schema in `PUT /api/recommendation-weights` to include `rhythmCategory`.
+- Preserved backward compatibility by defaulting `rhythmCategory` to `0` when not present.
+
+**3. Recommendation logic updates**
+- **Frontend suggested songs (`main.js`)**:
+    - Added `rhythmCategoryScore` and `WEIGHTS.rhythmCategory` contribution.
+- **Backend rhythm set recommendation (`server.js`)**:
+    - Added `normalizeRhythmCategory()`.
+    - Recompute pipeline now stores `derivedTags.rhythmCategories` per rhythm set.
+    - `recommendRhythmSetForSong()` now boosts matches when song rhythm category aligns with rhythm-set derived tags.
+
+**4. API metadata updates (`server.js`)**
+- `GET /api/song-metadata` now returns `rhythmCategoryOptions` for consistent source-of-truth metadata.
+- Song create/update paths normalize and persist `rhythmCategory`.
+- Song scan responses now include `rhythmCategory` in compact payloads.
+
+**Files Modified:**
+- `index.html`
+- `main.js`
+- `server.js`
+
+**Validation Performed:**
+- `node --check main.js`
+- `node --check server.js`
+- Editor diagnostics: no errors in `index.html`, `main.js`, `server.js`
+
+**Compatibility Note:**
+- Legacy songs without `rhythmCategory` remain valid; they are treated as blank until edited/migrated.
+- Existing weight configs remain valid because new `rhythmCategory` weight defaults to `0`.
+
+---
+
 ## 15. PROJECT OVERVIEW
 
 ### Application Purpose
@@ -6936,7 +6998,7 @@ Replace condition-only runtime loop matching with deterministic `rhythmSetId` ma
 
 ---
 
-**Document End - Last Updated: March 9, 2026, 11:59 PM - Version 1.19.0 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: March 9, 2026, 1:42 AM - Version 1.20.0 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
 - Added Documentation Maintenance Hook (mandatory update process)
@@ -6981,6 +7043,11 @@ Replace condition-only runtime loop matching with deterministic `rhythmSetId` ma
     * Manual key UI updated in `index.html` from `D#`/`A#` to `Eb`/`Bb`
     * Added migration script `migrate-chord-accidentals.js` and executed dry/live/dry verification
     * Added complete implementation + rollback guide in `CHORD_ACCIDENTAL_NORMALIZATION.md`
+- Documented Session #9: Song Rhythm Category + Recommendation Weight Extension
+    * Added separate `rhythmCategory` (`Indian`, `Western`, `Others`) in add/edit song flows
+    * Extended admin recommendation weights with `rhythmCategory` and total=100 validation
+    * Updated frontend suggested-song scoring and backend rhythm-set recommendation to use rhythm category
+    * Added `rhythmCategoryOptions` in `/api/song-metadata` and included `rhythmCategory` in scan payloads
 - Documented Bug #3: Vercel Production API Requests Failing After Replace Uploads
     * Allowed `*.vercel.app` CORS origins and preview domains
     * Avoided serverless filesystem writes during init

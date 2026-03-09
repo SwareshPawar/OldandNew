@@ -30,8 +30,7 @@ let currentHistoryPosition = -1;
 let isNavigatingHistory = false;
 let currentModal = null;
 
-// Recommendation weights: loaded from backend or localStorage fallback
-let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
+const DEFAULT_RECOMMENDATION_WEIGHTS = {
     language: 20,
     scale: 25,
     timeSignature: 20,
@@ -39,8 +38,19 @@ let WEIGHTS = JSON.parse(localStorage.getItem('recommendationWeights')) || {
     tempo: 5,
     genre: 5,
     vocal: 5,
-    mood: 5
+    mood: 5,
+    rhythmCategory: 0
 };
+
+// Recommendation weights: loaded from backend or localStorage fallback
+let WEIGHTS = (() => {
+    try {
+        const stored = JSON.parse(localStorage.getItem('recommendationWeights')) || {};
+        return { ...DEFAULT_RECOMMENDATION_WEIGHTS, ...stored };
+    } catch (error) {
+        return { ...DEFAULT_RECOMMENDATION_WEIGHTS };
+    }
+})();
 
 // Initialize currentUser from localStorage
 try {
@@ -63,6 +73,7 @@ const KEYS = [
     "Cm", "C#m", "Dm", "Ebm", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "Bbm", "Bm"
 ];
 const CATEGORIES = ["New", "Old"];
+const RHYTHM_CATEGORIES = ["Indian", "Western", "Others"];
 const TIMES = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8","12/8","14/8"];
 const TAALS = [
 
@@ -192,6 +203,16 @@ function buildRhythmSetIdValue(rhythmFamily, rhythmSetNo) {
     return `${family}_${setNo}`;
 }
 
+function normalizeRhythmCategoryValue(value) {
+    if (typeof value !== 'string') return '';
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return '';
+    if (normalized === 'indian') return 'Indian';
+    if (normalized === 'western') return 'Western';
+    if (normalized === 'others' || normalized === 'other') return 'Others';
+    return '';
+}
+
 function updateRhythmSetIdPreview(familyInputId, setNoInputId, previewInputId) {
     const familyEl = document.getElementById(familyInputId);
     const setNoEl = document.getElementById(setNoInputId);
@@ -221,18 +242,36 @@ function populateRhythmFamilyDropdown(dropdownId, rhythmFamilies) {
     }
 }
 
+function populateRhythmCategoryDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const selectedValue = normalizeRhythmCategoryValue(dropdown.value);
+    dropdown.innerHTML = '<option value="">Select Rhythm Category</option>';
+
+    RHYTHM_CATEGORIES.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        dropdown.appendChild(option);
+    });
+
+    if (selectedValue) {
+        dropdown.value = selectedValue;
+    }
+}
+
 async function hydrateRhythmFamilies() {
-    const fallbackFamilies = Array.from(new Set(TAALS.map(t => normalizeRhythmFamilyValue(t)).filter(Boolean))).sort();
-    populateRhythmFamilyDropdown('songRhythmFamily', fallbackFamilies);
-    populateRhythmFamilyDropdown('editSongRhythmFamily', fallbackFamilies);
+    populateRhythmFamilyDropdown('songRhythmFamily', []);
+    populateRhythmFamilyDropdown('editSongRhythmFamily', []);
 
     try {
         const response = await authFetch(`${API_BASE_URL}/api/song-metadata`);
         if (!response.ok) return;
         const metadata = await response.json();
-        const serverFamilies = Array.isArray(metadata.rhythmFamilies) && metadata.rhythmFamilies.length
+        const serverFamilies = Array.isArray(metadata.rhythmFamilies)
             ? metadata.rhythmFamilies.map(normalizeRhythmFamilyValue).filter(Boolean)
-            : fallbackFamilies;
+            : [];
 
         const uniqueFamilies = Array.from(new Set(serverFamilies)).sort();
         populateRhythmFamilyDropdown('songRhythmFamily', uniqueFamilies);
@@ -410,8 +449,8 @@ async function fetchRecommendationWeights() {
         });
         if (res.ok) {
             const data = await res.json();
-            WEIGHTS = data;
-            localStorage.setItem('recommendationWeights', JSON.stringify(data));
+            WEIGHTS = { ...DEFAULT_RECOMMENDATION_WEIGHTS, ...data };
+            localStorage.setItem('recommendationWeights', JSON.stringify(WEIGHTS));
         }
     } catch (e) { /* fallback to local */ }
 }
@@ -428,8 +467,9 @@ async function saveRecommendationWeightsToBackend(weights) {
         });
         if (res.ok) {
             const data = await res.json();
-            localStorage.setItem('recommendationWeights', JSON.stringify(weights));
-            WEIGHTS = weights;
+            const mergedWeights = { ...DEFAULT_RECOMMENDATION_WEIGHTS, ...weights };
+            localStorage.setItem('recommendationWeights', JSON.stringify(mergedWeights));
+            WEIGHTS = mergedWeights;
             return { success: true, message: data.message || 'Weights updated' };
         } else {
             const err = await res.json();
@@ -1273,6 +1313,8 @@ document.addEventListener('DOMContentLoaded', () => {
     populateDropdown('editSongArtist', ARTISTS);
     populateDropdown('songMood', MOODS);
     populateDropdown('editSongMood', MOODS);
+    populateRhythmCategoryDropdown('songRhythmCategory');
+    populateRhythmCategoryDropdown('editSongRhythmCategory');
 
     hydrateRhythmFamilies();
     updateRhythmSetIdPreview('songRhythmFamily', 'songRhythmSetNo', 'songRhythmSetIdPreview');
@@ -2464,19 +2506,20 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     // Load weights into form
     async function loadWeightsToForm() {
         await fetchRecommendationWeights();
-        document.getElementById('weightLanguage').value = WEIGHTS.language;
-        document.getElementById('weightScale').value = WEIGHTS.scale;
-        document.getElementById('weightTimeSignature').value = WEIGHTS.timeSignature;
-        document.getElementById('weightTaal').value = WEIGHTS.taal;
-        document.getElementById('weightTempo').value = WEIGHTS.tempo;
-        document.getElementById('weightGenre').value = WEIGHTS.genre;
-        document.getElementById('weightVocal').value = WEIGHTS.vocal;
-        document.getElementById('weightMood').value = WEIGHTS.mood;
+        document.getElementById('weightLanguage').value = WEIGHTS.language ?? 0;
+        document.getElementById('weightScale').value = WEIGHTS.scale ?? 0;
+        document.getElementById('weightTimeSignature').value = WEIGHTS.timeSignature ?? 0;
+        document.getElementById('weightTaal').value = WEIGHTS.taal ?? 0;
+        document.getElementById('weightTempo').value = WEIGHTS.tempo ?? 0;
+        document.getElementById('weightGenre').value = WEIGHTS.genre ?? 0;
+        document.getElementById('weightVocal').value = WEIGHTS.vocal ?? 0;
+        document.getElementById('weightMood').value = WEIGHTS.mood ?? 0;
+        document.getElementById('weightRhythmCategory').value = WEIGHTS.rhythmCategory ?? 0;
         
         // Calculate and display total
-        const total = WEIGHTS.language + WEIGHTS.scale + WEIGHTS.timeSignature + 
-                      WEIGHTS.taal + WEIGHTS.tempo + WEIGHTS.genre + 
-                      WEIGHTS.vocal + WEIGHTS.mood;
+        const total = (WEIGHTS.language || 0) + (WEIGHTS.scale || 0) + (WEIGHTS.timeSignature || 0) +
+                      (WEIGHTS.taal || 0) + (WEIGHTS.tempo || 0) + (WEIGHTS.genre || 0) +
+                      (WEIGHTS.vocal || 0) + (WEIGHTS.mood || 0) + (WEIGHTS.rhythmCategory || 0);
         const bar = document.getElementById('weightsTotalBar');
         if (bar) {
             bar.textContent = `Total: ${total} / 100`;
@@ -8219,7 +8262,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     tempoSimilarity: 0,
                     genreMatch: 0,
                     vocalScore: 0,
-                    moodScore: 0
+                    moodScore: 0,
+                    rhythmCategoryScore: 0
                 };
 
                 let score = 0;
@@ -8291,6 +8335,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 details.moodScore = getMoodMatchScore(currentSong.mood, song.mood);
                 score += WEIGHTS.mood * details.moodScore;
 
+                // 9. Rhythm category match (Indian/Western/Others)
+                const currentRhythmCategory = normalizeRhythmCategoryValue(currentSong.rhythmCategory || '');
+                const songRhythmCategory = normalizeRhythmCategoryValue(song.rhythmCategory || '');
+                details.rhythmCategoryScore = (currentRhythmCategory && songRhythmCategory && currentRhythmCategory === songRhythmCategory) ? 1 : 0;
+                score += (WEIGHTS.rhythmCategory || 0) * details.rhythmCategoryScore;
+
                 return {
                     ...song,
                     matchScore: Math.min(Math.round(score), 100),
@@ -8300,7 +8350,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                         tempoSimilarity: Math.round(details.tempoSimilarity * 100),
                         genreMatch: Math.round(details.genreMatch * 100),
                         vocalScore: Math.round(details.vocalScore * 100),
-                        moodScore: Math.round(details.moodScore * 100)
+                        moodScore: Math.round(details.moodScore * 100),
+                        rhythmCategoryScore: Math.round(details.rhythmCategoryScore * 100)
                     }
                 };
             });
@@ -8392,8 +8443,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    localStorage.setItem('recommendationWeights', JSON.stringify(weights));
-                    WEIGHTS = weights;
+                    const mergedWeights = { ...DEFAULT_RECOMMENDATION_WEIGHTS, ...weights };
+                    localStorage.setItem('recommendationWeights', JSON.stringify(mergedWeights));
+                    WEIGHTS = mergedWeights;
                     return { success: true, message: data.message || 'Weights updated' };
                 } else {
                     const err = await res.json();
@@ -8416,8 +8468,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const data = await res.json();
                     const localLastModified = WEIGHTS.lastModified || localStorage.getItem('recommendationWeightsLastModified');
                     if (!localLastModified || !data.lastModified || data.lastModified !== localLastModified) {
-                        WEIGHTS = data;
-                        localStorage.setItem('recommendationWeights', JSON.stringify(data));
+                        WEIGHTS = { ...DEFAULT_RECOMMENDATION_WEIGHTS, ...data };
+                        localStorage.setItem('recommendationWeights', JSON.stringify(WEIGHTS));
                         localStorage.setItem('recommendationWeightsLastModified', data.lastModified || '');
                     }
                 }
@@ -10012,6 +10064,10 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             const editRhythmSetNoEl = document.getElementById('editSongRhythmSetNo');
             if (editRhythmFamilyEl) editRhythmFamilyEl.value = resolvedRhythmFamily;
             if (editRhythmSetNoEl) editRhythmSetNoEl.value = parsedRhythmSetNo;
+            const editRhythmCategoryEl = document.getElementById('editSongRhythmCategory');
+            if (editRhythmCategoryEl) {
+                editRhythmCategoryEl.value = normalizeRhythmCategoryValue(song.rhythmCategory || '');
+            }
             updateRhythmSetIdPreview('editSongRhythmFamily', 'editSongRhythmSetNo', 'editSongRhythmSetIdPreview');
 
             const editRhythmPreviewEl = document.getElementById('editSongRhythmSetIdPreview');
@@ -10139,7 +10195,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     parseInt(document.getElementById('weightTempo').value) || 0,
                     parseInt(document.getElementById('weightGenre').value) || 0,
                     parseInt(document.getElementById('weightVocal').value) || 0,
-                    parseInt(document.getElementById('weightMood').value) || 0
+                    parseInt(document.getElementById('weightMood').value) || 0,
+                    parseInt(document.getElementById('weightRhythmCategory').value) || 0
                 ];
                 const total = vals.reduce((a, b) => a + b, 0);
                 const bar = document.getElementById('weightsTotalBar');
@@ -10154,7 +10211,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 'weightTempo',
                 'weightGenre',
                 'weightVocal',
-                'weightMood'
+                'weightMood',
+                'weightRhythmCategory'
             ].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', updateWeightsTotalBar);
@@ -10262,7 +10320,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                         tempo: parseInt(document.getElementById('weightTempo').value),
                         genre: parseInt(document.getElementById('weightGenre').value),
                         vocal: parseInt(document.getElementById('weightVocal').value),
-                        mood: parseInt(document.getElementById('weightMood').value)
+                        mood: parseInt(document.getElementById('weightMood').value),
+                        rhythmCategory: parseInt(document.getElementById('weightRhythmCategory').value)
                     };
                     const total = Object.values(newWeights).reduce((a, b) => a + b, 0);
                     const notif = document.getElementById('weightsNotification');
@@ -10623,6 +10682,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const newSong = {
                         title: title,
                         category: document.getElementById('songCategory').value,
+                        rhythmCategory: normalizeRhythmCategoryValue(document.getElementById('songRhythmCategory')?.value || ''),
                         key: normalizeKeySignature(document.getElementById('songKey').value),
                         artistDetails: selectedArtists.length > 0 ? selectedArtists.join(', ') : '',
                         mood: selectedMoods.length > 0 ? selectedMoods.join(', ') : '',
@@ -10750,6 +10810,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     id: Number(id),
                     title: title,
                     category: document.getElementById('editSongCategory').value,
+                    rhythmCategory: normalizeRhythmCategoryValue(document.getElementById('editSongRhythmCategory')?.value || ''),
                     key: normalizeKeySignature(document.getElementById('editSongKey').value),
                     artistDetails: selectedArtists.length > 0 ? selectedArtists.join(', ') : '',
                     mood: selectedMoods.length > 0 ? selectedMoods.join(', ') : '',

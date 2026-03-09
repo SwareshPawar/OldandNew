@@ -306,24 +306,27 @@ function authMiddleware(req, res, next) {
 // Get recommendation weights config (requires authentication)
 app.get('/api/recommendation-weights', authMiddleware, async (req, res) => {
   try {
+    const defaultWeights = {
+      language: 10,
+      scale: 18,
+      timeSignature: 18,
+      taal: 18,
+      tempo: 5,
+      genre: 13,
+      vocal: 8,
+      mood: 10,
+      rhythmCategory: 0,
+      lastModified: null
+    };
+
     const config = await db.collection('config').findOne({ _id: 'weights' });
     if (!config) {
-      // Default if not set
-      return res.json({
-        language: 10,
-        scale: 18,
-        timeSignature: 18,
-        taal: 18,
-        tempo: 5,
-        genre: 13,
-        vocal: 8,
-        mood: 10,
-        lastModified: null
-      });
+      return res.json(defaultWeights);
     }
+
     // Remove _id for frontend, include lastModified
     const { _id, ...weights } = config;
-    res.json(weights);
+    res.json({ ...defaultWeights, ...weights });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -333,17 +336,18 @@ app.get('/api/recommendation-weights', authMiddleware, async (req, res) => {
 app.put('/api/recommendation-weights', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { language, scale, timeSignature, taal, tempo, genre, vocal, mood } = req.body;
-    if ([language, scale, timeSignature, taal, tempo, genre, vocal, mood].some(v => typeof v !== 'number')) {
+    const rhythmCategory = (typeof req.body.rhythmCategory === 'number') ? req.body.rhythmCategory : 0;
+    if ([language, scale, timeSignature, taal, tempo, genre, vocal, mood, rhythmCategory].some(v => typeof v !== 'number')) {
       return res.status(400).json({ error: 'All weights must be numbers' });
     }
-    const total = language + scale + timeSignature + taal + tempo + genre + vocal + mood;
+    const total = language + scale + timeSignature + taal + tempo + genre + vocal + mood + rhythmCategory;
     if (total !== 100) {
       return res.status(400).json({ error: 'Total must be 100' });
     }
     const lastModified = new Date().toISOString();
     await db.collection('config').updateOne(
       { _id: 'weights' },
-      { $set: { language, scale, timeSignature, taal, tempo, genre, vocal, mood, lastModified } },
+      { $set: { language, scale, timeSignature, taal, tempo, genre, vocal, mood, rhythmCategory, lastModified } },
       { upsert: true }
     );
     res.json({ message: 'Recommendation weights updated', lastModified });
@@ -422,6 +426,7 @@ function requireAdmin(req, res, next) {
 }
 
 const RHYTHM_SET_DEFAULT_NO = 1;
+const RHYTHM_CATEGORY_OPTIONS = ['Indian', 'Western', 'Others'];
 
 function normalizeRhythmFamily(value) {
   if (typeof value !== 'string') return '';
@@ -430,6 +435,16 @@ function normalizeRhythmFamily(value) {
     .toLowerCase()
     .replace(/\s+/g, '_')
     .replace(/[^a-z0-9_-]/g, '');
+}
+
+function normalizeRhythmCategory(value) {
+  if (typeof value !== 'string') return '';
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return '';
+  if (normalized === 'indian') return 'Indian';
+  if (normalized === 'western') return 'Western';
+  if (normalized === 'others' || normalized === 'other') return 'Others';
+  return '';
 }
 
 function normalizeRhythmSetNo(value) {
@@ -598,6 +613,7 @@ async function recomputeRhythmSetDerivedMetadata(rhythmSetId) {
         tempo: 1,
         genre: 1,
         genres: 1,
+        rhythmCategory: 1,
         taal: 1,
         time: 1,
         timeSignature: 1
@@ -606,12 +622,15 @@ async function recomputeRhythmSetDerivedMetadata(rhythmSetId) {
   ).toArray();
 
   const genres = new Set();
+  const rhythmCategories = new Set();
   const taals = new Set();
   const times = new Set();
   const tempos = [];
 
   songs.forEach(song => {
     getSongGenreList(song).forEach(g => genres.add(g));
+    const normalizedCategory = normalizeRhythmCategory(song?.rhythmCategory || '');
+    if (normalizedCategory) rhythmCategories.add(normalizedCategory);
     if (song?.taal) taals.add(String(song.taal).trim());
     if (song?.time) times.add(String(song.time).trim());
     if (song?.timeSignature) times.add(String(song.timeSignature).trim());
@@ -629,6 +648,7 @@ async function recomputeRhythmSetDerivedMetadata(rhythmSetId) {
         mappedSongCount: songs.length,
         derivedTags: {
           genres: Array.from(genres),
+          rhythmCategories: Array.from(rhythmCategories),
           taals: Array.from(taals),
           times: Array.from(times),
           tempoRange: tempos.length
@@ -648,6 +668,24 @@ async function recommendRhythmSetForSong(song) {
   const sets = buildRhythmSetIndexFromMetadata(metadata);
   if (!sets.length) return null;
 
+  const rhythmSetCategoryMap = new Map();
+  if (rhythmSetsCollection) {
+    try {
+      const setDocs = await rhythmSetsCollection.find(
+        {},
+        { projection: { _id: 0, rhythmSetId: 1, 'derivedTags.rhythmCategories': 1 } }
+      ).toArray();
+      setDocs.forEach(doc => {
+        const categories = Array.isArray(doc?.derivedTags?.rhythmCategories)
+          ? doc.derivedTags.rhythmCategories.map(normalizeRhythmCategory).filter(Boolean)
+          : [];
+        rhythmSetCategoryMap.set(doc.rhythmSetId, categories);
+      });
+    } catch (error) {
+      console.warn('Could not load rhythm-set category tags for recommendation:', error.message);
+    }
+  }
+
   // If caller already provided explicit family/no, honor deterministic choice when present in metadata.
   const explicitFamily = normalizeRhythmFamily(song?.rhythmFamily || '');
   const explicitNo = normalizeRhythmSetNo(song?.rhythmSetNo || song?.setNo || null);
@@ -666,6 +704,7 @@ async function recommendRhythmSetForSong(song) {
   }
 
   const songFamily = normalizeRhythmFamily(song?.taal || song?.rhythmFamily || '');
+  const songRhythmCategory = normalizeRhythmCategory(song?.rhythmCategory || '');
   const songTime = String(song?.time || song?.timeSignature || '').trim();
   const songTempo = getTempoCategoryFromValue(song?.tempo || song?.bpm);
   const songGenres = getSongGenreList(song);
@@ -696,6 +735,11 @@ async function recommendRhythmSetForSong(song) {
     const setGenre = String(set.conditionsHint.genre || '').trim().toLowerCase();
     if (setGenre && songGenres.some(g => g === setGenre || g.includes(setGenre) || setGenre.includes(g))) {
       score += 3;
+    }
+
+    const setRhythmCategories = rhythmSetCategoryMap.get(set.rhythmSetId) || [];
+    if (songRhythmCategory && setRhythmCategories.includes(songRhythmCategory)) {
+      score += 6;
     }
 
     if (set.loopCount >= 6) {
@@ -1216,6 +1260,7 @@ app.get('/api/songs', authMiddleware, async (req, res) => {
 app.post('/api/songs', authMiddleware, async (req, res) => {
   try {
     req.body = normalizeSongAccidentals(req.body);
+    req.body.rhythmCategory = normalizeRhythmCategory(req.body.rhythmCategory || '');
 
     const recommendation = await recommendRhythmSetForSong(req.body);
     const resolvedRhythm = resolveSongRhythmSelection(req.body, recommendation);
@@ -1302,6 +1347,10 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
     }
 
     req.body = normalizeSongAccidentals(req.body);
+    const incomingRhythmCategory = Object.prototype.hasOwnProperty.call(req.body, 'rhythmCategory')
+      ? req.body.rhythmCategory
+      : existingSong.rhythmCategory;
+    req.body.rhythmCategory = normalizeRhythmCategory(incomingRhythmCategory || '');
 
     const mergedSong = { ...existingSong, ...req.body };
     const recommendation = await recommendRhythmSetForSong(mergedSong);
@@ -1589,6 +1638,7 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
         artistDetails: song.artistDetails,
         artist: song.artist,
         category: song.category,
+        rhythmCategory: song.rhythmCategory,
         genre: song.genre,
         genres: song.genres,
         taal: song.taal,
@@ -1631,6 +1681,7 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
       artistDetails: song.artistDetails,
       artist: song.artist,
       category: song.category,
+      rhythmCategory: song.rhythmCategory,
       genre: song.genre,
       genres: song.genres,
       taal: song.taal,
@@ -1945,10 +1996,9 @@ app.get('/api/song-metadata', async (req, res) => {
       rhythmSets = [];
     }
 
-    const rhythmFamilies = Array.from(new Set([
-      ...taals.map(t => normalizeRhythmFamily(t)).filter(Boolean),
-      ...rhythmSets.map(set => normalizeRhythmFamily(set.rhythmFamily)).filter(Boolean)
-    ])).sort((a, b) => a.localeCompare(b));
+    const rhythmFamilies = Array.from(new Set(
+      rhythmSets.map(set => normalizeRhythmFamily(set.rhythmFamily)).filter(Boolean)
+    )).sort((a, b) => a.localeCompare(b));
 
     res.json({
       genres: genres,
@@ -1958,6 +2008,7 @@ app.get('/api/song-metadata', async (req, res) => {
       timeGenreMap: timeGenreMap,
       rhythmFamilies,
       rhythmSets,
+      rhythmCategoryOptions: RHYTHM_CATEGORY_OPTIONS,
       vocalTags: ['Male', 'Female', 'Duet'],
       languageTags: ['Hindi', 'Marathi', 'English'],
       eraSettings: ['New', 'Old', 'Mid']
@@ -2154,8 +2205,10 @@ const loopUpload = multer({
 
 app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), async (req, res) => {
   try {
-    const { taal, timeSignature, tempo, genre, description } = req.body;
-    const rhythmFamily = normalizeRhythmFamily(req.body?.rhythmFamily || taal);
+    const { timeSignature, tempo, genre, description } = req.body;
+    const requestedTaal = req.body?.taal || '';
+    const rhythmFamily = normalizeRhythmFamily(req.body?.rhythmFamily || requestedTaal);
+    const taal = rhythmFamily || normalizeRhythmFamily(requestedTaal);
     const rhythmSetNo = normalizeRhythmSetNo(req.body?.rhythmSetNo || req.body?.setNo || RHYTHM_SET_DEFAULT_NO) || RHYTHM_SET_DEFAULT_NO;
     const rhythmSetId = buildRhythmSetId(rhythmFamily, rhythmSetNo);
     const files = req.files;
@@ -2285,8 +2338,10 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
  */
 app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), async (req, res) => {
   try {
-    const { taal, timeSignature, tempo, genre, type, number, description } = req.body;
-    const rhythmFamily = normalizeRhythmFamily(req.body?.rhythmFamily || taal);
+    const { timeSignature, tempo, genre, type, number, description } = req.body;
+    const requestedTaal = req.body?.taal || '';
+    const rhythmFamily = normalizeRhythmFamily(req.body?.rhythmFamily || requestedTaal);
+    const taal = rhythmFamily || normalizeRhythmFamily(requestedTaal);
     const rhythmSetNo = normalizeRhythmSetNo(req.body?.rhythmSetNo || req.body?.setNo || RHYTHM_SET_DEFAULT_NO) || RHYTHM_SET_DEFAULT_NO;
     const rhythmSetId = buildRhythmSetId(rhythmFamily, rhythmSetNo);
     const file = req.file;
@@ -2296,7 +2351,7 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     }
 
     // Validate required fields
-    if (!taal || !timeSignature || !tempo || !genre || !type || !number) {
+    if (!rhythmFamily || !timeSignature || !tempo || !genre || !type || !number) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 

@@ -166,10 +166,12 @@ See CODE_DOCUMENTATION.md Section 9, Session #1 for details.
 - **Loop Player System:**
    - Deterministic loop resolution by `rhythmSetId` (`rhythmFamily_setNo`)
    - Recommendation-assisted rhythm set assignment during song add/edit
+   - Song-level `Rhythm Category` tagging (`Indian`, `Western`, `Others`) in add/edit flows
    - Rhythm loops with fills and variations
    - Melodic pads (Tanpura, Atmosphere) organized by musical key
    - Tempo control with SoundTouch.js
    - Admin interfaces for loop uploads and rhythm mapping workflow
+- Admin-configurable recommendation weights now include `rhythmCategory` signal (total remains 100)
 - Standalone Rhythm Mapper page for song-to-rhythm-set assignment and preview
 - Floating stop button for global playback control
 - Admin panel

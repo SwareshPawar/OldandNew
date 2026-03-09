@@ -449,6 +449,10 @@
                                 <td style="padding:10px 8px;">Mood</td>
                                 <td style="padding:10px 8px;"><input type="number" id="weightMood" min="0" max="100" step="5" required style="width:60px;"></td>
                             </tr>
+                            <tr>
+                                <td style="padding:10px 8px;">Rhythm Category</td>
+                                <td style="padding:10px 8px;"><input type="number" id="weightRhythmCategory" min="0" max="100" step="5" required style="width:60px;"></td>
+                            </tr>
                         </tbody>
                     </table>
                     <button type="submit" class="btn" style="width:100%;margin-top:8px;" title="Save Weights - Apply new recommendation algorithm parameters" aria-label="Save Weights">Save Weights</button>
@@ -575,6 +579,10 @@
                 <input type="number" id="songRhythmSetNo" min="1" step="1" placeholder="e.g., 1">
                 <label for="songRhythmSetIdPreview">Rhythm Set ID:</label>
                 <input type="text" id="songRhythmSetIdPreview" readonly placeholder="Auto-assigned by server">
+                <label for="songRhythmCategory">Rhythm Category:</label>
+                <select id="songRhythmCategory">
+                    <option value="">Select Rhythm Category</option>
+                </select>
                 <label for="songLyrics">Lyrics:</label>
                 <div class="song-structure-tags">
                     <div class="structure-tags-header">Quick Tags:</div>
@@ -656,6 +664,10 @@
                 <input type="number" id="editSongRhythmSetNo" min="1" step="1" placeholder="e.g., 1">
                 <label for="editSongRhythmSetIdPreview">Rhythm Set ID:</label>
                 <input type="text" id="editSongRhythmSetIdPreview" readonly placeholder="Auto-assigned by server">
+                <label for="editSongRhythmCategory">Rhythm Category:</label>
+                <select id="editSongRhythmCategory">
+                    <option value="">Select Rhythm Category</option>
+                </select>
                 <label for="editSongLyrics">Lyrics:</label>
                 <div class="song-structure-tags">
                     <div class="structure-tags-header">Quick Tags:</div>
