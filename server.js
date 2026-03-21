@@ -1013,10 +1013,14 @@ app.get('/api/rhythm-sets', authMiddleware, async (req, res) => {
     const merged = dbSets.map(set => {
       const loopSet = metadataMap.get(set.rhythmSetId);
       const fileKeys = loopSet ? Object.keys(loopSet.files || {}) : [];
+      const files = loopSet ? loopSet.files || {} : {};
+      const conditionsHint = loopSet ? loopSet.conditionsHint || {} : {};
       return {
         ...set,
         mappedSongCount: songCountMap.get(String(set.rhythmSetId)) || 0,
         availableFiles: fileKeys,
+        files: files,
+        conditionsHint: conditionsHint,
         isComplete: ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'].every(k => fileKeys.includes(k))
       };
     });
@@ -1032,6 +1036,8 @@ app.get('/api/rhythm-sets', authMiddleware, async (req, res) => {
           status: 'active',
           mappedSongCount: songCountMap.get(String(loopSet.rhythmSetId)) || 0,
           availableFiles: fileKeys,
+          files: loopSet.files || {},
+          conditionsHint: loopSet.conditionsHint || {},
           isComplete: ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'].every(k => fileKeys.includes(k)),
           source: 'loops-metadata'
         });
@@ -1222,6 +1228,149 @@ app.put('/api/rhythm-sets/:rhythmSetId/recompute', authMiddleware, requireAdmin,
     await recomputeRhythmSetDerivedMetadata(parsed.rhythmSetId);
     const updated = await rhythmSetsCollection.findOne({ rhythmSetId: parsed.rhythmSetId });
     res.json({ success: true, rhythmSet: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const rhythmSetId = req.params.rhythmSetId;
+    const parsed = parseRhythmSetId(rhythmSetId);
+    if (!parsed) {
+      return res.status(400).json({ error: 'Invalid rhythmSetId format. Expected family_setNo' });
+    }
+
+    // Check if any songs are currently mapped to this rhythm set
+    const mappedSongsCount = await songsCollection.countDocuments({ rhythmSetId: rhythmSetId });
+    if (mappedSongsCount > 0) {
+      return res.status(400).json({ 
+        error: `Cannot delete rhythm set. ${mappedSongsCount} song(s) are currently mapped to it. Please unmap them first.`,
+        mappedSongsCount 
+      });
+    }
+
+    // Get loop files associated with this rhythm set from metadata
+    const metadata = readLoopsMetadataSafe();
+    const loopsToDelete = [];
+    
+    if (metadata && metadata.loops) {
+      metadata.loops.forEach(loop => {
+        if (loop.rhythmSetId === rhythmSetId && loop.filename) {
+          loopsToDelete.push(loop.filename);
+        }
+      });
+    }
+
+    // Delete the rhythm set from the database
+    const result = await rhythmSetsCollection.deleteOne({ rhythmSetId: rhythmSetId });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Rhythm set not found' });
+    }
+
+    // Delete associated loop files and update metadata
+    let deletedFilesCount = 0;
+    if (loopsToDelete.length > 0) {
+      for (const filename of loopsToDelete) {
+        const filePath = path.join(loopsDir, filename);
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            deletedFilesCount++;
+          }
+        } catch (err) {
+          console.error(`Failed to delete loop file ${filename}:`, err);
+        }
+      }
+
+      // Update metadata to remove deleted loops
+      const updatedLoops = metadata.loops.filter(loop => loop.rhythmSetId !== rhythmSetId);
+      metadata.loops = updatedLoops;
+      
+      const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+      try {
+        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      } catch (err) {
+        console.error('Failed to update metadata after deleting loops:', err);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Rhythm set ${rhythmSetId} deleted successfully. ${deletedFilesCount} loop file(s) removed.`,
+      rhythmSetId,
+      deletedFilesCount
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/rhythm-sets/:rhythmSetId/loops/:loopType
+ * Delete a single loop file from a rhythm set
+ */
+app.delete('/api/rhythm-sets/:rhythmSetId/loops/:loopType', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { rhythmSetId, loopType } = req.params;
+    
+    // Validate loopType (loop1, loop2, loop3, fill1, fill2, fill3)
+    const validLoopTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    if (!validLoopTypes.includes(loopType)) {
+      return res.status(400).json({ error: 'Invalid loop type. Must be one of: loop1-3, fill1-3' });
+    }
+
+    // Read metadata
+    const metadata = readLoopsMetadataSafe();
+    if (!metadata || !metadata.loops) {
+      return res.status(404).json({ error: 'No loops metadata found' });
+    }
+
+    // Find the specific loop entry
+    const loopEntry = metadata.loops.find(loop => 
+      loop.rhythmSetId === rhythmSetId && 
+      `${loop.type}${loop.number}` === loopType
+    );
+
+    if (!loopEntry) {
+      return res.status(404).json({ error: `Loop ${loopType} not found for rhythm set ${rhythmSetId}` });
+    }
+
+    // Delete the physical file
+    const filePath = path.join(loopsDir, loopEntry.filename);
+    let fileDeleted = false;
+    
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        fileDeleted = true;
+      } catch (err) {
+        console.error(`Failed to delete file ${loopEntry.filename}:`, err);
+        return res.status(500).json({ error: 'Failed to delete loop file' });
+      }
+    }
+
+    // Update metadata - remove this loop entry
+    metadata.loops = metadata.loops.filter(loop => 
+      !(loop.rhythmSetId === rhythmSetId && `${loop.type}${loop.number}` === loopType)
+    );
+
+    // Save updated metadata
+    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+    try {
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    } catch (err) {
+      console.error('Failed to update metadata:', err);
+      return res.status(500).json({ error: 'Failed to update metadata' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Loop ${loopType} deleted from rhythm set ${rhythmSetId}`,
+      filename: loopEntry.filename,
+      fileDeleted
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

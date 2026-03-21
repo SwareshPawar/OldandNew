@@ -918,29 +918,6 @@
       "rhythmSetId": "keherwa_1"
     },
     {
-      "id": "keherwa_4_4_fast_dholak_loop1",
-      "filename": "keherwa_4_4_fast_dholak_LOOP1.wav",
-      "type": "loop",
-      "number": 1,
-      "conditions": {
-        "taal": "keherwa",
-        "timeSignature": "4/4",
-        "tempo": "fast",
-        "genre": "dholak"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-02-28T14:12:26.667Z",
-        "description": ""
-      },
-      "files": {
-        "loop1": "keherwa_4_4_fast_dholak_LOOP1.wav"
-      },
-      "rhythmFamily": "keherwa",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "keherwa_1"
-    },
-    {
       "id": "keherwa_4_4_fast_dholak_loop2",
       "filename": "keherwa_4_4_fast_dholak_LOOP2.wav",
       "type": "loop",
@@ -1198,6 +1175,857 @@
       "rhythmFamily": "congo",
       "rhythmSetNo": 1,
       "rhythmSetId": "congo_1"
+    },
+    {
+      "id": "keherwa_4_4_slow_dholak_loop1",
+      "filename": "keherwa_4_4_slow_dholak_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "keherwa_3",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T11:56:11.452Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "keherwa_4_4_slow_dholak_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_dholak_loop2",
+      "filename": "keherwa_4_4_slow_dholak_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "keherwa_3",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T11:56:12.505Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "keherwa_4_4_slow_dholak_LOOP2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_dholak_loop3",
+      "filename": "keherwa_4_4_slow_dholak_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "keherwa_3",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T11:56:13.065Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "keherwa_4_4_slow_dholak_LOOP3.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_dholak_fill1",
+      "filename": "keherwa_4_4_slow_dholak_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "keherwa_3",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T11:56:13.619Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "keherwa_4_4_slow_dholak_FILL1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_dholak_fill2",
+      "filename": "keherwa_4_4_slow_dholak_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "keherwa_3",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T11:56:14.124Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "keherwa_4_4_slow_dholak_FILL2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_dholak_fill3",
+      "filename": "keherwa_4_4_slow_dholak_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "keherwa_3",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T11:56:14.674Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "keherwa_4_4_slow_dholak_FILL3.wav"
+      }
+    },
+    {
+      "id": "rupak_7_8_slow_tabla_loop1",
+      "filename": "rupak_7_8_slow_tabla_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rupak",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rupak_1",
+      "conditions": {
+        "taal": "rupak",
+        "timeSignature": "7/8",
+        "tempo": "slow",
+        "genre": "tabla"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:01:38.724Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "rupak_7_8_slow_tabla_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rupak_7_8_slow_tabla_loop2",
+      "filename": "rupak_7_8_slow_tabla_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rupak",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rupak_1",
+      "conditions": {
+        "taal": "rupak",
+        "timeSignature": "7/8",
+        "tempo": "slow",
+        "genre": "tabla"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:01:39.113Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "rupak_7_8_slow_tabla_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rupak_7_8_slow_tabla_loop3",
+      "filename": "rupak_7_8_slow_tabla_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rupak",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rupak_1",
+      "conditions": {
+        "taal": "rupak",
+        "timeSignature": "7/8",
+        "tempo": "slow",
+        "genre": "tabla"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:01:39.602Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "rupak_7_8_slow_tabla_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rupak_7_8_slow_tabla_fill1",
+      "filename": "rupak_7_8_slow_tabla_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rupak",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rupak_1",
+      "conditions": {
+        "taal": "rupak",
+        "timeSignature": "7/8",
+        "tempo": "slow",
+        "genre": "tabla"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:01:40.123Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "rupak_7_8_slow_tabla_FILL1.wav"
+      }
+    },
+    {
+      "id": "onetwo_2_4_medium_drum_slow_fill3",
+      "filename": "onetwo_2_4_medium_drum_slow_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "onetwo_1",
+      "conditions": {
+        "taal": "onetwo",
+        "timeSignature": "2/4",
+        "tempo": "medium",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:13:44.428Z",
+        "description": ""
+      },
+      "files": {
+        "fill3": "onetwo_2_4_medium_drum_slow_FILL3.wav"
+      }
+    },
+    {
+      "id": "onetwo_2_4_medium_drum_slow_fill2",
+      "filename": "onetwo_2_4_medium_drum_slow_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "onetwo_1",
+      "conditions": {
+        "taal": "onetwo",
+        "timeSignature": "2/4",
+        "tempo": "medium",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:13:46.314Z",
+        "description": ""
+      },
+      "files": {
+        "fill2": "onetwo_2_4_medium_drum_slow_FILL2.wav"
+      }
+    },
+    {
+      "id": "onetwo_2_4_medium_drum_slow_fill1",
+      "filename": "onetwo_2_4_medium_drum_slow_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "onetwo_1",
+      "conditions": {
+        "taal": "onetwo",
+        "timeSignature": "2/4",
+        "tempo": "medium",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:13:47.034Z",
+        "description": ""
+      },
+      "files": {
+        "fill1": "onetwo_2_4_medium_drum_slow_FILL1.wav"
+      }
+    },
+    {
+      "id": "onetwo_2_4_medium_drum_slow_loop3",
+      "filename": "onetwo_2_4_medium_drum_slow_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "onetwo_1",
+      "conditions": {
+        "taal": "onetwo",
+        "timeSignature": "2/4",
+        "tempo": "medium",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:13:47.426Z",
+        "description": ""
+      },
+      "files": {
+        "loop3": "onetwo_2_4_medium_drum_slow_LOOP3.wav"
+      }
+    },
+    {
+      "id": "onetwo_2_4_medium_drum_slow_loop2",
+      "filename": "onetwo_2_4_medium_drum_slow_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "onetwo_1",
+      "conditions": {
+        "taal": "onetwo",
+        "timeSignature": "2/4",
+        "tempo": "medium",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:13:48.284Z",
+        "description": ""
+      },
+      "files": {
+        "loop2": "onetwo_2_4_medium_drum_slow_LOOP2.wav"
+      }
+    },
+    {
+      "id": "onetwo_2_4_medium_drum_slow_loop1",
+      "filename": "onetwo_2_4_medium_drum_slow_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "onetwo_1",
+      "conditions": {
+        "taal": "onetwo",
+        "timeSignature": "2/4",
+        "tempo": "medium",
+        "genre": "drum slow"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:13:48.667Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "onetwo_2_4_medium_drum_slow_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_slow_rd_pattern_loop1",
+      "filename": "keherwa_4_4_slow_rd_pattern_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_1",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "slow",
+        "genre": "rd pattern"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:37:39.811Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "keherwa_4_4_slow_rd_pattern_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_pattern_4_4_fast_dholak_loop1",
+      "filename": "rd_pattern_4_4_fast_dholak_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_pattern",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_pattern_1",
+      "conditions": {
+        "taal": "rd_pattern",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:40:55.833Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "rd_pattern_4_4_fast_dholak_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_fast_dholak_loop1",
+      "filename": "keherwa_4_4_fast_dholak_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_1",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "fast",
+        "genre": "dholak"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T12:41:29.434Z",
+        "description": ""
+      },
+      "files": {
+        "loop1": "keherwa_4_4_fast_dholak_LOOP1.wav"
+      }
+    },
+    {
+      "id": "dadra_4_4_medium_acoustic_loop1",
+      "filename": "dadra_4_4_medium_acoustic_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "dadra",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_2",
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:47:44.990Z",
+        "description": "loop1 for dadra_2"
+      },
+      "files": {
+        "loop1": "dadra_4_4_medium_acoustic_LOOP1.wav"
+      }
+    },
+    {
+      "id": "dadra_4_4_medium_acoustic_loop2",
+      "filename": "dadra_4_4_medium_acoustic_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "dadra",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_2",
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:47:58.151Z",
+        "description": "loop2 for dadra_2"
+      },
+      "files": {
+        "loop2": "dadra_4_4_medium_acoustic_LOOP2.wav"
+      }
+    },
+    {
+      "id": "dadra_4_4_medium_acoustic_loop3",
+      "filename": "dadra_4_4_medium_acoustic_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "dadra",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_2",
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:48:10.643Z",
+        "description": "loop3 for dadra_2"
+      },
+      "files": {
+        "loop3": "dadra_4_4_medium_acoustic_LOOP3.wav"
+      }
+    },
+    {
+      "id": "dadra_4_4_medium_acoustic_fill1",
+      "filename": "dadra_4_4_medium_acoustic_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "dadra",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_2",
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:48:19.833Z",
+        "description": "fill1 for dadra_2"
+      },
+      "files": {
+        "fill1": "dadra_4_4_medium_acoustic_FILL1.wav"
+      }
+    },
+    {
+      "id": "dadra_4_4_medium_acoustic_fill2",
+      "filename": "dadra_4_4_medium_acoustic_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "dadra",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_2",
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:48:33.042Z",
+        "description": "fill2 for dadra_2"
+      },
+      "files": {
+        "fill2": "dadra_4_4_medium_acoustic_FILL2.wav"
+      }
+    },
+    {
+      "id": "dadra_4_4_medium_acoustic_fill3",
+      "filename": "dadra_4_4_medium_acoustic_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "dadra",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_2",
+      "conditions": {
+        "taal": "dadra",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:48:40.704Z",
+        "description": "fill3 for dadra_2"
+      },
+      "files": {
+        "fill3": "dadra_4_4_medium_acoustic_FILL3.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_4_4_medium_acoustic_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "keherwa_2",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:52:12.318Z",
+        "description": "loop1 for keherwa_2"
+      },
+      "files": {
+        "loop1": "keherwa_4_4_medium_acoustic_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_acoustic_loop2",
+      "filename": "keherwa_4_4_medium_acoustic_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "keherwa_2",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:52:23.211Z",
+        "description": "loop2 for keherwa_2"
+      },
+      "files": {
+        "loop2": "keherwa_4_4_medium_acoustic_LOOP2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_acoustic_loop3",
+      "filename": "keherwa_4_4_medium_acoustic_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "keherwa_2",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:52:27.708Z",
+        "description": "loop3 for keherwa_2"
+      },
+      "files": {
+        "loop3": "keherwa_4_4_medium_acoustic_LOOP3.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_4_4_medium_acoustic_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "keherwa_2",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:52:32.964Z",
+        "description": "fill1 for keherwa_2"
+      },
+      "files": {
+        "fill1": "keherwa_4_4_medium_acoustic_FILL1.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_acoustic_fill2",
+      "filename": "keherwa_4_4_medium_acoustic_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "keherwa_2",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:52:36.891Z",
+        "description": "fill2 for keherwa_2"
+      },
+      "files": {
+        "fill2": "keherwa_4_4_medium_acoustic_FILL2.wav"
+      }
+    },
+    {
+      "id": "keherwa_4_4_medium_acoustic_fill3",
+      "filename": "keherwa_4_4_medium_acoustic_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "keherwa_2",
+      "conditions": {
+        "taal": "keherwa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T13:52:41.102Z",
+        "description": "fill3 for keherwa_2"
+      },
+      "files": {
+        "fill3": "keherwa_4_4_medium_acoustic_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_pattern_4_4_medium_acoustic_loop1",
+      "filename": "rd_pattern_4_4_medium_acoustic_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_pattern",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
+      "conditions": {
+        "taal": "rd_pattern",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T20:29:58.068Z",
+        "description": "loop1 for rd_pattern_2"
+      },
+      "files": {
+        "loop1": "rd_pattern_4_4_medium_acoustic_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_pattern_4_4_medium_acoustic_loop2",
+      "filename": "rd_pattern_4_4_medium_acoustic_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_pattern",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
+      "conditions": {
+        "taal": "rd_pattern",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T20:30:07.317Z",
+        "description": "loop2 for rd_pattern_2"
+      },
+      "files": {
+        "loop2": "rd_pattern_4_4_medium_acoustic_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_pattern_4_4_medium_acoustic_loop3",
+      "filename": "rd_pattern_4_4_medium_acoustic_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_pattern",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
+      "conditions": {
+        "taal": "rd_pattern",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T20:30:14.848Z",
+        "description": "loop3 for rd_pattern_2"
+      },
+      "files": {
+        "loop3": "rd_pattern_4_4_medium_acoustic_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_pattern_4_4_medium_acoustic_fill1",
+      "filename": "rd_pattern_4_4_medium_acoustic_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_pattern",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
+      "conditions": {
+        "taal": "rd_pattern",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T20:30:23.683Z",
+        "description": "fill1 for rd_pattern_2"
+      },
+      "files": {
+        "fill1": "rd_pattern_4_4_medium_acoustic_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_pattern_4_4_medium_acoustic_fill2",
+      "filename": "rd_pattern_4_4_medium_acoustic_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_pattern",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
+      "conditions": {
+        "taal": "rd_pattern",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T20:30:31.417Z",
+        "description": "fill2 for rd_pattern_2"
+      },
+      "files": {
+        "fill2": "rd_pattern_4_4_medium_acoustic_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_pattern_4_4_medium_acoustic_fill3",
+      "filename": "rd_pattern_4_4_medium_acoustic_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_pattern",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
+      "conditions": {
+        "taal": "rd_pattern",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-21T20:30:34.582Z",
+        "description": "fill3 for rd_pattern_2"
+      },
+      "files": {
+        "fill3": "rd_pattern_4_4_medium_acoustic_FILL3.wav"
+      }
     }
   ],
   "tempoRanges": {
@@ -1273,13 +2101,13 @@
       "rhythmSetId": "keherwa_1",
       "rhythmFamily": "keherwa",
       "rhythmSetNo": 1,
-      "fileCount": 18
+      "fileCount": 19
     },
     {
       "rhythmSetId": "rd_pattern_1",
       "rhythmFamily": "rd_pattern",
       "rhythmSetNo": 1,
-      "fileCount": 4
+      "fileCount": 5
     },
     {
       "rhythmSetId": "6beat_1",
@@ -1297,6 +2125,36 @@
       "rhythmSetId": "congo_1",
       "rhythmFamily": "congo",
       "rhythmSetNo": 1,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "keherwa_3",
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 3,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rupak_1",
+      "rhythmFamily": "rupak",
+      "rhythmSetNo": 1,
+      "fileCount": 4
+    },
+    {
+      "rhythmSetId": "onetwo_1",
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 1,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "dadra_2",
+      "rhythmFamily": "dadra",
+      "rhythmSetNo": 2,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "keherwa_2",
+      "rhythmFamily": "keherwa",
+      "rhythmSetNo": 2,
       "fileCount": 6
     }
   ]
