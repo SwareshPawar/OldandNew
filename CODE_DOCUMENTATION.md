@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** March 9, 2026 - 1:42 AM  
-**Version:** 1.20.0
+**Last Updated:** March 21, 2026 - Atmosphere Pad Looping Fix (Bug #9)  
+**Version:** 1.20.1
 
 ---
 
@@ -1535,6 +1535,135 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 ## 8. BUGS ENCOUNTERED & RESOLVED
 
 This section documents production bugs discovered during development and testing, along with their root causes and solutions. Each entry includes reproduction steps, debugging process, and lessons learned.
+
+### Bug #9: Atmosphere Pads Stopping After One Loop Iteration
+**Date Discovered:** March 21, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+Melodic atmosphere pads (atmosphere and tanpura) would play once through their loop and then stop, despite the UI showing them as active. The crossfade looping mechanism failed to schedule subsequent loop iterations, resulting in silence after the first loop completed.
+
+**Affected Components:**
+- `loop-player-pad.js` - Melodic pad playback system
+- `_startMelodicPad()` - Pad initialization
+- `_scheduleCrossfadeLoop()` - Crossfade scheduling logic
+
+**Reproduction Steps:**
+1. Load a song with a key (e.g., G)
+2. Click the "Atmosphere" pad button
+3. Pad starts playing with fade-in
+4. Wait for loop duration (e.g., 4.8 seconds)
+5. **BUG**: Audio stops, but UI still shows pad as active
+
+**Root Cause Analysis:**
+
+**Race Condition / Ordering Bug:**
+
+The `pad.isPlaying` flag was being set to `true` AFTER `_startCrossfadeLoop()` was called:
+
+```javascript
+// BROKEN CODE (line 1006-1007):
+this._startCrossfadeLoop(padType, buffer);  // Called first
+pad.isPlaying = true;                        // Set second (TOO LATE!)
+```
+
+**Execution flow:**
+1. `_startMelodicPad()` calls `_startCrossfadeLoop()` (line 1006)
+2. `_startCrossfadeLoop()` immediately calls `_scheduleCrossfadeLoop()` (line 1052)
+3. `_scheduleCrossfadeLoop()` checks `if (!pad.isPlaying)` (line 1063)
+4. **At this point, `pad.isPlaying` is still `false`!**
+5. Function returns early without scheduling (line 1066)
+6. THEN `pad.isPlaying` is set to `true` (line 1007) - but too late
+7. Result: First loop plays, but no subsequent loops are scheduled
+
+**Console Output Revealed the Issue:**
+```
+⏰ atmosphere first crossfade will be at 3.30s
+❌ atmosphere crossfade scheduling stopped - pad.isPlaying is false
+Started atmosphere pad (key: G) with 2s fade-in and 1.5s crossfade looping
+```
+
+Note: The "Started" message appears AFTER the scheduling failure.
+
+**Solution Implemented:**
+
+**Set `pad.isPlaying = true` BEFORE calling `_startCrossfadeLoop()`:**
+
+```javascript
+// FIXED CODE:
+// Set playing state BEFORE starting crossfade loop (so scheduling checks pass)
+pad.isPlaying = true;
+
+// Start the seamless crossfade looping
+this._startCrossfadeLoop(padType, buffer);
+```
+
+**Files Modified:**
+- `loop-player-pad.js` (lines 1004-1008)
+
+**Changes Made:**
+1. Moved `pad.isPlaying = true` to execute BEFORE `_startCrossfadeLoop()` call
+2. Added comment explaining why order matters
+3. Removed debug logging after verification
+
+**Additional Improvements (Implemented Earlier):**
+
+While debugging, implemented comprehensive crossfade looping system:
+
+1. **Dual-Buffer Crossfade System:**
+   - Each loop iteration gets its own `GainNode` for independent volume control
+   - Old source fades out while new source fades in simultaneously
+   - Smooth 1.5-second crossfade at loop point eliminates audible gaps
+
+2. **Seamless Looping Chain:**
+   - Each crossfade passes its `GainNode` reference to the next iteration
+   - Recursive scheduling continues indefinitely until `isPlaying = false`
+   - Proper cleanup prevents memory leaks
+
+3. **Fade In/Out on Start/Stop:**
+   - 2-second fade-in when pad starts (gentle introduction)
+   - 2-second fade-out when pad stops (smooth ending)
+   - No abrupt audio clicks or pops
+
+**Testing Performed:**
+- ✅ First loop plays completely
+- ✅ Second loop starts 1.5s before first ends
+- ✅ Crossfade is smooth and inaudible
+- ✅ Looping continues indefinitely (tested 5+ minutes)
+- ✅ Stop button works with fade-out
+- ✅ Works for both atmosphere and tanpura pads
+- ✅ No console errors
+- ✅ No memory leaks (checked DevTools memory profiler)
+
+**Console Output After Fix:**
+```
+🎬 atmosphere starting crossfade loop (buffer: 4.80s, fade-in: 2s, crossfade: 1.5s)
+▶️ atmosphere first source started at 0.00s, will play until 4.80s
+⏰ atmosphere first crossfade will be at 3.30s
+⏰ atmosphere scheduling crossfade in 3.20s (scheduled successfully)
+🔄 atmosphere crossfade executing at audio time 3.30s
+[Continues looping indefinitely...]
+```
+
+**Impact:**
+- Atmosphere pads now provide continuous, meditative background
+- Users can't hear where loops restart (truly seamless)
+- Professional-quality audio crossfading
+- No user-facing changes (bug fix is transparent)
+
+**Lessons Learned:**
+1. **Initialization order matters** - Flags must be set before functions that check them
+2. **Debug logging is invaluable** - Console output immediately revealed the race condition
+3. **Test asynchronous code thoroughly** - Timing-dependent bugs require careful execution flow analysis
+4. **Don't assume, verify** - The fix seemed simple, but required proof via logging
+
+**Related Documentation:**
+- `MELODIC_PAD_CROSSFADE_UPDATE.md` - Feature documentation for crossfade system
+- `ATMOSPHERE_PAD_LOOPING_FIX.md` - Detailed technical analysis of this bug
+- `ATMOSPHERE_PAD_VISUAL_GUIDE.md` - Visual diagrams of crossfade mechanism
+
+---
 
 ### Bug #8: Loop Player Expand/Collapse Button Not Working After Song Switch
 **Date Discovered:** February 28, 2026  

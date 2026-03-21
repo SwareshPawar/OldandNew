@@ -34,12 +34,16 @@ class LoopPlayerPad {
             atmosphere: {
                 isPlaying: false,
                 source: null,
-                gainNode: null
+                gainNode: null,
+                crossfadeSource: null, // Secondary source for seamless looping
+                scheduledStopTime: null
             },
             tanpura: {
                 isPlaying: false,
                 source: null,
-                gainNode: null
+                gainNode: null,
+                crossfadeSource: null, // Secondary source for seamless looping
+                scheduledStopTime: null
             }
         };
         this.currentSongKey = null;
@@ -56,6 +60,8 @@ class LoopPlayerPad {
         this.playbackRate = 1.0; // 0.5-2.0
         this.atmosphereVolume = 0.5; // 50% volume for atmosphere pad (increased for prominence)
         this.tanpuraVolume = 0.22; // 20% volume for tanpura pad (subtle but audible background drone)
+        this.melodicFadeDuration = 2.0; // Fade duration in seconds for melodic pads (2 seconds for smooth transitions)
+        this.loopCrossfadeDuration = 1.5; // Crossfade duration at loop point in seconds for seamless looping
         
         // Timing
         this.loopDuration = 0;
@@ -948,7 +954,7 @@ class LoopPlayerPad {
     }
 
     /**
-     * Start a melodic pad
+     * Start a melodic pad with seamless crossfade looping
      * @private
      * @param {string} padType - 'atmosphere' or 'tanpura'
      */
@@ -989,31 +995,132 @@ class LoopPlayerPad {
 
         const pad = this.melodicPads[padType];
         
-        // Ensure proper volume is set now that we're ready to play
-        if (pad.gainNode) {
-            pad.gainNode.gain.value = padType === 'atmosphere' ? this.atmosphereVolume : this.tanpuraVolume;
-        }
-        
-        // Stop any existing source
-        if (pad.source) {
-            try {
-                pad.source.stop();
-            } catch (e) {
-                // Already stopped
-            }
+        // Stop any existing source with fade out
+        if (pad.source && pad.isPlaying) {
+            this._stopMelodicPad(padType);
+            // Wait for fade out to complete before starting new source
+            await new Promise(resolve => setTimeout(resolve, this.melodicFadeDuration * 1000));
         }
 
-        // Create new looping source
-        pad.source = this.audioContext.createBufferSource();
-        pad.source.buffer = buffer;
-        pad.source.loop = true; // Enable looping
-        pad.source.connect(pad.gainNode);
-        
-        // Start playback
-        pad.source.start();
+        // Set playing state BEFORE starting crossfade loop (so scheduling checks pass)
         pad.isPlaying = true;
         
-        console.log(`Started ${padType} pad (key: ${effectiveKey})`);
+        // Start the seamless crossfade looping
+        this._startCrossfadeLoop(padType, buffer);
+        
+        console.log(`Started ${padType} pad (key: ${effectiveKey}) with ${this.melodicFadeDuration}s fade-in and ${this.loopCrossfadeDuration}s crossfade looping`);
+    }
+
+    /**
+     * Start a seamless crossfade loop for melodic pads
+     * Uses two alternating sources with crossfade at loop point for truly seamless playback
+     * @private
+     * @param {string} padType - 'atmosphere' or 'tanpura'
+     * @param {AudioBuffer} buffer - The audio buffer to loop
+     */
+    _startCrossfadeLoop(padType, buffer) {
+        const pad = this.melodicPads[padType];
+        const targetVolume = padType === 'atmosphere' ? this.atmosphereVolume : this.tanpuraVolume;
+        const currentTime = this.audioContext.currentTime;
+        const bufferDuration = buffer.duration;
+        
+        // Create the first source with its own gain for crossfading
+        const sourceGain = this.audioContext.createGain();
+        sourceGain.connect(pad.gainNode);
+        
+        pad.source = this.audioContext.createBufferSource();
+        pad.source.buffer = buffer;
+        pad.source.connect(sourceGain);
+        
+        // Start with volume at 0 for fade in (using main gain)
+        pad.gainNode.gain.cancelScheduledValues(currentTime);
+        pad.gainNode.gain.setValueAtTime(0, currentTime);
+        
+        // Fade in over the fade duration
+        pad.gainNode.gain.linearRampToValueAtTime(targetVolume, currentTime + this.melodicFadeDuration);
+        
+        // Source gain starts at full volume
+        sourceGain.gain.setValueAtTime(1.0, currentTime);
+        
+        // Start playback
+        pad.source.start(currentTime);
+        
+        // Schedule the first crossfade to happen before the buffer ends
+        const firstCrossfadeTime = currentTime + bufferDuration - this.loopCrossfadeDuration;
+        this._scheduleCrossfadeLoop(padType, buffer, firstCrossfadeTime, sourceGain);
+    }
+
+    /**
+     * Schedule the next crossfade loop iteration
+     * @private
+     * @param {string} padType - 'atmosphere' or 'tanpura'
+     * @param {AudioBuffer} buffer - The audio buffer to loop
+     * @param {number} crossfadeStartTime - When to start the crossfade
+     * @param {GainNode} oldSourceGain - The gain node of the currently playing source
+     */
+    _scheduleCrossfadeLoop(padType, buffer, crossfadeStartTime, oldSourceGain) {
+        const pad = this.melodicPads[padType];
+        if (!pad.isPlaying) return; // Stop scheduling if pad was stopped
+        
+        const currentTime = this.audioContext.currentTime;
+        const bufferDuration = buffer.duration;
+        
+        // Calculate when to schedule this (leave some buffer time)
+        const scheduleDelay = Math.max(0, (crossfadeStartTime - currentTime - 0.1) * 1000);
+        
+        setTimeout(() => {
+            if (!pad.isPlaying) return; // Double-check still playing
+            
+            const now = this.audioContext.currentTime;
+            
+            // Create new source with its own gain node for independent volume control
+            const newSourceGain = this.audioContext.createGain();
+            newSourceGain.connect(pad.gainNode);
+            
+            const newSource = this.audioContext.createBufferSource();
+            newSource.buffer = buffer;
+            newSource.connect(newSourceGain);
+            
+            // New source starts at 0 volume
+            newSourceGain.gain.setValueAtTime(0, now);
+            
+            // Fade in during crossfade period
+            newSourceGain.gain.linearRampToValueAtTime(1.0, now + this.loopCrossfadeDuration);
+            
+            // Start the new source immediately
+            newSource.start(now);
+            
+            // Store the new source as current
+            const oldSource = pad.source;
+            pad.source = newSource;
+            
+            // Fade out the old source during crossfade
+            if (oldSourceGain) {
+                oldSourceGain.gain.cancelScheduledValues(now);
+                oldSourceGain.gain.setValueAtTime(oldSourceGain.gain.value, now);
+                oldSourceGain.gain.linearRampToValueAtTime(0, now + this.loopCrossfadeDuration);
+            }
+            
+            // Stop and clean up the old source after crossfade completes
+            if (oldSource) {
+                setTimeout(() => {
+                    try {
+                        oldSource.stop();
+                        oldSource.disconnect();
+                        if (oldSourceGain) {
+                            oldSourceGain.disconnect();
+                        }
+                    } catch (e) {
+                        // Already stopped
+                    }
+                }, (this.loopCrossfadeDuration + 0.1) * 1000);
+            }
+            
+            // Schedule the next crossfade to happen before this new source ends
+            const nextCrossfadeTime = now + bufferDuration - this.loopCrossfadeDuration;
+            this._scheduleCrossfadeLoop(padType, buffer, nextCrossfadeTime, newSourceGain);
+            
+        }, scheduleDelay);
     }
 
     /**
@@ -1024,17 +1131,28 @@ class LoopPlayerPad {
     _stopMelodicPad(padType) {
         const pad = this.melodicPads[padType];
         
-        if (pad.source) {
-            try {
-                pad.source.stop();
-            } catch (e) {
-                // Already stopped
-            }
-            pad.source = null;
+        if (pad.source && pad.isPlaying) {
+            // Fade out before stopping
+            const currentTime = this.audioContext.currentTime;
+            pad.gainNode.gain.cancelScheduledValues(currentTime);
+            pad.gainNode.gain.setValueAtTime(pad.gainNode.gain.value, currentTime);
+            pad.gainNode.gain.linearRampToValueAtTime(0, currentTime + this.melodicFadeDuration);
+            
+            // Schedule the actual stop after fade completes
+            setTimeout(() => {
+                try {
+                    if (pad.source) {
+                        pad.source.stop();
+                        pad.source = null;
+                    }
+                } catch (e) {
+                    // Already stopped
+                }
+            }, this.melodicFadeDuration * 1000);
+            
+            pad.isPlaying = false;
+            console.log(`Stopping ${padType} pad with ${this.melodicFadeDuration}s fade-out`);
         }
-        
-        pad.isPlaying = false;
-        console.log(`Stopped ${padType} pad`);
     }
 
     /**
