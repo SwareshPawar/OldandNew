@@ -605,9 +605,24 @@
         </div>
     </div>
 
+    <!-- Loop Player Integration -->
+    <div class="panel" id="loopPlayerPanel" style="display: none;">
+        <div class="panel-header">
+            <h2><i class="fas fa-play-circle"></i> Loop Player</h2>
+            <button class="btn btn-danger" onclick="closeLoopPlayer()">
+                <i class="fas fa-times"></i> Close Player
+            </button>
+        </div>
+        
+        <div id="loopPlayerContainer"></div>
+    </div>
+
     <!-- Audio Player (Hidden) -->
     <audio id="loopPlayer" style="display: none;"></audio>
 
+    <!-- Load Loop Player Engine (not the UI - we create custom UI) -->
+    <script src="loop-player-pad.js"></script>
+    <!-- Then load the manager script -->
     <script src="loop-rhythm-manager.js"></script>
 </body>
 </html>

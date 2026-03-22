@@ -280,6 +280,49 @@ async function assignRhythmSet() {
     filterSongs();
 }
 
+async function unassignRhythmSet() {
+    if (selectedSongIds.size === 0) {
+        showAlert('Please select at least one song', 'error');
+        return;
+    }
+
+    if (!confirm(`Unassign rhythm set from ${selectedSongIds.size} selected song(s)?\n\nThis will remove their rhythm set assignment and they will use automatic rhythm matching instead.`)) {
+        return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const songId of selectedSongIds) {
+        try {
+            const response = await authFetch(`${API_BASE_URL}/api/songs/${songId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rhythmSetId: null,
+                    rhythmFamily: null,
+                    rhythmSetNo: null
+                })
+            });
+
+            if (response.ok) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        } catch (error) {
+            console.error(`Failed to unassign song ${songId}:`, error);
+            failCount++;
+        }
+    }
+
+    showAlert(`Unassigned ${successCount} song(s) successfully. ${failCount > 0 ? `Failed: ${failCount}` : ''}`, successCount > 0 ? 'success' : 'error');
+    
+    await loadSongs();
+    clearSelection();
+    filterSongs();
+}
+
 async function clearSongMapping(songId) {
     if (!confirm('Clear rhythm set assignment for this song?')) {
         return;

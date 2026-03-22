@@ -1209,28 +1209,45 @@ class LoopPlayerPad {
                     const fill = this.nextFill;
                     this.nextFill = null;
                     
-                    if (this.onPadActive && fill) this.onPadActive(fill);
-                    if (this.onLoopChange) this.onLoopChange(fill);
-                    
-                    // Play fill (not continuing sequence)
-                    this._playLoop(fill, false);
-                    
-                    // Schedule next loop after fill
+                    // Check if fill exists before trying to play it
                     const fillBuffer = this.audioBuffers.get(fill);
-                    const fillDuration = fillBuffer.duration / this.playbackRate;
                     
-                    this.loopTimeout = setTimeout(() => {
-                        if (this.isPlaying) {
-                            const targetLoop = this.nextLoop || this.currentLoop;
-                            this.currentLoop = targetLoop;
-                            this.nextLoop = null;
-                            
-                            if (this.onPadActive && targetLoop) this.onPadActive(targetLoop);
-                            if (this.onLoopChange) this.onLoopChange(targetLoop);
-                            
-                            this._playLoop(targetLoop, true);
-                        }
-                    }, fillDuration * 1000);
+                    if (fillBuffer) {
+                        // Fill exists - play it
+                        if (this.onPadActive && fill) this.onPadActive(fill);
+                        if (this.onLoopChange) this.onLoopChange(fill);
+                        
+                        // Play fill (not continuing sequence)
+                        this._playLoop(fill, false);
+                        
+                        // Schedule next loop after fill
+                        const fillDuration = fillBuffer.duration / this.playbackRate;
+                        
+                        this.loopTimeout = setTimeout(() => {
+                            if (this.isPlaying) {
+                                const targetLoop = this.nextLoop || this.currentLoop;
+                                this.currentLoop = targetLoop;
+                                this.nextLoop = null;
+                                
+                                if (this.onPadActive && targetLoop) this.onPadActive(targetLoop);
+                                if (this.onLoopChange) this.onLoopChange(targetLoop);
+                                
+                                this._playLoop(targetLoop, true);
+                            }
+                        }, fillDuration * 1000);
+                    } else {
+                        // Fill doesn't exist - skip directly to next loop
+                        console.warn(`Auto-fill ${fill} not available, skipping to next loop`);
+                        
+                        const targetLoop = this.nextLoop || this.currentLoop;
+                        this.currentLoop = targetLoop;
+                        this.nextLoop = null;
+                        
+                        if (this.onPadActive && targetLoop) this.onPadActive(targetLoop);
+                        if (this.onLoopChange) this.onLoopChange(targetLoop);
+                        
+                        this._playLoop(targetLoop, true);
+                    }
                     
                 } else if (this.nextLoop) {
                     // Switch to queued loop

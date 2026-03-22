@@ -372,6 +372,18 @@ function renderLoopSlots(rhythmSet) {
     });
     
     html += '</div>';
+    
+    // Add "Test in Loop Player" button if rhythm set has loops
+    if (availableFiles.length > 0) {
+        html += `
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn btn-primary" onclick="openLoopPlayer('${escapeHtml(rhythmSet.rhythmSetId)}')" style="padding: 12px 30px; font-size: 14px;">
+                    <i class="fas fa-play-circle"></i> Test in Loop Player (${availableFiles.length}/6 loops)
+                </button>
+            </div>
+        `;
+    }
+    
     return html;
 }
 
@@ -528,6 +540,31 @@ async function deleteRhythmSet(rhythmSetId) {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({ error: 'Failed to delete rhythm set' }));
+            console.error('Delete failed:', err);
+            
+            // If songs are mapped, offer force delete option
+            if (err.mappedSongsCount > 0) {
+                const songsList = err.mappedSongs 
+                    ? err.mappedSongs.map(s => `  • ${s.title} (ID: ${s.id})`).join('\n')
+                    : '';
+                
+                const forceDelete = confirm(
+                    `Cannot delete rhythm set "${rhythmSetId}".\n\n` +
+                    `${err.mappedSongsCount} song(s) are currently mapped to it:\n${songsList}\n\n` +
+                    `Would you like to FORCE DELETE?\n\n` +
+                    `⚠️ This will:\n` +
+                    `- Unmap all songs (they will lose their rhythm set assignment)\n` +
+                    `- Delete the rhythm set from database\n` +
+                    `- Delete all loop files\n\n` +
+                    `This action cannot be undone!`
+                );
+                
+                if (forceDelete) {
+                    await forceDeleteRhythmSet(rhythmSetId);
+                }
+                return;
+            }
+            
             throw new Error(err.error || 'Failed to delete rhythm set');
         }
 
@@ -537,6 +574,31 @@ async function deleteRhythmSet(rhythmSetId) {
         await loadRhythmSets();
 
     } catch (error) {
+        console.error('Delete error:', error);
+        showAlert('Error: ' + error.message, 'error');
+    }
+}
+
+async function forceDeleteRhythmSet(rhythmSetId) {
+    try {
+        showAlert('Force deleting rhythm set...', 'success');
+        
+        const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets/${rhythmSetId}/force`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: 'Failed to force delete rhythm set' }));
+            throw new Error(err.error || 'Failed to force delete rhythm set');
+        }
+
+        const result = await response.json();
+        showAlert(result.message || `Rhythm set "${rhythmSetId}" force deleted successfully`, 'success');
+        
+        await loadRhythmSets();
+
+    } catch (error) {
+        console.error('Force delete error:', error);
         showAlert('Error: ' + error.message, 'error');
     }
 }
@@ -703,4 +765,309 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ========================================
+// Loop Player Integration
+// ========================================
+
+let rhythmManagerPlayer = null;
+let currentPlayerRhythmSet = null;
+
+/**
+ * Open loop player for a specific rhythm set
+ */
+async function openLoopPlayer(rhythmSetId) {
+    const rhythmSet = rhythmSets.find(s => s.rhythmSetId === rhythmSetId);
+    if (!rhythmSet) {
+        showAlert('Rhythm set not found', 'error');
+        return;
+    }
+
+    // Check if rhythm set has any loops
+    const loopCount = (rhythmSet.availableFiles || []).length;
+    if (loopCount === 0) {
+        showAlert('No loops available for this rhythm set. Please upload loops first.', 'warning');
+        return;
+    }
+
+    currentPlayerRhythmSet = rhythmSet;
+
+    // Show the player panel
+    const playerPanel = document.getElementById('loopPlayerPanel');
+    playerPanel.style.display = 'block';
+    playerPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    try {
+        // Create or reuse player instance
+        if (!rhythmManagerPlayer) {
+            rhythmManagerPlayer = new LoopPlayerPad();
+        }
+
+        // Load loops for this rhythm set
+        await loadRhythmSetIntoPlayer(rhythmSet);
+        
+        // Create simple UI for the player
+        createSimplePlayerUI(rhythmSet);
+        
+        showAlert(`Loop player loaded for: ${rhythmSetId}`, 'success');
+    } catch (error) {
+        console.error('Error opening loop player:', error);
+        showAlert('Error opening loop player: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Load a rhythm set's loops into the player
+ */
+async function loadRhythmSetIntoPlayer(rhythmSet) {
+    const rhythmSetId = rhythmSet.rhythmSetId;
+    const files = rhythmSet.files || {};
+    
+    // Build loop map with actual filenames
+    const loopMap = {};
+    const loopTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    
+    loopTypes.forEach(loopType => {
+        const filename = files[loopType];
+        if (filename) {
+            loopMap[loopType] = `${API_BASE_URL}/loops/${filename}`;
+        }
+    });
+
+    console.log('Loading rhythm set into player:', rhythmSetId, loopMap);
+
+    // Load loops into player
+    try {
+        await rhythmManagerPlayer.loadLoops(loopMap, rhythmSetId);
+        showAlert(`Loaded ${Object.keys(loopMap).length} loops`, 'success');
+    } catch (error) {
+        console.error('Error loading loops into player:', error);
+        showAlert('Error loading loops: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Create simple player UI
+ */
+function createSimplePlayerUI(rhythmSet) {
+    const container = document.getElementById('loopPlayerContainer');
+    const files = rhythmSet.files || {};
+    
+    let html = `
+        <div style="background: #2c2c2c; padding: 20px; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #9b59b6;">
+                <i class="fas fa-drum"></i> ${escapeHtml(rhythmSet.rhythmSetId)}
+            </h3>
+            
+            <!-- Loop Pads -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #3498db; margin-bottom: 10px;">
+                    <i class="fas fa-music"></i> Main Loops
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+    `;
+    
+    ['loop1', 'loop2', 'loop3'].forEach(loopType => {
+        const hasLoop = files[loopType];
+        html += `
+            <button 
+                class="btn ${hasLoop ? 'btn-primary' : 'btn-secondary'}" 
+                ${hasLoop ? `onclick="playLoopPad('${loopType}')"` : 'disabled'}
+                style="padding: 15px; font-size: 16px;">
+                <i class="fas fa-play-circle"></i><br>
+                ${loopType.toUpperCase()}
+            </button>
+        `;
+    });
+    
+    html += `
+                </div>
+            </div>
+            
+            <!-- Fill Pads -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #e67e22; margin-bottom: 10px;">
+                    <i class="fas fa-drum"></i> Fills
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+    `;
+    
+    ['fill1', 'fill2', 'fill3'].forEach(fillType => {
+        const hasFill = files[fillType];
+        html += `
+            <button 
+                class="btn ${hasFill ? 'btn-warning' : 'btn-secondary'}" 
+                ${hasFill ? `onclick="playLoopPad('${fillType}')"` : 'disabled'}
+                style="padding: 15px; font-size: 16px;">
+                <i class="fas fa-bolt"></i><br>
+                ${fillType.toUpperCase()}
+            </button>
+        `;
+    });
+    
+    html += `
+                </div>
+            </div>
+            
+            <!-- Controls -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #27ae60; margin-bottom: 10px;">
+                    <i class="fas fa-sliders-h"></i> Controls
+                </h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #bbb;">
+                            <i class="fas fa-volume-up"></i> Volume: <span id="volumeValue">100</span>%
+                        </label>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="100" 
+                               style="width: 100%;" oninput="updateVolume(this.value)">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #bbb;">
+                            <i class="fas fa-tachometer-alt"></i> Tempo: <span id="tempoValue">100</span>%
+                        </label>
+                        <input type="range" id="tempoSlider" min="50" max="200" value="100" 
+                               style="width: 100%;" oninput="updateTempo(this.value)">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="autoFillCheckbox" onchange="toggleAutoFill(this.checked)" checked>
+                        <span style="color: #bbb;">
+                            <i class="fas fa-magic"></i> Auto-fill (play fill before switching loops)
+                        </span>
+                    </label>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn btn-success" onclick="startPlayer()" style="padding: 12px; font-size: 14px;">
+                        <i class="fas fa-play"></i> Start / Resume
+                    </button>
+                    <button class="btn btn-danger" onclick="stopPlayer()" style="padding: 12px; font-size: 14px;">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Status -->
+            <div id="playerStatus" style="padding: 10px; background: #1a1a1a; border-radius: 5px; color: #bbb; text-align: center;">
+                <i class="fas fa-info-circle"></i> Click a loop pad to start playing
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Play a loop or fill pad
+ */
+async function playLoopPad(padName) {
+    if (!rhythmManagerPlayer) return;
+    
+    try {
+        // Initialize audio context if needed (requires user gesture)
+        await rhythmManagerPlayer.initialize();
+        
+        const status = document.getElementById('playerStatus');
+        
+        if (padName.startsWith('fill')) {
+            rhythmManagerPlayer.playFill(padName);
+            if (status) status.innerHTML = `<i class="fas fa-bolt"></i> Playing ${padName.toUpperCase()}...`;
+        } else {
+            rhythmManagerPlayer.switchToLoop(padName);
+            await rhythmManagerPlayer.play();
+            if (status) status.innerHTML = `<i class="fas fa-play-circle"></i> Playing ${padName.toUpperCase()}...`;
+        }
+    } catch (error) {
+        console.error('Error playing pad:', error);
+        showAlert('Error: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Start the player
+ */
+async function startPlayer() {
+    if (!rhythmManagerPlayer) return;
+    
+    try {
+        await rhythmManagerPlayer.initialize();
+        await rhythmManagerPlayer.play();
+        
+        const status = document.getElementById('playerStatus');
+        if (status) status.innerHTML = `<i class="fas fa-play-circle"></i> Playing...`;
+    } catch (error) {
+        console.error('Error starting player:', error);
+        showAlert('Error: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Stop the player
+ */
+function stopPlayer() {
+    if (!rhythmManagerPlayer) return;
+    
+    rhythmManagerPlayer.pause();
+    
+    const status = document.getElementById('playerStatus');
+    if (status) status.innerHTML = `<i class="fas fa-stop-circle"></i> Stopped`;
+}
+
+/**
+ * Update volume
+ */
+function updateVolume(value) {
+    if (!rhythmManagerPlayer) return;
+    
+    const volumeValue = document.getElementById('volumeValue');
+    if (volumeValue) volumeValue.textContent = value;
+    
+    rhythmManagerPlayer.setVolume(value / 100);
+}
+
+/**
+ * Update tempo
+ */
+function updateTempo(value) {
+    if (!rhythmManagerPlayer) return;
+    
+    const tempoValue = document.getElementById('tempoValue');
+    if (tempoValue) tempoValue.textContent = value;
+    
+    rhythmManagerPlayer.setTempo(value / 100);
+}
+
+/**
+ * Toggle auto-fill
+ */
+function toggleAutoFill(enabled) {
+    if (!rhythmManagerPlayer) return;
+    
+    rhythmManagerPlayer.setAutoFill(enabled);
+    
+    const status = document.getElementById('playerStatus');
+    if (status) {
+        const icon = enabled ? '<i class="fas fa-magic"></i>' : '<i class="fas fa-ban"></i>';
+        status.innerHTML = `${icon} Auto-fill ${enabled ? 'enabled' : 'disabled'}`;
+    }
+}
+
+/**
+ * Close the loop player
+ */
+function closeLoopPlayer() {
+    if (rhythmManagerPlayer) {
+        rhythmManagerPlayer.pause();
+    }
+    
+    const playerPanel = document.getElementById('loopPlayerPanel');
+    playerPanel.style.display = 'none';
+    
+    currentPlayerRhythmSet = null;
 }

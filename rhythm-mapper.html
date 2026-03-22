@@ -48,6 +48,13 @@
         .btn-primary:hover {
             background-color: #2980b9;
         }
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
         .btn-secondary {
             background-color: #95a5a6;
             color: white;
@@ -316,6 +323,9 @@
             </select>
             <button class="btn btn-primary" onclick="assignRhythmSet()">
                 <i class="fas fa-check"></i> Assign to Selected
+            </button>
+            <button class="btn btn-warning" onclick="unassignRhythmSet()" title="Remove rhythm set assignment from selected songs">
+                <i class="fas fa-times"></i> Unassign from Selected
             </button>
         </div>
 

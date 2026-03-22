@@ -1242,11 +1242,13 @@ app.delete('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async 
     }
 
     // Check if any songs are currently mapped to this rhythm set
-    const mappedSongsCount = await songsCollection.countDocuments({ rhythmSetId: rhythmSetId });
-    if (mappedSongsCount > 0) {
+    const mappedSongs = await songsCollection.find({ rhythmSetId: rhythmSetId }).toArray();
+    if (mappedSongs.length > 0) {
+      const songTitles = mappedSongs.map(s => `"${s.title}" (ID: ${s.id})`).join(', ');
       return res.status(400).json({ 
-        error: `Cannot delete rhythm set. ${mappedSongsCount} song(s) are currently mapped to it. Please unmap them first.`,
-        mappedSongsCount 
+        error: `Cannot delete rhythm set. ${mappedSongs.length} song(s) are currently mapped to it: ${songTitles}. Please unmap them first in Rhythm Mapper, or use force delete.`,
+        mappedSongsCount: mappedSongs.length,
+        mappedSongs: mappedSongs.map(s => ({ id: s.id, title: s.title }))
       });
     }
 
@@ -1300,6 +1302,84 @@ app.delete('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async 
       success: true, 
       message: `Rhythm set ${rhythmSetId} deleted successfully. ${deletedFilesCount} loop file(s) removed.`,
       rhythmSetId,
+      deletedFilesCount
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/rhythm-sets/:rhythmSetId/force
+ * Force delete a rhythm set (unmaps songs automatically)
+ */
+app.delete('/api/rhythm-sets/:rhythmSetId/force', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const rhythmSetId = req.params.rhythmSetId;
+    const parsed = parseRhythmSetId(rhythmSetId);
+    if (!parsed) {
+      return res.status(400).json({ error: 'Invalid rhythmSetId format. Expected family_setNo' });
+    }
+
+    // Unmap all songs that reference this rhythm set
+    const unmapResult = await songsCollection.updateMany(
+      { rhythmSetId: rhythmSetId },
+      { $unset: { rhythmSetId: "" } }
+    );
+    
+    console.log(`Unmapped ${unmapResult.modifiedCount} songs from rhythm set ${rhythmSetId}`);
+
+    // Get loop files associated with this rhythm set from metadata
+    const metadata = readLoopsMetadataSafe();
+    const loopsToDelete = [];
+    
+    if (metadata && metadata.loops) {
+      metadata.loops.forEach(loop => {
+        if (loop.rhythmSetId === rhythmSetId && loop.filename) {
+          loopsToDelete.push(loop.filename);
+        }
+      });
+    }
+
+    // Delete the rhythm set from the database
+    const result = await rhythmSetsCollection.deleteOne({ rhythmSetId: rhythmSetId });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Rhythm set not found' });
+    }
+
+    // Delete associated loop files and update metadata
+    let deletedFilesCount = 0;
+    if (loopsToDelete.length > 0) {
+      for (const filename of loopsToDelete) {
+        const filePath = path.join(loopsDir, filename);
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            deletedFilesCount++;
+          }
+        } catch (err) {
+          console.error(`Failed to delete loop file ${filename}:`, err);
+        }
+      }
+
+      // Update metadata to remove deleted loops
+      const updatedLoops = metadata.loops.filter(loop => loop.rhythmSetId !== rhythmSetId);
+      metadata.loops = updatedLoops;
+      
+      const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+      try {
+        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      } catch (err) {
+        console.error('Failed to update metadata after deleting loops:', err);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Rhythm set ${rhythmSetId} force deleted successfully. Unmapped ${unmapResult.modifiedCount} song(s) and removed ${deletedFilesCount} loop file(s).`,
+      rhythmSetId,
+      unmappedSongsCount: unmapResult.modifiedCount,
       deletedFilesCount
     });
   } catch (err) {
