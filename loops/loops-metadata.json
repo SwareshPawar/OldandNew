@@ -1803,8 +1803,8 @@
       "type": "loop",
       "number": 1,
       "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 3,
-      "rhythmSetId": "rd_pattern_3",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
       "conditions": {
         "taal": "rd_pattern",
         "timeSignature": "4/4",
@@ -1813,8 +1813,8 @@
       },
       "metadata": {
         "duration": 0,
-        "uploadedAt": "2026-03-22T05:25:46.039Z",
-        "description": "loop1 for rd_pattern_3"
+        "uploadedAt": "2026-03-22T06:34:34.141Z",
+        "description": "loop1 for rd_pattern_2"
       },
       "files": {
         "loop1": "rd_pattern_4_4_medium_acoustic_LOOP1.wav"
@@ -1826,8 +1826,8 @@
       "type": "loop",
       "number": 2,
       "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 3,
-      "rhythmSetId": "rd_pattern_3",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
       "conditions": {
         "taal": "rd_pattern",
         "timeSignature": "4/4",
@@ -1836,8 +1836,8 @@
       },
       "metadata": {
         "duration": 0,
-        "uploadedAt": "2026-03-22T05:25:54.161Z",
-        "description": "loop2 for rd_pattern_3"
+        "uploadedAt": "2026-03-22T06:34:39.868Z",
+        "description": "loop2 for rd_pattern_2"
       },
       "files": {
         "loop2": "rd_pattern_4_4_medium_acoustic_LOOP2.wav"
@@ -1849,8 +1849,8 @@
       "type": "loop",
       "number": 3,
       "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 3,
-      "rhythmSetId": "rd_pattern_3",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
       "conditions": {
         "taal": "rd_pattern",
         "timeSignature": "4/4",
@@ -1859,8 +1859,8 @@
       },
       "metadata": {
         "duration": 0,
-        "uploadedAt": "2026-03-22T05:25:57.239Z",
-        "description": "loop3 for rd_pattern_3"
+        "uploadedAt": "2026-03-22T06:34:59.461Z",
+        "description": "loop3 for rd_pattern_2"
       },
       "files": {
         "loop3": "rd_pattern_4_4_medium_acoustic_LOOP3.wav"
@@ -1872,8 +1872,8 @@
       "type": "fill",
       "number": 1,
       "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 3,
-      "rhythmSetId": "rd_pattern_3",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
       "conditions": {
         "taal": "rd_pattern",
         "timeSignature": "4/4",
@@ -1882,8 +1882,8 @@
       },
       "metadata": {
         "duration": 0,
-        "uploadedAt": "2026-03-22T05:26:02.911Z",
-        "description": "fill1 for rd_pattern_3"
+        "uploadedAt": "2026-03-22T06:35:10.711Z",
+        "description": "fill1 for rd_pattern_2"
       },
       "files": {
         "fill1": "rd_pattern_4_4_medium_acoustic_FILL1.wav"
@@ -1895,8 +1895,8 @@
       "type": "fill",
       "number": 2,
       "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 3,
-      "rhythmSetId": "rd_pattern_3",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
       "conditions": {
         "taal": "rd_pattern",
         "timeSignature": "4/4",
@@ -1905,8 +1905,8 @@
       },
       "metadata": {
         "duration": 0,
-        "uploadedAt": "2026-03-22T05:26:05.698Z",
-        "description": "fill2 for rd_pattern_3"
+        "uploadedAt": "2026-03-22T06:35:13.587Z",
+        "description": "fill2 for rd_pattern_2"
       },
       "files": {
         "fill2": "rd_pattern_4_4_medium_acoustic_FILL2.wav"
@@ -1918,8 +1918,8 @@
       "type": "fill",
       "number": 3,
       "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 3,
-      "rhythmSetId": "rd_pattern_3",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_pattern_2",
       "conditions": {
         "taal": "rd_pattern",
         "timeSignature": "4/4",
@@ -1928,8 +1928,8 @@
       },
       "metadata": {
         "duration": 0,
-        "uploadedAt": "2026-03-22T05:26:08.630Z",
-        "description": "fill3 for rd_pattern_3"
+        "uploadedAt": "2026-03-22T06:35:38.540Z",
+        "description": "fill3 for rd_pattern_2"
       },
       "files": {
         "fill3": "rd_pattern_4_4_medium_acoustic_FILL3.wav"

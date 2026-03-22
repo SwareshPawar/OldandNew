@@ -54,9 +54,72 @@ async function loadRhythmSets() {
             console.log('files mapping:', rhythmSets[0].files);
             console.log('conditionsHint:', rhythmSets[0].conditionsHint);
         }
+        populateRhythmFamilyList();
         renderRhythmSetsTable();
     } catch (error) {
         showAlert('Error loading rhythm sets: ' + error.message, 'error');
+    }
+}
+
+function populateRhythmFamilyList() {
+    const selectElement = document.getElementById('rhythmFamilySelect');
+    if (!selectElement) return;
+    
+    // Get unique rhythm families
+    const families = new Set();
+    rhythmSets.forEach(set => {
+        if (set.rhythmFamily) {
+            families.add(set.rhythmFamily);
+        }
+    });
+    
+    // Sort alphabetically
+    const sortedFamilies = Array.from(families).sort();
+    
+    // Clear existing options (keep first two: empty and custom)
+    while (selectElement.options.length > 2) {
+        selectElement.remove(2);
+    }
+    
+    // Add existing families
+    sortedFamilies.forEach(family => {
+        const option = document.createElement('option');
+        option.value = family;
+        option.textContent = family;
+        selectElement.appendChild(option);
+    });
+    
+    console.log(`Populated ${sortedFamilies.length} rhythm families:`, sortedFamilies);
+}
+
+function handleRhythmFamilySelect() {
+    const selectElement = document.getElementById('rhythmFamilySelect');
+    const inputElement = document.getElementById('rhythmFamily');
+    const selectedValue = selectElement.value;
+    
+    if (selectedValue === '__custom__') {
+        // Show input field for custom entry
+        selectElement.style.display = 'none';
+        inputElement.style.display = 'block';
+        inputElement.value = '';
+        inputElement.focus();
+        
+        // Clear set number and preview
+        document.getElementById('rhythmSetNo').innerHTML = '<option value="">Select set number...</option>';
+        document.getElementById('rhythmSetPreview').style.display = 'none';
+        document.getElementById('existingLoopsInfo').style.display = 'none';
+    } else if (selectedValue) {
+        // Use selected family
+        inputElement.value = selectedValue;
+        updateAvailableSetNumbers();
+        updateRhythmSetPreview();
+        showExistingLoops();
+    } else {
+        // Empty selection
+        inputElement.value = '';
+        document.getElementById('rhythmSetNo').innerHTML = '<option value="">Select set number...</option>';
+        document.getElementById('rhythmSetPreview').style.display = 'none';
+        document.getElementById('existingLoopsInfo').style.display = 'none';
     }
 }
 
@@ -67,6 +130,26 @@ function setupRhythmFamilyListener() {
         updateAvailableSetNumbers();
         updateRhythmSetPreview();
         showExistingLoops();
+    });
+    
+    // Add button to go back to select
+    familyInput.addEventListener('blur', (e) => {
+        // Don't hide if clicking on set number dropdown
+        setTimeout(() => {
+            if (familyInput.value && familyInput.style.display === 'block') {
+                // Keep visible if user entered a value
+            }
+        }, 200);
+    });
+    
+    // Add escape key handler to go back to select
+    familyInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const selectElement = document.getElementById('rhythmFamilySelect');
+            familyInput.style.display = 'none';
+            selectElement.style.display = 'block';
+            selectElement.value = '';
+        }
     });
 
     document.getElementById('rhythmSetNo').addEventListener('change', () => {
@@ -231,7 +314,15 @@ async function createRhythmSet() {
         showAlert(`Rhythm set "${rhythmSetId}" created successfully!`, 'success');
         
         // Reset form
-        document.getElementById('rhythmFamily').value = '';
+        const selectElement = document.getElementById('rhythmFamilySelect');
+        const inputElement = document.getElementById('rhythmFamily');
+        
+        // Show select, hide input
+        selectElement.style.display = 'block';
+        inputElement.style.display = 'none';
+        selectElement.value = '';
+        inputElement.value = '';
+        
         document.getElementById('rhythmSetNo').innerHTML = '<option value="">Select set number...</option>';
         document.getElementById('notes').value = '';
         document.getElementById('rhythmSetPreview').style.display = 'none';

@@ -509,7 +509,17 @@
         <div class="form-grid">
             <div class="form-group">
                 <label for="rhythmFamily">Rhythm Family *</label>
-                <input type="text" id="rhythmFamily" placeholder="e.g., keherwa, dadra, waltz" required>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="rhythmFamilySelect" style="flex: 1;" onchange="handleRhythmFamilySelect()">
+                        <option value="">-- Select existing or type new --</option>
+                        <option value="__custom__">✏️ Type new family name...</option>
+                    </select>
+                    <input type="text" id="rhythmFamily" placeholder="Type new rhythm family" 
+                           required autocomplete="off" style="flex: 1; display: none;">
+                </div>
+                <small style="color: #888; font-size: 11px; margin-top: 3px; display: block;">
+                    <i class="fas fa-lightbulb"></i> Select existing family or choose "Type new" to create a new one
+                </small>
             </div>
             <div class="form-group">
                 <label for="rhythmSetNo">Set Number *</label>
