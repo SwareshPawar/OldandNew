@@ -1934,6 +1934,144 @@
       "files": {
         "fill3": "rd_pattern_4_4_medium_acoustic_FILL3.wav"
       }
+    },
+    {
+      "id": "drum_6_slow_4_4_medium_acoustic_loop1",
+      "filename": "drum_6_slow_4_4_medium_acoustic_LOOP1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-24T06:44:44.652Z",
+        "description": "loop1 for drum_6_slow_1"
+      },
+      "files": {
+        "loop1": "drum_6_slow_4_4_medium_acoustic_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_4_4_medium_acoustic_loop2",
+      "filename": "drum_6_slow_4_4_medium_acoustic_LOOP2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-24T06:44:51.898Z",
+        "description": "loop2 for drum_6_slow_1"
+      },
+      "files": {
+        "loop2": "drum_6_slow_4_4_medium_acoustic_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_4_4_medium_acoustic_loop3",
+      "filename": "drum_6_slow_4_4_medium_acoustic_LOOP3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-24T06:44:54.437Z",
+        "description": "loop3 for drum_6_slow_1"
+      },
+      "files": {
+        "loop3": "drum_6_slow_4_4_medium_acoustic_LOOP3.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_4_4_medium_acoustic_fill1",
+      "filename": "drum_6_slow_4_4_medium_acoustic_FILL1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-24T06:44:58.454Z",
+        "description": "fill1 for drum_6_slow_1"
+      },
+      "files": {
+        "fill1": "drum_6_slow_4_4_medium_acoustic_FILL1.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_4_4_medium_acoustic_fill2",
+      "filename": "drum_6_slow_4_4_medium_acoustic_FILL2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-24T06:45:00.877Z",
+        "description": "fill2 for drum_6_slow_1"
+      },
+      "files": {
+        "fill2": "drum_6_slow_4_4_medium_acoustic_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_4_4_medium_acoustic_fill3",
+      "filename": "drum_6_slow_4_4_medium_acoustic_FILL3.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-24T06:45:03.286Z",
+        "description": "fill3 for drum_6_slow_1"
+      },
+      "files": {
+        "fill3": "drum_6_slow_4_4_medium_acoustic_FILL3.wav"
+      }
     }
   ],
   "tempoRanges": {
