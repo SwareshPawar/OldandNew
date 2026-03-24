@@ -630,6 +630,70 @@
     <!-- Audio Player (Hidden) -->
     <audio id="loopPlayer" style="display: none;"></audio>
 
+    <!-- Edit Rhythm Set Modal -->
+    <div id="editRhythmSetModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; overflow-y: auto;">
+        <div style="max-width: 600px; margin: 50px auto; background: #2c2c2c; border-radius: 10px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #444;">
+                <h2 style="margin: 0; color: #9b59b6;"><i class="fas fa-edit"></i> Edit Rhythm Set ID</h2>
+                <button onclick="closeEditModal()" style="background: none; border: none; color: #e74c3c; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="info-box warning" style="margin-bottom: 20px;">
+                <strong>⚠️ Warning:</strong> Editing the Rhythm Set ID will update:
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>The rhythm set in the database</li>
+                    <li>All loop files (renamed accordingly)</li>
+                    <li>All songs mapped to this rhythm set</li>
+                </ul>
+            </div>
+
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <strong style="color: #aaa;">Current Rhythm Set ID:</strong>
+                <div style="font-size: 18px; color: #3498db; margin-top: 5px;" id="editCurrentRhythmSetId"></div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="editRhythmFamily">New Rhythm Family *</label>
+                    <input type="text" id="editRhythmFamily" placeholder="Enter rhythm family" required>
+                    <small style="color: #888; font-size: 11px; margin-top: 3px; display: block;">
+                        e.g., Rock, Blues, Jazz, Pop, etc.
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="editRhythmSetNo">New Set Number *</label>
+                    <input type="number" id="editRhythmSetNo" min="1" placeholder="Enter set number" required>
+                    <small style="color: #888; font-size: 11px; margin-top: 3px; display: block;">
+                        Must be a positive integer
+                    </small>
+                </div>
+            </div>
+
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <strong style="color: #aaa;">New Rhythm Set ID Preview:</strong>
+                <div style="font-size: 18px; color: #27ae60; margin-top: 5px;" id="editNewRhythmSetIdPreview">-</div>
+            </div>
+
+            <div id="editConflictWarning" class="info-box" style="display: none; border-left-color: #e74c3c; background-color: #3a1a1a;">
+                <strong style="color: #e74c3c;">❌ Conflict:</strong>
+                <span id="editConflictMessage"></span>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeEditModal()" style="flex: 1;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-success" onclick="saveRhythmSetEdit()" id="saveEditButton" style="flex: 1;">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+
+            <input type="hidden" id="editOriginalRhythmSetId">
+        </div>
+    </div>
+
     <!-- Load Loop Player Engine (not the UI - we create custom UI) -->
     <script src="loop-player-pad.js"></script>
     <!-- Then load the manager script -->

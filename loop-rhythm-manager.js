@@ -382,6 +382,9 @@ function renderRhythmSetsTable() {
             <td>${loopBadge}</td>
             <td>${statusBadge}</td>
             <td>
+                <button class="btn btn-primary btn-mini" onclick="event.stopPropagation(); editRhythmSet('${escapeHtml(set.rhythmSetId)}', '${escapeHtml(set.rhythmFamily)}', ${set.rhythmSetNo})" style="margin-right: 5px;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
                 <button class="btn btn-danger btn-mini" onclick="event.stopPropagation(); deleteRhythmSet('${escapeHtml(set.rhythmSetId)}')">
                     <i class="fas fa-trash"></i> Delete
                 </button>
@@ -1161,4 +1164,165 @@ function closeLoopPlayer() {
     playerPanel.style.display = 'none';
     
     currentPlayerRhythmSet = null;
+}
+
+/**
+ * Edit Rhythm Set ID
+ */
+function editRhythmSet(rhythmSetId, rhythmFamily, rhythmSetNo) {
+    const modal = document.getElementById('editRhythmSetModal');
+    const currentId = document.getElementById('editCurrentRhythmSetId');
+    const familyInput = document.getElementById('editRhythmFamily');
+    const setNoInput = document.getElementById('editRhythmSetNo');
+    const originalIdInput = document.getElementById('editOriginalRhythmSetId');
+    
+    // Set current values
+    currentId.textContent = rhythmSetId;
+    familyInput.value = rhythmFamily;
+    setNoInput.value = rhythmSetNo;
+    originalIdInput.value = rhythmSetId;
+    
+    // Update preview
+    updateEditPreview();
+    
+    // Show modal
+    modal.style.display = 'block';
+    
+    // Add event listeners for live preview
+    familyInput.addEventListener('input', updateEditPreview);
+    setNoInput.addEventListener('input', updateEditPreview);
+}
+
+/**
+ * Update the preview of new rhythm set ID
+ */
+async function updateEditPreview() {
+    const familyInput = document.getElementById('editRhythmFamily');
+    const setNoInput = document.getElementById('editRhythmSetNo');
+    const preview = document.getElementById('editNewRhythmSetIdPreview');
+    const conflictWarning = document.getElementById('editConflictWarning');
+    const conflictMessage = document.getElementById('editConflictMessage');
+    const saveButton = document.getElementById('saveEditButton');
+    
+    const family = familyInput.value.trim();
+    const setNo = parseInt(setNoInput.value);
+    
+    if (!family || !setNo || setNo < 1) {
+        preview.textContent = '-';
+        conflictWarning.style.display = 'none';
+        saveButton.disabled = true;
+        return;
+    }
+    
+    const newRhythmSetId = `${family}_${setNo}`;
+    preview.textContent = newRhythmSetId;
+    
+    // Check for conflicts
+    const originalId = document.getElementById('editOriginalRhythmSetId').value;
+    if (newRhythmSetId === originalId) {
+        conflictWarning.style.display = 'none';
+        saveButton.disabled = false;
+        return;
+    }
+    
+    // Check if new ID already exists
+    const existingSet = rhythmSets.find(set => set.rhythmSetId === newRhythmSetId);
+    if (existingSet) {
+        conflictWarning.style.display = 'block';
+        conflictMessage.textContent = `A rhythm set with ID "${newRhythmSetId}" already exists!`;
+        saveButton.disabled = true;
+    } else {
+        conflictWarning.style.display = 'none';
+        saveButton.disabled = false;
+    }
+}
+
+/**
+ * Save the edited rhythm set
+ */
+async function saveRhythmSetEdit() {
+    const originalId = document.getElementById('editOriginalRhythmSetId').value;
+    const newFamily = document.getElementById('editRhythmFamily').value.trim();
+    const newSetNo = parseInt(document.getElementById('editRhythmSetNo').value);
+    
+    if (!newFamily || !newSetNo || newSetNo < 1) {
+        showAlert('Please provide valid rhythm family and set number', 'error');
+        return;
+    }
+    
+    const newRhythmSetId = `${newFamily}_${newSetNo}`;
+    
+    // If no change, just close
+    if (newRhythmSetId === originalId) {
+        closeEditModal();
+        return;
+    }
+    
+    // Confirm the change
+    const confirmed = confirm(
+        `Are you sure you want to update the Rhythm Set ID?\n\n` +
+        `From: ${originalId}\n` +
+        `To: ${newRhythmSetId}\n\n` +
+        `This will update:\n` +
+        `- The rhythm set in the database\n` +
+        `- All loop files (renamed accordingly)\n` +
+        `- All songs mapped to this rhythm set\n\n` +
+        `This action cannot be undone!`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+        showAlert('Updating rhythm set...', 'success');
+        
+        const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets/${originalId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                newRhythmSetId: newRhythmSetId,
+                rhythmFamily: newFamily,
+                rhythmSetNo: newSetNo
+            })
+        });
+        
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: 'Failed to update rhythm set' }));
+            throw new Error(err.error || 'Failed to update rhythm set');
+        }
+        
+        const result = await response.json();
+        
+        showAlert(
+            `Rhythm set updated successfully!\n\n` +
+            `Old ID: ${originalId}\n` +
+            `New ID: ${newRhythmSetId}\n\n` +
+            `${result.updatedSongsCount || 0} song(s) updated.`,
+            'success'
+        );
+        
+        // Close modal and reload
+        closeEditModal();
+        await loadRhythmSets();
+        
+    } catch (error) {
+        console.error('Edit error:', error);
+        showAlert('Error: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Close the edit modal
+ */
+function closeEditModal() {
+    const modal = document.getElementById('editRhythmSetModal');
+    modal.style.display = 'none';
+    
+    // Clear inputs
+    document.getElementById('editRhythmFamily').value = '';
+    document.getElementById('editRhythmSetNo').value = '';
+    document.getElementById('editOriginalRhythmSetId').value = '';
+    document.getElementById('editNewRhythmSetIdPreview').textContent = '-';
+    document.getElementById('editConflictWarning').style.display = 'none';
 }

@@ -1165,7 +1165,7 @@ app.put('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async (re
     }
 
     if (isRename) {
-      await songsCollection.updateMany(
+      const songUpdateResult = await songsCollection.updateMany(
         { rhythmSetId: parsed.rhythmSetId },
         {
           $set: {
@@ -1184,6 +1184,8 @@ app.put('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async (re
         targetRhythmSetNo,
         targetRhythmSetId
       );
+      
+      updates.updatedSongsCount = songUpdateResult.modifiedCount;
     }
 
     const result = await rhythmSetsCollection.updateOne(
@@ -1200,7 +1202,8 @@ app.put('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async (re
     res.json({
       ...updated,
       previousRhythmSetId: parsed.rhythmSetId,
-      renamed: isRename
+      renamed: isRename,
+      updatedSongsCount: updates.updatedSongsCount || 0
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
