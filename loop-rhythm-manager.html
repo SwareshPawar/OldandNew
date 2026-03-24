@@ -265,14 +265,25 @@
             font-weight: bold;
         }
         .rhythm-set-row {
-            cursor: pointer;
             transition: background-color 0.2s;
-        }
-        .rhythm-set-row:hover {
-            background-color: #3a3a5a !important;
         }
         .rhythm-set-row.expanded {
             background-color: #3a3a5a !important;
+        }
+        .expand-icon {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            padding: 5px;
+        }
+        .expand-icon:hover {
+            color: #9b59b6;
+            transform: scale(1.2);
+        }
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+        .expand-icon.expanded:hover {
+            transform: rotate(90deg) scale(1.2);
         }
         .loop-details-row {
             display: none;
@@ -351,13 +362,6 @@
             font-size: 12px;
             color: #aaa;
             margin-top: 5px;
-        }
-        .expand-icon {
-            transition: transform 0.3s;
-            display: inline-block;
-        }
-        .expand-icon.expanded {
-            transform: rotate(90deg);
         }
         
         /* Mobile Responsive Styles */
@@ -590,7 +594,7 @@
         </div>
 
         <div class="info-box" style="margin-bottom: 15px;">
-            <strong>💡 Tip:</strong> Click on any rhythm set row to expand and view/manage individual loops
+            <strong>💡 Tip:</strong> Click on the <i class="fas fa-chevron-right"></i> arrow icon to expand and view/manage individual loops
         </div>
 
         <div style="overflow-x: auto;">

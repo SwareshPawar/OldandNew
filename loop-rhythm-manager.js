@@ -373,7 +373,7 @@ function renderRhythmSetsTable() {
         mainRow.id = `row-${index}`;
         mainRow.style = isSelected ? 'background-color: #3a3a5a;' : '';
         mainRow.innerHTML = `
-            <td>
+            <td style="cursor: pointer;" data-expand-trigger="${index}">
                 <i class="fas fa-chevron-right expand-icon" id="icon-${index}"></i>
             </td>
             <td><strong>${escapeHtml(set.rhythmSetId)}</strong></td>
@@ -401,8 +401,12 @@ function renderRhythmSetsTable() {
             </td>
         `;
 
-        // Click handler for main row
-        mainRow.addEventListener('click', () => toggleExpandRow(index));
+        // Click handler ONLY for the chevron icon cell
+        const expandCell = mainRow.querySelector('[data-expand-trigger]');
+        expandCell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleExpandRow(index);
+        });
 
         tbody.appendChild(mainRow);
         tbody.appendChild(detailsRow);
