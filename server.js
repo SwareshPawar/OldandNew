@@ -557,6 +557,7 @@ function buildRhythmSetIndexFromMetadata(metadata) {
         rhythmFamily,
         rhythmSetNo,
         files: {},
+        originalFilenames: {}, // Store original uploaded filenames
         loopCount: 0,
         conditionsHint: {
           taal: loop?.conditions?.taal || rhythmFamily,
@@ -571,6 +572,10 @@ function buildRhythmSetIndexFromMetadata(metadata) {
     const fileKey = `${loop.type}${loop.number}`;
     if (loop.filename && fileKey) {
       set.files[fileKey] = loop.filename;
+      // Store original filename if available
+      if (loop.originalFilename) {
+        set.originalFilenames[fileKey] = loop.originalFilename;
+      }
     }
     set.loopCount += 1;
   });
@@ -1014,12 +1019,14 @@ app.get('/api/rhythm-sets', authMiddleware, async (req, res) => {
       const loopSet = metadataMap.get(set.rhythmSetId);
       const fileKeys = loopSet ? Object.keys(loopSet.files || {}) : [];
       const files = loopSet ? loopSet.files || {} : {};
+      const originalFilenames = loopSet ? loopSet.originalFilenames || {} : {};
       const conditionsHint = loopSet ? loopSet.conditionsHint || {} : {};
       return {
         ...set,
         mappedSongCount: songCountMap.get(String(set.rhythmSetId)) || 0,
         availableFiles: fileKeys,
         files: files,
+        originalFilenames: originalFilenames,
         conditionsHint: conditionsHint,
         isComplete: ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'].every(k => fileKeys.includes(k))
       };
@@ -1584,20 +1591,34 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
       : existingSong.rhythmCategory;
     req.body.rhythmCategory = normalizeRhythmCategory(incomingRhythmCategory || '');
 
-    const mergedSong = { ...existingSong, ...req.body };
-    const recommendation = await recommendRhythmSetForSong(mergedSong);
-    const resolvedRhythm = resolveSongRhythmSelection(mergedSong, recommendation);
+    // Check if explicitly unassigning (setting to null)
+    const isUnassigning = req.body.rhythmSetId === null || 
+                          (Object.prototype.hasOwnProperty.call(req.body, 'rhythmSetId') && !req.body.rhythmSetId);
 
-    if (!resolvedRhythm.rhythmSetId && !existingSong.rhythmSetId) {
-      return res.status(400).json({
-        error: 'Unable to assign rhythmSetId. Provide Rhythm Family + Set No or ensure matching loop sets exist.'
-      });
+    if (isUnassigning) {
+      // Explicitly unassigning - set all rhythm fields to null
+      req.body.rhythmSetId = null;
+      req.body.rhythmFamily = null;
+      req.body.rhythmSetNo = null;
+      req.body.rhythmRecommendation = null;
+      console.log(`Unassigning rhythm set from song ${numericId}`);
+    } else {
+      // Normal update - use recommendation logic
+      const mergedSong = { ...existingSong, ...req.body };
+      const recommendation = await recommendRhythmSetForSong(mergedSong);
+      const resolvedRhythm = resolveSongRhythmSelection(mergedSong, recommendation);
+
+      if (!resolvedRhythm.rhythmSetId && !existingSong.rhythmSetId) {
+        return res.status(400).json({
+          error: 'Unable to assign rhythmSetId. Provide Rhythm Family + Set No or ensure matching loop sets exist.'
+        });
+      }
+
+      req.body.rhythmFamily = resolvedRhythm.rhythmFamily || existingSong.rhythmFamily;
+      req.body.rhythmSetNo = resolvedRhythm.rhythmSetNo || existingSong.rhythmSetNo;
+      req.body.rhythmSetId = resolvedRhythm.rhythmSetId || existingSong.rhythmSetId;
+      req.body.rhythmRecommendation = resolvedRhythm.recommendation || existingSong.rhythmRecommendation || null;
     }
-
-    req.body.rhythmFamily = resolvedRhythm.rhythmFamily || existingSong.rhythmFamily;
-    req.body.rhythmSetNo = resolvedRhythm.rhythmSetNo || existingSong.rhythmSetNo;
-    req.body.rhythmSetId = resolvedRhythm.rhythmSetId || existingSong.rhythmSetId;
-    req.body.rhythmRecommendation = resolvedRhythm.recommendation || existingSong.rhythmRecommendation || null;
 
     // Always set updatedAt to now on edit
     req.body.updatedAt = new Date().toISOString();
@@ -2660,6 +2681,7 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     const loopEntry = {
       id: loopId,
       filename: correctFilename,
+      originalFilename: file.originalname, // Store original uploaded filename
       type: type,
       number: parseInt(number),
       rhythmFamily,

@@ -461,7 +461,7 @@ function renderLoopSlots(rhythmSet) {
                 </div>
                 <div class="loop-slot-info">
                     ${hasLoop ? 
-                        `<i class="fas fa-check-circle" style="color: #27ae60;"></i> Loop available` : 
+                        `<i class="fas fa-check-circle" style="color: #27ae60;"></i> Loop available${rhythmSet.originalFilenames && rhythmSet.originalFilenames[loopType] ? ` <span style="color: #7f8c8d; font-size: 11px;">(Original: ${escapeHtml(rhythmSet.originalFilenames[loopType])})</span>` : ''}` : 
                         `<i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i> No loop uploaded`
                     }
                 </div>

@@ -248,11 +248,17 @@ async function assignRhythmSet() {
         return;
     }
 
+    // Show loader
+    showAlert(`Assigning rhythm set ${rhythmSetId}...`, 'success');
+    
     let successCount = 0;
     let failCount = 0;
+    const songIdsArray = Array.from(selectedSongIds);
 
-    for (const songId of selectedSongIds) {
+    for (const songId of songIdsArray) {
         try {
+            console.log(`Assigning song ${songId} to ${rhythmSetId}...`);
+            
             const response = await authFetch(`${API_BASE_URL}/api/songs/${songId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -264,20 +270,52 @@ async function assignRhythmSet() {
             });
 
             if (response.ok) {
+                const updatedSong = await response.json();
+                console.log(`Successfully assigned song ${songId}:`, updatedSong);
+                
                 successCount++;
+                // Update the song object in memory immediately
+                const song = songs.find(s => parseInt(s.id) === parseInt(songId));
+                if (song) {
+                    song.rhythmSetId = rhythmSet.rhythmSetId;
+                    song.rhythmFamily = rhythmSet.rhythmFamily;
+                    song.rhythmSetNo = rhythmSet.rhythmSetNo;
+                    console.log(`Updated in-memory song ${songId}:`, song);
+                } else {
+                    console.warn(`Song ${songId} not found in memory`);
+                }
             } else {
+                const errorData = await response.json().catch(() => ({}));
+                console.error(`Failed to assign song ${songId}:`, errorData);
                 failCount++;
             }
         } catch (error) {
+            console.error(`Error assigning song ${songId}:`, error);
             failCount++;
         }
     }
 
-    showAlert(`Assigned ${successCount} song(s) successfully. ${failCount > 0 ? `Failed: ${failCount}` : ''}`, successCount > 0 ? 'success' : 'error');
+    // Show final result
+    const resultMessage = successCount > 0
+        ? `Assigned ${successCount} song(s) successfully.${failCount > 0 ? ` Failed: ${failCount}` : ''}`
+        : `Failed to assign songs. Failed: ${failCount}`;
     
+    showAlert(resultMessage, successCount > 0 ? 'success' : 'error');
+    
+    console.log(`Assignment complete: ${successCount} success, ${failCount} failed`);
+    
+    // Reload songs from server to ensure data consistency
     await loadSongs();
+    
+    console.log('Songs reloaded, clearing selection and re-rendering...');
+    
+    // Clear selection and re-render the table
     clearSelection();
+    
+    // Force re-render with current filter state
     filterSongs();
+    
+    console.log('Table re-rendered');
 }
 
 async function unassignRhythmSet() {
@@ -290,11 +328,17 @@ async function unassignRhythmSet() {
         return;
     }
 
+    // Show loader
+    showAlert('Unassigning rhythm sets...', 'success');
+    
     let successCount = 0;
     let failCount = 0;
+    const songIdsArray = Array.from(selectedSongIds);
 
-    for (const songId of selectedSongIds) {
+    for (const songId of songIdsArray) {
         try {
+            console.log(`Unassigning song ${songId}...`);
+            
             const response = await authFetch(`${API_BASE_URL}/api/songs/${songId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -306,21 +350,52 @@ async function unassignRhythmSet() {
             });
 
             if (response.ok) {
+                const updatedSong = await response.json();
+                console.log(`Successfully unassigned song ${songId}:`, updatedSong);
+                
                 successCount++;
+                // Update the song object in memory immediately
+                const song = songs.find(s => parseInt(s.id) === parseInt(songId));
+                if (song) {
+                    song.rhythmSetId = null;
+                    song.rhythmFamily = null;
+                    song.rhythmSetNo = null;
+                    console.log(`Updated in-memory song ${songId}:`, song);
+                } else {
+                    console.warn(`Song ${songId} not found in memory`);
+                }
             } else {
+                const errorData = await response.json().catch(() => ({}));
+                console.error(`Failed to unassign song ${songId}:`, errorData);
                 failCount++;
             }
         } catch (error) {
-            console.error(`Failed to unassign song ${songId}:`, error);
+            console.error(`Error unassigning song ${songId}:`, error);
             failCount++;
         }
     }
 
-    showAlert(`Unassigned ${successCount} song(s) successfully. ${failCount > 0 ? `Failed: ${failCount}` : ''}`, successCount > 0 ? 'success' : 'error');
+    // Show final result
+    const resultMessage = successCount > 0 
+        ? `Unassigned ${successCount} song(s) successfully.${failCount > 0 ? ` Failed: ${failCount}` : ''}` 
+        : `Failed to unassign songs. Failed: ${failCount}`;
     
+    showAlert(resultMessage, successCount > 0 ? 'success' : 'error');
+    
+    console.log(`Unassign complete: ${successCount} success, ${failCount} failed`);
+    
+    // Reload songs from server to ensure data consistency
     await loadSongs();
+    
+    console.log('Songs reloaded, clearing selection and re-rendering...');
+    
+    // Clear selection and re-render the table
     clearSelection();
+    
+    // Force re-render with current filter state
     filterSongs();
+    
+    console.log('Table re-rendered');
 }
 
 async function clearSongMapping(songId) {
@@ -328,7 +403,12 @@ async function clearSongMapping(songId) {
         return;
     }
 
+    // Show loader
+    showAlert('Clearing rhythm set assignment...', 'success');
+    
     try {
+        console.log(`Clearing mapping for song ${songId}...`);
+        
         const response = await authFetch(`${API_BASE_URL}/api/songs/${songId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -340,13 +420,38 @@ async function clearSongMapping(songId) {
         });
 
         if (response.ok) {
+            const updatedSong = await response.json();
+            console.log(`Successfully cleared song ${songId}:`, updatedSong);
+            
+            // Update the song object in memory immediately
+            const song = songs.find(s => parseInt(s.id) === parseInt(songId));
+            if (song) {
+                song.rhythmSetId = null;
+                song.rhythmFamily = null;
+                song.rhythmSetNo = null;
+                console.log(`Updated in-memory song ${songId}:`, song);
+            } else {
+                console.warn(`Song ${songId} not found in memory`);
+            }
+            
             showAlert('Rhythm set cleared successfully', 'success');
+            
+            // Reload songs from server to ensure data consistency
             await loadSongs();
+            
+            console.log('Songs reloaded, re-rendering...');
+            
+            // Force re-render with current filter state
             filterSongs();
+            
+            console.log('Table re-rendered');
         } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Failed to clear mapping:', errorData);
             throw new Error('Failed to clear mapping');
         }
     } catch (error) {
+        console.error('Error clearing mapping:', error);
         showAlert('Error: ' + error.message, 'error');
     }
 }
@@ -357,7 +462,13 @@ function showAlert(message, type) {
     alertBox.className = `alert alert-${type}`;
     alertBox.style.display = 'block';
     
-    setTimeout(() => {
+    // Clear any existing timeout
+    if (alertBox.hideTimeout) {
+        clearTimeout(alertBox.hideTimeout);
+    }
+    
+    // Set new timeout
+    alertBox.hideTimeout = setTimeout(() => {
         alertBox.style.display = 'none';
     }, 5000);
 }
