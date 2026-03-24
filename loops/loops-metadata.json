@@ -2018,12 +2018,6 @@
       "fileCount": 5
     },
     {
-      "rhythmSetId": "6beat_1",
-      "rhythmFamily": "6beat",
-      "rhythmSetNo": 1,
-      "fileCount": 6
-    },
-    {
       "rhythmSetId": "rock_1",
       "rhythmFamily": "rock",
       "rhythmSetNo": 1,
@@ -2066,9 +2060,9 @@
       "fileCount": 6
     },
     {
-      "rhythmSetId": "rd_pattern_3",
+      "rhythmSetId": "rd_pattern_2",
       "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 3,
+      "rhythmSetNo": 2,
       "fileCount": 6
     }
   ]
