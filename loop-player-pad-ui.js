@@ -342,6 +342,8 @@ function getLoopPlayerHTML(songId) {
                 </button>
             </div>
         </div>
+
+        <div class="loop-player-rhythmset" id="loopRhythmSet-${songId}">Current Rhythm Set: --</div>
     </div>
 </div>
 
@@ -459,6 +461,19 @@ async function initializeLoopPlayer(songId) {
     }
     
     const { loopSet, rhythmSetId } = matchResult;
+
+    const rhythmSetInfo = document.getElementById(`loopRhythmSet-${songId}`);
+    if (rhythmSetInfo) {
+        const assignedRhythmSetId = String(song.rhythmSetId || '').trim();
+        const normalizedAssignedId = assignedRhythmSetId.toLowerCase();
+        if (assignedRhythmSetId && normalizedAssignedId !== rhythmSetId) {
+            rhythmSetInfo.textContent = `Current Rhythm Set: ${assignedRhythmSetId} | Loaded Set: ${rhythmSetId}`;
+        } else if (assignedRhythmSetId) {
+            rhythmSetInfo.textContent = `Current Rhythm Set: ${assignedRhythmSetId}`;
+        } else {
+            rhythmSetInfo.textContent = `Current Rhythm Set: ${rhythmSetId}`;
+        }
+    }
     
     // Show the container
     const container = document.getElementById(`loopPlayerContainer-${songId}`);
@@ -966,6 +981,20 @@ const loopPlayerStyles = `
     border: 1px solid rgba(197, 177, 148, 0.3);
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     font-weight: 500;
+}
+
+.loop-player-rhythmset {
+    margin: 8px 2px 0 2px;
+    font-size: 0.72em;
+    color: rgba(197, 177, 148, 0.85);
+    background: transparent;
+    border: 0;
+    border-top: 1px dashed rgba(197, 177, 148, 0.25);
+    padding: 5px 2px 0 2px;
+    text-align: right;
+    letter-spacing: 0.02em;
+    position: relative;
+    z-index: 1;
 }
 
 .loop-player-toggle-btn {

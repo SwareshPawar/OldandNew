@@ -8250,6 +8250,17 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     genresA.filter(g => genresB.includes(g)).length / Math.max(genresA.length, genresB.length) : 0;
             };
 
+            const getSongRhythmSetId = (song) => {
+                if (!song) return '';
+                const derivedId = buildRhythmSetIdValue(song.rhythmFamily || '', song.rhythmSetNo);
+                if (derivedId) return derivedId;
+
+                const existingId = String(song.rhythmSetId || '').trim().toLowerCase();
+                return /^.+_[0-9]+$/.test(existingId) ? existingId : '';
+            };
+
+            const currentSongRhythmSetId = getSongRhythmSetId(currentSong);
+
             // Score each song
             const scoredSongs = sameCategorySongs.map(song => {
                 const details = {
@@ -8309,8 +8320,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     score += WEIGHTS.timeSignature * 0.9;
                 }
 
-                // 4. Taal match
-                details.taalMatch = currentSong.taal === song.taal;
+                // 4. Taal weight: if current song has a rhythm set, match only by rhythm set.
+                if (currentSongRhythmSetId) {
+                    details.taalMatch = getSongRhythmSetId(song) === currentSongRhythmSetId;
+                } else {
+                    details.taalMatch = currentSong.taal === song.taal;
+                }
                 if (details.taalMatch) score += WEIGHTS.taal;
 
                 // 5. Tempo similarity

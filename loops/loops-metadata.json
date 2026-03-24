@@ -256,98 +256,6 @@
       "rhythmSetId": "dadra_slow_1"
     },
     {
-      "id": "rd pattern_3_4_slow_acoustic_fill2",
-      "filename": "rd pattern_3_4_slow_acoustic_FILL2.wav",
-      "type": "fill",
-      "number": 2,
-      "conditions": {
-        "taal": "rd pattern",
-        "timeSignature": "3/4",
-        "tempo": "slow",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-02-28T11:30:37.722Z",
-        "description": ""
-      },
-      "files": {
-        "fill2": "rd pattern_3_4_slow_acoustic_FILL2.wav"
-      },
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "rd_pattern_1"
-    },
-    {
-      "id": "rd pattern_3_4_slow_acoustic_fill1",
-      "filename": "rd pattern_3_4_slow_acoustic_FILL1.wav",
-      "type": "fill",
-      "number": 1,
-      "conditions": {
-        "taal": "rd pattern",
-        "timeSignature": "3/4",
-        "tempo": "slow",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-02-28T11:30:38.543Z",
-        "description": ""
-      },
-      "files": {
-        "fill1": "rd pattern_3_4_slow_acoustic_FILL1.wav"
-      },
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "rd_pattern_1"
-    },
-    {
-      "id": "rd pattern_3_4_slow_acoustic_loop2",
-      "filename": "rd pattern_3_4_slow_acoustic_LOOP2.wav",
-      "type": "loop",
-      "number": 2,
-      "conditions": {
-        "taal": "rd pattern",
-        "timeSignature": "3/4",
-        "tempo": "slow",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-02-28T11:30:39.169Z",
-        "description": ""
-      },
-      "files": {
-        "loop2": "rd pattern_3_4_slow_acoustic_LOOP2.wav"
-      },
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "rd_pattern_1"
-    },
-    {
-      "id": "rd pattern_3_4_slow_acoustic_loop1",
-      "filename": "rd pattern_3_4_slow_acoustic_LOOP1.wav",
-      "type": "loop",
-      "number": 1,
-      "conditions": {
-        "taal": "rd pattern",
-        "timeSignature": "3/4",
-        "tempo": "slow",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-02-28T11:30:39.705Z",
-        "description": ""
-      },
-      "files": {
-        "loop1": "rd pattern_3_4_slow_acoustic_LOOP1.wav"
-      },
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "rd_pattern_1"
-    },
-    {
       "id": "rock_4_4_medium_rock_loop1",
       "filename": "rock_4_4_medium_rock_LOOP1.wav",
       "type": "loop",
@@ -995,29 +903,6 @@
       },
       "files": {
         "loop1": "onetwo_2_4_medium_drum_slow_LOOP1.wav"
-      }
-    },
-    {
-      "id": "rd_pattern_4_4_fast_dholak_loop1",
-      "filename": "rd_pattern_4_4_fast_dholak_LOOP1.wav",
-      "type": "loop",
-      "number": 1,
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "rd_pattern_1",
-      "conditions": {
-        "taal": "rd_pattern",
-        "timeSignature": "4/4",
-        "tempo": "fast",
-        "genre": "dholak"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-21T12:40:55.833Z",
-        "description": ""
-      },
-      "files": {
-        "loop1": "rd_pattern_4_4_fast_dholak_LOOP1.wav"
       }
     },
     {
@@ -2423,12 +2308,6 @@
       "rhythmFamily": "deepchandi",
       "rhythmSetNo": 1,
       "fileCount": 4
-    },
-    {
-      "rhythmSetId": "rd_pattern_1",
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 1,
-      "fileCount": 5
     },
     {
       "rhythmSetId": "rock_1",
