@@ -1,5 +1,18 @@
 // Loop & Rhythm Set Manager
-const API_BASE_URL = window.location.origin;
+function resolveApiBaseUrl() {
+    const { protocol, hostname, port, origin } = window.location;
+
+    // When opened from a local static server, Live Server, or file preview,
+    // always target the backend server that serves the API.
+    if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
+        const localHost = hostname || 'localhost';
+        return port === '3001' ? origin : `http://${localHost}:3001`;
+    }
+
+    return origin;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 let rhythmSets = [];
 let selectedRhythmSet = null;
@@ -38,15 +51,36 @@ async function authFetch(url, options = {}) {
         window.location.href = '/index.html';
         throw new Error('Session expired');
     }
+
+    if (!response.ok) {
+        let errorMessage = `Request failed with status ${response.status}`;
+
+        try {
+            const errorPayload = await response.clone().json();
+            errorMessage = errorPayload.error || errorPayload.message || errorMessage;
+        } catch (jsonError) {
+            try {
+                const errorText = await response.clone().text();
+                if (errorText) {
+                    errorMessage = errorText;
+                }
+            } catch (textError) {
+                // Keep the default status-based message.
+            }
+        }
+
+        throw new Error(errorMessage);
+    }
+
     return response;
 }
 
 async function loadRhythmSets() {
     try {
         const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets`);
-        if (!response.ok) throw new Error('Failed to load rhythm sets');
         rhythmSets = await response.json();
         console.log('Loaded rhythm sets:', rhythmSets.length);
+        console.log('Loop manager API base URL:', API_BASE_URL);
         // Debug: Show first set's data structure
         if (rhythmSets.length > 0) {
             console.log('Sample rhythm set:', rhythmSets[0]);

@@ -3,29 +3,6 @@
   "description": "Loop file metadata and matching conditions",
   "loops": [
     {
-      "id": "dadra_fast_2_loop1",
-      "filename": "dadra_fast_2_LOOP1.wav",
-      "type": "loop",
-      "number": 1,
-      "conditions": {
-        "taal": "dadra",
-        "timeSignature": "3/4",
-        "tempo": "medium",
-        "genre": "dholak"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-02-15T14:19:00.495Z",
-        "description": ""
-      },
-      "files": {
-        "loop1": "dadra_fast_2_LOOP1.wav"
-      },
-      "rhythmFamily": "dadra_fast",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "dadra_fast_2"
-    },
-    {
       "id": "dadra_fast_2_loop2",
       "filename": "dadra_fast_2_LOOP2.wav",
       "type": "loop",
@@ -231,29 +208,6 @@
       "rhythmFamily": "deepchandi",
       "rhythmSetNo": 1,
       "rhythmSetId": "deepchandi_1"
-    },
-    {
-      "id": "dadra_3_4_slow_ghazal_loop1",
-      "filename": "dadra_3_4_slow_ghazal_LOOP1.wav",
-      "type": "loop",
-      "number": 1,
-      "conditions": {
-        "taal": "dadra",
-        "timeSignature": "3/4",
-        "tempo": "slow",
-        "genre": "ghazal"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-02-28T06:45:28.446Z",
-        "description": ""
-      },
-      "files": {
-        "loop1": "dadra_3_4_slow_ghazal_LOOP1.wav"
-      },
-      "rhythmFamily": "dadra_fast",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "dadra_fast_2"
     },
     {
       "id": "rock_1_loop1",

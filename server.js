@@ -2777,7 +2777,6 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
       success: true,
       filename: correctFilename,
       id: loopId,
-      pattern: basePattern,
       rhythmSetId
     });
   } catch (error) {
