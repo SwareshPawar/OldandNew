@@ -136,6 +136,26 @@
         .info-box.success {
             border-left-color: #27ae60;
         }
+        .read-only-banner {
+            border-left-color: #f39c12;
+            background-color: #3a2f1a;
+        }
+        .quick-play-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .quick-play-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .quick-play-note {
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 8px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -420,6 +440,10 @@
                 grid-template-columns: 1fr;
                 gap: 10px;
             }
+            .quick-play-grid,
+            .quick-play-actions {
+                grid-template-columns: 1fr;
+            }
             table {
                 font-size: 12px;
             }
@@ -504,8 +528,12 @@
 
     <div id="alertBox" class="alert"></div>
 
+    <div id="readOnlyBanner" class="info-box read-only-banner" style="display: none;">
+        <strong><i class="fas fa-eye"></i> Read-only mode:</strong> You can browse rhythm set IDs and play available loops. Login is required for create, upload, edit, and delete actions.
+    </div>
+
     <!-- Create Rhythm Set Section -->
-    <div class="panel">
+    <div class="panel" id="createRhythmSetPanel">
         <div class="panel-header">
             <h2><i class="fas fa-plus-circle"></i> Create New Rhythm Set</h2>
         </div>
@@ -562,7 +590,7 @@
     </div>
 
     <!-- Upload Loops Section -->
-    <div class="panel">
+    <div class="panel" id="uploadLoopsPanel">
         <div class="panel-header">
             <h2><i class="fas fa-upload"></i> Upload Loops</h2>
         </div>
@@ -582,6 +610,39 @@
             <br>
             <strong>Current Loops:</strong> <span id="selectedRhythmSetLoops">0/6</span>
         </div>
+    </div>
+
+    <!-- Quick Mobile Playback -->
+    <div class="panel" id="quickPlayPanel">
+        <div class="panel-header">
+            <h2><i class="fas fa-mobile-alt"></i> Quick Loop Playback</h2>
+        </div>
+
+        <div class="quick-play-grid">
+            <div class="form-group">
+                <label for="quickRhythmSetSelect">Rhythm Set ID</label>
+                <select id="quickRhythmSetSelect">
+                    <option value="">Loading rhythm sets...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="quickLoopTypeSelect">Available Loop</label>
+                <select id="quickLoopTypeSelect">
+                    <option value="">Select rhythm set first...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="quick-play-actions">
+            <button class="btn btn-primary" onclick="playQuickLoop()">
+                <i class="fas fa-play"></i> Play Selected Loop
+            </button>
+            <button class="btn btn-success" onclick="openQuickSetPlayer()">
+                <i class="fas fa-play-circle"></i> Open Set Player
+            </button>
+        </div>
+
+        <div id="quickSetInfo" class="quick-play-note">Loading rhythm sets...</div>
     </div>
 
     <!-- Rhythm Sets Table -->

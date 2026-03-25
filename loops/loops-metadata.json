@@ -2956,6 +2956,150 @@
       "files": {
         "fill3": "keherwa_mid_3_FILL3.wav"
       }
+    },
+    {
+      "id": "keherwa_fast_1_loop1",
+      "filename": "keherwa_fast_1_LOOP1.wav",
+      "originalFilename": "R K LOOPS  SSVII 095 2-4 02.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_fast_1",
+      "conditions": {
+        "taal": "keherwa_fast",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-25T20:11:18.745Z",
+        "description": "loop1 for keherwa_fast_1"
+      },
+      "files": {
+        "loop1": "keherwa_fast_1_LOOP1.wav"
+      }
+    },
+    {
+      "id": "keherwa_fast_1_fill1",
+      "filename": "keherwa_fast_1_FILL1.wav",
+      "originalFilename": "R K LOOPS  SSVII 095 2-4 03.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_fast_1",
+      "conditions": {
+        "taal": "keherwa_fast",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-25T20:11:27.087Z",
+        "description": "fill1 for keherwa_fast_1"
+      },
+      "files": {
+        "fill1": "keherwa_fast_1_FILL1.wav"
+      }
+    },
+    {
+      "id": "keherwa_fast_1_fill2",
+      "filename": "keherwa_fast_1_FILL2.wav",
+      "originalFilename": "R K LOOPS  SSVII 095 2-4 04.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_fast_1",
+      "conditions": {
+        "taal": "keherwa_fast",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-25T20:11:34.937Z",
+        "description": "fill2 for keherwa_fast_1"
+      },
+      "files": {
+        "fill2": "keherwa_fast_1_FILL2.wav"
+      }
+    },
+    {
+      "id": "keherwa_fast_1_loop2",
+      "filename": "keherwa_fast_1_LOOP2.wav",
+      "originalFilename": "R K LOOPS  SSVII 095 2-4 05.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_fast_1",
+      "conditions": {
+        "taal": "keherwa_fast",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-25T20:11:42.193Z",
+        "description": "loop2 for keherwa_fast_1"
+      },
+      "files": {
+        "loop2": "keherwa_fast_1_LOOP2.wav"
+      }
+    },
+    {
+      "id": "keherwa_fast_1_loop3",
+      "filename": "keherwa_fast_1_LOOP3.wav",
+      "originalFilename": "R K LOOPS  SSVII 095 2-4 10.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_fast_1",
+      "conditions": {
+        "taal": "keherwa_fast",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-25T20:12:07.490Z",
+        "description": "loop3 for keherwa_fast_1"
+      },
+      "files": {
+        "loop3": "keherwa_fast_1_LOOP3.wav"
+      }
+    },
+    {
+      "id": "keherwa_fast_1_fill3",
+      "filename": "keherwa_fast_1_FILL3.wav",
+      "originalFilename": "R K LOOPS  SSVII 095 2-4 11.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_fast_1",
+      "conditions": {
+        "taal": "keherwa_fast",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-25T20:12:26.935Z",
+        "description": "fill3 for keherwa_fast_1"
+      },
+      "files": {
+        "fill3": "keherwa_fast_1_FILL3.wav"
+      }
     }
   ],
   "tempoRanges": {

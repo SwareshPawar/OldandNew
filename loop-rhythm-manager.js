@@ -26,6 +26,7 @@ const API_BASE_URL = resolveApiBaseUrl();
 
 let rhythmSets = [];
 let selectedRhythmSet = null;
+let isReadOnlyMode = false;
 let loopFiles = {
     loop1: null,
     loop2: null,
@@ -37,13 +38,22 @@ let loopFiles = {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
+    setupQuickPlayListeners();
     await loadRhythmSets();
     setupRhythmFamilyListener();
 });
 
 async function authFetch(url, options = {}) {
+    const suppressAuthRedirect = options.suppressAuthRedirect === true;
+    if ('suppressAuthRedirect' in options) {
+        delete options.suppressAuthRedirect;
+    }
+
     const token = localStorage.getItem('jwtToken');
     if (!token) {
+        if (suppressAuthRedirect) {
+            throw new Error('AUTH_REQUIRED');
+        }
         alert('Please login first');
         window.location.href = 'index.html';
         throw new Error('Not authenticated');
@@ -56,6 +66,9 @@ async function authFetch(url, options = {}) {
 
     const response = await fetch(url, options);
     if (response.status === 401) {
+        if (suppressAuthRedirect) {
+            throw new Error('AUTH_REQUIRED');
+        }
         localStorage.removeItem('jwtToken');
         alert('Session expired. Please login again.');
         window.location.href = 'index.html';
@@ -87,8 +100,17 @@ async function authFetch(url, options = {}) {
 
 async function loadRhythmSets() {
     try {
-        const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets`);
-        rhythmSets = await response.json();
+        const hasToken = !!localStorage.getItem('jwtToken');
+
+        if (hasToken) {
+            const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets`, { suppressAuthRedirect: true });
+            rhythmSets = await response.json();
+            isReadOnlyMode = false;
+        } else {
+            rhythmSets = await loadPublicRhythmSetsFromMetadata();
+            isReadOnlyMode = true;
+        }
+
         console.log('Loaded rhythm sets:', rhythmSets.length);
         console.log('Loop manager API base URL:', API_BASE_URL);
         // Debug: Show first set's data structure
@@ -98,11 +120,249 @@ async function loadRhythmSets() {
             console.log('files mapping:', rhythmSets[0].files);
             console.log('conditionsHint:', rhythmSets[0].conditionsHint);
         }
+        applyReadOnlyModeUI();
         populateRhythmFamilyList();
         renderRhythmSetsTable();
+        updateQuickPlayControls();
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            try {
+                rhythmSets = await loadPublicRhythmSetsFromMetadata();
+                isReadOnlyMode = true;
+                applyReadOnlyModeUI();
+                populateRhythmFamilyList();
+                renderRhythmSetsTable();
+                updateQuickPlayControls();
+                showAlert('Loaded in read-only mode. Login for upload/edit actions.', 'success');
+                return;
+            } catch (fallbackError) {
+                showAlert('Error loading rhythm sets: ' + fallbackError.message, 'error');
+                return;
+            }
+        }
         showAlert('Error loading rhythm sets: ' + error.message, 'error');
     }
+}
+
+function parseRhythmSetParts(rhythmSetId, fallbackFamily = '', fallbackSetNo = 1) {
+    if (typeof rhythmSetId !== 'string') {
+        return {
+            rhythmFamily: fallbackFamily || 'unknown',
+            rhythmSetNo: Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1,
+            rhythmSetId: `${fallbackFamily || 'unknown'}_${Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1}`
+        };
+    }
+
+    const cleaned = rhythmSetId.trim().toLowerCase();
+    const match = cleaned.match(/^(.+)_([0-9]+)$/);
+    if (!match) {
+        return {
+            rhythmFamily: fallbackFamily || cleaned || 'unknown',
+            rhythmSetNo: Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1,
+            rhythmSetId: cleaned || `${fallbackFamily || 'unknown'}_${Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1}`
+        };
+    }
+
+    const parsedSetNo = parseInt(match[2], 10);
+    return {
+        rhythmFamily: match[1],
+        rhythmSetNo: Number.isInteger(parsedSetNo) && parsedSetNo > 0 ? parsedSetNo : (Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1),
+        rhythmSetId: `${match[1]}_${Number.isInteger(parsedSetNo) && parsedSetNo > 0 ? parsedSetNo : (Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1)}`
+    };
+}
+
+function buildRhythmSetsFromMetadata(metadata) {
+    const loops = Array.isArray(metadata?.loops) ? metadata.loops : [];
+    const map = new Map();
+
+    loops.forEach(loop => {
+        const normalizedFamily = String(loop?.rhythmFamily || '').trim().toLowerCase().replace(/\s+/g, '_') || 'unknown';
+        const normalizedSetNo = parseInt(loop?.rhythmSetNo, 10);
+        const derivedSetNo = Number.isInteger(normalizedSetNo) && normalizedSetNo > 0 ? normalizedSetNo : 1;
+        const derivedId = String(loop?.rhythmSetId || '').trim().toLowerCase() || `${normalizedFamily}_${derivedSetNo}`;
+        const parsed = parseRhythmSetParts(derivedId, normalizedFamily, derivedSetNo);
+        const fileType = String(loop?.type || '').trim().toLowerCase();
+        const fileNumber = parseInt(loop?.number, 10);
+        const fileKey = fileType && Number.isInteger(fileNumber) && fileNumber > 0 ? `${fileType}${fileNumber}` : '';
+
+        if (!map.has(parsed.rhythmSetId)) {
+            map.set(parsed.rhythmSetId, {
+                rhythmSetId: parsed.rhythmSetId,
+                rhythmFamily: parsed.rhythmFamily,
+                rhythmSetNo: parsed.rhythmSetNo,
+                status: 'active',
+                availableFiles: [],
+                files: {},
+                originalFilenames: {},
+                conditionsHint: {
+                    taal: String(loop?.conditions?.taal || parsed.rhythmFamily || ''),
+                    timeSignature: String(loop?.conditions?.timeSignature || ''),
+                    tempo: String(loop?.conditions?.tempo || ''),
+                    genre: String(loop?.conditions?.genre || '')
+                }
+            });
+        }
+
+        const set = map.get(parsed.rhythmSetId);
+        if (fileKey && loop?.filename) {
+            set.files[fileKey] = loop.filename;
+            if (!set.availableFiles.includes(fileKey)) {
+                set.availableFiles.push(fileKey);
+            }
+            if (loop.originalFilename) {
+                set.originalFilenames[fileKey] = loop.originalFilename;
+            }
+        }
+    });
+
+    const indexedSets = Array.isArray(metadata?.rhythmSets) ? metadata.rhythmSets : [];
+    indexedSets.forEach(set => {
+        const parsed = parseRhythmSetParts(String(set?.rhythmSetId || ''), String(set?.rhythmFamily || ''), parseInt(set?.rhythmSetNo, 10) || 1);
+        if (!map.has(parsed.rhythmSetId)) {
+            map.set(parsed.rhythmSetId, {
+                rhythmSetId: parsed.rhythmSetId,
+                rhythmFamily: parsed.rhythmFamily,
+                rhythmSetNo: parsed.rhythmSetNo,
+                status: 'active',
+                availableFiles: [],
+                files: {},
+                originalFilenames: {},
+                conditionsHint: {
+                    taal: parsed.rhythmFamily,
+                    timeSignature: '',
+                    tempo: '',
+                    genre: ''
+                }
+            });
+        }
+    });
+
+    return Array.from(map.values()).sort((a, b) => {
+        if (a.rhythmFamily !== b.rhythmFamily) {
+            return a.rhythmFamily.localeCompare(b.rhythmFamily);
+        }
+        return a.rhythmSetNo - b.rhythmSetNo;
+    });
+}
+
+async function loadPublicRhythmSetsFromMetadata() {
+    const response = await fetch(`${API_BASE_URL}/api/loops/metadata`);
+    if (!response.ok) {
+        throw new Error(`Public metadata request failed with status ${response.status}`);
+    }
+
+    const metadata = await response.json();
+    return buildRhythmSetsFromMetadata(metadata);
+}
+
+function applyReadOnlyModeUI() {
+    const createPanel = document.getElementById('createRhythmSetPanel');
+    const uploadPanel = document.getElementById('uploadLoopsPanel');
+    const readOnlyBanner = document.getElementById('readOnlyBanner');
+
+    if (isReadOnlyMode) {
+        if (createPanel) createPanel.style.display = 'none';
+        if (uploadPanel) uploadPanel.style.display = 'none';
+        if (readOnlyBanner) readOnlyBanner.style.display = 'block';
+        return;
+    }
+
+    if (createPanel) createPanel.style.display = '';
+    if (uploadPanel) uploadPanel.style.display = '';
+    if (readOnlyBanner) readOnlyBanner.style.display = 'none';
+}
+
+function setupQuickPlayListeners() {
+    const setSelect = document.getElementById('quickRhythmSetSelect');
+    if (setSelect) {
+        setSelect.addEventListener('change', updateQuickLoopOptions);
+    }
+}
+
+function updateQuickPlayControls() {
+    const setSelect = document.getElementById('quickRhythmSetSelect');
+    const setInfo = document.getElementById('quickSetInfo');
+    if (!setSelect || !setInfo) return;
+
+    setSelect.innerHTML = '<option value="">Select rhythm set ID...</option>';
+    rhythmSets.forEach(set => {
+        const availableCount = (set.availableFiles || []).length;
+        const option = document.createElement('option');
+        option.value = set.rhythmSetId;
+        option.textContent = `${set.rhythmSetId} (${availableCount}/6)`;
+        setSelect.appendChild(option);
+    });
+
+    if (rhythmSets.length > 0) {
+        setSelect.value = rhythmSets[0].rhythmSetId;
+    }
+
+    setInfo.textContent = `${rhythmSets.length} rhythm set IDs loaded`;
+    updateQuickLoopOptions();
+}
+
+function updateQuickLoopOptions() {
+    const setSelect = document.getElementById('quickRhythmSetSelect');
+    const loopSelect = document.getElementById('quickLoopTypeSelect');
+    const quickInfo = document.getElementById('quickSetInfo');
+    if (!setSelect || !loopSelect || !quickInfo) return;
+
+    const rhythmSetId = setSelect.value;
+    const selectedSet = rhythmSets.find(set => set.rhythmSetId === rhythmSetId);
+    loopSelect.innerHTML = '<option value="">Select loop...</option>';
+
+    if (!selectedSet) {
+        quickInfo.textContent = `${rhythmSets.length} rhythm set IDs loaded`;
+        return;
+    }
+
+    const orderedTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    const available = new Set(selectedSet.availableFiles || []);
+    const files = selectedSet.files || {};
+    let added = 0;
+
+    orderedTypes.forEach(loopType => {
+        if (!available.has(loopType) || !files[loopType]) return;
+        const option = document.createElement('option');
+        option.value = loopType;
+        option.textContent = `${loopType.toUpperCase()} (${files[loopType]})`;
+        loopSelect.appendChild(option);
+        added += 1;
+    });
+
+    quickInfo.textContent = `${selectedSet.rhythmSetId} has ${added} loop${added === 1 ? '' : 's'} available`;
+}
+
+function playQuickLoop() {
+    const setSelect = document.getElementById('quickRhythmSetSelect');
+    const loopSelect = document.getElementById('quickLoopTypeSelect');
+    if (!setSelect || !loopSelect) return;
+
+    const rhythmSetId = setSelect.value;
+    const loopType = loopSelect.value;
+    if (!rhythmSetId || !loopType) {
+        showAlert('Please select a rhythm set and loop', 'warning');
+        return;
+    }
+
+    const selectedSet = rhythmSets.find(set => set.rhythmSetId === rhythmSetId);
+    const filename = selectedSet?.files?.[loopType];
+    if (!filename) {
+        showAlert('Selected loop file is not available', 'error');
+        return;
+    }
+
+    playLoop(rhythmSetId, loopType, filename);
+}
+
+function openQuickSetPlayer() {
+    const setSelect = document.getElementById('quickRhythmSetSelect');
+    if (!setSelect || !setSelect.value) {
+        showAlert('Please select a rhythm set first', 'warning');
+        return;
+    }
+
+    openLoopPlayer(setSelect.value);
 }
 
 function populateRhythmFamilyList() {
@@ -409,6 +669,17 @@ function renderRhythmSetsTable() {
             ? '<span class="badge badge-success">Active</span>'
             : '<span class="badge badge-info">Draft</span>';
 
+           const actionsHtml = isReadOnlyMode
+              ? `<button class="btn btn-primary btn-mini" onclick="event.stopPropagation(); openLoopPlayer('${escapeHtml(set.rhythmSetId)}')" ${loopCount === 0 ? 'disabled' : ''}>
+                    <i class="fas fa-play"></i> Play Set
+                </button>`
+              : `<button class="btn btn-primary btn-mini" onclick="event.stopPropagation(); editRhythmSet('${escapeHtml(set.rhythmSetId)}', '${escapeHtml(set.rhythmFamily)}', ${set.rhythmSetNo})" style="margin-right: 5px;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-danger btn-mini" onclick="event.stopPropagation(); deleteRhythmSet('${escapeHtml(set.rhythmSetId)}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>`;
+
         const isSelected = selectedRhythmSet?.rhythmSetId === set.rhythmSetId;
 
         // Main row
@@ -425,14 +696,7 @@ function renderRhythmSetsTable() {
             <td>${set.rhythmSetNo}</td>
             <td>${loopBadge}</td>
             <td>${statusBadge}</td>
-            <td>
-                <button class="btn btn-primary btn-mini" onclick="event.stopPropagation(); editRhythmSet('${escapeHtml(set.rhythmSetId)}', '${escapeHtml(set.rhythmFamily)}', ${set.rhythmSetNo})" style="margin-right: 5px;">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-danger btn-mini" onclick="event.stopPropagation(); deleteRhythmSet('${escapeHtml(set.rhythmSetId)}')">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-            </td>
+            <td>${actionsHtml}</td>
         `;
         
         // Details row (expandable)
@@ -472,12 +736,14 @@ function renderLoopSlots(rhythmSet) {
         const loopName = loopType.replace(/(\d)/, ' $1');
         const loopIcon = loopType.includes('loop') ? 'music' : 'drum';
         const slotId = `loop-slot-${rhythmSet.rhythmSetId}-${loopType}`;
+        const dragDropAttributes = isReadOnlyMode
+            ? ''
+            : `ondragover="handleDragOver(event)" 
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDrop(event, '${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')"`;
         
         html += `
-            <div class="loop-slot ${slotClass}" id="${slotId}" 
-                 ondragover="handleDragOver(event)" 
-                 ondragleave="handleDragLeave(event)"
-                 ondrop="handleDrop(event, '${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')">
+            <div class="loop-slot ${slotClass}" id="${slotId}" ${dragDropAttributes}>
                 <div class="loop-slot-header">
                     <span class="loop-slot-title">
                         <i class="fas fa-${loopIcon}"></i> ${loopName.toUpperCase()}
@@ -487,21 +753,21 @@ function renderLoopSlots(rhythmSet) {
                         `<span class="badge badge-danger" style="font-size: 10px;">Empty</span>`
                     }
                 </div>
-                <div class="drag-drop-hint" style="font-size: 11px; color: #888; margin: 5px 0;">
+                ${isReadOnlyMode ? '' : `<div class="drag-drop-hint" style="font-size: 11px; color: #888; margin: 5px 0;">
                     <i class="fas fa-upload"></i> Drag & drop or click
-                </div>
+                </div>`}
                 <div class="loop-slot-actions">
                     ${hasLoop ? `
                         <button class="btn btn-primary btn-mini" onclick="playLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}', '${escapeHtml(filename)}')">
                             <i class="fas fa-play"></i> Play
                         </button>
-                        <button class="btn btn-danger btn-mini" onclick="removeLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')">
+                        ${isReadOnlyMode ? '' : `<button class="btn btn-danger btn-mini" onclick="removeLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')">
                             <i class="fas fa-trash"></i> Remove
-                        </button>
+                        </button>`}
                     ` : ''}
-                    <button class="btn btn-success btn-mini" onclick="uploadSingleLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')">
+                    ${isReadOnlyMode ? '' : `<button class="btn btn-success btn-mini" onclick="uploadSingleLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')">
                         <i class="fas fa-upload"></i> ${hasLoop ? 'Replace' : 'Upload'}
-                    </button>
+                    </button>`}
                 </div>
                 <div class="loop-slot-info">
                     ${hasLoop ? 
