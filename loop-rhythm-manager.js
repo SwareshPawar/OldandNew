@@ -1,12 +1,22 @@
 // Loop & Rhythm Set Manager
 function resolveApiBaseUrl() {
     const { protocol, hostname, port, origin } = window.location;
+    const explicitApiBase = (window.__API_BASE_URL__ || localStorage.getItem('apiBaseUrl') || '').trim();
+
+    if (explicitApiBase) {
+        return explicitApiBase.replace(/\/$/, '');
+    }
 
     // When opened from a local static server, Live Server, or file preview,
     // always target the backend server that serves the API.
     if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
         const localHost = hostname || 'localhost';
         return port === '3001' ? origin : `http://${localHost}:3001`;
+    }
+
+    // GitHub Pages hosts static files only; API is served from Vercel.
+    if (hostname.endsWith('github.io')) {
+        return 'https://oldand-new.vercel.app';
     }
 
     return origin;
@@ -35,7 +45,7 @@ async function authFetch(url, options = {}) {
     const token = localStorage.getItem('jwtToken');
     if (!token) {
         alert('Please login first');
-        window.location.href = '/index.html';
+        window.location.href = 'index.html';
         throw new Error('Not authenticated');
     }
 
@@ -48,7 +58,7 @@ async function authFetch(url, options = {}) {
     if (response.status === 401) {
         localStorage.removeItem('jwtToken');
         alert('Session expired. Please login again.');
-        window.location.href = '/index.html';
+        window.location.href = 'index.html';
         throw new Error('Session expired');
     }
 

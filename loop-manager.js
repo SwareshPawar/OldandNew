@@ -4,11 +4,27 @@
  */
 
 // Dynamic API base URL for local/dev/prod
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:3001'
-    : (window.location.hostname.endsWith('github.io')
-        ? 'https://oldand-new.vercel.app'
-        : window.location.origin);
+function resolveApiBaseUrl() {
+    const { protocol, hostname, port, origin } = window.location;
+    const explicitApiBase = (window.__API_BASE_URL__ || localStorage.getItem('apiBaseUrl') || '').trim();
+
+    if (explicitApiBase) {
+        return explicitApiBase.replace(/\/$/, '');
+    }
+
+    if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
+        const localHost = hostname || 'localhost';
+        return port === '3001' ? origin : `http://${localHost}:3001`;
+    }
+
+    if (hostname.endsWith('github.io')) {
+        return 'https://oldand-new.vercel.app';
+    }
+
+    return origin;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 let loopsMetadata = null;
 let songMetadata = null;
