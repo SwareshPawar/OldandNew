@@ -3019,7 +3019,7 @@
       "rhythmSetId": "dadra_fast_2",
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 2,
-      "fileCount": 8
+      "fileCount": 6
     },
     {
       "rhythmSetId": "deepchandi_1",
@@ -3088,12 +3088,6 @@
       "fileCount": 6
     },
     {
-      "rhythmSetId": "keherwa_mid_1",
-      "rhythmFamily": "keherwa_mid",
-      "rhythmSetNo": 1,
-      "fileCount": 2
-    },
-    {
       "rhythmSetId": "keherwa_ghoomar_1",
       "rhythmFamily": "keherwa_ghoomar",
       "rhythmSetNo": 1,
@@ -3118,12 +3112,6 @@
       "fileCount": 6
     },
     {
-      "rhythmSetId": "keherwa_mid_2",
-      "rhythmFamily": "keherwa_mid",
-      "rhythmSetNo": 2,
-      "fileCount": 4
-    },
-    {
       "rhythmSetId": "rupak_mid_1",
       "rhythmFamily": "rupak_mid",
       "rhythmSetNo": 1,
@@ -3145,12 +3133,36 @@
       "rhythmSetId": "dadra_slow_1",
       "rhythmFamily": "dadra_slow",
       "rhythmSetNo": 1,
+      "fileCount": 4
+    },
+    {
+      "rhythmSetId": "teentaal_addha_1",
+      "rhythmFamily": "teentaal_addha",
+      "rhythmSetNo": 1,
+      "fileCount": 3
+    },
+    {
+      "rhythmSetId": "teentaal_addha_2",
+      "rhythmFamily": "teentaal_addha",
+      "rhythmSetNo": 2,
+      "fileCount": 3
+    },
+    {
+      "rhythmSetId": "dadra_slow_2",
+      "rhythmFamily": "dadra_slow",
+      "rhythmSetNo": 2,
+      "fileCount": 2
+    },
+    {
+      "rhythmSetId": "keherwa_fast_3",
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 3,
       "fileCount": 6
     },
     {
-      "rhythmSetId": "keherwa_fast_1",
-      "rhythmFamily": "keherwa_fast",
-      "rhythmSetNo": 1,
+      "rhythmSetId": "keherwa_mid_3",
+      "rhythmFamily": "keherwa_mid",
+      "rhythmSetNo": 3,
       "fileCount": 6
     }
   ]
