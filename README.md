@@ -99,20 +99,38 @@ See the **"DOCUMENTATION MAINTENANCE HOOK"** section at the top of `CODE_DOCUMEN
    - Git workflow and documentation requirements
    - How to contribute to the project
 
-4. **`README.md`** - This File
+4. **`README.md`** - This file
    - Getting started guide and project overview
 
-5. **`MIGRATION_SONG_ID_FIX.md`** - Historical Reference
-   - Completed code migrations (read-only)
-
-6. **`DOCUMENTATION_AI_GUIDE.md`** - For AI Assistants
+5. **`DOCUMENTATION_AI_GUIDE.md`** - For AI assistants
    - How to maintain and use documentation
 
-7. **`CHORD_ACCIDENTAL_NORMALIZATION.md`** - Accidental policy guide
+6. **`CHORD_ACCIDENTAL_NORMALIZATION.md`** - Accidental policy guide
    - Eb/Bb canonicalization implementation details
    - Rollback checklist for D#/A# policy
 
-**All documentation consolidated from 33 files to 6 for easier maintenance!**
+### Archived Documentation
+
+- Historical one-off docs and implementation notes are stored in `docs/archive/`.
+- This keeps root-level documentation minimal while preserving historical detail.
+
+### Documentation Lookup (Quick Navigation)
+
+Use this path when you need to find information quickly:
+
+1. Start with `README.md` (this file) for structure.
+2. Use `CODE_DOCUMENTATION.md` for latest canonical bug/session history.
+3. Use `LOOP_PLAYER_DOCUMENTATION.md` for loop-player architecture/behavior.
+4. Use `docs/archive/INDEX.md` for categorized historical references.
+
+**Topic shortcuts:**
+- Loop replace/upload/playback issues: `CODE_DOCUMENTATION.md` (latest), then `docs/archive/INDEX.md` → Loop Upload/Playback
+- Rhythm set manager flows and fixes: `CODE_DOCUMENTATION.md` (latest), then `docs/archive/INDEX.md` → Rhythm Set Management
+- Architecture and screen split history: `docs/archive/INDEX.md` → Architecture and Migration
+- Authentication/admin-page access issues: `docs/archive/INDEX.md` → Authentication and Access
+- Mobile/responsive changes: `docs/archive/INDEX.md` → UI and Mobile
+
+**Active root docs are consolidated to 6 core files for easier maintenance.**
 
 ---
 

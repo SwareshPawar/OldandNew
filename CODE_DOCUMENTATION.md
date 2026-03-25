@@ -2,8 +2,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** March 21, 2026 - Atmosphere Pad Looping Fix (Bug #9)  
-**Version:** 1.20.1
+**Last Updated:** March 25, 2026 - Loop Replacement + Loop Player Refresh Fix (Bug #10)  
+**Version:** 1.20.2
 
 ---
 
@@ -309,7 +309,33 @@ Before marking vulnerabilities as fixed:
 
 ---
 
-## RECENT CHANGES (February 14-15, 2026)
+## RECENT CHANGES (February-March 2026)
+
+### Completed Fixes - Session 7 (March 25, 2026)
+
+23. **✅ Loop & Rhythm Set Manager: Single-Slot Upload Truly Replaces Existing Loop**
+     - **Problem**: Uploading a new sample in an existing slot sometimes created duplicate loop metadata entries instead of replacing the existing slot entry.
+     - **Root Cause**: Loop IDs were generated from mixed-case request inputs (tempo/genre/time fields), so old and new IDs could differ by case and fail dedup filtering.
+     - **Fixes**:
+         - Normalized naming components to lowercase before building loop IDs and filenames.
+         - Added filename-based dedup fallback when updating `metadata.loops`.
+     - **Locations**:
+         - [server.js](server.js#L2511) - `POST /api/loops/upload` normalization + robust dedup
+         - [server.js](server.js#L2644) - `POST /api/loops/upload-single` normalization + robust dedup
+     - **Impact**: Uploading a replacement sample now consistently updates the same loop slot instead of creating duplicate backend entries.
+
+24. **✅ Loop Player: Force Fresh Audio After Loop File Replacement**
+     - **Problem**: After replacing a loop file with the same filename, loop player could keep playing stale audio from in-memory and browser fetch caches.
+     - **Fixes**:
+         - Added `forceReload` support to loop loading path.
+         - Added browser fetch cache bypass (`cache: 'reload'`) for forced reloads.
+         - Added cross-page signal (`localStorage.loopFilesReplacedAt`) on successful uploads.
+         - Loop player now detects replacement signal and forces a fresh audio reload.
+     - **Locations**:
+         - [loop-player-pad.js](loop-player-pad.js#L174) - `loadLoops(..., forceReload)`
+         - [loop-player-pad-ui.js](loop-player-pad-ui.js#L17) - replacement signal tracking and forced reload trigger
+         - [loop-rhythm-manager.js](loop-rhythm-manager.js#L593) and [loop-rhythm-manager.js](loop-rhythm-manager.js#L833) - set `loopFilesReplacedAt` after successful upload
+     - **Impact**: Loop player now plays newly uploaded audio immediately instead of stale previous audio.
 
 ### Completed Fixes - Session 6 (February 15, 2026 - Evening)
 
@@ -746,6 +772,7 @@ WEIGHTS = {
 | GET | `/api/songs` | No | `?since=TIMESTAMP` (optional) | `Array<Song>` | Get all songs, supports delta sync |
 | POST | `/api/songs` | Yes | Song object | Created song | Add new song |
 | PUT | `/api/songs/:id` | Yes | Song object | Updated song | Update existing song |
+| PATCH | `/api/songs/:id/rhythm-set` | Yes (Admin) | `{rhythmSetId}` | Updated song | Assign or clear a song's rhythm set from preview editor |
 | DELETE | `/api/songs/:id` | Yes (Admin) | None | `{message}` | Delete song by ID |
 | DELETE | `/api/songs` | Yes (Admin) | None | `{message}` | Delete all songs |
 | POST | `/api/songs/scan` | No | `{keys, tempoMin, tempoMax, times, taals, moods, genres, categories}` | `Array<Song>` | Scan songs with conditions |
@@ -1535,6 +1562,75 @@ The `getSuggestedSongs()` function uses weighted scoring based on multiple music
 ## 8. BUGS ENCOUNTERED & RESOLVED
 
 This section documents production bugs discovered during development and testing, along with their root causes and solutions. Each entry includes reproduction steps, debugging process, and lessons learned.
+
+### Bug #10: Replacing Loop Samples Created Duplicate Entries and Player Used Old Audio
+**Date Discovered:** March 25, 2026  
+**Severity:** High  
+**Status:** ✅ RESOLVED  
+
+**Description:**  
+In Loop & Rhythm Set Manager, uploading a new sample for an existing slot (for example `loop1`) could create duplicate metadata entries rather than replacing the previous one. After upload, loop player sometimes continued playing older audio instead of the newly uploaded sample.
+
+**Affected Components:**
+- `server.js` - Loop upload endpoints and metadata dedup logic
+- `loop-rhythm-manager.js` - Upload success flow
+- `loop-player-pad-ui.js` - Loop refresh trigger logic
+- `loop-player-pad.js` - Audio fetch and in-memory buffer reload behavior
+
+**Reproduction Steps:**
+1. Open Loop & Rhythm Set Manager and upload a sample to an already filled loop slot.
+2. Upload another sample to the same slot.
+3. Check `loops-metadata.json` and observe duplicate entries in some input-casing scenarios.
+4. Open song loop player for the mapped rhythm set.
+5. **BUG**: Player may still use old audio buffers / cached fetch response.
+
+**Root Cause Analysis:**
+
+1. **Case-sensitive ID drift in backend dedup path**
+    - IDs were built from request fields whose casing could vary (`Medium` vs `medium`).
+    - Dedup logic filtered only by ID, so case drift produced non-matching IDs and duplicate records.
+
+2. **No filename fallback dedup**
+    - Existing filter did not remove old records by canonical filename, leaving room for legacy duplicates.
+
+3. **Audio caching after replacement**
+    - Loop player reused `rawAudioData` when song/loop URLs appeared unchanged.
+    - Browser fetch cache could still return stale content for same URL/filename.
+
+**Solution Implemented:**
+
+1. **Canonical lowercase normalization for ID/filename generation**
+    - Applied in both `POST /api/loops/upload` and `POST /api/loops/upload-single`.
+
+2. **Robust dedup filter**
+    - Metadata update now removes prior entries by **ID or filename**.
+
+3. **Forced fresh audio reload after upload**
+    - Upload success writes `localStorage.loopFilesReplacedAt`.
+    - Loop player UI compares signal timestamp and forces reload when newer.
+    - Forced reload bypasses browser HTTP cache with `fetch(..., { cache: 'reload' })`.
+
+**Files Modified:**
+- `server.js`
+- `loop-player-pad.js`
+- `loop-player-pad-ui.js`
+- `loop-rhythm-manager.js`
+
+**Testing Performed:**
+- ✅ Re-upload to same loop slot no longer creates duplicate metadata entries
+- ✅ Same slot reflects latest uploaded file in backend metadata
+- ✅ Opening loop player after replacement fetches new sample data
+- ✅ Forced reload path bypasses stale browser cache
+- ✅ `node --check` passed for all modified JS files
+
+**Impact:**
+- Loop slot uploads now behave as true replacement operations.
+- Loop player consistently uses newly uploaded loops without requiring manual cache clears or file renames.
+
+**Lessons Learned:**
+1. Canonicalization must happen before ID generation, not only at display time.
+2. Metadata dedup should include a stable fallback key (filename) when IDs may have historical drift.
+3. Audio/media replacement workflows need explicit cache-busting signals when URLs stay constant.
 
 ### Bug #9: Atmosphere Pads Stopping After One Loop Iteration
 **Date Discovered:** March 21, 2026  

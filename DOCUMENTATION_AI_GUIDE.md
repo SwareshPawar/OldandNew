@@ -1,6 +1,6 @@
 # Documentation Guide - Simplified Structure
 
-## 📚 Documentation Files (6 Total)
+## 📚 Documentation Files
 
 ### Core Documentation (Always Update These)
 
@@ -31,15 +31,19 @@
    - Code style guide
    - **Update**: When changing development process
 
-5. **`MIGRATION_SONG_ID_FIX.md`** - Historical Reference (1515 lines)
-   - Completed code migrations
-   - Refactoring history
-   - **Read-only**: Keep for historical reference
-
-6. **`DOCUMENTATION_AI_GUIDE.md`** - This File
+5. **`DOCUMENTATION_AI_GUIDE.md`** - This file
    - How AI assistants should use documentation
    - Where to add what type of content
    - **Update**: When documentation structure changes
+
+6. **`CHORD_ACCIDENTAL_NORMALIZATION.md`** - Accidental policy guide
+   - Eb/Bb canonicalization implementation details
+   - Rollback checklist for D#/A# policy
+
+### Archived Documentation
+
+- Historical, one-off, and migration-specific markdown files are kept in `docs/archive/`.
+- Treat archive files as reference-only unless user explicitly asks to revive/move content.
 
 ---
 
@@ -47,7 +51,7 @@
 
 ### Documentation Structure
 ```
-📚 All Documentation (6 files):
+📚 Active Documentation (6 files):
 
 CODE_DOCUMENTATION.md           → Complete change history, bugs, sessions (6500+ lines)
 ├── Section 8: BUGS             → All bugs ever fixed
@@ -60,8 +64,10 @@ LOOP_PLAYER_DOCUMENTATION.md    → Loop system technical reference (590 lines)
 
 README.md                       → User-facing quickstart (265 lines)
 CONTRIBUTING.md                 → Development workflow (454 lines)
-MIGRATION_SONG_ID_FIX.md       → Historical migrations (read-only, 1515 lines)
 DOCUMENTATION_AI_GUIDE.md       → This file (for AI assistants)
+CHORD_ACCIDENTAL_NORMALIZATION.md → Chord accidental canonicalization policy
+
+docs/archive/*                  → Historical documentation archive (read-only)
 ```
 
 ### When User Reports a Bug
@@ -131,14 +137,16 @@ keherwa_4_4_fast_qawalli_LOOP1.wav
 
 ### When Creating New Documentation
 
-**DON'T**: Create separate markdown files for each issue
+**DON'T**: Create separate markdown files for each issue in repo root
 **DO**: Update existing main documents:
 - Bug? → `CODE_DOCUMENTATION.md` Section 8
 - New feature? → `CODE_DOCUMENTATION.md` Section 9
 - Loop system change? → `LOOP_PLAYER_DOCUMENTATION.md`
 - Major feature docs? → Update `README.md` overview
 
-**Why**: We reduced from 33 markdown files to 6. Keep it clean!
+**If a one-off note is still needed**: Put it under `docs/archive/`.
+
+**Why**: Keep active docs minimal and centralized.
 
 ### File Change Protocol
 
