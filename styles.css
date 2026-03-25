@@ -608,10 +608,13 @@
             align-items: center;
             gap: 6px;
             flex: 1;
+            min-width: 0;
+            flex-wrap: wrap;
         }
 
         .preview-rhythm-set-select {
-            flex: 1;
+            flex: 1 1 180px;
+            min-width: 0;
             font-size: 0.82rem;
             font-weight: 600;
             color: var(--primary-color);
@@ -771,6 +774,33 @@
             .preview-meta-row {
                 min-width: fit-content;
                 gap: 6px;
+            }
+
+            .preview-meta-row.preview-rhythm-set-row {
+                min-width: 0;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+
+            .preview-rhythm-set-row .preview-meta-label {
+                min-width: 0;
+                flex: 0 0 100%;
+            }
+
+            .preview-rhythm-set-row .preview-rhythm-set-editor {
+                width: 100%;
+                min-width: 0;
+                gap: 6px;
+            }
+
+            .preview-rhythm-set-row .preview-rhythm-set-select {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+
+            .preview-rhythm-set-row .preview-rhythm-set-save-btn {
+                width: 100%;
+                justify-content: center;
             }
             
             .preview-meta-label {
