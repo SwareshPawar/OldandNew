@@ -2575,7 +2575,9 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
         continue; // Skip invalid files
       }
 
-      const correctFilename = `${basePattern}_${type.toUpperCase()}${number}.wav`;
+      // New naming convention v3.0: {rhythmSetId}_{TYPE}{number}.wav
+      // Guaranteed unique per set regardless of taal/tempo/genre metadata
+      const correctFilename = `${rhythmSetId}_${type.toUpperCase()}${number}.wav`;
       const oldPath = file.path;
       const newPath = path.join(loopsDir, correctFilename);
 
@@ -2586,7 +2588,7 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
 
       // Create metadata entry
       const loopEntry = {
-        id: `${basePattern}_${type}${number}`,
+        id: `${rhythmSetId}_${type}${number}`,
         filename: correctFilename,
         type: type,
         number: number,
@@ -2606,8 +2608,10 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
         }
       };
 
-      // Remove existing entry with same ID or same filename (handles case-mismatch IDs from older uploads)
-      metadata.loops = metadata.loops.filter(loop => loop.id !== loopEntry.id && loop.filename !== correctFilename);
+      // Remove any existing entry for this rhythmSetId + loopType slot (old or new naming)
+      metadata.loops = metadata.loops.filter(loop =>
+        !(loop.rhythmSetId === rhythmSetId && loop.type === type && loop.number === number)
+      );
       
       // Add new entry
       metadata.loops.push(loopEntry);
@@ -2698,23 +2702,19 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
       return res.status(500).json({ error: 'Failed to read loop metadata' });
     }
 
-    // Generate correct filename based on naming convention v2.0
-    // Sanitize all inputs: lowercase first to ensure consistent IDs regardless of input casing
-    const taalSanitized = taal.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
-    const timeFormatted = timeSignature.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
-    const tempoSanitized = tempo.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
-    const genreSanitized = genre.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
-    
-    const basePattern = `${taalSanitized}_${timeFormatted}_${tempoSanitized}_${genreSanitized}`;
+    // Naming convention v3.0: {rhythmSetId}_{TYPE}{number}.wav
+    // Guaranteed unique per rhythm set — avoids collisions between sets sharing the same
+    // taal/tempo/genre combination (which was the root cause of files being overwritten).
     const typeUpper = type.toUpperCase();
-    const correctFilename = `${basePattern}_${typeUpper}${number}.wav`;
+    const correctFilename = `${rhythmSetId}_${typeUpper}${number}.wav`;
+    const loopId = `${rhythmSetId}_${type}${number}`;
 
     // Rename uploaded file
     const oldPath = file.path;
     const newPath = path.join(loopsDir, correctFilename);
 
     try {
-      // If file with same name exists, delete it first
+      // If a file with the same name already exists, remove it first (replacing old sample)
       if (fs.existsSync(newPath) && oldPath !== newPath) {
         fs.unlinkSync(newPath);
       }
@@ -2729,7 +2729,6 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     }
 
     // Create metadata entry
-    const loopId = `${basePattern}_${type}${number}`;
     const loopEntry = {
       id: loopId,
       filename: correctFilename,
@@ -2755,8 +2754,10 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
       }
     };
 
-    // Remove existing entry with same ID or same filename (handles case-mismatch IDs from older uploads)
-    metadata.loops = metadata.loops.filter(loop => loop.id !== loopId && loop.filename !== correctFilename);
+    // Remove any existing entry for this rhythmSetId + loopType slot (handles both old and new naming)
+    metadata.loops = metadata.loops.filter(loop =>
+      !(loop.rhythmSetId === rhythmSetId && loop.type === type && loop.number === parseInt(number))
+    );
     
     // Add new entry
     metadata.loops.push(loopEntry);

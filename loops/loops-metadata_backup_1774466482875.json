@@ -3,8 +3,8 @@
   "description": "Loop file metadata and matching conditions",
   "loops": [
     {
-      "id": "dadra_fast_2_loop1",
-      "filename": "dadra_fast_2_LOOP1.wav",
+      "id": "dadra_3_4_medium_dholak_loop1",
+      "filename": "dadra_3_4_medium_dholak_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "conditions": {
@@ -19,15 +19,15 @@
         "description": ""
       },
       "files": {
-        "loop1": "dadra_fast_2_LOOP1.wav"
+        "loop1": "dadra_3_4_medium_dholak_LOOP1.wav"
       },
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 2,
       "rhythmSetId": "dadra_fast_2"
     },
     {
-      "id": "dadra_fast_2_loop2",
-      "filename": "dadra_fast_2_LOOP2.wav",
+      "id": "dadra_3_4_medium_dholak_loop2",
+      "filename": "dadra_3_4_medium_dholak_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "conditions": {
@@ -42,15 +42,15 @@
         "description": ""
       },
       "files": {
-        "loop2": "dadra_fast_2_LOOP2.wav"
+        "loop2": "dadra_3_4_medium_dholak_LOOP2.wav"
       },
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 2,
       "rhythmSetId": "dadra_fast_2"
     },
     {
-      "id": "dadra_fast_2_loop3",
-      "filename": "dadra_fast_2_LOOP3.wav",
+      "id": "dadra_3_4_medium_dholak_loop3",
+      "filename": "dadra_3_4_medium_dholak_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "conditions": {
@@ -65,15 +65,15 @@
         "description": ""
       },
       "files": {
-        "loop3": "dadra_fast_2_LOOP3.wav"
+        "loop3": "dadra_3_4_medium_dholak_LOOP3.wav"
       },
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 2,
       "rhythmSetId": "dadra_fast_2"
     },
     {
-      "id": "dadra_fast_2_fill1",
-      "filename": "dadra_fast_2_FILL1.wav",
+      "id": "dadra_3_4_medium_dholak_fill1",
+      "filename": "dadra_3_4_medium_dholak_FILL1.wav",
       "type": "fill",
       "number": 1,
       "conditions": {
@@ -88,15 +88,15 @@
         "description": ""
       },
       "files": {
-        "fill1": "dadra_fast_2_FILL1.wav"
+        "fill1": "dadra_3_4_medium_dholak_FILL1.wav"
       },
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 2,
       "rhythmSetId": "dadra_fast_2"
     },
     {
-      "id": "dadra_fast_2_fill2",
-      "filename": "dadra_fast_2_FILL2.wav",
+      "id": "dadra_3_4_medium_dholak_fill2",
+      "filename": "dadra_3_4_medium_dholak_FILL2.wav",
       "type": "fill",
       "number": 2,
       "conditions": {
@@ -111,15 +111,15 @@
         "description": ""
       },
       "files": {
-        "fill2": "dadra_fast_2_FILL2.wav"
+        "fill2": "dadra_3_4_medium_dholak_FILL2.wav"
       },
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 2,
       "rhythmSetId": "dadra_fast_2"
     },
     {
-      "id": "dadra_fast_2_fill3",
-      "filename": "dadra_fast_2_FILL3.wav",
+      "id": "dadra_3_4_medium_dholak_fill3",
+      "filename": "dadra_3_4_medium_dholak_FILL3.wav",
       "type": "fill",
       "number": 3,
       "conditions": {
@@ -134,15 +134,15 @@
         "description": ""
       },
       "files": {
-        "fill3": "dadra_fast_2_FILL3.wav"
+        "fill3": "dadra_3_4_medium_dholak_FILL3.wav"
       },
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 2,
       "rhythmSetId": "dadra_fast_2"
     },
     {
-      "id": "deepchandi_1_loop1",
-      "filename": "deepchandi_1_LOOP1.wav",
+      "id": "deepchandi_14_8_slow_classical_loop1",
+      "filename": "deepchandi_14_8_slow_classical_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "conditions": {
@@ -157,15 +157,15 @@
         "description": ""
       },
       "files": {
-        "loop1": "deepchandi_1_LOOP1.wav"
+        "loop1": "deepchandi_14_8_slow_classical_LOOP1.wav"
       },
       "rhythmFamily": "deepchandi",
       "rhythmSetNo": 1,
       "rhythmSetId": "deepchandi_1"
     },
     {
-      "id": "deepchandi_1_loop2",
-      "filename": "deepchandi_1_LOOP2.wav",
+      "id": "deepchandi_14_8_slow_classical_loop2",
+      "filename": "deepchandi_14_8_slow_classical_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "conditions": {
@@ -180,15 +180,15 @@
         "description": ""
       },
       "files": {
-        "loop2": "deepchandi_1_LOOP2.wav"
+        "loop2": "deepchandi_14_8_slow_classical_LOOP2.wav"
       },
       "rhythmFamily": "deepchandi",
       "rhythmSetNo": 1,
       "rhythmSetId": "deepchandi_1"
     },
     {
-      "id": "deepchandi_1_fill1",
-      "filename": "deepchandi_1_FILL1.wav",
+      "id": "deepchandi_14_8_slow_classical_fill1",
+      "filename": "deepchandi_14_8_slow_classical_FILL1.wav",
       "type": "fill",
       "number": 1,
       "conditions": {
@@ -203,15 +203,15 @@
         "description": ""
       },
       "files": {
-        "fill1": "deepchandi_1_FILL1.wav"
+        "fill1": "deepchandi_14_8_slow_classical_FILL1.wav"
       },
       "rhythmFamily": "deepchandi",
       "rhythmSetNo": 1,
       "rhythmSetId": "deepchandi_1"
     },
     {
-      "id": "deepchandi_1_fill2",
-      "filename": "deepchandi_1_FILL2.wav",
+      "id": "deepchandi_14_8_slow_classical_fill2",
+      "filename": "deepchandi_14_8_slow_classical_FILL2.wav",
       "type": "fill",
       "number": 2,
       "conditions": {
@@ -226,7 +226,7 @@
         "description": ""
       },
       "files": {
-        "fill2": "deepchandi_1_FILL2.wav"
+        "fill2": "deepchandi_14_8_slow_classical_FILL2.wav"
       },
       "rhythmFamily": "deepchandi",
       "rhythmSetNo": 1,
@@ -256,8 +256,8 @@
       "rhythmSetId": "dadra_fast_2"
     },
     {
-      "id": "rock_1_loop1",
-      "filename": "rock_1_LOOP1.wav",
+      "id": "rock_4_4_medium_rock_loop1",
+      "filename": "rock_4_4_medium_rock_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "conditions": {
@@ -272,15 +272,15 @@
         "description": ""
       },
       "files": {
-        "loop1": "rock_1_LOOP1.wav"
+        "loop1": "rock_4_4_medium_rock_LOOP1.wav"
       },
       "rhythmFamily": "rock",
       "rhythmSetNo": 1,
       "rhythmSetId": "rock_1"
     },
     {
-      "id": "rock_1_loop2",
-      "filename": "rock_1_LOOP2.wav",
+      "id": "rock_4_4_medium_rock_loop2",
+      "filename": "rock_4_4_medium_rock_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "conditions": {
@@ -295,15 +295,15 @@
         "description": ""
       },
       "files": {
-        "loop2": "rock_1_LOOP2.wav"
+        "loop2": "rock_4_4_medium_rock_LOOP2.wav"
       },
       "rhythmFamily": "rock",
       "rhythmSetNo": 1,
       "rhythmSetId": "rock_1"
     },
     {
-      "id": "rock_1_loop3",
-      "filename": "rock_1_LOOP3.wav",
+      "id": "rock_4_4_medium_rock_loop3",
+      "filename": "rock_4_4_medium_rock_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "conditions": {
@@ -318,15 +318,15 @@
         "description": ""
       },
       "files": {
-        "loop3": "rock_1_LOOP3.wav"
+        "loop3": "rock_4_4_medium_rock_LOOP3.wav"
       },
       "rhythmFamily": "rock",
       "rhythmSetNo": 1,
       "rhythmSetId": "rock_1"
     },
     {
-      "id": "rock_1_fill1",
-      "filename": "rock_1_FILL1.wav",
+      "id": "rock_4_4_medium_rock_fill1",
+      "filename": "rock_4_4_medium_rock_FILL1.wav",
       "type": "fill",
       "number": 1,
       "conditions": {
@@ -341,15 +341,15 @@
         "description": ""
       },
       "files": {
-        "fill1": "rock_1_FILL1.wav"
+        "fill1": "rock_4_4_medium_rock_FILL1.wav"
       },
       "rhythmFamily": "rock",
       "rhythmSetNo": 1,
       "rhythmSetId": "rock_1"
     },
     {
-      "id": "rock_1_fill2",
-      "filename": "rock_1_FILL2.wav",
+      "id": "rock_4_4_medium_rock_fill2",
+      "filename": "rock_4_4_medium_rock_FILL2.wav",
       "type": "fill",
       "number": 2,
       "conditions": {
@@ -364,15 +364,15 @@
         "description": ""
       },
       "files": {
-        "fill2": "rock_1_FILL2.wav"
+        "fill2": "rock_4_4_medium_rock_FILL2.wav"
       },
       "rhythmFamily": "rock",
       "rhythmSetNo": 1,
       "rhythmSetId": "rock_1"
     },
     {
-      "id": "rock_1_fill3",
-      "filename": "rock_1_FILL3.wav",
+      "id": "rock_4_4_medium_rock_fill3",
+      "filename": "rock_4_4_medium_rock_FILL3.wav",
       "type": "fill",
       "number": 3,
       "conditions": {
@@ -387,15 +387,15 @@
         "description": ""
       },
       "files": {
-        "fill3": "rock_1_FILL3.wav"
+        "fill3": "rock_4_4_medium_rock_FILL3.wav"
       },
       "rhythmFamily": "rock",
       "rhythmSetNo": 1,
       "rhythmSetId": "rock_1"
     },
     {
-      "id": "congo_1_loop1",
-      "filename": "congo_1_LOOP1.wav",
+      "id": "congo_6_8_slow_acoustic_loop1",
+      "filename": "congo_6_8_slow_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "conditions": {
@@ -410,15 +410,15 @@
         "description": ""
       },
       "files": {
-        "loop1": "congo_1_LOOP1.wav"
+        "loop1": "congo_6_8_slow_acoustic_LOOP1.wav"
       },
       "rhythmFamily": "congo",
       "rhythmSetNo": 1,
       "rhythmSetId": "congo_1"
     },
     {
-      "id": "congo_1_loop2",
-      "filename": "congo_1_LOOP2.wav",
+      "id": "congo_6_8_slow_acoustic_loop2",
+      "filename": "congo_6_8_slow_acoustic_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "conditions": {
@@ -433,7 +433,7 @@
         "description": ""
       },
       "files": {
-        "loop2": "congo_1_LOOP2.wav"
+        "loop2": "congo_6_8_slow_acoustic_LOOP2.wav"
       },
       "replacedAt": "2026-02-28T15:06:12.359Z",
       "replacedBy": "swareshpawar@gmail.com",
@@ -443,8 +443,8 @@
       "rhythmSetId": "congo_1"
     },
     {
-      "id": "congo_1_loop3",
-      "filename": "congo_1_LOOP3.wav",
+      "id": "congo_6_8_slow_acoustic_loop3",
+      "filename": "congo_6_8_slow_acoustic_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "conditions": {
@@ -459,7 +459,7 @@
         "description": ""
       },
       "files": {
-        "loop3": "congo_1_LOOP3.wav"
+        "loop3": "congo_6_8_slow_acoustic_LOOP3.wav"
       },
       "replacedAt": "2026-02-28T15:06:21.674Z",
       "replacedBy": "swareshpawar@gmail.com",
@@ -469,8 +469,8 @@
       "rhythmSetId": "congo_1"
     },
     {
-      "id": "congo_1_fill1",
-      "filename": "congo_1_FILL1.wav",
+      "id": "congo_6_8_slow_acoustic_fill1",
+      "filename": "congo_6_8_slow_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "conditions": {
@@ -485,15 +485,15 @@
         "description": ""
       },
       "files": {
-        "fill1": "congo_1_FILL1.wav"
+        "fill1": "congo_6_8_slow_acoustic_FILL1.wav"
       },
       "rhythmFamily": "congo",
       "rhythmSetNo": 1,
       "rhythmSetId": "congo_1"
     },
     {
-      "id": "congo_1_fill2",
-      "filename": "congo_1_FILL2.wav",
+      "id": "congo_6_8_slow_acoustic_fill2",
+      "filename": "congo_6_8_slow_acoustic_FILL2.wav",
       "type": "fill",
       "number": 2,
       "conditions": {
@@ -508,15 +508,15 @@
         "description": ""
       },
       "files": {
-        "fill2": "congo_1_FILL2.wav"
+        "fill2": "congo_6_8_slow_acoustic_FILL2.wav"
       },
       "rhythmFamily": "congo",
       "rhythmSetNo": 1,
       "rhythmSetId": "congo_1"
     },
     {
-      "id": "congo_1_fill3",
-      "filename": "congo_1_FILL3.wav",
+      "id": "congo_6_8_slow_acoustic_fill3",
+      "filename": "congo_6_8_slow_acoustic_FILL3.wav",
       "type": "fill",
       "number": 3,
       "conditions": {
@@ -531,15 +531,15 @@
         "description": ""
       },
       "files": {
-        "fill3": "congo_1_FILL3.wav"
+        "fill3": "congo_6_8_slow_acoustic_FILL3.wav"
       },
       "rhythmFamily": "congo",
       "rhythmSetNo": 1,
       "rhythmSetId": "congo_1"
     },
     {
-      "id": "keherwa_slow_3_loop1",
-      "filename": "keherwa_slow_3_LOOP1.wav",
+      "id": "keherwa_4_4_slow_dholak_loop1",
+      "filename": "keherwa_4_4_slow_dholak_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "keherwa_slow",
@@ -557,12 +557,12 @@
         "description": ""
       },
       "files": {
-        "loop1": "keherwa_slow_3_LOOP1.wav"
+        "loop1": "keherwa_4_4_slow_dholak_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_slow_3_loop2",
-      "filename": "keherwa_slow_3_LOOP2.wav",
+      "id": "keherwa_4_4_slow_dholak_loop2",
+      "filename": "keherwa_4_4_slow_dholak_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "keherwa_slow",
@@ -580,12 +580,12 @@
         "description": ""
       },
       "files": {
-        "loop2": "keherwa_slow_3_LOOP2.wav"
+        "loop2": "keherwa_4_4_slow_dholak_LOOP2.wav"
       }
     },
     {
-      "id": "keherwa_slow_3_loop3",
-      "filename": "keherwa_slow_3_LOOP3.wav",
+      "id": "keherwa_4_4_slow_dholak_loop3",
+      "filename": "keherwa_4_4_slow_dholak_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "keherwa_slow",
@@ -603,12 +603,12 @@
         "description": ""
       },
       "files": {
-        "loop3": "keherwa_slow_3_LOOP3.wav"
+        "loop3": "keherwa_4_4_slow_dholak_LOOP3.wav"
       }
     },
     {
-      "id": "keherwa_slow_3_fill1",
-      "filename": "keherwa_slow_3_FILL1.wav",
+      "id": "keherwa_4_4_slow_dholak_fill1",
+      "filename": "keherwa_4_4_slow_dholak_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "keherwa_slow",
@@ -626,12 +626,12 @@
         "description": ""
       },
       "files": {
-        "fill1": "keherwa_slow_3_FILL1.wav"
+        "fill1": "keherwa_4_4_slow_dholak_FILL1.wav"
       }
     },
     {
-      "id": "keherwa_slow_3_fill2",
-      "filename": "keherwa_slow_3_FILL2.wav",
+      "id": "keherwa_4_4_slow_dholak_fill2",
+      "filename": "keherwa_4_4_slow_dholak_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "keherwa_slow",
@@ -649,12 +649,12 @@
         "description": ""
       },
       "files": {
-        "fill2": "keherwa_slow_3_FILL2.wav"
+        "fill2": "keherwa_4_4_slow_dholak_FILL2.wav"
       }
     },
     {
-      "id": "keherwa_slow_3_fill3",
-      "filename": "keherwa_slow_3_FILL3.wav",
+      "id": "keherwa_4_4_slow_dholak_fill3",
+      "filename": "keherwa_4_4_slow_dholak_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "keherwa_slow",
@@ -672,12 +672,12 @@
         "description": ""
       },
       "files": {
-        "fill3": "keherwa_slow_3_FILL3.wav"
+        "fill3": "keherwa_4_4_slow_dholak_FILL3.wav"
       }
     },
     {
-      "id": "rupak_1_loop1",
-      "filename": "rupak_1_LOOP1.wav",
+      "id": "rupak_7_8_slow_tabla_loop1",
+      "filename": "rupak_7_8_slow_tabla_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "rupak",
@@ -695,12 +695,12 @@
         "description": ""
       },
       "files": {
-        "loop1": "rupak_1_LOOP1.wav"
+        "loop1": "rupak_7_8_slow_tabla_LOOP1.wav"
       }
     },
     {
-      "id": "rupak_1_loop2",
-      "filename": "rupak_1_LOOP2.wav",
+      "id": "rupak_7_8_slow_tabla_loop2",
+      "filename": "rupak_7_8_slow_tabla_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "rupak",
@@ -718,12 +718,12 @@
         "description": ""
       },
       "files": {
-        "loop2": "rupak_1_LOOP2.wav"
+        "loop2": "rupak_7_8_slow_tabla_LOOP2.wav"
       }
     },
     {
-      "id": "rupak_1_loop3",
-      "filename": "rupak_1_LOOP3.wav",
+      "id": "rupak_7_8_slow_tabla_loop3",
+      "filename": "rupak_7_8_slow_tabla_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "rupak",
@@ -741,12 +741,12 @@
         "description": ""
       },
       "files": {
-        "loop3": "rupak_1_LOOP3.wav"
+        "loop3": "rupak_7_8_slow_tabla_LOOP3.wav"
       }
     },
     {
-      "id": "rupak_1_fill1",
-      "filename": "rupak_1_FILL1.wav",
+      "id": "rupak_7_8_slow_tabla_fill1",
+      "filename": "rupak_7_8_slow_tabla_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "rupak",
@@ -764,12 +764,12 @@
         "description": ""
       },
       "files": {
-        "fill1": "rupak_1_FILL1.wav"
+        "fill1": "rupak_7_8_slow_tabla_FILL1.wav"
       }
     },
     {
-      "id": "onetwo_1_fill3",
-      "filename": "onetwo_1_FILL3.wav",
+      "id": "onetwo_2_4_medium_drum_slow_fill3",
+      "filename": "onetwo_2_4_medium_drum_slow_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "onetwo",
@@ -787,12 +787,12 @@
         "description": ""
       },
       "files": {
-        "fill3": "onetwo_1_FILL3.wav"
+        "fill3": "onetwo_2_4_medium_drum_slow_FILL3.wav"
       }
     },
     {
-      "id": "onetwo_1_fill2",
-      "filename": "onetwo_1_FILL2.wav",
+      "id": "onetwo_2_4_medium_drum_slow_fill2",
+      "filename": "onetwo_2_4_medium_drum_slow_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "onetwo",
@@ -810,12 +810,12 @@
         "description": ""
       },
       "files": {
-        "fill2": "onetwo_1_FILL2.wav"
+        "fill2": "onetwo_2_4_medium_drum_slow_FILL2.wav"
       }
     },
     {
-      "id": "onetwo_1_fill1",
-      "filename": "onetwo_1_FILL1.wav",
+      "id": "onetwo_2_4_medium_drum_slow_fill1",
+      "filename": "onetwo_2_4_medium_drum_slow_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "onetwo",
@@ -833,12 +833,12 @@
         "description": ""
       },
       "files": {
-        "fill1": "onetwo_1_FILL1.wav"
+        "fill1": "onetwo_2_4_medium_drum_slow_FILL1.wav"
       }
     },
     {
-      "id": "onetwo_1_loop3",
-      "filename": "onetwo_1_LOOP3.wav",
+      "id": "onetwo_2_4_medium_drum_slow_loop3",
+      "filename": "onetwo_2_4_medium_drum_slow_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "onetwo",
@@ -856,12 +856,12 @@
         "description": ""
       },
       "files": {
-        "loop3": "onetwo_1_LOOP3.wav"
+        "loop3": "onetwo_2_4_medium_drum_slow_LOOP3.wav"
       }
     },
     {
-      "id": "onetwo_1_loop2",
-      "filename": "onetwo_1_LOOP2.wav",
+      "id": "onetwo_2_4_medium_drum_slow_loop2",
+      "filename": "onetwo_2_4_medium_drum_slow_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "onetwo",
@@ -879,12 +879,12 @@
         "description": ""
       },
       "files": {
-        "loop2": "onetwo_1_LOOP2.wav"
+        "loop2": "onetwo_2_4_medium_drum_slow_LOOP2.wav"
       }
     },
     {
-      "id": "onetwo_1_loop1",
-      "filename": "onetwo_1_LOOP1.wav",
+      "id": "onetwo_2_4_medium_drum_slow_loop1",
+      "filename": "onetwo_2_4_medium_drum_slow_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "onetwo",
@@ -902,12 +902,12 @@
         "description": ""
       },
       "files": {
-        "loop1": "onetwo_1_LOOP1.wav"
+        "loop1": "onetwo_2_4_medium_drum_slow_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_fast_2_loop1",
-      "filename": "keherwa_fast_2_LOOP1.wav",
+      "id": "keherwa_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_4_4_medium_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "keherwa_fast",
@@ -925,12 +925,12 @@
         "description": "loop1 for keherwa_2"
       },
       "files": {
-        "loop1": "keherwa_fast_2_LOOP1.wav"
+        "loop1": "keherwa_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_fast_2_loop2",
-      "filename": "keherwa_fast_2_LOOP2.wav",
+      "id": "keherwa_4_4_medium_acoustic_loop2",
+      "filename": "keherwa_4_4_medium_acoustic_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "keherwa_fast",
@@ -948,12 +948,12 @@
         "description": "loop2 for keherwa_2"
       },
       "files": {
-        "loop2": "keherwa_fast_2_LOOP2.wav"
+        "loop2": "keherwa_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "keherwa_fast_2_loop3",
-      "filename": "keherwa_fast_2_LOOP3.wav",
+      "id": "keherwa_4_4_medium_acoustic_loop3",
+      "filename": "keherwa_4_4_medium_acoustic_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "keherwa_fast",
@@ -971,12 +971,12 @@
         "description": "loop3 for keherwa_2"
       },
       "files": {
-        "loop3": "keherwa_fast_2_LOOP3.wav"
+        "loop3": "keherwa_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "keherwa_fast_2_fill1",
-      "filename": "keherwa_fast_2_FILL1.wav",
+      "id": "keherwa_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_4_4_medium_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "keherwa_fast",
@@ -994,12 +994,12 @@
         "description": "fill1 for keherwa_2"
       },
       "files": {
-        "fill1": "keherwa_fast_2_FILL1.wav"
+        "fill1": "keherwa_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "keherwa_fast_2_fill2",
-      "filename": "keherwa_fast_2_FILL2.wav",
+      "id": "keherwa_4_4_medium_acoustic_fill2",
+      "filename": "keherwa_4_4_medium_acoustic_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "keherwa_fast",
@@ -1017,12 +1017,12 @@
         "description": "fill2 for keherwa_2"
       },
       "files": {
-        "fill2": "keherwa_fast_2_FILL2.wav"
+        "fill2": "keherwa_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "keherwa_fast_2_fill3",
-      "filename": "keherwa_fast_2_FILL3.wav",
+      "id": "keherwa_4_4_medium_acoustic_fill3",
+      "filename": "keherwa_4_4_medium_acoustic_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "keherwa_fast",
@@ -1040,12 +1040,12 @@
         "description": "fill3 for keherwa_2"
       },
       "files": {
-        "fill3": "keherwa_fast_2_FILL3.wav"
+        "fill3": "keherwa_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "dadra_slow_3_loop1",
-      "filename": "dadra_slow_3_LOOP1.wav",
+      "id": "dadra_4_4_medium_acoustic_loop1",
+      "filename": "dadra_4_4_medium_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "dadra_slow",
@@ -1063,12 +1063,12 @@
         "description": "loop1 for dadra_3"
       },
       "files": {
-        "loop1": "dadra_slow_3_LOOP1.wav"
+        "loop1": "dadra_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "dadra_slow_3_loop2",
-      "filename": "dadra_slow_3_LOOP2.wav",
+      "id": "dadra_4_4_medium_acoustic_loop2",
+      "filename": "dadra_4_4_medium_acoustic_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "dadra_slow",
@@ -1086,12 +1086,12 @@
         "description": "loop2 for dadra_3"
       },
       "files": {
-        "loop2": "dadra_slow_3_LOOP2.wav"
+        "loop2": "dadra_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "dadra_slow_3_loop3",
-      "filename": "dadra_slow_3_LOOP3.wav",
+      "id": "dadra_4_4_medium_acoustic_loop3",
+      "filename": "dadra_4_4_medium_acoustic_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "dadra_slow",
@@ -1109,12 +1109,12 @@
         "description": "loop3 for dadra_3"
       },
       "files": {
-        "loop3": "dadra_slow_3_LOOP3.wav"
+        "loop3": "dadra_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "dadra_slow_3_fill1",
-      "filename": "dadra_slow_3_FILL1.wav",
+      "id": "dadra_4_4_medium_acoustic_fill1",
+      "filename": "dadra_4_4_medium_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "dadra_slow",
@@ -1132,12 +1132,12 @@
         "description": "fill1 for dadra_3"
       },
       "files": {
-        "fill1": "dadra_slow_3_FILL1.wav"
+        "fill1": "dadra_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "dadra_slow_3_fill2",
-      "filename": "dadra_slow_3_FILL2.wav",
+      "id": "dadra_4_4_medium_acoustic_fill2",
+      "filename": "dadra_4_4_medium_acoustic_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "dadra_slow",
@@ -1155,12 +1155,12 @@
         "description": "fill2 for dadra_3"
       },
       "files": {
-        "fill2": "dadra_slow_3_FILL2.wav"
+        "fill2": "dadra_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "dadra_slow_3_fill3",
-      "filename": "dadra_slow_3_FILL3.wav",
+      "id": "dadra_4_4_medium_acoustic_fill3",
+      "filename": "dadra_4_4_medium_acoustic_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "dadra_slow",
@@ -1178,12 +1178,12 @@
         "description": "fill3 for dadra_3"
       },
       "files": {
-        "fill3": "dadra_slow_3_FILL3.wav"
+        "fill3": "dadra_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "rupak_1_fill2",
-      "filename": "rupak_1_FILL2.wav",
+      "id": "rupak_7_8_slow_tabla_fill2",
+      "filename": "rupak_7_8_slow_tabla_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "rupak",
@@ -1201,12 +1201,12 @@
         "description": "fill2 for rupak_1"
       },
       "files": {
-        "fill2": "rupak_1_FILL2.wav"
+        "fill2": "rupak_7_8_slow_tabla_FILL2.wav"
       }
     },
     {
-      "id": "rupak_1_fill3",
-      "filename": "rupak_1_FILL3.wav",
+      "id": "rupak_7_8_slow_tabla_fill3",
+      "filename": "rupak_7_8_slow_tabla_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "rupak",
@@ -1224,12 +1224,12 @@
         "description": "fill3 for rupak_1"
       },
       "files": {
-        "fill3": "rupak_1_FILL3.wav"
+        "fill3": "rupak_7_8_slow_tabla_FILL3.wav"
       }
     },
     {
-      "id": "rd_pattern_2_loop1",
-      "filename": "rd_pattern_2_LOOP1.wav",
+      "id": "rd_pattern_4_4_medium_acoustic_loop1",
+      "filename": "rd_pattern_4_4_medium_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "rd_pattern",
@@ -1247,12 +1247,12 @@
         "description": "loop1 for rd_pattern_2"
       },
       "files": {
-        "loop1": "rd_pattern_2_LOOP1.wav"
+        "loop1": "rd_pattern_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "rd_pattern_2_loop2",
-      "filename": "rd_pattern_2_LOOP2.wav",
+      "id": "rd_pattern_4_4_medium_acoustic_loop2",
+      "filename": "rd_pattern_4_4_medium_acoustic_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "rd_pattern",
@@ -1270,12 +1270,12 @@
         "description": "loop2 for rd_pattern_2"
       },
       "files": {
-        "loop2": "rd_pattern_2_LOOP2.wav"
+        "loop2": "rd_pattern_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "rd_pattern_2_loop3",
-      "filename": "rd_pattern_2_LOOP3.wav",
+      "id": "rd_pattern_4_4_medium_acoustic_loop3",
+      "filename": "rd_pattern_4_4_medium_acoustic_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "rd_pattern",
@@ -1293,12 +1293,12 @@
         "description": "loop3 for rd_pattern_2"
       },
       "files": {
-        "loop3": "rd_pattern_2_LOOP3.wav"
+        "loop3": "rd_pattern_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "rd_pattern_2_fill1",
-      "filename": "rd_pattern_2_FILL1.wav",
+      "id": "rd_pattern_4_4_medium_acoustic_fill1",
+      "filename": "rd_pattern_4_4_medium_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "rd_pattern",
@@ -1316,12 +1316,12 @@
         "description": "fill1 for rd_pattern_2"
       },
       "files": {
-        "fill1": "rd_pattern_2_FILL1.wav"
+        "fill1": "rd_pattern_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "rd_pattern_2_fill2",
-      "filename": "rd_pattern_2_FILL2.wav",
+      "id": "rd_pattern_4_4_medium_acoustic_fill2",
+      "filename": "rd_pattern_4_4_medium_acoustic_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "rd_pattern",
@@ -1339,12 +1339,12 @@
         "description": "fill2 for rd_pattern_2"
       },
       "files": {
-        "fill2": "rd_pattern_2_FILL2.wav"
+        "fill2": "rd_pattern_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "rd_pattern_2_fill3",
-      "filename": "rd_pattern_2_FILL3.wav",
+      "id": "rd_pattern_4_4_medium_acoustic_fill3",
+      "filename": "rd_pattern_4_4_medium_acoustic_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "rd_pattern",
@@ -1362,12 +1362,12 @@
         "description": "fill3 for rd_pattern_2"
       },
       "files": {
-        "fill3": "rd_pattern_2_FILL3.wav"
+        "fill3": "rd_pattern_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "drum_6_slow_1_loop1",
-      "filename": "drum_6_slow_1_LOOP1.wav",
+      "id": "drum_6_slow_4_4_medium_acoustic_loop1",
+      "filename": "drum_6_slow_4_4_medium_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "drum_6_slow",
@@ -1385,12 +1385,12 @@
         "description": "loop1 for drum_6_slow_1"
       },
       "files": {
-        "loop1": "drum_6_slow_1_LOOP1.wav"
+        "loop1": "drum_6_slow_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "drum_6_slow_1_loop2",
-      "filename": "drum_6_slow_1_LOOP2.wav",
+      "id": "drum_6_slow_4_4_medium_acoustic_loop2",
+      "filename": "drum_6_slow_4_4_medium_acoustic_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "drum_6_slow",
@@ -1408,12 +1408,12 @@
         "description": "loop2 for drum_6_slow_1"
       },
       "files": {
-        "loop2": "drum_6_slow_1_LOOP2.wav"
+        "loop2": "drum_6_slow_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "drum_6_slow_1_loop3",
-      "filename": "drum_6_slow_1_LOOP3.wav",
+      "id": "drum_6_slow_4_4_medium_acoustic_loop3",
+      "filename": "drum_6_slow_4_4_medium_acoustic_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "drum_6_slow",
@@ -1431,12 +1431,12 @@
         "description": "loop3 for drum_6_slow_1"
       },
       "files": {
-        "loop3": "drum_6_slow_1_LOOP3.wav"
+        "loop3": "drum_6_slow_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "drum_6_slow_1_fill1",
-      "filename": "drum_6_slow_1_FILL1.wav",
+      "id": "drum_6_slow_4_4_medium_acoustic_fill1",
+      "filename": "drum_6_slow_4_4_medium_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "drum_6_slow",
@@ -1454,12 +1454,12 @@
         "description": "fill1 for drum_6_slow_1"
       },
       "files": {
-        "fill1": "drum_6_slow_1_FILL1.wav"
+        "fill1": "drum_6_slow_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "drum_6_slow_1_fill2",
-      "filename": "drum_6_slow_1_FILL2.wav",
+      "id": "drum_6_slow_4_4_medium_acoustic_fill2",
+      "filename": "drum_6_slow_4_4_medium_acoustic_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "drum_6_slow",
@@ -1477,12 +1477,12 @@
         "description": "fill2 for drum_6_slow_1"
       },
       "files": {
-        "fill2": "drum_6_slow_1_FILL2.wav"
+        "fill2": "drum_6_slow_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "drum_6_slow_1_fill3",
-      "filename": "drum_6_slow_1_FILL3.wav",
+      "id": "drum_6_slow_4_4_medium_acoustic_fill3",
+      "filename": "drum_6_slow_4_4_medium_acoustic_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "drum_6_slow",
@@ -1500,12 +1500,12 @@
         "description": "fill3 for drum_6_slow_1"
       },
       "files": {
-        "fill3": "drum_6_slow_1_FILL3.wav"
+        "fill3": "drum_6_slow_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "dadra_fast_1_fill1",
-      "filename": "dadra_fast_1_FILL1.wav",
+      "id": "dadra_fast_4_4_medium_acoustic_fill1",
+      "filename": "dadra_fast_4_4_medium_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "dadra_fast",
@@ -1523,12 +1523,12 @@
         "description": "fill1 for dadra_fast_1"
       },
       "files": {
-        "fill1": "dadra_fast_1_FILL1.wav"
+        "fill1": "dadra_fast_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "dadra_fast_1_fill2",
-      "filename": "dadra_fast_1_FILL2.wav",
+      "id": "dadra_fast_4_4_medium_acoustic_fill2",
+      "filename": "dadra_fast_4_4_medium_acoustic_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "dadra_fast",
@@ -1546,12 +1546,12 @@
         "description": "fill2 for dadra_fast_1"
       },
       "files": {
-        "fill2": "dadra_fast_1_FILL2.wav"
+        "fill2": "dadra_fast_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "dadra_fast_1_fill3",
-      "filename": "dadra_fast_1_FILL3.wav",
+      "id": "dadra_fast_4_4_medium_acoustic_fill3",
+      "filename": "dadra_fast_4_4_medium_acoustic_FILL3.wav",
       "type": "fill",
       "number": 3,
       "rhythmFamily": "dadra_fast",
@@ -1569,12 +1569,12 @@
         "description": "fill3 for dadra_fast_1"
       },
       "files": {
-        "fill3": "dadra_fast_1_FILL3.wav"
+        "fill3": "dadra_fast_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "dadra_fast_1_loop1",
-      "filename": "dadra_fast_1_LOOP1.wav",
+      "id": "dadra_fast_4_4_medium_acoustic_loop1",
+      "filename": "dadra_fast_4_4_medium_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "dadra_fast",
@@ -1592,12 +1592,12 @@
         "description": "loop1 for dadra_fast_1"
       },
       "files": {
-        "loop1": "dadra_fast_1_LOOP1.wav"
+        "loop1": "dadra_fast_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "dadra_fast_1_loop2",
-      "filename": "dadra_fast_1_LOOP2.wav",
+      "id": "dadra_fast_4_4_medium_acoustic_loop2",
+      "filename": "dadra_fast_4_4_medium_acoustic_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "dadra_fast",
@@ -1615,12 +1615,12 @@
         "description": "loop2 for dadra_fast_1"
       },
       "files": {
-        "loop2": "dadra_fast_1_LOOP2.wav"
+        "loop2": "dadra_fast_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "dadra_fast_1_loop3",
-      "filename": "dadra_fast_1_LOOP3.wav",
+      "id": "dadra_fast_4_4_medium_acoustic_loop3",
+      "filename": "dadra_fast_4_4_medium_acoustic_LOOP3.wav",
       "type": "loop",
       "number": 3,
       "rhythmFamily": "dadra_fast",
@@ -1638,12 +1638,12 @@
         "description": "loop3 for dadra_fast_1"
       },
       "files": {
-        "loop3": "dadra_fast_1_LOOP3.wav"
+        "loop3": "dadra_fast_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "keherwa_ghoomar_1_loop1",
-      "filename": "keherwa_ghoomar_1_LOOP1.wav",
+      "id": "keherwa_ghoomar_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_ghoomar_4_4_medium_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "keherwa_ghoomar",
@@ -1661,12 +1661,12 @@
         "description": "loop1 for keherwa_ghoomar_1"
       },
       "files": {
-        "loop1": "keherwa_ghoomar_1_LOOP1.wav"
+        "loop1": "keherwa_ghoomar_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_ghoomar_1_loop2",
-      "filename": "keherwa_ghoomar_1_LOOP2.wav",
+      "id": "keherwa_ghoomar_4_4_medium_acoustic_loop2",
+      "filename": "keherwa_ghoomar_4_4_medium_acoustic_LOOP2.wav",
       "type": "loop",
       "number": 2,
       "rhythmFamily": "keherwa_ghoomar",
@@ -1684,12 +1684,12 @@
         "description": "loop2 for keherwa_ghoomar_1"
       },
       "files": {
-        "loop2": "keherwa_ghoomar_1_LOOP2.wav"
+        "loop2": "keherwa_ghoomar_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "keherwa_ghoomar_1_fill1",
-      "filename": "keherwa_ghoomar_1_FILL1.wav",
+      "id": "keherwa_ghoomar_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_ghoomar_4_4_medium_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "keherwa_ghoomar",
@@ -1707,12 +1707,12 @@
         "description": "fill1 for keherwa_ghoomar_1"
       },
       "files": {
-        "fill1": "keherwa_ghoomar_1_FILL1.wav"
+        "fill1": "keherwa_ghoomar_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "keherwa_ghoomar_1_fill2",
-      "filename": "keherwa_ghoomar_1_FILL2.wav",
+      "id": "keherwa_ghoomar_4_4_medium_acoustic_fill2",
+      "filename": "keherwa_ghoomar_4_4_medium_acoustic_FILL2.wav",
       "type": "fill",
       "number": 2,
       "rhythmFamily": "keherwa_ghoomar",
@@ -1730,12 +1730,12 @@
         "description": "fill2 for keherwa_ghoomar_1"
       },
       "files": {
-        "fill2": "keherwa_ghoomar_1_FILL2.wav"
+        "fill2": "keherwa_ghoomar_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "keherwa_ghazal_1_loop1",
-      "filename": "keherwa_ghazal_1_LOOP1.wav",
+      "id": "keherwa_ghazal_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_ghazal_4_4_medium_acoustic_LOOP1.wav",
       "type": "loop",
       "number": 1,
       "rhythmFamily": "keherwa_ghazal",
@@ -1753,12 +1753,12 @@
         "description": "loop1 for keherwa_ghazal_1"
       },
       "files": {
-        "loop1": "keherwa_ghazal_1_LOOP1.wav"
+        "loop1": "keherwa_ghazal_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_ghazal_1_fill1",
-      "filename": "keherwa_ghazal_1_FILL1.wav",
+      "id": "keherwa_ghazal_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_ghazal_4_4_medium_acoustic_FILL1.wav",
       "type": "fill",
       "number": 1,
       "rhythmFamily": "keherwa_ghazal",
@@ -1776,7 +1776,7 @@
         "description": "fill1 for keherwa_ghazal_1"
       },
       "files": {
-        "fill1": "keherwa_ghazal_1_FILL1.wav"
+        "fill1": "keherwa_ghazal_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
@@ -1804,8 +1804,8 @@
       }
     },
     {
-      "id": "keherwa_slow_1_loop1",
-      "filename": "keherwa_slow_1_LOOP1.wav",
+      "id": "keherwa_slow_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_slow_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "V1.wav",
       "type": "loop",
       "number": 1,
@@ -1824,12 +1824,12 @@
         "description": "loop1 for keherwa_slow_1"
       },
       "files": {
-        "loop1": "keherwa_slow_1_LOOP1.wav"
+        "loop1": "keherwa_slow_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_slow_1_loop2",
-      "filename": "keherwa_slow_1_LOOP2.wav",
+      "id": "keherwa_slow_4_4_medium_acoustic_loop2",
+      "filename": "keherwa_slow_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "V2.wav",
       "type": "loop",
       "number": 2,
@@ -1848,12 +1848,12 @@
         "description": "loop2 for keherwa_slow_1"
       },
       "files": {
-        "loop2": "keherwa_slow_1_LOOP2.wav"
+        "loop2": "keherwa_slow_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "keherwa_slow_1_loop3",
-      "filename": "keherwa_slow_1_LOOP3.wav",
+      "id": "keherwa_slow_4_4_medium_acoustic_loop3",
+      "filename": "keherwa_slow_4_4_medium_acoustic_LOOP3.wav",
       "originalFilename": "V2.wav",
       "type": "loop",
       "number": 3,
@@ -1872,12 +1872,12 @@
         "description": "loop3 for keherwa_slow_1"
       },
       "files": {
-        "loop3": "keherwa_slow_1_LOOP3.wav"
+        "loop3": "keherwa_slow_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "keherwa_slow_1_fill3",
-      "filename": "keherwa_slow_1_FILL3.wav",
+      "id": "keherwa_slow_4_4_medium_acoustic_fill3",
+      "filename": "keherwa_slow_4_4_medium_acoustic_FILL3.wav",
       "originalFilename": "F5.wav",
       "type": "fill",
       "number": 3,
@@ -1896,12 +1896,12 @@
         "description": "fill3 for keherwa_slow_1"
       },
       "files": {
-        "fill3": "keherwa_slow_1_FILL3.wav"
+        "fill3": "keherwa_slow_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "keherwa_slow_1_fill2",
-      "filename": "keherwa_slow_1_FILL2.wav",
+      "id": "keherwa_slow_4_4_medium_acoustic_fill2",
+      "filename": "keherwa_slow_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "F4.wav",
       "type": "fill",
       "number": 2,
@@ -1920,12 +1920,12 @@
         "description": "fill2 for keherwa_slow_1"
       },
       "files": {
-        "fill2": "keherwa_slow_1_FILL2.wav"
+        "fill2": "keherwa_slow_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "keherwa_slow_1_fill1",
-      "filename": "keherwa_slow_1_FILL1.wav",
+      "id": "keherwa_slow_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_slow_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "F3.wav",
       "type": "fill",
       "number": 1,
@@ -1944,12 +1944,12 @@
         "description": "fill1 for keherwa_slow_1"
       },
       "files": {
-        "fill1": "keherwa_slow_1_FILL1.wav"
+        "fill1": "keherwa_slow_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "keherwa_bhajani_1_loop1",
-      "filename": "keherwa_bhajani_1_LOOP1.wav",
+      "id": "keherwa_bhajani_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_bhajani_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "V1.wav",
       "type": "loop",
       "number": 1,
@@ -1968,12 +1968,12 @@
         "description": "loop1 for keherwa_bhajani_1"
       },
       "files": {
-        "loop1": "keherwa_bhajani_1_LOOP1.wav"
+        "loop1": "keherwa_bhajani_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_bhajani_1_loop2",
-      "filename": "keherwa_bhajani_1_LOOP2.wav",
+      "id": "keherwa_bhajani_4_4_medium_acoustic_loop2",
+      "filename": "keherwa_bhajani_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "V2.wav",
       "type": "loop",
       "number": 2,
@@ -1992,12 +1992,12 @@
         "description": "loop2 for keherwa_bhajani_1"
       },
       "files": {
-        "loop2": "keherwa_bhajani_1_LOOP2.wav"
+        "loop2": "keherwa_bhajani_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "keherwa_bhajani_1_loop3",
-      "filename": "keherwa_bhajani_1_LOOP3.wav",
+      "id": "keherwa_bhajani_4_4_medium_acoustic_loop3",
+      "filename": "keherwa_bhajani_4_4_medium_acoustic_LOOP3.wav",
       "originalFilename": "V3.wav",
       "type": "loop",
       "number": 3,
@@ -2016,12 +2016,12 @@
         "description": "loop3 for keherwa_bhajani_1"
       },
       "files": {
-        "loop3": "keherwa_bhajani_1_LOOP3.wav"
+        "loop3": "keherwa_bhajani_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "keherwa_bhajani_1_fill1",
-      "filename": "keherwa_bhajani_1_FILL1.wav",
+      "id": "keherwa_bhajani_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_bhajani_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "F1.wav",
       "type": "fill",
       "number": 1,
@@ -2040,12 +2040,12 @@
         "description": "fill1 for keherwa_bhajani_1"
       },
       "files": {
-        "fill1": "keherwa_bhajani_1_FILL1.wav"
+        "fill1": "keherwa_bhajani_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "keherwa_bhajani_1_fill2",
-      "filename": "keherwa_bhajani_1_FILL2.wav",
+      "id": "keherwa_bhajani_4_4_medium_acoustic_fill2",
+      "filename": "keherwa_bhajani_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "F2.wav",
       "type": "fill",
       "number": 2,
@@ -2064,12 +2064,12 @@
         "description": "fill2 for keherwa_bhajani_1"
       },
       "files": {
-        "fill2": "keherwa_bhajani_1_FILL2.wav"
+        "fill2": "keherwa_bhajani_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "keherwa_bhajani_1_fill3",
-      "filename": "keherwa_bhajani_1_FILL3.wav",
+      "id": "keherwa_bhajani_4_4_medium_acoustic_fill3",
+      "filename": "keherwa_bhajani_4_4_medium_acoustic_FILL3.wav",
       "originalFilename": "F3.wav",
       "type": "fill",
       "number": 3,
@@ -2088,12 +2088,12 @@
         "description": "fill3 for keherwa_bhajani_1"
       },
       "files": {
-        "fill3": "keherwa_bhajani_1_FILL3.wav"
+        "fill3": "keherwa_bhajani_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "rupak_mid_1_loop1",
-      "filename": "rupak_mid_1_LOOP1.wav",
+      "id": "rupak_mid_4_4_medium_acoustic_loop1",
+      "filename": "rupak_mid_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "Rupak V1.wav",
       "type": "loop",
       "number": 1,
@@ -2112,12 +2112,12 @@
         "description": "loop1 for rupak_mid_1"
       },
       "files": {
-        "loop1": "rupak_mid_1_LOOP1.wav"
+        "loop1": "rupak_mid_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "rupak_mid_1_loop2",
-      "filename": "rupak_mid_1_LOOP2.wav",
+      "id": "rupak_mid_4_4_medium_acoustic_loop2",
+      "filename": "rupak_mid_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "Rupak V1.wav",
       "type": "loop",
       "number": 2,
@@ -2136,12 +2136,12 @@
         "description": "loop2 for rupak_mid_1"
       },
       "files": {
-        "loop2": "rupak_mid_1_LOOP2.wav"
+        "loop2": "rupak_mid_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "rupak_mid_1_fill1",
-      "filename": "rupak_mid_1_FILL1.wav",
+      "id": "rupak_mid_4_4_medium_acoustic_fill1",
+      "filename": "rupak_mid_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "Rupak F1-01.wav",
       "type": "fill",
       "number": 1,
@@ -2160,12 +2160,12 @@
         "description": "fill1 for rupak_mid_1"
       },
       "files": {
-        "fill1": "rupak_mid_1_FILL1.wav"
+        "fill1": "rupak_mid_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "rupak_mid_1_fill2",
-      "filename": "rupak_mid_1_FILL2.wav",
+      "id": "rupak_mid_4_4_medium_acoustic_fill2",
+      "filename": "rupak_mid_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "Rupak F1-01.wav",
       "type": "fill",
       "number": 2,
@@ -2184,12 +2184,12 @@
         "description": "fill2 for rupak_mid_1"
       },
       "files": {
-        "fill2": "rupak_mid_1_FILL2.wav"
+        "fill2": "rupak_mid_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "deepchandi_2_loop1",
-      "filename": "deepchandi_2_LOOP1.wav",
+      "id": "deepchandi_4_4_medium_acoustic_loop1",
+      "filename": "deepchandi_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "DEEpV1.wav",
       "type": "loop",
       "number": 1,
@@ -2208,12 +2208,12 @@
         "description": "loop1 for deepchandi_2"
       },
       "files": {
-        "loop1": "deepchandi_2_LOOP1.wav"
+        "loop1": "deepchandi_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "deepchandi_2_loop2",
-      "filename": "deepchandi_2_LOOP2.wav",
+      "id": "deepchandi_4_4_medium_acoustic_loop2",
+      "filename": "deepchandi_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "DEEpV2.wav",
       "type": "loop",
       "number": 2,
@@ -2232,12 +2232,12 @@
         "description": "loop2 for deepchandi_2"
       },
       "files": {
-        "loop2": "deepchandi_2_LOOP2.wav"
+        "loop2": "deepchandi_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "deepchandi_2_fill2",
-      "filename": "deepchandi_2_FILL2.wav",
+      "id": "deepchandi_4_4_medium_acoustic_fill2",
+      "filename": "deepchandi_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "DEEpF22.wav",
       "type": "fill",
       "number": 2,
@@ -2256,12 +2256,12 @@
         "description": "fill2 for deepchandi_2"
       },
       "files": {
-        "fill2": "deepchandi_2_FILL2.wav"
+        "fill2": "deepchandi_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "deepchandi_2_fill1",
-      "filename": "deepchandi_2_FILL1.wav",
+      "id": "deepchandi_4_4_medium_acoustic_fill1",
+      "filename": "deepchandi_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "DEEpF1`.wav",
       "type": "fill",
       "number": 1,
@@ -2280,12 +2280,12 @@
         "description": "fill1 for deepchandi_2"
       },
       "files": {
-        "fill1": "deepchandi_2_FILL1.wav"
+        "fill1": "deepchandi_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "dadra_mid_1_loop1",
-      "filename": "dadra_mid_1_LOOP1.wav",
+      "id": "dadra_mid_4_4_medium_acoustic_loop1",
+      "filename": "dadra_mid_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "V1.wav",
       "type": "loop",
       "number": 1,
@@ -2304,12 +2304,12 @@
         "description": "loop1 for dadra_mid_1"
       },
       "files": {
-        "loop1": "dadra_mid_1_LOOP1.wav"
+        "loop1": "dadra_mid_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "dadra_mid_1_loop2",
-      "filename": "dadra_mid_1_LOOP2.wav",
+      "id": "dadra_mid_4_4_medium_acoustic_loop2",
+      "filename": "dadra_mid_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "V2.wav",
       "type": "loop",
       "number": 2,
@@ -2328,12 +2328,12 @@
         "description": "loop2 for dadra_mid_1"
       },
       "files": {
-        "loop2": "dadra_mid_1_LOOP2.wav"
+        "loop2": "dadra_mid_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "dadra_mid_1_loop3",
-      "filename": "dadra_mid_1_LOOP3.wav",
+      "id": "dadra_mid_4_4_medium_acoustic_loop3",
+      "filename": "dadra_mid_4_4_medium_acoustic_LOOP3.wav",
       "originalFilename": "V3.wav",
       "type": "loop",
       "number": 3,
@@ -2352,12 +2352,12 @@
         "description": "loop3 for dadra_mid_1"
       },
       "files": {
-        "loop3": "dadra_mid_1_LOOP3.wav"
+        "loop3": "dadra_mid_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "dadra_mid_1_fill1",
-      "filename": "dadra_mid_1_FILL1.wav",
+      "id": "dadra_mid_4_4_medium_acoustic_fill1",
+      "filename": "dadra_mid_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "F2.wav",
       "type": "fill",
       "number": 1,
@@ -2376,12 +2376,12 @@
         "description": "fill1 for dadra_mid_1"
       },
       "files": {
-        "fill1": "dadra_mid_1_FILL1.wav"
+        "fill1": "dadra_mid_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "dadra_mid_1_fill2",
-      "filename": "dadra_mid_1_FILL2.wav",
+      "id": "dadra_mid_4_4_medium_acoustic_fill2",
+      "filename": "dadra_mid_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "F3.wav",
       "type": "fill",
       "number": 2,
@@ -2400,12 +2400,12 @@
         "description": "fill2 for dadra_mid_1"
       },
       "files": {
-        "fill2": "dadra_mid_1_FILL2.wav"
+        "fill2": "dadra_mid_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "dadra_mid_1_fill3",
-      "filename": "dadra_mid_1_FILL3.wav",
+      "id": "dadra_mid_4_4_medium_acoustic_fill3",
+      "filename": "dadra_mid_4_4_medium_acoustic_FILL3.wav",
       "originalFilename": "F5.wav",
       "type": "fill",
       "number": 3,
@@ -2424,12 +2424,12 @@
         "description": "fill3 for dadra_mid_1"
       },
       "files": {
-        "fill3": "dadra_mid_1_FILL3.wav"
+        "fill3": "dadra_mid_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "dadra_slow_1_loop2",
-      "filename": "dadra_slow_1_LOOP2.wav",
+      "id": "dadra_slow_4_4_medium_acoustic_loop2",
+      "filename": "dadra_slow_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "Dadra V2.wav",
       "type": "loop",
       "number": 2,
@@ -2448,12 +2448,12 @@
         "description": "loop2 for dadra_slow_1"
       },
       "files": {
-        "loop2": "dadra_slow_1_LOOP2.wav"
+        "loop2": "dadra_slow_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "dadra_slow_1_loop3",
-      "filename": "dadra_slow_1_LOOP3.wav",
+      "id": "dadra_slow_4_4_medium_acoustic_loop3",
+      "filename": "dadra_slow_4_4_medium_acoustic_LOOP3.wav",
       "originalFilename": "Dadra V1.wav",
       "type": "loop",
       "number": 3,
@@ -2472,12 +2472,12 @@
         "description": "loop3 for dadra_slow_1"
       },
       "files": {
-        "loop3": "dadra_slow_1_LOOP3.wav"
+        "loop3": "dadra_slow_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "dadra_slow_1_fill2",
-      "filename": "dadra_slow_1_FILL2.wav",
+      "id": "dadra_slow_4_4_medium_acoustic_fill2",
+      "filename": "dadra_slow_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "Dadra F2.wav",
       "type": "fill",
       "number": 2,
@@ -2496,12 +2496,12 @@
         "description": "fill2 for dadra_slow_1"
       },
       "files": {
-        "fill2": "dadra_slow_1_FILL2.wav"
+        "fill2": "dadra_slow_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "dadra_slow_1_fill3",
-      "filename": "dadra_slow_1_FILL3.wav",
+      "id": "dadra_slow_4_4_medium_acoustic_fill3",
+      "filename": "dadra_slow_4_4_medium_acoustic_FILL3.wav",
       "originalFilename": "Dadra F3.wav",
       "type": "fill",
       "number": 3,
@@ -2520,12 +2520,12 @@
         "description": "fill3 for dadra_slow_1"
       },
       "files": {
-        "fill3": "dadra_slow_1_FILL3.wav"
+        "fill3": "dadra_slow_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "teentaal_addha_1_fill1",
-      "filename": "teentaal_addha_1_FILL1.wav",
+      "id": "teentaal_addha_4_4_medium_acoustic_fill1",
+      "filename": "teentaal_addha_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "Addha F1.wav",
       "type": "fill",
       "number": 1,
@@ -2544,12 +2544,12 @@
         "description": "fill1 for teentaal_addha_1"
       },
       "files": {
-        "fill1": "teentaal_addha_1_FILL1.wav"
+        "fill1": "teentaal_addha_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "teentaal_addha_1_fill2",
-      "filename": "teentaal_addha_1_FILL2.wav",
+      "id": "teentaal_addha_4_4_medium_acoustic_fill2",
+      "filename": "teentaal_addha_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "Addha F1.wav",
       "type": "fill",
       "number": 2,
@@ -2568,12 +2568,12 @@
         "description": "fill2 for teentaal_addha_1"
       },
       "files": {
-        "fill2": "teentaal_addha_1_FILL2.wav"
+        "fill2": "teentaal_addha_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "teentaal_addha_1_fill3",
-      "filename": "teentaal_addha_1_FILL3.wav",
+      "id": "teentaal_addha_4_4_medium_acoustic_fill3",
+      "filename": "teentaal_addha_4_4_medium_acoustic_FILL3.wav",
       "originalFilename": "Addha F1.wav",
       "type": "fill",
       "number": 3,
@@ -2592,12 +2592,12 @@
         "description": "fill3 for teentaal_addha_1"
       },
       "files": {
-        "fill3": "teentaal_addha_1_FILL3.wav"
+        "fill3": "teentaal_addha_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "teentaal_addha_2_loop1",
-      "filename": "teentaal_addha_2_LOOP1.wav",
+      "id": "teentaal_addha_4_4_medium_acoustic_loop1",
+      "filename": "teentaal_addha_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "V1.wav",
       "type": "loop",
       "number": 1,
@@ -2616,12 +2616,12 @@
         "description": "loop1 for teentaal_addha_2"
       },
       "files": {
-        "loop1": "teentaal_addha_2_LOOP1.wav"
+        "loop1": "teentaal_addha_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "teentaal_addha_2_loop2",
-      "filename": "teentaal_addha_2_LOOP2.wav",
+      "id": "teentaal_addha_4_4_medium_acoustic_loop2",
+      "filename": "teentaal_addha_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "V2.wav",
       "type": "loop",
       "number": 2,
@@ -2640,12 +2640,12 @@
         "description": "loop2 for teentaal_addha_2"
       },
       "files": {
-        "loop2": "teentaal_addha_2_LOOP2.wav"
+        "loop2": "teentaal_addha_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "teentaal_addha_2_loop3",
-      "filename": "teentaal_addha_2_LOOP3.wav",
+      "id": "teentaal_addha_4_4_medium_acoustic_loop3",
+      "filename": "teentaal_addha_4_4_medium_acoustic_LOOP3.wav",
       "originalFilename": "V3.wav",
       "type": "loop",
       "number": 3,
@@ -2664,12 +2664,12 @@
         "description": "loop3 for teentaal_addha_2"
       },
       "files": {
-        "loop3": "teentaal_addha_2_LOOP3.wav"
+        "loop3": "teentaal_addha_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "dadra_slow_2_fill1",
-      "filename": "dadra_slow_2_FILL1.wav",
+      "id": "dadra_slow_4_4_medium_acoustic_fill1",
+      "filename": "dadra_slow_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "F1.wav",
       "type": "fill",
       "number": 1,
@@ -2688,12 +2688,12 @@
         "description": "fill1 for dadra_slow_2"
       },
       "files": {
-        "fill1": "dadra_slow_2_FILL1.wav"
+        "fill1": "dadra_slow_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "dadra_slow_2_loop1",
-      "filename": "dadra_slow_2_LOOP1.wav",
+      "id": "dadra_slow_4_4_medium_acoustic_loop1",
+      "filename": "dadra_slow_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "V1.wav",
       "type": "loop",
       "number": 1,
@@ -2712,12 +2712,12 @@
         "description": "loop1 for dadra_slow_2"
       },
       "files": {
-        "loop1": "dadra_slow_2_LOOP1.wav"
+        "loop1": "dadra_slow_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_fast_3_loop1",
-      "filename": "keherwa_fast_3_LOOP1.wav",
+      "id": "keherwa_fast_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_fast_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "V1.wav",
       "type": "loop",
       "number": 1,
@@ -2736,12 +2736,12 @@
         "description": "loop1 for keherwa_fast_3"
       },
       "files": {
-        "loop1": "keherwa_fast_3_LOOP1.wav"
+        "loop1": "keherwa_fast_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_fast_3_loop2",
-      "filename": "keherwa_fast_3_LOOP2.wav",
+      "id": "keherwa_fast_4_4_medium_acoustic_loop2",
+      "filename": "keherwa_fast_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "V2.wav",
       "type": "loop",
       "number": 2,
@@ -2760,12 +2760,12 @@
         "description": "loop2 for keherwa_fast_3"
       },
       "files": {
-        "loop2": "keherwa_fast_3_LOOP2.wav"
+        "loop2": "keherwa_fast_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "keherwa_fast_3_loop3",
-      "filename": "keherwa_fast_3_LOOP3.wav",
+      "id": "keherwa_fast_4_4_medium_acoustic_loop3",
+      "filename": "keherwa_fast_4_4_medium_acoustic_LOOP3.wav",
       "originalFilename": "V3.wav",
       "type": "loop",
       "number": 3,
@@ -2784,12 +2784,12 @@
         "description": "loop3 for keherwa_fast_3"
       },
       "files": {
-        "loop3": "keherwa_fast_3_LOOP3.wav"
+        "loop3": "keherwa_fast_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "keherwa_fast_3_fill1",
-      "filename": "keherwa_fast_3_FILL1.wav",
+      "id": "keherwa_fast_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_fast_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "F1.wav",
       "type": "fill",
       "number": 1,
@@ -2808,12 +2808,12 @@
         "description": "fill1 for keherwa_fast_3"
       },
       "files": {
-        "fill1": "keherwa_fast_3_FILL1.wav"
+        "fill1": "keherwa_fast_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "keherwa_fast_3_fill2",
-      "filename": "keherwa_fast_3_FILL2.wav",
+      "id": "keherwa_fast_4_4_medium_acoustic_fill2",
+      "filename": "keherwa_fast_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "F2.wav",
       "type": "fill",
       "number": 2,
@@ -2832,12 +2832,12 @@
         "description": "fill2 for keherwa_fast_3"
       },
       "files": {
-        "fill2": "keherwa_fast_3_FILL2.wav"
+        "fill2": "keherwa_fast_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "keherwa_fast_3_fill3",
-      "filename": "keherwa_fast_3_FILL3.wav",
+      "id": "keherwa_fast_4_4_medium_acoustic_fill3",
+      "filename": "keherwa_fast_4_4_medium_acoustic_FILL3.wav",
       "originalFilename": "F3.wav",
       "type": "fill",
       "number": 3,
@@ -2856,12 +2856,12 @@
         "description": "fill3 for keherwa_fast_3"
       },
       "files": {
-        "fill3": "keherwa_fast_3_FILL3.wav"
+        "fill3": "keherwa_fast_4_4_medium_acoustic_FILL3.wav"
       }
     },
     {
-      "id": "keherwa_mid_3_loop1",
-      "filename": "keherwa_mid_3_LOOP1.wav",
+      "id": "keherwa_mid_4_4_medium_acoustic_loop1",
+      "filename": "keherwa_mid_4_4_medium_acoustic_LOOP1.wav",
       "originalFilename": "Keherwa V1.wav",
       "type": "loop",
       "number": 1,
@@ -2880,12 +2880,12 @@
         "description": "loop1 for keherwa_mid_3"
       },
       "files": {
-        "loop1": "keherwa_mid_3_LOOP1.wav"
+        "loop1": "keherwa_mid_4_4_medium_acoustic_LOOP1.wav"
       }
     },
     {
-      "id": "keherwa_mid_3_loop2",
-      "filename": "keherwa_mid_3_LOOP2.wav",
+      "id": "keherwa_mid_4_4_medium_acoustic_loop2",
+      "filename": "keherwa_mid_4_4_medium_acoustic_LOOP2.wav",
       "originalFilename": "Keherwa V2.wav",
       "type": "loop",
       "number": 2,
@@ -2904,12 +2904,12 @@
         "description": "loop2 for keherwa_mid_3"
       },
       "files": {
-        "loop2": "keherwa_mid_3_LOOP2.wav"
+        "loop2": "keherwa_mid_4_4_medium_acoustic_LOOP2.wav"
       }
     },
     {
-      "id": "keherwa_mid_3_loop3",
-      "filename": "keherwa_mid_3_LOOP3.wav",
+      "id": "keherwa_mid_4_4_medium_acoustic_loop3",
+      "filename": "keherwa_mid_4_4_medium_acoustic_LOOP3.wav",
       "originalFilename": "Keherwa V3.wav",
       "type": "loop",
       "number": 3,
@@ -2928,12 +2928,12 @@
         "description": "loop3 for keherwa_mid_3"
       },
       "files": {
-        "loop3": "keherwa_mid_3_LOOP3.wav"
+        "loop3": "keherwa_mid_4_4_medium_acoustic_LOOP3.wav"
       }
     },
     {
-      "id": "keherwa_mid_3_fill1",
-      "filename": "keherwa_mid_3_FILL1.wav",
+      "id": "keherwa_mid_4_4_medium_acoustic_fill1",
+      "filename": "keherwa_mid_4_4_medium_acoustic_FILL1.wav",
       "originalFilename": "Keherwa F1.wav",
       "type": "fill",
       "number": 1,
@@ -2952,12 +2952,12 @@
         "description": "fill1 for keherwa_mid_3"
       },
       "files": {
-        "fill1": "keherwa_mid_3_FILL1.wav"
+        "fill1": "keherwa_mid_4_4_medium_acoustic_FILL1.wav"
       }
     },
     {
-      "id": "keherwa_mid_3_fill2",
-      "filename": "keherwa_mid_3_FILL2.wav",
+      "id": "keherwa_mid_4_4_medium_acoustic_fill2",
+      "filename": "keherwa_mid_4_4_medium_acoustic_FILL2.wav",
       "originalFilename": "Keherwa F2-01.wav",
       "type": "fill",
       "number": 2,
@@ -2976,12 +2976,12 @@
         "description": "fill2 for keherwa_mid_3"
       },
       "files": {
-        "fill2": "keherwa_mid_3_FILL2.wav"
+        "fill2": "keherwa_mid_4_4_medium_acoustic_FILL2.wav"
       }
     },
     {
-      "id": "keherwa_mid_3_fill3",
-      "filename": "keherwa_mid_3_FILL3.wav",
+      "id": "keherwa_mid_4_4_medium_acoustic_fill3",
+      "filename": "keherwa_mid_4_4_medium_acoustic_FILL3.wav",
       "originalFilename": "Keherwa F3.wav",
       "type": "fill",
       "number": 3,
@@ -3000,7 +3000,7 @@
         "description": "fill3 for keherwa_mid_3"
       },
       "files": {
-        "fill3": "keherwa_mid_3_FILL3.wav"
+        "fill3": "keherwa_mid_4_4_medium_acoustic_FILL3.wav"
       }
     }
   ],

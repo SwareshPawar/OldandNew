@@ -510,14 +510,16 @@ async function playLoop(rhythmSetId, loopType, filename) {
         return;
     }
     
-    // Use the actual filename from metadata
-    const loopUrl = `${API_BASE_URL}/loops/${filename}`;
+    // Add cache-buster so freshly uploaded/replaced files are always fetched fresh
+    const loopUrl = `${API_BASE_URL}/loops/${filename}?t=${Date.now()}`;
     const player = document.getElementById('loopPlayer');
     
     console.log('Playing loop:', { rhythmSetId, loopType, filename, loopUrl });
     
     try {
         player.src = loopUrl;
+        // Explicitly reload so the audio element picks up the new src before playback
+        player.load();
         await player.play();
         showAlert(`Playing ${loopType}...`, 'success');
     } catch (error) {
@@ -600,6 +602,19 @@ async function uploadSingleLoop(rhythmSetId, loopType) {
             
             // Reload rhythm sets to update the UI
             await loadRhythmSets();
+
+            // If the loop player panel is currently showing this same rhythm set,
+            // force-reload its audio buffers so the new sample is picked up immediately
+            // without requiring a full page refresh.
+            if (rhythmManagerPlayer && currentPlayerRhythmSet &&
+                currentPlayerRhythmSet.rhythmSetId === currentRhythmSetId) {
+                const updatedSet = rhythmSets.find(s => s.rhythmSetId === currentRhythmSetId);
+                if (updatedSet) {
+                    currentPlayerRhythmSet = updatedSet;
+                    await loadRhythmSetIntoPlayer(updatedSet, true);
+                    createSimplePlayerUI(updatedSet);
+                }
+            }
             
             // Find and re-expand the row
             const rhythmSetIndex = rhythmSets.findIndex(s => s.rhythmSetId === currentRhythmSetId);
@@ -840,6 +855,19 @@ async function uploadFileForLoop(rhythmSetId, loopType, file) {
         
         // Reload rhythm sets to update the UI
         await loadRhythmSets();
+
+        // If the loop player panel is currently showing this same rhythm set,
+        // force-reload its audio buffers so the new sample is picked up immediately
+        // without requiring a full page refresh.
+        if (rhythmManagerPlayer && currentPlayerRhythmSet &&
+            currentPlayerRhythmSet.rhythmSetId === currentRhythmSetId) {
+            const updatedSet = rhythmSets.find(s => s.rhythmSetId === currentRhythmSetId);
+            if (updatedSet) {
+                currentPlayerRhythmSet = updatedSet;
+                await loadRhythmSetIntoPlayer(updatedSet, true);
+                createSimplePlayerUI(updatedSet);
+            }
+        }
         
         // Find and re-expand the row
         const rhythmSetIndex = rhythmSets.findIndex(s => s.rhythmSetId === currentRhythmSetId);
@@ -908,8 +936,14 @@ async function openLoopPlayer(rhythmSetId) {
             rhythmManagerPlayer = new LoopPlayerPad();
         }
 
+        // Force-reload if loop files were replaced on disk since the player last loaded them.
+        // This ensures freshly uploaded samples are always fetched, not served from cache.
+        const lastReplace = parseInt(localStorage.getItem('loopFilesReplacedAt') || '0', 10);
+        const lastLoad = rhythmManagerPlayer._lastLoadedAt || 0;
+        const forceReload = lastReplace > lastLoad;
+
         // Load loops for this rhythm set
-        await loadRhythmSetIntoPlayer(rhythmSet);
+        await loadRhythmSetIntoPlayer(rhythmSet, forceReload);
         
         // Create simple UI for the player
         createSimplePlayerUI(rhythmSet);
@@ -923,27 +957,35 @@ async function openLoopPlayer(rhythmSetId) {
 
 /**
  * Load a rhythm set's loops into the player
+ * @param {object} rhythmSet
+ * @param {boolean} forceReload - When true, bypasses audio buffer cache and browser HTTP cache.
+ *   Pass true after an upload so freshly replaced files are picked up immediately.
  */
-async function loadRhythmSetIntoPlayer(rhythmSet) {
+async function loadRhythmSetIntoPlayer(rhythmSet, forceReload = false) {
     const rhythmSetId = rhythmSet.rhythmSetId;
     const files = rhythmSet.files || {};
     
-    // Build loop map with actual filenames
+    // Build loop map with actual filenames.
+    // When force-reloading after an upload, add a cache-buster to each URL so the
+    // browser fetches fresh bytes even if the filename on disk is unchanged.
     const loopMap = {};
     const loopTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    const cacheBuster = forceReload ? `?t=${Date.now()}` : '';
     
     loopTypes.forEach(loopType => {
         const filename = files[loopType];
         if (filename) {
-            loopMap[loopType] = `${API_BASE_URL}/loops/${filename}`;
+            loopMap[loopType] = `${API_BASE_URL}/loops/${filename}${cacheBuster}`;
         }
     });
 
-    console.log('Loading rhythm set into player:', rhythmSetId, loopMap);
+    console.log('Loading rhythm set into player:', rhythmSetId, forceReload ? '(force reload)' : '', loopMap);
 
     // Load loops into player
     try {
-        await rhythmManagerPlayer.loadLoops(loopMap, rhythmSetId);
+        await rhythmManagerPlayer.loadLoops(loopMap, rhythmSetId, forceReload);
+        // Track when we last loaded so openLoopPlayer can decide whether to force-reload
+        rhythmManagerPlayer._lastLoadedAt = Date.now();
         showAlert(`Loaded ${Object.keys(loopMap).length} loops`, 'success');
     } catch (error) {
         console.error('Error loading loops into player:', error);
