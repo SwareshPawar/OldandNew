@@ -592,6 +592,9 @@ async function uploadSingleLoop(rhythmSetId, loopType) {
             const result = await response.json();
             showAlert(`${loopType} uploaded successfully!`, 'success');
             
+            // Signal loop player to bypass cache and re-fetch files (loop file was replaced on disk)
+            localStorage.setItem('loopFilesReplacedAt', Date.now().toString());
+            
             // Store the current rhythm set ID to re-expand after reload
             const currentRhythmSetId = rhythmSetId;
             
@@ -828,6 +831,9 @@ async function uploadFileForLoop(rhythmSetId, loopType, file) {
         }
         
         showAlert(`${loopType} uploaded successfully!`, 'success');
+        
+        // Signal loop player to bypass cache and re-fetch files (loop file was replaced on disk)
+        localStorage.setItem('loopFilesReplacedAt', Date.now().toString());
         
         // Store the current rhythm set ID to re-expand after reload
         const currentRhythmSetId = rhythmSetId;
@@ -1306,8 +1312,12 @@ async function saveRhythmSetEdit() {
             'success'
         );
         
-        // Close modal and reload
+        // Close modal and reload; signal all tabs to bust loops metadata cache
         closeEditModal();
+        localStorage.setItem('loopsMetadataInvalidatedAt', Date.now().toString());
+        if (typeof window.invalidateLoopsMetadataCache === 'function') {
+            window.invalidateLoopsMetadataCache();
+        }
         await loadRhythmSets();
         
     } catch (error) {

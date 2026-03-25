@@ -172,7 +172,7 @@ class LoopPlayerPad {
      * Uses new naming convention v2.0: {taal}_{time}_{tempo}_{genre}_{TYPE}{num}.wav
      * Falls back to keherwa_4_4 files if no map provided (backward compatibility)
      */
-    async loadLoops(loopMap = null, songId = null) {
+    async loadLoops(loopMap = null, songId = null, forceReload = false) {
         // Default to keherwa_4_4 files if no map provided (backward compatibility)
         if (!loopMap) {
             loopMap = {
@@ -185,8 +185,8 @@ class LoopPlayerPad {
             };
         }
 
-        // Check if reload is needed
-        const needsReload = this.needsLoopReload(songId, loopMap);
+        // Check if reload is needed (forceReload bypasses the cache check for post-upload refresh)
+        const needsReload = forceReload || this.needsLoopReload(songId, loopMap);
         
         if (!needsReload && this.rawAudioData.size > 0) {
             console.log('✅ Loops already loaded for this song');
@@ -194,7 +194,7 @@ class LoopPlayerPad {
         }
         
         // If currently playing, queue reload for next play
-        if (needsReload && this.isPlaying) {
+        if (needsReload && this.isPlaying && !forceReload) {
             console.log('🔄 Different song/loops detected - queueing reload for next play');
             this.pendingLoopReload = { loopMap, songId };
             // Don't interrupt current playback
@@ -208,15 +208,17 @@ class LoopPlayerPad {
         
         // Clear old data if reloading
         if (needsReload) {
-            console.log('🗑️ Clearing old loop data');
+            console.log(forceReload ? '🔄 Force-reloading loop files (post-upload refresh)' : '🗑️ Clearing old loop data');
             this.rawAudioData.clear();
             this.audioBuffers.clear();
         }
 
         // Only fetch raw audio data (don't decode yet - requires user gesture)
+        // When forceReload, bypass browser HTTP cache so replaced files are picked up immediately
+        const fetchOptions = forceReload ? { cache: 'reload' } : {};
         const loadPromises = Object.entries(loopMap).map(async ([name, url]) => {
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, fetchOptions);
                 const arrayBuffer = await response.arrayBuffer();
                 this.rawAudioData.set(name, arrayBuffer);
                 console.log(`Fetched: ${name}, size: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`);

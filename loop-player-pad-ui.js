@@ -15,15 +15,35 @@
 // Global instance
 let loopPlayerInstance = null;
 let loopsMetadataCache = null;
+let loopsMetadataCacheTimestamp = 0;
+const LOOPS_METADATA_CACHE_TTL = 30000; // 30 s — reflects rename/upload changes quickly
+// Tracks when loop audio files were last force-loaded; compared against loopFilesReplacedAt signal
+let loopFilesCheckedAt = 0;
 
 // Make loop player instance globally accessible for floating stop button
 window.getLoopPlayerInstance = () => loopPlayerInstance;
 
 /**
- * Load loops metadata (cached)
+ * Invalidate loops metadata cache (call after any rhythm-set rename or loop upload)
  */
-async function getLoopsMetadata() {
-    if (loopsMetadataCache) {
+function invalidateLoopsMetadataCache() {
+    loopsMetadataCache = null;
+    loopsMetadataCacheTimestamp = 0;
+}
+window.invalidateLoopsMetadataCache = invalidateLoopsMetadataCache;
+
+/**
+ * Load loops metadata (TTL-cached; pass forceRefresh=true to bypass cache)
+ */
+async function getLoopsMetadata(forceRefresh = false) {
+    const now = Date.now();
+    // Also honour cross-tab invalidation written by loop-rhythm-manager after a rename
+    const crossTabSignal = parseInt(localStorage.getItem('loopsMetadataInvalidatedAt') || '0', 10);
+    const cacheStale = !loopsMetadataCache ||
+        (now - loopsMetadataCacheTimestamp > LOOPS_METADATA_CACHE_TTL) ||
+        (crossTabSignal > loopsMetadataCacheTimestamp);
+
+    if (!forceRefresh && !cacheStale) {
         return loopsMetadataCache;
     }
 
@@ -31,6 +51,7 @@ async function getLoopsMetadata() {
         const response = await fetch(`${API_BASE_URL}/api/loops/metadata`);
         if (response.ok) {
             loopsMetadataCache = await response.json();
+            loopsMetadataCacheTimestamp = now;
             return loopsMetadataCache;
         }
     } catch (error) {
@@ -39,18 +60,6 @@ async function getLoopsMetadata() {
 
     return null;
 }
-
-/**
- * Get tempo category from BPM
- */
-function getTempoCategory(bpm) {
-    if (!bpm) return 'medium';
-    const bpmNum = parseInt(bpm);
-    if (bpmNum < 80) return 'slow';
-    if (bpmNum > 120) return 'fast';
-    return 'medium';
-}
-
 /**
  * Calculate transpose level for a song (similar to main.js logic)
  * @param {Object} song - Song object with id
@@ -153,8 +162,8 @@ function areTimeSignaturesEquivalent(time1, time2) {
  * Resolve loop set deterministically from song.rhythmSetId
  * Returns: { loopSet, rhythmSetId } or null
  */
-async function findMatchingLoopSet(song) {
-    const metadata = await getLoopsMetadata();
+async function findMatchingLoopSet(song, forceRefresh = false) {
+    const metadata = await getLoopsMetadata(forceRefresh);
     if (!metadata || !metadata.loops || metadata.loops.length === 0) {
         console.log('🔍 Loop resolve: No metadata or loops available');
         return null;
@@ -205,13 +214,20 @@ async function findMatchingLoopSet(song) {
         loopSets[key].files[fileKey] = loop.filename;
     });
 
-    const resolvedSet = loopSets[rhythmSetId];
-    if (!resolvedSet) {
-        console.log(`❌ Loop resolve: rhythmSetId ${rhythmSetId} not found in metadata`);
-        return null;
-    }
+        let resolvedSet = loopSets[rhythmSetId];
+        if (!resolvedSet && !forceRefresh) {
+            // Cache may be stale (e.g. rhythm set was renamed after cache was populated).
+            // Force a fresh fetch and retry once.
+            console.log(`⚠️ Loop resolve: ${rhythmSetId} not in cached metadata — forcing refresh`);
+            return findMatchingLoopSet(song, true);
+        }
 
-    return { loopSet: resolvedSet, rhythmSetId };
+        if (!resolvedSet) {
+            console.log(`❌ Loop resolve: rhythmSetId ${rhythmSetId} not found in metadata even after fresh fetch`);
+            return null;
+        }
+
+        return { loopSet: resolvedSet, rhythmSetId };
 }
 
 /**
@@ -598,8 +614,17 @@ async function initializeLoopPlayer(songId) {
         
         console.log('🔊 Loading loops from:', loopMap);
         
+        // Check if loop files were replaced since we last loaded — if so, force a fresh fetch
+        // bypassing both our rawAudioData cache and the browser HTTP cache
+        const loopFilesReplacedAt = parseInt(localStorage.getItem('loopFilesReplacedAt') || '0', 10);
+        const forceReload = loopFilesReplacedAt > loopFilesCheckedAt;
+        if (forceReload) {
+            loopFilesCheckedAt = Date.now();
+            console.log('🔄 Loop files were replaced — force-reloading audio from server');
+        }
+        
         // Load loops with song ID for tracking
-        await loopPlayerInstance.loadLoops(loopMap, songId);
+        await loopPlayerInstance.loadLoops(loopMap, songId, forceReload);
         
         // Check availability of melodic samples for the effective key
         const melodicAvailability = await loopPlayerInstance.checkMelodicAvailability(['atmosphere', 'tanpura']);

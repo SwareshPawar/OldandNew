@@ -823,6 +823,10 @@ async function renameRhythmSetInLoopsMetadata(oldRhythmSetId, newRhythmFamily, n
     normalizedLoop.rhythmFamily = newRhythmFamily;
     normalizedLoop.rhythmSetNo = newRhythmSetNo;
     normalizedLoop.rhythmSetId = newRhythmSetId;
+    // Sync conditions.taal with the new rhythmFamily for consistent fallback resolution
+    if (normalizedLoop.conditions && typeof normalizedLoop.conditions === 'object') {
+      normalizedLoop.conditions = { ...normalizedLoop.conditions, taal: newRhythmFamily };
+    }
     updatedLoops += 1;
     return normalizedLoop;
   });
@@ -1654,6 +1658,54 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
       await recomputeRhythmSetDerivedMetadata(existingSong.rhythmSetId);
     }
 
+    res.json(updatedSong);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin-only: update just the rhythmSetId of a song without touching other fields
+app.patch('/api/songs/:id/rhythm-set', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const numericId = parseInt(req.params.id);
+    const existingSong = await songsCollection.findOne({ id: numericId });
+    if (!existingSong) return res.status(404).json({ error: 'Song not found' });
+
+    const { rhythmSetId } = req.body;
+    const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+    const updatedBy = cap(req.user.firstName || req.user.username);
+    const updatedAt = new Date().toISOString();
+
+    let updateFields = { updatedAt, updatedBy };
+
+    if (!rhythmSetId) {
+      // Unassign rhythm set
+      updateFields.rhythmSetId = null;
+      updateFields.rhythmFamily = null;
+      updateFields.rhythmSetNo = null;
+      updateFields.rhythmRecommendation = null;
+    } else {
+      const parsed = parseRhythmSetId(rhythmSetId);
+      if (!parsed) return res.status(400).json({ error: 'Invalid rhythmSetId format' });
+      updateFields.rhythmSetId = parsed.rhythmSetId;
+      updateFields.rhythmFamily = parsed.rhythmFamily;
+      updateFields.rhythmSetNo = parsed.rhythmSetNo;
+    }
+
+    await songsCollection.updateOne({ id: numericId }, { $set: updateFields });
+
+    if (updateFields.rhythmSetId) {
+      await ensureRhythmSetDocument(
+        { rhythmSetId: updateFields.rhythmSetId, rhythmFamily: updateFields.rhythmFamily, rhythmSetNo: updateFields.rhythmSetNo },
+        updatedBy, 'song-rhythm-set-patch'
+      );
+      await recomputeRhythmSetDerivedMetadata(updateFields.rhythmSetId);
+    }
+    if (existingSong.rhythmSetId && existingSong.rhythmSetId !== updateFields.rhythmSetId) {
+      await recomputeRhythmSetDerivedMetadata(existingSong.rhythmSetId);
+    }
+
+    const updatedSong = await songsCollection.findOne({ id: numericId });
     res.json(updatedSong);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2499,9 +2551,9 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
       };
     }
 
-    // Generate expected filename pattern
-    const timeFormatted = timeSignature.replace('/', '_');
-    const basePattern = `${taal}_${timeFormatted}_${tempo}_${genre}`;
+    // Generate expected filename pattern — lowercase to ensure consistent IDs regardless of input casing
+    const timeFormatted = timeSignature.toLowerCase().replace('/', '_');
+    const basePattern = `${taal}_${timeFormatted}_${tempo.toLowerCase()}_${genre.toLowerCase()}`;
 
     // Rename uploaded files to correct format and add to metadata
     const uploadedFiles = [];
@@ -2554,8 +2606,8 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
         }
       };
 
-      // Remove existing entry with same ID if exists
-      metadata.loops = metadata.loops.filter(loop => loop.id !== loopEntry.id);
+      // Remove existing entry with same ID or same filename (handles case-mismatch IDs from older uploads)
+      metadata.loops = metadata.loops.filter(loop => loop.id !== loopEntry.id && loop.filename !== correctFilename);
       
       // Add new entry
       metadata.loops.push(loopEntry);
@@ -2647,11 +2699,11 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
     }
 
     // Generate correct filename based on naming convention v2.0
-    // Sanitize all inputs to remove invalid path characters and trim spaces
-    const taalSanitized = taal.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
-    const timeFormatted = timeSignature.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
-    const tempoSanitized = tempo.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
-    const genreSanitized = genre.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    // Sanitize all inputs: lowercase first to ensure consistent IDs regardless of input casing
+    const taalSanitized = taal.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    const timeFormatted = timeSignature.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    const tempoSanitized = tempo.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
+    const genreSanitized = genre.toLowerCase().replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
     
     const basePattern = `${taalSanitized}_${timeFormatted}_${tempoSanitized}_${genreSanitized}`;
     const typeUpper = type.toUpperCase();
@@ -2703,8 +2755,8 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
       }
     };
 
-    // Remove existing entry with same ID if exists
-    metadata.loops = metadata.loops.filter(loop => loop.id !== loopId);
+    // Remove existing entry with same ID or same filename (handles case-mismatch IDs from older uploads)
+    metadata.loops = metadata.loops.filter(loop => loop.id !== loopId && loop.filename !== correctFilename);
     
     // Add new entry
     metadata.loops.push(loopEntry);
