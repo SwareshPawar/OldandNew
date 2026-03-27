@@ -582,7 +582,7 @@ async function createRhythmSet() {
             handleAuthRequired();
             return;
         }
-        showAlert('Error: ' + error.message, 'error');
+        showAlert(error.message, 'error');
     }
 }
 
@@ -1079,7 +1079,7 @@ async function uploadSingleLoop(rhythmSetId, loopType) {
                 handleAuthRequired();
                 return;
             }
-            showAlert(`Error: ${error.message}`, 'error');
+            showAlert(error.message, 'error');
         }
     };
     
@@ -1147,7 +1147,7 @@ async function deleteRhythmSet(rhythmSetId) {
         }
 
         console.error('Delete error:', error);
-        showAlert('Error: ' + error.message, 'error');
+        showAlert(error.message, 'error');
     }
 }
 
@@ -1174,7 +1174,7 @@ async function forceDeleteRhythmSet(rhythmSetId) {
             return;
         }
         console.error('Force delete error:', error);
-        showAlert('Error: ' + error.message, 'error');
+        showAlert(error.message, 'error');
     }
 }
 
@@ -1214,7 +1214,7 @@ async function removeLoop(rhythmSetId, loopType) {
             handleAuthRequired();
             return;
         }
-        showAlert('Error: ' + error.message, 'error');
+        showAlert(error.message, 'error');
     }
 }
 
@@ -1646,7 +1646,7 @@ async function playLoopPad(padName) {
         }
     } catch (error) {
         console.error('Error playing pad:', error);
-        showAlert('Error: ' + error.message, 'error');
+        showAlert(error.message, 'error');
     }
 }
 
@@ -1664,7 +1664,7 @@ async function startPlayer() {
         setPlayerStatus(status, 'fa-play-circle', 'Playing...');
     } catch (error) {
         console.error('Error starting player:', error);
-        showAlert('Error: ' + error.message, 'error');
+        showAlert(error.message, 'error');
     }
 }
 
@@ -1897,7 +1897,7 @@ async function saveRhythmSetEdit() {
             return;
         }
         console.error('Edit error:', error);
-        showAlert('Error: ' + error.message, 'error');
+        showAlert(error.message, 'error');
     }
 }
 

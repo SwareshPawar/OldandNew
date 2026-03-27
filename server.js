@@ -30,6 +30,20 @@ let rhythmSetsCollection;
 
 // Create uploads directory (use /tmp in serverless environments)
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+const LOOP_UPLOAD_BLOCKED_MESSAGE = 'Loop uploads are disabled on production deployment. Please upload loops on the local server, then commit and deploy.';
+
+function blockLoopUploadsInProduction(req, res, next) {
+  if (isServerless) {
+    return res.status(403).json({
+      error: LOOP_UPLOAD_BLOCKED_MESSAGE,
+      message: LOOP_UPLOAD_BLOCKED_MESSAGE,
+      suggestion: 'Use localhost upload tools, commit loop files, then redeploy production.'
+    });
+  }
+
+  next();
+}
+
 const uploadsDir = isServerless 
   ? path.join('/tmp', 'loops')
   : path.join(__dirname, 'uploads', 'loops');
@@ -1867,7 +1881,7 @@ app.post('/api/songs/scan', authMiddleware, async (req, res) => {
 // ===== LOOP PLAYER ENDPOINTS =====
 
 // Upload loop audio file for a song
-app.post('/api/songs/:id/loops/upload', authMiddleware, upload.single('audioFile'), async (req, res) => {
+app.post('/api/songs/:id/loops/upload', authMiddleware, blockLoopUploadsInProduction, upload.single('audioFile'), async (req, res) => {
   try {
     const { id } = req.params;
     const { loopType } = req.body; // 'main', 'variation1', 'variation2', 'variation3', 'fillin'
@@ -2339,7 +2353,7 @@ const loopUpload = multer({
   }
 });
 
-app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), async (req, res) => {
+app.post('/api/loops/upload', authMiddleware, blockLoopUploadsInProduction, loopUpload.array('loopFiles', 6), async (req, res) => {
   try {
     const { timeSignature, tempo, genre, description } = req.body;
     const requestedTaal = req.body?.taal || '';
@@ -2476,7 +2490,7 @@ app.post('/api/loops/upload', authMiddleware, loopUpload.array('loopFiles', 6), 
  * POST /api/loops/upload-single
  * Upload a single loop/fill file with automatic renaming
  */
-app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), async (req, res) => {
+app.post('/api/loops/upload-single', authMiddleware, blockLoopUploadsInProduction, loopUpload.single('file'), async (req, res) => {
   try {
     const { timeSignature, tempo, genre, type, number, description } = req.body;
     const requestedTaal = req.body?.taal || '';
@@ -2497,15 +2511,6 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
 
     if (!rhythmSetId) {
       return res.status(400).json({ error: 'Invalid rhythmFamily/rhythmSetNo combination' });
-    }
-
-    // Handle serverless environment limitations
-    if (process.env.VERCEL) {
-      return res.status(501).json({ 
-        error: 'File uploads are not supported in serverless environment',
-        message: 'Loop uploads require a persistent file system. Please use the local development server for uploading files.',
-        suggestion: 'Upload files locally, then commit them to your repository'
-      });
     }
 
     const metadataPath = path.join(loopsDir, 'loops-metadata.json');
@@ -2634,7 +2639,7 @@ app.post('/api/loops/upload-single', authMiddleware, loopUpload.single('file'), 
  * PUT /api/loops/:loopId/replace
  * Replace a loop file while keeping the same metadata 
  */
-app.put('/api/loops/:loopId/replace', authMiddleware, requireAdmin, (req, res) => {
+app.put('/api/loops/:loopId/replace', authMiddleware, requireAdmin, blockLoopUploadsInProduction, (req, res) => {
   upload.single('file')(req, res, async function (err) {
     if (err instanceof multer.MulterError) {
       console.error('Multer error:', err);
@@ -2910,7 +2915,7 @@ app.get('/api/melodic-loops/key/:key', authMiddleware, async (req, res) => {
  * POST /api/melodic-loops/upload
  * Upload a melodic loop file (atmosphere or tanpura)
  */
-app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file'), async (req, res) => {
+app.post('/api/melodic-loops/upload', authMiddleware, blockLoopUploadsInProduction, melodicUpload.single('file'), async (req, res) => {
     try {
     const { type } = req.body;
     const canonicalKey = normalizeMelodicKey(req.body.key);
@@ -2928,19 +2933,6 @@ app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file
         // Validate type
         if (!['atmosphere', 'tanpura'].includes(type)) {
             return res.status(400).json({ error: 'Invalid type. Must be atmosphere or tanpura' });
-        }
-        
-        // Handle serverless environment limitations
-        if (process.env.VERCEL) {
-            // Clean up temp file
-            if (fs.existsSync(file.path)) {
-                fs.unlinkSync(file.path);
-            }
-            return res.status(501).json({ 
-                error: 'File uploads are not supported in serverless environment',
-                message: 'Melodic loop uploads require a persistent file system. Please use the local development server for uploading files.',
-                suggestion: 'Upload files locally, then commit them to your repository'
-            });
         }
         
         // Determine target directory and filename
@@ -2991,7 +2983,7 @@ app.post('/api/melodic-loops/upload', authMiddleware, melodicUpload.single('file
  * PUT /api/melodic-loops/:id/replace
  * Replace a melodic loop file by ID (format: type_key)
  */
-app.put('/api/melodic-loops/:id/replace', authMiddleware, requireAdmin, (req, res) => {
+app.put('/api/melodic-loops/:id/replace', authMiddleware, requireAdmin, blockLoopUploadsInProduction, (req, res) => {
     melodicUpload.single('file')(req, res, async function (err) {
         if (err instanceof multer.MulterError) {
             console.error('Multer error:', err);
