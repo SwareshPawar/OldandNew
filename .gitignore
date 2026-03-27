@@ -49,6 +49,5 @@ jspm_packages/
 # Logs
 logs
 *.log
-.env.example
 .vercel
 .env*.local
