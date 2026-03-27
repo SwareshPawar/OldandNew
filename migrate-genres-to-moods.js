@@ -1,8 +1,9 @@
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
-// MongoDB connection details
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://swareshpawar4141:TYkhlRAkYjHJIcgh@cluster0.dxhnj.mongodb.net/';
+// MongoDB connection details — requires MONGODB_URI in .env
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) throw new Error('MONGODB_URI environment variable is required. Add it to a .env file.');
 const DB_NAME = process.env.DB_NAME || 'OldNewSongs';
 const COLLECTION_NAME = process.env.COLLECTION_NAME || 'OldNewSongs';
 

@@ -1,4 +1,6 @@
-# CODE DOCUMENTATION - SINGLE SOURCE OF TRUTH
+# CODE DOCUMENTATION - HISTORICAL CHANGE LOG
+
+> Status: Historical/supporting reference. For the current canonical documentation set, start with `docs/CODEBASE_GUIDE.md`, `docs/FUNCTION_INVENTORY.md`, and `docs/CODE_ISSUES_AND_DUPLICATION.md`.
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  

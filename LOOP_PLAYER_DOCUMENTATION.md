@@ -1,5 +1,7 @@
 # Loop Player System v3.0 - Documentation
 
+> Status: Supporting subsystem reference. For the current canonical documentation set, start with `docs/CODEBASE_GUIDE.md`, `docs/FUNCTION_INVENTORY.md`, and `docs/CODE_ISSUES_AND_DUPLICATION.md`.
+
 **Version**: 3.0.0  
 **Last Updated**: March 9, 2026
 
@@ -35,23 +37,27 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
    - Auto-generates filenames based on conditions
    - Visual preview and management
 
-4. **Rhythm Mapper** (`rhythm-sets-manager.html` + `rhythm-sets-manager.js`)
+4. **Rhythm Set Admin** (`loop-rhythm-manager.html` + `loop-rhythm-manager.js`)
    - Standalone admin workspace for rhythm set lifecycle
-   - Create, edit, rename, and recompute rhythm sets
-   - Map songs to rhythm sets and preview available loops
+   - Create, edit, rename, and manage loop slots per set
+   - Preview and test loops with integrated player panel
 
-5. **Player Engine** (`loop-player-pad.js`)
+5. **Rhythm Mapper** (`rhythm-mapper.html` + `rhythm-mapper.js`)
+   - Batch map songs to rhythm sets
+   - Assign/unassign mappings for selected songs
+
+6. **Player Engine** (`loop-player-pad.js`)
    - Web Audio API-based loop player
    - Seamless loop switching
    - Auto-fill feature for transitions
 
-6. **UI Integration** (`loop-player-pad-ui.js`)
+7. **UI Integration** (`loop-player-pad-ui.js`)
    - 6-pad interface (3 loops + 3 fills)
    - Deterministic loop set resolution by `song.rhythmSetId`
    - Volume and tempo controls (90-110% range)
    - Tempo reset button for quick return to 100%
 
-7. **API Endpoints** (`server.js`)
+8. **API Endpoints** (`server.js`)
    - `/api/loops/metadata` - Get loops metadata
    - `/api/loops/upload` - Upload new loop set (legacy bulk upload)
    - `/api/loops/upload-single` - Upload individual file with auto-rename (v2.0)
@@ -61,7 +67,7 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
    - `/api/rhythm-sets/:rhythmSetId/recompute` - Recompute derived metadata
    - `/api/song-metadata` - Provides rhythm families used by dropdowns
 
-8. **Melodic Pads** (`loop-player-pad.js` + `melodic-loops-manager.html`)
+9. **Melodic Pads** (`loop-player-pad.js` + `melodic-loops-manager.html`)
    - Atmosphere and tanpura pads per key
    - Samples served from `/loops/melodies/{type}/{type}_{key}.wav`
    - Uses `API_BASE_URL` for production-safe loading
@@ -247,6 +253,31 @@ When a song is played, the system:
 
 ## Melodic Pads (Atmosphere/Tanpura)
 
+### Crossfade Loop Architecture
+
+The melodic pad engine (atmosphere/tanpura) uses a recursive crossfade scheduling chain so loops play back seamlessly without a click or gap:
+
+**Audio graph topology per pad:**
+```
+Source → sourceGain → pad.gainNode → audioContext.destination
+```
+Each playback source gets its own `GainNode` for independent fade control. During a crossfade, two sources are active simultaneously — peak memory is 2 `AudioBufferSourceNode` + 2 `GainNode`, then GC releases the old pair.
+
+**Crossfade timing constants:**
+- Start/stop fade duration: **2.0 s**
+- Loop crossfade duration (at loop boundary): **1.5 s**
+
+**Scheduling chain:**
+1. `_startCrossfadeLoop()` — creates source, starts playback, schedules first crossfade
+2. `setTimeout( bufferDuration − 1.5s )` — fires 1.5 s before the loop ends
+3. `_scheduleCrossfadeLoop(oldSource, oldSourceGain)` — creates new source, ramps old gain down while new gain ramps up, calls `oldSource.stop()` + `disconnect()` to prevent memory leaks, then reschedules itself recursively for the next loop boundary
+4. Stop condition: `isPlaying = false` — prevents new iterations from scheduling; current source fades out cleanly
+
+**Per-iteration state stored in each pad:**
+```javascript
+{ isPlaying, source, gainNode, crossfadeSource }
+```
+
 ### How Melodic Pads Load
 
 - Samples are fetched from `${API_BASE_URL}/loops/melodies/{type}/{type}_{key}.wav`.
@@ -267,7 +298,8 @@ tanpura_C#.wav
 ### Accessing
 - Navigate to `/loop-manager.html` (requires admin authentication)
 - OR click "Loop Manager" link in Admin Panel popup (from main app)
-- For song mapping and set management, use `/rhythm-sets-manager.html` (Rhythm Mapper)
+- For rhythm set lifecycle + slot management, use `/loop-rhythm-manager.html`
+- For song-to-rhythm-set mapping, use `/rhythm-mapper.html`
 
 ### Uploading a New Loop Set v2.0
 

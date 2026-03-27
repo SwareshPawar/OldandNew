@@ -3,48 +3,14 @@
  * Handles loop file uploads, metadata management, and display
  */
 
-// Dynamic API base URL for local/dev/prod
-function resolveApiBaseUrl() {
-    const { protocol, hostname, port, origin } = window.location;
-    const explicitApiBase = (window.__API_BASE_URL__ || localStorage.getItem('apiBaseUrl') || '').trim();
-
-    if (explicitApiBase) {
-        return explicitApiBase.replace(/\/$/, '');
-    }
-
-    if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
-        const localHost = hostname || 'localhost';
-        return port === '3001' ? origin : `http://${localHost}:3001`;
-    }
-
-    if (hostname.endsWith('github.io')) {
-        return 'https://oldand-new.vercel.app';
-    }
-
-    return origin;
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_URL = window.AppApiBase.resolve();
+const normalizeRhythmFamily = window.RhythmSetUtils.normalizeRhythmFamily;
+const buildRhythmSetId = window.RhythmSetUtils.buildRhythmSetId;
 
 let loopsMetadata = null;
 let songMetadata = null;
-let currentAudio = null;
-
-function normalizeRhythmFamily(value) {
-    if (typeof value !== 'string') return '';
-    return value
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_-]/g, '');
-}
-
-function buildRhythmSetId(rhythmFamily, rhythmSetNo) {
-    const family = normalizeRhythmFamily(rhythmFamily);
-    const setNo = parseInt(rhythmSetNo, 10);
-    if (!family || !Number.isInteger(setNo) || setNo <= 0) return '';
-    return `${family}_${setNo}`;
-}
+let isReadOnlyMode = false;
+const audioPreviewController = window.AdminPage.createAudioPreviewController();
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -61,40 +27,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateStats();
 });
 
+async function authFetch(url, options = {}) {
+    const response = await window.AppAuth.authFetch(url, {
+        ...options,
+        suppressAuthRedirect: true,
+        loginUrl: 'index.html'
+    });
+
+    if (!response.ok) {
+        let errorMessage = `Request failed with status ${response.status}`;
+
+        try {
+            const errorPayload = await response.clone().json();
+            errorMessage = errorPayload.error || errorPayload.message || errorMessage;
+        } catch (jsonError) {
+            try {
+                const errorText = await response.clone().text();
+                if (errorText) {
+                    errorMessage = errorText;
+                }
+            } catch (textError) {
+                // Keep status-based message.
+            }
+        }
+
+        throw new Error(errorMessage);
+    }
+
+    return response;
+}
+
 /**
  * Check if user is authenticated
  */
 function isAuthenticated() {
-    const token = localStorage.getItem('jwtToken');
-    return token && token.length > 0;
+    return window.AppAuth.hasToken();
 }
 
 /**
  * Show authentication warning
  */
 function showAuthenticationWarning() {
-    const uploadAlert = document.getElementById('uploadAlert');
-    if (uploadAlert) {
-        uploadAlert.innerHTML = `
-            <strong><i class="fas fa-lock"></i> Authentication Required</strong><br>
-            Please <a href="index.html" style="color: #2c5282; font-weight: bold; text-decoration: underline;">login to the main app</a> first to access Loop Manager.
-        `;
-        uploadAlert.className = 'alert alert-error';
-        uploadAlert.style.display = 'block';
-    }
-
-    const loopsAlert = document.getElementById('loopsAlert');
-    if (loopsAlert) {
-        loopsAlert.innerHTML = `
-            <strong><i class="fas fa-info-circle"></i> Login Required</strong><br>
-            You can view loops but need admin access to upload or delete.
-        `;
-        loopsAlert.className = 'alert alert-info';
-        loopsAlert.style.display = 'block';
-    }
-
-    document.getElementById('uploadForm').style.opacity = '0.5';
-    document.getElementById('uploadForm').style.pointerEvents = 'none';
+    isReadOnlyMode = true;
+    window.AdminPage.showAuthenticationWarnings({
+        alerts: [
+            {
+                elementId: 'uploadAlert',
+                type: 'error',
+                html: `
+                    <strong><i class="fas fa-lock"></i> Authentication Required</strong><br>
+                    Please <a href="index.html" style="color: #2c5282; font-weight: bold; text-decoration: underline;">login to the main app</a> first to access Loop Manager.
+                `
+            },
+            {
+                elementId: 'loopsAlert',
+                type: 'info',
+                html: `
+                    <strong><i class="fas fa-info-circle"></i> Login Required</strong><br>
+                    You can view loops but need admin access to upload or delete.
+                `
+            }
+        ],
+        disableSelectors: ['#uploadForm']
+    });
     
     // Still load and display loops (read-only mode)
     loadSongMetadata();
@@ -317,6 +312,11 @@ function getSlotId(number, type) {
  * Upload a single file with automatic renaming
  */
 async function uploadSingleFile(slotNumber, type) {
+    if (isReadOnlyMode) {
+        showAlert('uploadAlert', 'Read-only mode. Login required for uploads.', 'warning');
+        return;
+    }
+
     const slotId = getSlotId(slotNumber, type);
     const fileInput = document.getElementById(`loopFile${slotId}`);
     const uploadBtn = document.getElementById(`uploadBtn${slotId}`);
@@ -361,71 +361,30 @@ async function uploadSingleFile(slotNumber, type) {
         formData.append('description', description);
         
         // Upload to server
-        const response = await fetch(`${API_BASE_URL}/api/loops/upload-single`, {
+        const response = await authFetch(`${API_BASE_URL}/api/loops/upload-single`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-            },
             body: formData
         });
-        
-        let result;
-        const contentType = response.headers.get('content-type');
-        
-        try {
-            if (contentType && contentType.includes('application/json')) {
-                result = await response.json();
-            } else {
-                // Handle non-JSON response (like HTML error pages)
-                const text = await response.text();
-                result = { 
-                    error: `Server error (${response.status})`,
-                    details: text.length > 200 ? text.substring(0, 200) + '...' : text
-                };
-            }
-        } catch (parseError) {
-            result = { 
-                error: `Failed to parse server response (${response.status})`,
-                details: parseError.message
-            };
-        }
-        
-        if (response.ok) {
-            statusSpan.textContent = '✓ Uploaded';
-            statusSpan.className = 'upload-status success';
-            fileInput.value = ''; // Clear file input
-            
-            // Reload loops
-            await loadLoopsMetadata();
-            updateStats();
-        } else {
-            if (response.status === 401) {
-                showAlert('uploadAlert', 'Session expired. Please login again.', 'error');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
-            } else if (response.status === 501) {
-                // Handle serverless limitation
-                statusSpan.textContent = '✗ Not Supported';
-                statusSpan.className = 'upload-status error';
-                showAlert('uploadAlert', result.error + '\n\n' + (result.message || '') + '\n\n' + (result.suggestion || ''), 'error');
-            } else {
-                statusSpan.textContent = '✗ Failed';
-                statusSpan.className = 'upload-status error';
-                const errorMsg = result.error || result.message || `Server error (${response.status})`;
-                showAlert('uploadAlert', errorMsg, 'error');
-                
-                // Log details for debugging
-                if (result.details) {
-                    console.error('Upload error details:', result.details);
-                }
-            }
-        }
+        statusSpan.textContent = '✓ Uploaded';
+        statusSpan.className = 'upload-status success';
+        fileInput.value = ''; // Clear file input
+
+        // Reload loops
+        await loadLoopsMetadata();
+        updateStats();
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            showAlert('uploadAlert', 'Session expired. Please login again.', 'error');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+            return;
+        }
+
         console.error('Upload error:', error);
-        statusSpan.textContent = '✗ Error';
+        statusSpan.textContent = '✗ Failed';
         statusSpan.className = 'upload-status error';
-        showAlert('uploadAlert', 'Upload error: ' + error.message, 'error');
+        showAlert('uploadAlert', error.message || 'Upload failed', 'error');
     } finally {
         uploadBtn.disabled = false;
     }
@@ -477,15 +436,25 @@ function displayLoops() {
     Object.entries(loopSets).forEach(([key, set]) => {
         set.loops.forEach((loop, index) => {
             const tr = document.createElement('tr');
+            const safeFilename = escapeHtml(loop.filename || '');
+            const safeRhythmSetId = escapeHtml(set.rhythmSetId || '');
+            const safeRhythmFamily = escapeHtml(set.rhythmFamily || set.conditions?.taal || '');
+            const safeTimeSignature = escapeHtml(set.conditions?.timeSignature || '');
+            const safeTempo = escapeHtml(set.conditions?.tempo || '');
+            const safeGenre = escapeHtml(set.conditions?.genre || '');
+            const tempoClassToken = String(set.conditions?.tempo || 'unknown').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+            const safeLoopType = String(loop.type || '').toLowerCase();
+            const badgeType = safeLoopType === 'loop' || safeLoopType === 'fill' ? safeLoopType : 'unknown';
+            const loopNumber = Number.isFinite(Number(loop.number)) ? Number(loop.number) : '';
             
             // Filename
             const tdFile = document.createElement('td');
-            tdFile.innerHTML = `<strong>${loop.filename}</strong>`;
+            tdFile.innerHTML = `<strong>${safeFilename}</strong>`;
             tr.appendChild(tdFile);
 
             // Type badge
             const tdType = document.createElement('td');
-            tdType.innerHTML = `<span class="badge badge-${loop.type}">${loop.type.toUpperCase()} ${loop.number}</span>`;
+            tdType.innerHTML = `<span class="badge badge-${badgeType}">${escapeHtml(safeLoopType.toUpperCase())} ${loopNumber}</span>`;
             tr.appendChild(tdType);
 
             // Conditions (only show for first file in set)
@@ -493,11 +462,11 @@ function displayLoops() {
             if (index === 0) {
                 tdConditions.innerHTML = `
                     <div class="conditions-display">
-                        <span class="badge" style="background: #edf2f7; color: #1a202c;">${set.rhythmSetId}</span>
-                        <span class="badge" style="background: #e6f2ff; color: #004085;">${set.rhythmFamily || set.conditions.taal}</span>
-                        <span class="badge" style="background: #fff3cd; color: #856404;">${set.conditions.timeSignature}</span>
-                        <span class="badge badge-tempo-${set.conditions.tempo}">${set.conditions.tempo}</span>
-                        <span class="badge" style="background: #d1ecf1; color: #0c5460;">${set.conditions.genre}</span>
+                        <span class="badge" style="background: #edf2f7; color: #1a202c;">${safeRhythmSetId}</span>
+                        <span class="badge" style="background: #e6f2ff; color: #004085;">${safeRhythmFamily}</span>
+                        <span class="badge" style="background: #fff3cd; color: #856404;">${safeTimeSignature}</span>
+                        <span class="badge badge-tempo-${tempoClassToken}">${safeTempo}</span>
+                        <span class="badge" style="background: #d1ecf1; color: #0c5460;">${safeGenre}</span>
                     </div>
                 `;
                 tdConditions.rowSpan = set.loops.length;
@@ -506,29 +475,55 @@ function displayLoops() {
 
             // Audio preview
             const tdPreview = document.createElement('td');
-            tdPreview.innerHTML = `
-                <div class="audio-preview">
-                    <button class="play-btn" onclick="playAudio('/loops/${loop.filename}', this)">
-                        <i class="fas fa-play"></i>
-                    </button>
-                </div>
-            `;
+            const previewWrapper = document.createElement('div');
+            previewWrapper.className = 'audio-preview';
+            const playBtn = document.createElement('button');
+            playBtn.className = 'play-btn';
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            playBtn.addEventListener('click', () => {
+                playAudio(`/loops/${encodeURIComponent(String(loop.filename || ''))}`, playBtn);
+            });
+            previewWrapper.appendChild(playBtn);
+            tdPreview.appendChild(previewWrapper);
             tr.appendChild(tdPreview);
 
             // Actions
             const tdActions = document.createElement('td');
-            tdActions.innerHTML = `
-                <div class="action-btns">
-                    <input type="file" id="replaceFile-${loop.id}" accept="audio/*" style="display: none;" 
-                           onchange="handleReplaceFile('${loop.id}', this)">
-                    <button class="btn btn-warning btn-icon" onclick="document.getElementById('replaceFile-${loop.id}').click()" title="Replace">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button class="btn btn-danger btn-icon" onclick="deleteLoop('${loop.id}')" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
+            if (isReadOnlyMode) {
+                tdActions.innerHTML = '<span style="color:#718096; font-size: 0.9em;">Read-only</span>';
+            } else {
+                const actionWrapper = document.createElement('div');
+                actionWrapper.className = 'action-btns';
+
+                const replaceInput = document.createElement('input');
+                replaceInput.type = 'file';
+                replaceInput.accept = 'audio/*';
+                replaceInput.style.display = 'none';
+                replaceInput.addEventListener('change', () => {
+                    handleReplaceFile(loop.id, replaceInput);
+                });
+
+                const replaceBtn = document.createElement('button');
+                replaceBtn.className = 'btn btn-warning btn-icon';
+                replaceBtn.title = 'Replace';
+                replaceBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                replaceBtn.addEventListener('click', () => {
+                    replaceInput.click();
+                });
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-danger btn-icon';
+                deleteBtn.title = 'Delete';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteBtn.addEventListener('click', () => {
+                    deleteLoop(loop.id);
+                });
+
+                actionWrapper.appendChild(replaceInput);
+                actionWrapper.appendChild(replaceBtn);
+                actionWrapper.appendChild(deleteBtn);
+                tdActions.appendChild(actionWrapper);
+            }
             tr.appendChild(tdActions);
 
             tbody.appendChild(tr);
@@ -540,33 +535,19 @@ function displayLoops() {
  * Play audio preview
  */
 function playAudio(url, button) {
-    if (currentAudio) {
-        currentAudio.pause();
-        document.querySelectorAll('.play-btn i').forEach(icon => {
-            icon.className = 'fas fa-play';
-        });
-    }
-
-    const icon = button.querySelector('i');
-    
-    if (currentAudio && currentAudio.src.endsWith(url) && !currentAudio.paused) {
-        currentAudio.pause();
-        icon.className = 'fas fa-play';
-    } else {
-        currentAudio = new Audio(url);
-        currentAudio.play();
-        icon.className = 'fas fa-pause';
-
-        currentAudio.addEventListener('ended', () => {
-            icon.className = 'fas fa-play';
-        });
-    }
+    audioPreviewController.play(url, button);
 }
 
 /**
  * Handle replace file selection
  */
 function handleReplaceFile(loopId, fileInput) {
+    if (isReadOnlyMode) {
+        showAlert('loopsAlert', 'Read-only mode. Login required for replace/delete actions.', 'warning');
+        if (fileInput) fileInput.value = '';
+        return;
+    }
+
     const file = fileInput.files[0];
     if (!file) return;
     
@@ -582,6 +563,11 @@ function handleReplaceFile(loopId, fileInput) {
  * Replace loop file
  */
 async function replaceLoop(loopId, file) {
+    if (isReadOnlyMode) {
+        showAlert('loopsAlert', 'Read-only mode. Login required for replace/delete actions.', 'warning');
+        return;
+    }
+
     try {
         // Show loading state
         showAlert('loopsAlert', 'Replacing loop file...', 'info');
@@ -589,33 +575,26 @@ async function replaceLoop(loopId, file) {
         const formData = new FormData();
         formData.append('file', file);
         
-        const response = await fetch(`${API_BASE_URL}/api/loops/${loopId}/replace`, {
+        const response = await authFetch(`${API_BASE_URL}/api/loops/${loopId}/replace`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-            },
             body: formData
         });
-        
-        if (response.ok) {
-            const result = await response.json();
-            showAlert('loopsAlert', `Loop replaced successfully: ${result.filename}`, 'success');
-            await loadLoopsMetadata();
-            updateStats();
-        } else {
-            if (response.status === 401) {
-                showAlert('loopsAlert', 'Session expired. Please login again.', 'error');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
-            } else {
-                const result = await response.json();
-                showAlert('loopsAlert', result.error || 'Failed to replace loop', 'error');
-            }
-        }
+
+        const result = await response.json();
+        showAlert('loopsAlert', `Loop replaced successfully: ${result.filename}`, 'success');
+        await loadLoopsMetadata();
+        updateStats();
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            showAlert('loopsAlert', 'Session expired. Please login again.', 'error');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+            return;
+        }
+
         console.error('Replace error:', error);
-        showAlert('loopsAlert', 'Replace error: ' + error.message, 'error');
+        showAlert('loopsAlert', error.message || 'Failed to replace loop', 'error');
     }
 }
 
@@ -623,36 +602,34 @@ async function replaceLoop(loopId, file) {
  * Delete loop file
  */
 async function deleteLoop(loopId) {
+    if (isReadOnlyMode) {
+        showAlert('loopsAlert', 'Read-only mode. Login required for replace/delete actions.', 'warning');
+        return;
+    }
+
     if (!confirm('Are you sure you want to delete this loop? This action cannot be undone.')) {
         return;
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/loops/${loopId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
-            }
+        await authFetch(`${API_BASE_URL}/api/loops/${loopId}`, {
+            method: 'DELETE'
         });
 
-        if (response.ok) {
-            showAlert('loopsAlert', 'Loop deleted successfully', 'success');
-            await loadLoopsMetadata();
-            updateStats();
-        } else {
-            if (response.status === 401) {
-                showAlert('loopsAlert', 'Session expired. Please login again.', 'error');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
-            } else {
-                const result = await response.json();
-                showAlert('loopsAlert', result.error || 'Failed to delete loop', 'error');
-            }
-        }
+        showAlert('loopsAlert', 'Loop deleted successfully', 'success');
+        await loadLoopsMetadata();
+        updateStats();
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            showAlert('loopsAlert', 'Session expired. Please login again.', 'error');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+            return;
+        }
+
         console.error('Delete error:', error);
-        showAlert('loopsAlert', 'Delete error: ' + error.message, 'error');
+        showAlert('loopsAlert', error.message || 'Failed to delete loop', 'error');
     }
 }
 
@@ -690,12 +667,11 @@ function updateStats() {
  * Show alert message
  */
 function showAlert(elementId, message, type) {
-    const alert = document.getElementById(elementId);
-    alert.textContent = message;
-    alert.className = `alert alert-${type}`;
-    alert.style.display = 'block';
+    window.AdminPage.showAlert(elementId, message, type);
+}
 
-    setTimeout(() => {
-        alert.style.display = 'none';
-    }, 5000);
+function escapeHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = String(value ?? '');
+    return div.innerHTML;
 }

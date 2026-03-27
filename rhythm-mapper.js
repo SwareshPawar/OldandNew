@@ -1,5 +1,5 @@
 // Rhythm Mapper - Song Assignment Only
-const API_BASE_URL = window.location.origin;
+const API_BASE_URL = window.AppApiBase.resolve();
 
 let songs = [];
 let rhythmSets = [];
@@ -13,34 +13,51 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function authFetch(url, options = {}) {
-    const token = localStorage.getItem('jwtToken');
-    if (!token) {
-        alert('Please login first');
-        window.location.href = '/index.html';
-        throw new Error('Not authenticated');
+    const response = await window.AppAuth.authFetch(url, {
+        ...options,
+        suppressAuthRedirect: true,
+        loginUrl: 'index.html'
+    });
+
+    if (!response.ok) {
+        let errorMessage = `Request failed with status ${response.status}`;
+
+        try {
+            const errorPayload = await response.clone().json();
+            errorMessage = errorPayload.error || errorPayload.message || errorMessage;
+        } catch (jsonError) {
+            try {
+                const errorText = await response.clone().text();
+                if (errorText) {
+                    errorMessage = errorText;
+                }
+            } catch (textError) {
+                // Keep status-based message.
+            }
+        }
+
+        throw new Error(errorMessage);
     }
 
-    options.headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`
-    };
-
-    const response = await fetch(url, options);
-    if (response.status === 401) {
-        localStorage.removeItem('jwtToken');
-        alert('Session expired. Please login again.');
-        window.location.href = '/index.html';
-        throw new Error('Session expired');
-    }
     return response;
+}
+
+function handleAuthRequired() {
+    showAlert('Session expired. Please login again.', 'error');
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 2000);
 }
 
 async function loadSongs() {
     try {
         const response = await authFetch(`${API_BASE_URL}/api/songs`);
-        if (!response.ok) throw new Error('Failed to load songs');
         songs = await response.json();
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         showAlert('Error loading songs: ' + error.message, 'error');
     }
 }
@@ -48,10 +65,13 @@ async function loadSongs() {
 async function loadRhythmSets() {
     try {
         const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets`);
-        if (!response.ok) throw new Error('Failed to load rhythm sets');
         rhythmSets = await response.json();
         populateRhythmSetSelect();
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         showAlert('Error loading rhythm sets: ' + error.message, 'error');
     }
 }
@@ -143,18 +163,26 @@ function renderSongsTable(songsToRender = songs) {
         return;
     }
 
-    tbody.innerHTML = songsToRender.map(song => `
+    tbody.innerHTML = songsToRender.map(song => {
+        const safeSongId = Number(song.id);
+        if (!Number.isFinite(safeSongId)) {
+            return '';
+        }
+
+        const safeTempo = escapeHtml(song.tempo || '-');
+
+        return `
         <tr>
             <td class="checkbox-cell">
                 <input type="checkbox" 
-                       data-song-id="${song.id}" 
-                       ${selectedSongIds.has(Number(song.id)) ? 'checked' : ''}
-                       onchange="toggleSongSelection(${song.id}, this.checked)">
+                       data-song-id="${safeSongId}" 
+                       ${selectedSongIds.has(safeSongId) ? 'checked' : ''}
+                       onchange="toggleSongSelection(${safeSongId}, this.checked)">
             </td>
             <td>${escapeHtml(song.title || 'Untitled')}</td>
             <td>${escapeHtml(song.taal || '-')}</td>
             <td>${escapeHtml(song.key || '-')}</td>
-            <td>${song.tempo || '-'} BPM</td>
+            <td>${safeTempo} BPM</td>
             <td>
                 ${song.rhythmSetId 
                     ? `<span class="badge badge-success">${escapeHtml(song.rhythmSetId)}</span>`
@@ -162,12 +190,13 @@ function renderSongsTable(songsToRender = songs) {
                 }
             </td>
             <td>
-                <button class="btn btn-secondary" onclick="clearSongMapping(${song.id})" ${!song.rhythmSetId ? 'disabled' : ''}>
+                <button class="btn btn-secondary" onclick="clearSongMapping(${safeSongId})" ${!song.rhythmSetId ? 'disabled' : ''}>
                     <i class="fas fa-unlink"></i> Clear
                 </button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 
     updateHeaderCheckbox();
 }
@@ -269,27 +298,25 @@ async function assignRhythmSet() {
                 })
             });
 
-            if (response.ok) {
-                const updatedSong = await response.json();
-                console.log(`Successfully assigned song ${songId}:`, updatedSong);
-                
-                successCount++;
-                // Update the song object in memory immediately
-                const song = songs.find(s => parseInt(s.id) === parseInt(songId));
-                if (song) {
-                    song.rhythmSetId = rhythmSet.rhythmSetId;
-                    song.rhythmFamily = rhythmSet.rhythmFamily;
-                    song.rhythmSetNo = rhythmSet.rhythmSetNo;
-                    console.log(`Updated in-memory song ${songId}:`, song);
-                } else {
-                    console.warn(`Song ${songId} not found in memory`);
-                }
+            const updatedSong = await response.json();
+            console.log(`Successfully assigned song ${songId}:`, updatedSong);
+
+            successCount++;
+            // Update the song object in memory immediately
+            const song = songs.find(s => parseInt(s.id) === parseInt(songId));
+            if (song) {
+                song.rhythmSetId = rhythmSet.rhythmSetId;
+                song.rhythmFamily = rhythmSet.rhythmFamily;
+                song.rhythmSetNo = rhythmSet.rhythmSetNo;
+                console.log(`Updated in-memory song ${songId}:`, song);
             } else {
-                const errorData = await response.json().catch(() => ({}));
-                console.error(`Failed to assign song ${songId}:`, errorData);
-                failCount++;
+                console.warn(`Song ${songId} not found in memory`);
             }
         } catch (error) {
+            if (error.message === 'AUTH_REQUIRED') {
+                handleAuthRequired();
+                return;
+            }
             console.error(`Error assigning song ${songId}:`, error);
             failCount++;
         }
@@ -349,27 +376,25 @@ async function unassignRhythmSet() {
                 })
             });
 
-            if (response.ok) {
-                const updatedSong = await response.json();
-                console.log(`Successfully unassigned song ${songId}:`, updatedSong);
-                
-                successCount++;
-                // Update the song object in memory immediately
-                const song = songs.find(s => parseInt(s.id) === parseInt(songId));
-                if (song) {
-                    song.rhythmSetId = null;
-                    song.rhythmFamily = null;
-                    song.rhythmSetNo = null;
-                    console.log(`Updated in-memory song ${songId}:`, song);
-                } else {
-                    console.warn(`Song ${songId} not found in memory`);
-                }
+            const updatedSong = await response.json();
+            console.log(`Successfully unassigned song ${songId}:`, updatedSong);
+
+            successCount++;
+            // Update the song object in memory immediately
+            const song = songs.find(s => parseInt(s.id) === parseInt(songId));
+            if (song) {
+                song.rhythmSetId = null;
+                song.rhythmFamily = null;
+                song.rhythmSetNo = null;
+                console.log(`Updated in-memory song ${songId}:`, song);
             } else {
-                const errorData = await response.json().catch(() => ({}));
-                console.error(`Failed to unassign song ${songId}:`, errorData);
-                failCount++;
+                console.warn(`Song ${songId} not found in memory`);
             }
         } catch (error) {
+            if (error.message === 'AUTH_REQUIRED') {
+                handleAuthRequired();
+                return;
+            }
             console.error(`Error unassigning song ${songId}:`, error);
             failCount++;
         }
@@ -419,58 +444,43 @@ async function clearSongMapping(songId) {
             })
         });
 
-        if (response.ok) {
-            const updatedSong = await response.json();
-            console.log(`Successfully cleared song ${songId}:`, updatedSong);
-            
-            // Update the song object in memory immediately
-            const song = songs.find(s => parseInt(s.id) === parseInt(songId));
-            if (song) {
-                song.rhythmSetId = null;
-                song.rhythmFamily = null;
-                song.rhythmSetNo = null;
-                console.log(`Updated in-memory song ${songId}:`, song);
-            } else {
-                console.warn(`Song ${songId} not found in memory`);
-            }
-            
-            showAlert('Rhythm set cleared successfully', 'success');
-            
-            // Reload songs from server to ensure data consistency
-            await loadSongs();
-            
-            console.log('Songs reloaded, re-rendering...');
-            
-            // Force re-render with current filter state
-            filterSongs();
-            
-            console.log('Table re-rendered');
+        const updatedSong = await response.json();
+        console.log(`Successfully cleared song ${songId}:`, updatedSong);
+
+        // Update the song object in memory immediately
+        const song = songs.find(s => parseInt(s.id) === parseInt(songId));
+        if (song) {
+            song.rhythmSetId = null;
+            song.rhythmFamily = null;
+            song.rhythmSetNo = null;
+            console.log(`Updated in-memory song ${songId}:`, song);
         } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Failed to clear mapping:', errorData);
-            throw new Error('Failed to clear mapping');
+            console.warn(`Song ${songId} not found in memory`);
         }
+
+        showAlert('Rhythm set cleared successfully', 'success');
+
+        // Reload songs from server to ensure data consistency
+        await loadSongs();
+
+        console.log('Songs reloaded, re-rendering...');
+
+        // Force re-render with current filter state
+        filterSongs();
+
+        console.log('Table re-rendered');
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         console.error('Error clearing mapping:', error);
         showAlert('Error: ' + error.message, 'error');
     }
 }
 
 function showAlert(message, type) {
-    const alertBox = document.getElementById('alertBox');
-    alertBox.textContent = message;
-    alertBox.className = `alert alert-${type}`;
-    alertBox.style.display = 'block';
-    
-    // Clear any existing timeout
-    if (alertBox.hideTimeout) {
-        clearTimeout(alertBox.hideTimeout);
-    }
-    
-    // Set new timeout
-    alertBox.hideTimeout = setTimeout(() => {
-        alertBox.style.display = 'none';
-    }, 5000);
+    window.AdminPage.showAlert('alertBox', message, type);
 }
 
 function escapeHtml(text) {

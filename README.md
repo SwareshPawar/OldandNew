@@ -1,316 +1,401 @@
 # Old & New Songs Application
 
-A comprehensive web application for managing song collections, setlists, and musical performances. Designed for musicians, worship teams, and music directors.
+A web application for managing a song catalog, setlists, and live musical performances. Built for musicians, worship teams, and music directors. Features chord display and transposition, rhythm loop playback with melodic pads, smart setlist generation, and a full admin toolkit for loop and rhythm-set management.
 
-## 🚀 Quick Start
+---
+
+## Quick Start
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB Atlas account or local MongoDB
+- Node.js v14 or higher
+- MongoDB Atlas account or local MongoDB instance
 - Git
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd OldandNew
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Setup Git hooks (IMPORTANT!)**
-   ```bash
-   node setup-git-hooks.js
-   ```
-   This installs a pre-commit hook that reminds you to update documentation.
-
-4. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and set:
-   - `MONGODB_URI` - Your MongoDB connection string
-   - `JWT_SECRET` - Strong random secret (min 32 chars)
-   - `PORT` - Server port (default: 3000)
-
-5. **Start the server**
-   ```bash
-   node server.js
-   ```
-
-6. **Open the application**
-   Navigate to `http://localhost:3000` in your browser
-
----
-
-## 📝 **CRITICAL: Documentation Requirements**
-
-**⚠️ BEFORE YOU START CODING - READ THIS!**
-
-This project uses **mandatory documentation** via the Documentation Maintenance Hook.
-
-### The Rule
-**Every code change MUST be documented in `CODE_DOCUMENTATION.md` before the commit.**
-
-### What to Document
-- Bug fixes → Section 8: BUGS ENCOUNTERED & RESOLVED
-- New features → Section 9: DEVELOPMENT SESSIONS  
-- Security fixes → SECURITY VULNERABILITIES section
-- Architecture changes → Update relevant sections
-- Performance changes → Include benchmarks
-
-### How It Works
-1. **Git Hook**: Pre-commit hook checks if you modified code files
-2. **Reminder**: Prompts you to verify documentation was updated
-3. **Manual Check**: You confirm documentation is complete
-4. **Commit Proceeds**: Only after documentation verification
-
-### Full Documentation Guide
-See the **"DOCUMENTATION MAINTENANCE HOOK"** section at the top of `CODE_DOCUMENTATION.md`
-
-**Why This Matters:**
-- Future you will thank present you
-- Team members can understand changes
-- Maintenance becomes possible
-- Knowledge doesn't disappear
-
----
-
-## 📚 Documentation
-
-### Core Documentation (6 Files)
-
-1. **`CODE_DOCUMENTATION.md`** - Single Source of Truth
-   - Complete change history (all bugs, features, sessions)
-   - Section 8: All bugs encountered and resolved
-   - Section 9: Development sessions and features
-   - **Update this after every code change**
-
-2. **`LOOP_PLAYER_DOCUMENTATION.md`** - Loop System Reference
-   - Technical documentation for loop matching system
-   - Song data structures and matching logic
-   - API reference and troubleshooting
-
-3. **`CONTRIBUTING.md`** - Development Guidelines
-   - Git workflow and documentation requirements
-   - How to contribute to the project
-
-4. **`README.md`** - This file
-   - Getting started guide and project overview
-
-5. **`DOCUMENTATION_AI_GUIDE.md`** - For AI assistants
-   - How to maintain and use documentation
-
-6. **`CHORD_ACCIDENTAL_NORMALIZATION.md`** - Accidental policy guide
-   - Eb/Bb canonicalization implementation details
-   - Rollback checklist for D#/A# policy
-
-### Archived Documentation
-
-- Historical one-off docs and implementation notes are stored in `docs/archive/`.
-- This keeps root-level documentation minimal while preserving historical detail.
-
-### Documentation Lookup (Quick Navigation)
-
-Use this path when you need to find information quickly:
-
-1. Start with `README.md` (this file) for structure.
-2. Use `CODE_DOCUMENTATION.md` for latest canonical bug/session history.
-3. Use `LOOP_PLAYER_DOCUMENTATION.md` for loop-player architecture/behavior.
-4. Use `docs/archive/INDEX.md` for categorized historical references.
-
-**Topic shortcuts:**
-- Loop replace/upload/playback issues: `CODE_DOCUMENTATION.md` (latest), then `docs/archive/INDEX.md` → Loop Upload/Playback
-- Rhythm set manager flows and fixes: `CODE_DOCUMENTATION.md` (latest), then `docs/archive/INDEX.md` → Rhythm Set Management
-- Architecture and screen split history: `docs/archive/INDEX.md` → Architecture and Migration
-- Authentication/admin-page access issues: `docs/archive/INDEX.md` → Authentication and Access
-- Mobile/responsive changes: `docs/archive/INDEX.md` → UI and Mobile
-
-**Active root docs are consolidated to 6 core files for easier maintenance.**
-
----
-
-## 🛠️ Development Workflow
-
-### Making Changes
-
-1. **Before coding:**
-   - Read `CODE_DOCUMENTATION.md` to understand current state
-   - Check for related bugs/sessions already documented
-
-2. **During coding:**
-   - Take notes of files modified and why
-   - Note any important decisions or tradeoffs
-
-3. **Before committing:**
-   - Update `CODE_DOCUMENTATION.md` with your changes
-   - Follow the format of existing sessions/bugs
-   - Update version number if needed
-   - Update "Last Updated" timestamp
-
-4. **Commit:**
-   - Git hook will verify you've documented
-   - Write clear commit message
-   - Reference documentation section in commit
-
-### Example Commit Message
-```
-Fix loader timing issue (Bug #2)
-
-Ensures loader appears at 0% and hides at 100% of initialization.
-See CODE_DOCUMENTATION.md Section 9, Session #1 for details.
+```bash
+git clone <repository-url>
+cd OldandNew
+npm install
+node setup-git-hooks.js   # installs pre-commit documentation reminder hook
 ```
 
+### Configure environment
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Key variables:
+
+```
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/OldNewSongs
+JWT_SECRET=<strong random secret, min 64 chars>
+PORT=3001
+```
+
+### Run
+
+```bash
+node server.js            # API server at http://localhost:3001
+node static-server.js     # static file server at http://localhost:8080 (for admin pages)
+```
+
+Open the main app at `http://localhost:3001` or the admin pages at `http://localhost:8080`.
+
 ---
 
-## 🏗️ Architecture
+## Environments
+
+This app runs in two environments. API URL resolution is centralized in `scripts/core/api-base.js` — there is no duplication.
+
+| Environment | Frontend URL | API URL |
+|---|---|---|
+| **Local dev** | `http://localhost:3001` or `http://localhost:8080` | `http://localhost:3001` |
+| **Production** | `https://swareshpawar.github.io/OldandNew/` | `https://oldand-new.vercel.app` |
+
+**How it works (`scripts/core/api-base.js`):**
+- Any `localhost` or `127.0.0.1` hostname → API goes to `http://localhost:3001`
+- Any `*.github.io` hostname → API goes to `https://oldand-new.vercel.app`
+- Any other origin (self-hosted) → API goes to `origin` (same domain)
+- Override at runtime by setting `window.__API_BASE_URL__` or `localStorage.apiBaseUrl`
+
+The GitHub Pages site is **static only** — it has no server. All API calls are routed to the Vercel deployment which hosts the Node/Express backend connected to MongoDB Atlas.
+
+**CORS**: `server.js` allows `https://swareshpawar.github.io`, `https://oldand-new.vercel.app`, and all `localhost:*` origins.
+
+---
+
+## Project Overview
 
 ### Tech Stack
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB (Atlas)
-- **Authentication**: JWT tokens
-- **Deployment**: Vercel (frontend), MongoDB Atlas (database)
 
-### Key Features
-- Song management with lyrics & chords
-- Smart setlist generation
-- Chord transposition
-- Auto-scroll for lyrics
-- **Loop Player System:**
-   - Deterministic loop resolution by `rhythmSetId` (`rhythmFamily_setNo`)
-   - Recommendation-assisted rhythm set assignment during song add/edit
-   - Song-level `Rhythm Category` tagging (`Indian`, `Western`, `Others`) in add/edit flows
-   - Rhythm loops with fills and variations
-   - Melodic pads (Tanpura, Atmosphere) organized by musical key
-   - Tempo control with SoundTouch.js
-   - Admin interfaces for loop uploads and rhythm mapping workflow
-- Admin-configurable recommendation weights now include `rhythmCategory` signal (total remains 100)
-- Standalone Rhythm Mapper page for song-to-rhythm-set assignment and preview
-- Floating stop button for global playback control
-- Admin panel
-- PWA support (offline use)
-- Delta sync (90%+ faster loads)
-- Mobile-optimized UI with collapsible sections
+| Layer | Technology |
+|---|---|
+| Frontend | Vanilla JavaScript, HTML5, CSS3 (no framework, no bundler) |
+| Backend | Node.js + Express |
+| Database | MongoDB Atlas |
+| Auth | JWT (7-day tokens, stored in localStorage) |
+| Audio | Web Audio API (loop player + melodic pads) |
+| Deployment | Vercel (frontend + serverless), MongoDB Atlas |
 
-### File Structure
+### Core Features
+
+- **Song catalog** — full CRUD with lyrics, chords, taal, BPM, key, genre tagging
+- **Chord transposition** — real-time transpose with accidental normalization
+- **Auto-scroll** — configurable speed for live performance
+- **Setlists** — global, personal, and smart (condition-based auto-generation)
+- **Recommendation weights** — admin-configurable signal weights for smart setlist matching
+- **Rhythm loop player** — deterministic 6-pad playback (3 loops + 3 fills) resolved by `rhythmSetId`
+- **Melodic pads** — atmosphere and tanpura samples organized by musical key with seamless crossfade looping
+- **Admin tools** — rhythm set lifecycle management, loop uploads, song-to-rhythm-set mapping
+- **Delta sync** — incremental song cache refresh (~90% faster than full reload)
+- **PWA** — installable, minimal service worker
+- **Mobile UI** — collapsible panels, touch navigation, responsive breakpoints
+
+---
+
+## Architecture
+
+### Module System
+
+The frontend uses an **IIFE + `window.*` namespace** pattern — there is no bundler and no ES6 `import`/`export`. This allows plain `<script>` tag loading while still achieving code isolation and reuse across pages.
+
 ```
-├── main.js                        # Core application (~11,700 lines)
-├── server.js                      # Backend API
-├── index.html                     # Main HTML
-├── styles.css                     # Styles (~6,700 lines)
-├── service-worker.js              # PWA functionality
-├── spinner.html                   # Loading overlay
-├── CODE_DOCUMENTATION.md          # 📝 SINGLE SOURCE OF TRUTH
-├── loop-player-pad.js             # Loop player audio engine (Web Audio API)
-├── loop-player-pad-ui.js          # Loop player UI (v2.0 - pad-based interface)
-├── loop-player-pad-soundtouch.js  # SoundTouch.js integration for tempo control
-├── loop-player-pad-tonejs.js      # Tone.js integration (alternative)
-├── loop-player-ui.DEPRECATED.js   # ⚠️ Old loop player UI (deprecated Feb 2026)
-├── melodic-loops-manager.html     # Admin interface for melodic samples
-├── melodic-loops-manager.js       # Melodic sample upload/management
-├── loop-manager.html              # Admin interface for rhythm loops
-├── loop-manager.js                # Rhythm loop upload/management
-├── rhythm-sets-manager.html       # Standalone rhythm mapping workspace
-├── rhythm-sets-manager.js         # Rhythm Mapper logic
-├── api/
-│   └── index.js                   # Vercel serverless functions
+index.html loads scripts in this order:
+  1. scripts/core/         — foundational utilities (api-base, auth-client)
+  2. scripts/shared/       — cross-page helpers (admin-page, rhythm-set, chord-normalization, dom)
+  3. scripts/features/     — domain-specific UI modules (auth, songs, setlists, etc.)
+  4. main.js               — app bootstrap and orchestration
+  5. loop-player-pad.js    — audio engine
+  6. loop-player-pad-ui.js — loop player UI integration
+```
+
+Each module in `scripts/` wraps its code in an IIFE and writes its public API to `window.*`:
+
+```javascript
+(function initAppApiBase(global) {
+    global.AppApiBase = { resolve() { ... } };
+})(window);
+```
+
+`main.js` consumes these via `window.AppApiBase.resolve()`, `window.AppAuth.configure(...)`, `window.RhythmSetUtils.*`, etc.
+
+### Backend
+
+`server.js` is the Express backend. Responsibilities:
+- MongoDB lifecycle and collection management
+- JWT auth middleware and admin enforcement
+- All REST API routes (songs, setlists, rhythm sets, loops, users, admin)
+- Loop file upload (multer) and metadata persistence
+- Melodic loop file management
+
+`api/index.js` is a thin Vercel serverless wrapper that re-exports `server.js`.
+
+Shared backend utilities under `utils/`:
+- `utils/auth.js` — register, authenticate, JWT sign/verify, OTP flows
+- `utils/chord-normalization.js` — canonical chord/key normalization (shared with migration scripts)
+- `utils/rhythm-set.js` — rhythm family/category normalization and ID building
+
+---
+
+## File Structure
+
+```
+OldandNew/
+│
+├── index.html                      # Main SPA entry point
+├── main.js                         # App bootstrap, orchestration, global state
+├── styles.css                      # Application styles
+├── server.js                       # Express backend + all API routes
+├── service-worker.js               # Minimal PWA (install/activate only)
+│
+├── scripts/                        # Extracted frontend modules (IIFE + window.* pattern)
+│   ├── core/
+│   │   ├── api-base.js             # window.AppApiBase — API URL resolution
+│   │   └── auth-client.js          # window.AppAuth — token access, authFetch, 401 handling
+│   ├── shared/
+│   │   ├── admin-page.js           # window.AdminPage — alerts, auth banner, audio preview
+│   │   ├── rhythm-set.js           # window.RhythmSetUtils — family/ID normalization
+│   │   ├── chord-normalization.js  # window.ChordNormalization — accidental normalization
+│   │   └── dom.js                  # window.DOMHelpers — modal, search history, highlightText
+│   └── features/
+│       ├── auth-ui.js              # window.AuthUI — login/register/logout button state
+│       ├── password-reset.js       # window.PasswordResetUI — OTP flow
+│       ├── songs-ui.js             # window.SongsUI — song list load/render/count
+│       ├── song-crud-ui.js         # window.SongCRUDUI — edit/delete modal flows
+│       ├── song-preview-ui.js      # window.SongPreviewUI — preview, transpose, auto-scroll
+│       ├── setlists.js             # window.SetlistsUI — global/personal setlist CRUD
+│       ├── smart-setlists.js       # window.SmartSetlistsUI — server-backed smart setlists
+│       ├── rhythm-sets.js          # window.RhythmSetsUI — rhythm-set admin tab
+│       ├── admin-ui.js             # window.AdminUI — user management, recommendation weights
+│       └── mobile-ui.js            # window.MobileUI — touch nav, draggable panels
+│
+├── loop-player-pad.js              # Web Audio API loop engine (6 pads + melodic crossfade)
+├── loop-player-pad-ui.js           # Loop player UI: pad interface, resolution, metadata cache
+│
+├── loop-manager.html               # Admin: rhythm loop upload/replace
+├── loop-manager.js                 # Rhythm loop upload management
+├── loop-rhythm-manager.html        # Admin: rhythm set lifecycle (create/edit/delete/slots)
+├── loop-rhythm-manager.js          # Rhythm set workspace (slots, player, drag-drop upload)
+├── melodic-loops-manager.html      # Admin: melodic pad sample management
+├── melodic-loops-manager.js        # Melodic sample upload by key
+├── rhythm-mapper.html              # Admin: batch song-to-rhythm-set assignment
+├── rhythm-mapper.js                # Song mapper, bulk select, assign/unassign
+│
 ├── utils/
-│   └── auth.js                    # JWT utilities
+│   ├── auth.js                     # Backend auth helpers (JWT, OTP, bcrypt)
+│   ├── chord-normalization.js      # Backend chord normalization (shared with migration scripts)
+│   └── rhythm-set.js               # Backend rhythm-set helpers
+│
+├── api/
+│   └── index.js                    # Vercel serverless entry (re-exports server.js)
+│
 ├── loops/
-│   ├── loops-metadata.json        # Loop metadata (taal, tempo, genre)
-│   └── melodies/                  # Melodic samples by key (tanpura/atmosphere)
+│   ├── loops-metadata.json         # Rhythm loop file registry and conditions
+│   └── melodies/                   # Melodic samples: atmosphere_*.wav, tanpura_*.wav
+│
 ├── uploads/
-│   └── loops/                     # Uploaded rhythm loop audio files
-└── backups/                       # Code backups
+│   └── loops/                      # Uploaded rhythm loop audio files (.wav/.mp3)
+│
+├── legacy/
+│   └── runtime/                    # Archived deprecated files (Phase 5 audit)
+│                                   # loop-player.js, rhythm-sets-manager.js, etc.
+│
+├── docs/
+│   ├── CODEBASE_GUIDE.md           # Architecture overview, data flow, API surface, admin features
+│   ├── FUNCTION_INVENTORY.md       # Per-file function inventory for all active JS files
+│   ├── CODE_ISSUES_AND_DUPLICATION.md  # Technical debt, duplication, cleanup backlog
+│   └── REFACTOR_PLAN.md            # Phased refactor implementation log (Phases 1–6 complete)
+│
+├── backups/                        # Manual code backups (not part of runtime)
+├── scripts/ (migration)            # One-off migration and validation scripts at root level
+└── vercel.json                     # Vercel deployment config
 ```
 
 ---
 
-## 🧪 Testing
+## Key Subsystems
 
-### Manual Testing
-- Open application in Chrome DevTools (mobile view)
-- Test song CRUD operations
-- Test setlist management
-- Test authentication flow
-- Test offline functionality
+### Loop Player
 
-### Test Files
-- `test-api.js` - API endpoint tests
-- `test-jwt-validation.js` - JWT validation tests
-- `test-mood-recommendations.js` - Recommendation algorithm tests
-- `test-setlist-creation.js` - Setlist generation tests
+The active runtime uses a **deterministic `rhythmSetId` resolution** model:
+
+1. Songs are stored with `rhythmFamily`, `rhythmSetNo`, and computed `rhythmSetId` (e.g., `"keherwa_1"`)
+2. `loop-player-pad-ui.js` resolves the playable loop set by matching `song.rhythmSetId` against loop metadata
+3. `loop-player-pad.js` plays up to 6 web-audio buffers (3 loops + 3 fills) with seamless switching
+4. If no matching set exists, the player UI is hidden — the user must map the song first
+
+Melodic pads (atmosphere/tanpura) use a **recursive crossfade scheduling chain** — each loop boundary creates a new source that fades in while the old one fades out (2.0 s start/stop, 1.5 s crossfade). Audio graph: `Source → sourceGain → pad.gainNode → destination`.
+
+See [LOOP_PLAYER_DOCUMENTATION.md](LOOP_PLAYER_DOCUMENTATION.md) for the full reference.
+
+### Admin Workflow (Two-Screen Design)
+
+Loop and rhythm-set administration is split across two standalone pages:
+
+| Page | Purpose |
+|---|---|
+| `loop-rhythm-manager.html` | Create, rename, delete rhythm sets; upload/replace individual loop slots; test with integrated player |
+| `rhythm-mapper.html` | Batch assign or unassign songs to rhythm sets (multi-select, bulk PUT) |
+
+Both pages load only the shared scripts they need (`scripts/core/`, `scripts/shared/admin-page.js`, `scripts/shared/rhythm-set.js`) and enforce read-only mode for unauthenticated users.
+
+Loop slot naming convention: `{taal}_{time_signature}_{tempo}_{genre}_{TYPE}{number}.wav`
+Loop set API response includes: `availableFiles` (slot names, no extension), `files` (slot→filename map), `conditionsHint` (taal/tempo/genre/time).
+
+### Authentication
+
+- JWT tokens signed with `JWT_SECRET`, 7-day expiry, stored in `localStorage`
+- `scripts/core/auth-client.js` (`window.AppAuth`) handles token reads, `Authorization` header injection, 60-second request timeout, and centralized 401 redirect
+- Backend validates token on every protected route via `verifyToken` middleware in `utils/auth.js`
+- Password reset uses a time-limited OTP flow (email or SMS)
+
+### Song ID Contract
+
+Songs use a numeric `id` field (not MongoDB's `_id`):
+- All comparison code uses `parseInt()` for type safety: `parseInt(s.id) === parseInt(songId)`
+- `_id` (MongoDB ObjectId) also exists but is never used by frontend code
+- Assigned sequentially by `migrate-song-ids.js`
 
 ---
 
-## 🚨 Common Issues
+## API Reference (Major Endpoints)
 
-### Server won't start
-- **Check**: `.env` file exists and has valid `JWT_SECRET`
-- **Check**: MongoDB connection string is correct
-- **Check**: No other process using port 3000
-
-### Songs not loading
-- **Check**: Server is running
-- **Check**: Browser console for errors
-- **Check**: Network tab shows successful API calls
-
-### Documentation hook not working
-- **Run**: `node setup-git-hooks.js` to reinstall
-- **Check**: `.git/hooks/pre-commit` file exists and is executable
+| Group | Endpoints |
+|---|---|
+| Auth | `POST /api/register`, `POST /api/login`, `POST /api/forgot-password`, `POST /api/reset-password` |
+| Users | `GET /api/users`, `PUT /api/users/:id/admin`, `DELETE /api/users/:id/remove-admin` |
+| Songs | `GET/POST /api/songs`, `GET/PUT/DELETE /api/songs/:id`, `PUT /api/songs/:id/rhythm-set`, `GET /api/songs/scan` |
+| Setlists | `GET/POST /api/global-setlists`, `/api/global-setlists/add-song`, `/api/global-setlists/remove-song` |
+| Personal setlists | `GET/POST /api/my-setlists`, add/remove-song variants |
+| Smart setlists | `GET/POST/PUT/DELETE /api/smart-setlists` |
+| Recommendation weights | `GET/PUT /api/recommendation-weights` |
+| Rhythm sets | `GET/POST /api/rhythm-sets`, `PUT/DELETE /api/rhythm-sets/:rhythmSetId`, `POST /api/rhythm-sets/:rhythmSetId/recompute` |
+| Rhythm loop files | `GET /api/loops/metadata`, `POST /api/loops/upload-single`, `DELETE /api/loops/:loopId`, `POST /api/loops/:loopId/replace` |
+| Rhythm set loop slots | `DELETE /api/rhythm-sets/:rhythmSetId/loops/:loopType` |
+| Melodic loops | `GET/POST /api/melodic-loops`, `POST /api/melodic-loops/upload`, `POST /api/melodic-loops/:id/replace`, `DELETE /api/melodic-loops/:id` |
+| Metadata | `GET /api/song-metadata`, `GET /api/debug/db` |
 
 ---
 
-## 📦 Deployment
+## Documentation
 
-### Vercel Deployment
+### Canonical docs (start here)
+
+| File | Contents |
+|---|---|
+| [docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md) | Architecture, module map, data flow, API surface, admin feature contracts |
+| [docs/FUNCTION_INVENTORY.md](docs/FUNCTION_INVENTORY.md) | Per-file function and method inventory for all active JS files |
+| [docs/CODE_ISSUES_AND_DUPLICATION.md](docs/CODE_ISSUES_AND_DUPLICATION.md) | Technical debt, duplicate helpers, cleanup backlog |
+| [docs/REFACTOR_PLAN.md](docs/REFACTOR_PLAN.md) | Phased refactor log — all 6 phases complete |
+
+### Supporting reference docs (subsystem detail)
+
+| File | Contents |
+|---|---|
+| [LOOP_PLAYER_DOCUMENTATION.md](LOOP_PLAYER_DOCUMENTATION.md) | Loop player subsystem: crossfade architecture, file naming, matching logic, API contracts, function reference |
+| [CHORD_ACCIDENTAL_NORMALIZATION.md](CHORD_ACCIDENTAL_NORMALIZATION.md) | Chord accidental normalization policy and conversion tables |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development workflow, coding standards, commit process |
+
+### Documentation lookup order
+
+1. `docs/CODEBASE_GUIDE.md` — understand structure and find the right file/module
+2. `docs/FUNCTION_INVENTORY.md` — locate the exact function
+3. `docs/CODE_ISSUES_AND_DUPLICATION.md` — check if there's a known issue or debt item
+4. Subsystem-specific docs for loop player or chord normalization detail
+
+---
+
+## Security
+
+Phase 6 (completed March 2026) hardened all standalone admin pages against XSS injection:
+
+- All dynamic values are HTML-escaped or transported via `data-*` attributes (`encodeURIComponent` → `decodeURIComponent` at handler site)
+- Inline `onclick`/`oninput`/`onchange` handler attributes have been removed from all generated HTML in `loop-manager.js`, `loop-rhythm-manager.js`, `melodic-loops-manager.js`, and `rhythm-mapper.js`
+- DOM nodes for table rows, loop slots, and player controls are now built with `createElement` + `textContent` instead of `innerHTML` string interpolation
+- `renderLoopSlots()` returns a `DocumentFragment` — no raw HTML strings with dynamic content remain
+- Auth is enforced on all mutating API routes; admin-only routes use a separate `requireAdmin` middleware
+
+---
+
+## Development Workflow
+
+### Before coding
+
+1. Read `docs/CODEBASE_GUIDE.md` to understand which module/file is involved
+2. Check `docs/FUNCTION_INVENTORY.md` for exact function locations
+3. Check `docs/CODE_ISSUES_AND_DUPLICATION.md` for related debt
+
+### Before committing
+
+Update the relevant canonical doc in `docs/`. The git pre-commit hook will prompt you to confirm documentation is up to date.
+
+### Commit message format
+
+```
+Short description of change
+
+Updates docs/CODEBASE_GUIDE.md to reflect <what changed>.
+```
+
+---
+
+## Testing
+
+```bash
+node test-api.js                     # API endpoint smoke tests
+node test-jwt-validation.js          # JWT validation tests
+node test-mood-recommendations.js    # Recommendation algorithm tests
+node test-setlist-creation.js        # Setlist generation tests
+```
+
+Manual testing checklist:
+- Song CRUD (add, edit, delete, search)
+- Setlist create/add/remove
+- Authentication and password reset OTP flow
+- Loop player: play, switch loop, adjust volume/tempo
+- Admin pages: rhythm set create/edit/delete, slot upload, mapper assign/unassign
+
+---
+
+## Deployment
+
+### Vercel
+
 1. Connect repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy
+2. Set environment variables in Vercel dashboard: `MONGODB_URI`, `JWT_SECRET`, `NODE_ENV=production`
+3. `api/index.js` is the Vercel serverless entry point (auto-detected)
 
-### Environment Variables (Production)
-- `MONGODB_URI` - MongoDB Atlas connection string
-- `JWT_SECRET` - Strong cryptographic secret (128+ chars)
-- `NODE_ENV=production`
+### Local / self-hosted
 
----
-
-## 🤝 Contributing
-
-See `CONTRIBUTING.md` for detailed contribution guidelines.
-
-**Quick rules:**
-1. Document ALL changes in `CODE_DOCUMENTATION.md`
-2. Follow existing code style
-3. Test thoroughly before committing
-4. Write clear commit messages
-5. Reference documentation in commits
+```bash
+NODE_ENV=production node server.js
+```
 
 ---
 
-## 📄 License
+## Common Issues
 
-[Add your license here]
-
----
-
-## 🔗 Links
-
-- **Documentation**: See `CODE_DOCUMENTATION.md`
-- **Security**: See "SECURITY VULNERABILITIES" section in documentation
-- **Architecture**: See Section 14 in documentation
+| Symptom | Check |
+|---|---|
+| Server won't start | `.env` exists with valid `JWT_SECRET` and `MONGODB_URI`; port not already in use |
+| Songs not loading | Server is running; browser console for API errors; check network tab |
+| Loop player hidden | Song has no `rhythmSetId` — map it via `rhythm-mapper.html` first |
+| Admin page shows read-only | Token missing or expired — log in from the main app |
+| Git hook not prompting | Run `node setup-git-hooks.js` to reinstall; check `.git/hooks/pre-commit` exists |
 
 ---
 
-## 👥 Authors
+## Contributing
 
-[Add authors here]
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
 
----
-
-**Remember**: 📝 If it's not documented in `CODE_DOCUMENTATION.md`, it didn't happen!
+Quick rules:
+1. Update `docs/CODEBASE_GUIDE.md` for any architectural change
+2. Update `docs/FUNCTION_INVENTORY.md` when the active JS function surface changes
+3. Follow existing IIFE + `window.*` module pattern for any new shared script
+4. No inline `onclick`/`oninput`/`onchange` in generated HTML — use `addEventListener` and `data-*` attributes
+5. Escape all dynamic values before HTML context; use `textContent` over `innerHTML` wherever possible

@@ -1320,144 +1320,6 @@
       }
     },
     {
-      "id": "drum_6_slow_1_loop1",
-      "filename": "drum_6_slow_1_LOOP1.wav",
-      "type": "loop",
-      "number": 1,
-      "rhythmFamily": "drum_6_slow",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "drum_6_slow_1",
-      "conditions": {
-        "taal": "drum_6_slow",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-24T06:44:44.652Z",
-        "description": "loop1 for drum_6_slow_1"
-      },
-      "files": {
-        "loop1": "drum_6_slow_1_LOOP1.wav"
-      }
-    },
-    {
-      "id": "drum_6_slow_1_loop2",
-      "filename": "drum_6_slow_1_LOOP2.wav",
-      "type": "loop",
-      "number": 2,
-      "rhythmFamily": "drum_6_slow",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "drum_6_slow_1",
-      "conditions": {
-        "taal": "drum_6_slow",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-24T06:44:51.898Z",
-        "description": "loop2 for drum_6_slow_1"
-      },
-      "files": {
-        "loop2": "drum_6_slow_1_LOOP2.wav"
-      }
-    },
-    {
-      "id": "drum_6_slow_1_loop3",
-      "filename": "drum_6_slow_1_LOOP3.wav",
-      "type": "loop",
-      "number": 3,
-      "rhythmFamily": "drum_6_slow",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "drum_6_slow_1",
-      "conditions": {
-        "taal": "drum_6_slow",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-24T06:44:54.437Z",
-        "description": "loop3 for drum_6_slow_1"
-      },
-      "files": {
-        "loop3": "drum_6_slow_1_LOOP3.wav"
-      }
-    },
-    {
-      "id": "drum_6_slow_1_fill1",
-      "filename": "drum_6_slow_1_FILL1.wav",
-      "type": "fill",
-      "number": 1,
-      "rhythmFamily": "drum_6_slow",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "drum_6_slow_1",
-      "conditions": {
-        "taal": "drum_6_slow",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-24T06:44:58.454Z",
-        "description": "fill1 for drum_6_slow_1"
-      },
-      "files": {
-        "fill1": "drum_6_slow_1_FILL1.wav"
-      }
-    },
-    {
-      "id": "drum_6_slow_1_fill2",
-      "filename": "drum_6_slow_1_FILL2.wav",
-      "type": "fill",
-      "number": 2,
-      "rhythmFamily": "drum_6_slow",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "drum_6_slow_1",
-      "conditions": {
-        "taal": "drum_6_slow",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-24T06:45:00.877Z",
-        "description": "fill2 for drum_6_slow_1"
-      },
-      "files": {
-        "fill2": "drum_6_slow_1_FILL2.wav"
-      }
-    },
-    {
-      "id": "drum_6_slow_1_fill3",
-      "filename": "drum_6_slow_1_FILL3.wav",
-      "type": "fill",
-      "number": 3,
-      "rhythmFamily": "drum_6_slow",
-      "rhythmSetNo": 1,
-      "rhythmSetId": "drum_6_slow_1",
-      "conditions": {
-        "taal": "drum_6_slow",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-24T06:45:03.286Z",
-        "description": "fill3 for drum_6_slow_1"
-      },
-      "files": {
-        "fill3": "drum_6_slow_1_FILL3.wav"
-      }
-    },
-    {
       "id": "dadra_fast_1_fill1",
       "filename": "dadra_fast_1_FILL1.wav",
       "type": "fill",
@@ -3844,6 +3706,102 @@
       "files": {
         "loop1": "drum_4_mid_1_LOOP1.wav"
       }
+    },
+    {
+      "id": "drum_6_slow_1_loop1",
+      "filename": "drum_6_slow_1_LOOP1.wav",
+      "originalFilename": "Tuj V1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-27T08:40:53.797Z",
+        "description": "loop1 for drum_6_slow_1"
+      },
+      "files": {
+        "loop1": "drum_6_slow_1_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_1_loop2",
+      "filename": "drum_6_slow_1_LOOP2.wav",
+      "originalFilename": "Tuj V2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-27T08:40:55.941Z",
+        "description": "loop2 for drum_6_slow_1"
+      },
+      "files": {
+        "loop2": "drum_6_slow_1_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_1_fill1",
+      "filename": "drum_6_slow_1_FILL1.wav",
+      "originalFilename": "Tuj F1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-27T08:40:58.697Z",
+        "description": "fill1 for drum_6_slow_1"
+      },
+      "files": {
+        "fill1": "drum_6_slow_1_FILL1.wav"
+      }
+    },
+    {
+      "id": "drum_6_slow_1_fill2",
+      "filename": "drum_6_slow_1_FILL2.wav",
+      "originalFilename": "Tuj F1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "drum_6_slow_1",
+      "conditions": {
+        "taal": "drum_6_slow",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-27T08:41:02.941Z",
+        "description": "fill2 for drum_6_slow_1"
+      },
+      "files": {
+        "fill2": "drum_6_slow_1_FILL2.wav"
+      }
     }
   ],
   "tempoRanges": {
@@ -3964,12 +3922,6 @@
       "fileCount": 6
     },
     {
-      "rhythmSetId": "drum_6_slow_1",
-      "rhythmFamily": "drum_6_slow",
-      "rhythmSetNo": 1,
-      "fileCount": 6
-    },
-    {
       "rhythmSetId": "dadra_fast_1",
       "rhythmFamily": "dadra_fast",
       "rhythmSetNo": 1,
@@ -4058,6 +4010,54 @@
       "rhythmFamily": "keherwa_fast",
       "rhythmSetNo": 1,
       "fileCount": 6
+    },
+    {
+      "rhythmSetId": "drum4-4_1",
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 1,
+      "fileCount": 4
+    },
+    {
+      "rhythmSetId": "drum3-4_1",
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 1,
+      "fileCount": 4
+    },
+    {
+      "rhythmSetId": "onetwo_2",
+      "rhythmFamily": "onetwo",
+      "rhythmSetNo": 2,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "drum3-4_2",
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 2,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "keherwa_fast_4",
+      "rhythmFamily": "keherwa_fast",
+      "rhythmSetNo": 4,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "ektaal_1",
+      "rhythmFamily": "ektaal",
+      "rhythmSetNo": 1,
+      "fileCount": 3
+    },
+    {
+      "rhythmSetId": "drum_4_mid_1",
+      "rhythmFamily": "drum_4_mid",
+      "rhythmSetNo": 1,
+      "fileCount": 2
+    },
+    {
+      "rhythmSetId": "drum_6_slow_1",
+      "rhythmFamily": "drum_6_slow",
+      "rhythmSetNo": 1,
+      "fileCount": 4
     }
   ]
 }

@@ -1,28 +1,8 @@
 // Loop & Rhythm Set Manager
-function resolveApiBaseUrl() {
-    const { protocol, hostname, port, origin } = window.location;
-    const explicitApiBase = (window.__API_BASE_URL__ || localStorage.getItem('apiBaseUrl') || '').trim();
-
-    if (explicitApiBase) {
-        return explicitApiBase.replace(/\/$/, '');
-    }
-
-    // When opened from a local static server, Live Server, or file preview,
-    // always target the backend server that serves the API.
-    if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
-        const localHost = hostname || 'localhost';
-        return port === '3001' ? origin : `http://${localHost}:3001`;
-    }
-
-    // GitHub Pages hosts static files only; API is served from Vercel.
-    if (hostname.endsWith('github.io')) {
-        return 'https://oldand-new.vercel.app';
-    }
-
-    return origin;
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_URL = window.AppApiBase.resolve();
+const normalizeRhythmFamily = window.RhythmSetUtils.normalizeRhythmFamily;
+const buildRhythmSetId = window.RhythmSetUtils.buildRhythmSetId;
+const deriveRhythmSetFields = window.RhythmSetUtils.deriveRhythmSetFields;
 
 let rhythmSets = [];
 let selectedRhythmSet = null;
@@ -44,42 +24,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function authFetch(url, options = {}) {
-    const suppressAuthRedirect = options.suppressAuthRedirect === true;
-    if ('suppressAuthRedirect' in options) {
-        delete options.suppressAuthRedirect;
-    }
-
-    const token = localStorage.getItem('jwtToken');
-    if (!token) {
-        if (suppressAuthRedirect) {
-            throw new Error('AUTH_REQUIRED');
-        }
-        alert('Please login first');
-        window.location.href = 'index.html';
-        throw new Error('Not authenticated');
-    }
-
-    options.headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`
-    };
-
-    const response = await fetch(url, options);
-    if (response.status === 401) {
-        if (suppressAuthRedirect) {
-            throw new Error('AUTH_REQUIRED');
-        }
-        localStorage.removeItem('jwtToken');
-        alert('Session expired. Please login again.');
-        window.location.href = 'index.html';
-        throw new Error('Session expired');
-    }
+    const response = await window.AppAuth.authFetch(url, {
+        suppressAuthRedirect: true,
+        loginUrl: 'index.html',
+        ...options
+    });
 
     if (!response.ok) {
+        let errorPayload = null;
         let errorMessage = `Request failed with status ${response.status}`;
 
         try {
-            const errorPayload = await response.clone().json();
+            errorPayload = await response.clone().json();
             errorMessage = errorPayload.error || errorPayload.message || errorMessage;
         } catch (jsonError) {
             try {
@@ -92,15 +48,35 @@ async function authFetch(url, options = {}) {
             }
         }
 
-        throw new Error(errorMessage);
+        const requestError = new Error(errorMessage);
+        requestError.status = response.status;
+        if (errorPayload && typeof errorPayload === 'object') {
+            requestError.payload = errorPayload;
+        }
+        throw requestError;
     }
 
     return response;
 }
 
+function handleAuthRequired() {
+    showAlert('Session expired. Please login again.', 'error');
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 2000);
+}
+
+function ensureWriteAccess() {
+    if (isReadOnlyMode || !window.AppAuth.hasToken()) {
+        showAlert('Read-only mode: login required for create/edit/upload/delete actions.', 'error');
+        return false;
+    }
+    return true;
+}
+
 async function loadRhythmSets() {
     try {
-        const hasToken = !!localStorage.getItem('jwtToken');
+        const hasToken = window.AppAuth.hasToken();
 
         if (hasToken) {
             const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets`, { suppressAuthRedirect: true });
@@ -145,30 +121,7 @@ async function loadRhythmSets() {
 }
 
 function parseRhythmSetParts(rhythmSetId, fallbackFamily = '', fallbackSetNo = 1) {
-    if (typeof rhythmSetId !== 'string') {
-        return {
-            rhythmFamily: fallbackFamily || 'unknown',
-            rhythmSetNo: Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1,
-            rhythmSetId: `${fallbackFamily || 'unknown'}_${Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1}`
-        };
-    }
-
-    const cleaned = rhythmSetId.trim().toLowerCase();
-    const match = cleaned.match(/^(.+)_([0-9]+)$/);
-    if (!match) {
-        return {
-            rhythmFamily: fallbackFamily || cleaned || 'unknown',
-            rhythmSetNo: Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1,
-            rhythmSetId: cleaned || `${fallbackFamily || 'unknown'}_${Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1}`
-        };
-    }
-
-    const parsedSetNo = parseInt(match[2], 10);
-    return {
-        rhythmFamily: match[1],
-        rhythmSetNo: Number.isInteger(parsedSetNo) && parsedSetNo > 0 ? parsedSetNo : (Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1),
-        rhythmSetId: `${match[1]}_${Number.isInteger(parsedSetNo) && parsedSetNo > 0 ? parsedSetNo : (Number.isInteger(fallbackSetNo) ? fallbackSetNo : 1)}`
-    };
+    return deriveRhythmSetFields(rhythmSetId, fallbackFamily, fallbackSetNo);
 }
 
 function buildRhythmSetsFromMetadata(metadata) {
@@ -461,16 +414,6 @@ function setupRhythmFamilyListener() {
     });
 }
 
-function normalizeRhythmFamily(family) {
-    return family.toLowerCase().trim().replace(/\s+/g, '_');
-}
-
-function buildRhythmSetId(family, setNo) {
-    const normalized = normalizeRhythmFamily(family);
-    if (!normalized || !setNo) return null;
-    return `${normalized}_${setNo}`;
-}
-
 function updateAvailableSetNumbers() {
     const family = normalizeRhythmFamily(document.getElementById('rhythmFamily').value);
     const select = document.getElementById('rhythmSetNo');
@@ -574,6 +517,10 @@ function showExistingLoops() {
 }
 
 async function createRhythmSet() {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     const family = document.getElementById('rhythmFamily').value.trim();
     const setNo = parseInt(document.getElementById('rhythmSetNo').value, 10);
     const status = document.getElementById('status').value;
@@ -610,11 +557,6 @@ async function createRhythmSet() {
             })
         });
 
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({ error: 'Failed to create rhythm set' }));
-            throw new Error(err.error || 'Failed to create rhythm set');
-        }
-
         showAlert(`Rhythm set "${rhythmSetId}" created successfully!`, 'success');
         
         // Reset form
@@ -636,6 +578,10 @@ async function createRhythmSet() {
         await loadRhythmSets();
 
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         showAlert('Error: ' + error.message, 'error');
     }
 }
@@ -658,27 +604,8 @@ function renderRhythmSetsTable() {
     tbody.innerHTML = '';
     
     rhythmSets.forEach((set, index) => {
+        const numericSetNo = Number.isFinite(Number(set.rhythmSetNo)) ? Number(set.rhythmSetNo) : 1;
         const loopCount = (set.availableFiles || []).length;
-        const loopBadge = loopCount === 6 
-            ? `<span class="badge badge-success">${loopCount}/6</span>`
-            : loopCount > 0
-            ? `<span class="badge badge-warning">${loopCount}/6</span>`
-            : `<span class="badge badge-danger">0/6</span>`;
-
-        const statusBadge = set.status === 'active'
-            ? '<span class="badge badge-success">Active</span>'
-            : '<span class="badge badge-info">Draft</span>';
-
-           const actionsHtml = isReadOnlyMode
-              ? `<button class="btn btn-primary btn-mini" onclick="event.stopPropagation(); openLoopPlayer('${escapeHtml(set.rhythmSetId)}')" ${loopCount === 0 ? 'disabled' : ''}>
-                    <i class="fas fa-play"></i> Play Set
-                </button>`
-              : `<button class="btn btn-primary btn-mini" onclick="event.stopPropagation(); editRhythmSet('${escapeHtml(set.rhythmSetId)}', '${escapeHtml(set.rhythmFamily)}', ${set.rhythmSetNo})" style="margin-right: 5px;">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-danger btn-mini" onclick="event.stopPropagation(); deleteRhythmSet('${escapeHtml(set.rhythmSetId)}')">
-                    <i class="fas fa-trash"></i> Delete
-                </button>`;
 
         const isSelected = selectedRhythmSet?.rhythmSetId === set.rhythmSetId;
 
@@ -686,28 +613,74 @@ function renderRhythmSetsTable() {
         const mainRow = document.createElement('tr');
         mainRow.className = 'rhythm-set-row';
         mainRow.id = `row-${index}`;
-        mainRow.style = isSelected ? 'background-color: #3a3a5a;' : '';
-        mainRow.innerHTML = `
-            <td style="cursor: pointer;" data-expand-trigger="${index}">
-                <i class="fas fa-chevron-right expand-icon" id="icon-${index}"></i>
-            </td>
-            <td><strong>${escapeHtml(set.rhythmSetId)}</strong></td>
-            <td>${escapeHtml(set.rhythmFamily)}</td>
-            <td>${set.rhythmSetNo}</td>
-            <td>${loopBadge}</td>
-            <td>${statusBadge}</td>
-            <td>${actionsHtml}</td>
-        `;
+        if (isSelected) {
+            mainRow.style.backgroundColor = '#3a3a5a';
+        }
+
+        const expandTd = document.createElement('td');
+        expandTd.style.cursor = 'pointer';
+        expandTd.dataset.expandTrigger = String(index);
+
+        const expandIcon = document.createElement('i');
+        expandIcon.className = 'fas fa-chevron-right expand-icon';
+        expandIcon.id = `icon-${index}`;
+        expandTd.appendChild(expandIcon);
+        mainRow.appendChild(expandTd);
+
+        const idTd = document.createElement('td');
+        const idStrong = document.createElement('strong');
+        idStrong.textContent = set.rhythmSetId || '';
+        idTd.appendChild(idStrong);
+        mainRow.appendChild(idTd);
+
+        const familyTd = document.createElement('td');
+        familyTd.textContent = set.rhythmFamily || '';
+        mainRow.appendChild(familyTd);
+
+        const setNoTd = document.createElement('td');
+        setNoTd.textContent = String(numericSetNo);
+        mainRow.appendChild(setNoTd);
+
+        const loopsTd = document.createElement('td');
+        const loopsBadge = document.createElement('span');
+        if (loopCount === 6) {
+            loopsBadge.className = 'badge badge-success';
+            loopsBadge.textContent = `${loopCount}/6`;
+        } else if (loopCount > 0) {
+            loopsBadge.className = 'badge badge-warning';
+            loopsBadge.textContent = `${loopCount}/6`;
+        } else {
+            loopsBadge.className = 'badge badge-danger';
+            loopsBadge.textContent = '0/6';
+        }
+        loopsTd.appendChild(loopsBadge);
+        mainRow.appendChild(loopsTd);
+
+        const statusTd = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        if (set.status === 'active') {
+            statusBadge.className = 'badge badge-success';
+            statusBadge.textContent = 'Active';
+        } else {
+            statusBadge.className = 'badge badge-info';
+            statusBadge.textContent = 'Draft';
+        }
+        statusTd.appendChild(statusBadge);
+        mainRow.appendChild(statusTd);
+
+        const actionsTd = document.createElement('td');
+        actionsTd.className = 'actions-cell';
+        mainRow.appendChild(actionsTd);
         
         // Details row (expandable)
         const detailsRow = document.createElement('tr');
         detailsRow.className = 'loop-details-row';
         detailsRow.id = `details-${index}`;
-        detailsRow.innerHTML = `
-            <td colspan="7" class="loop-details-cell">
-                ${renderLoopSlots(set)}
-            </td>
-        `;
+        const detailsCell = document.createElement('td');
+        detailsCell.colSpan = 7;
+        detailsCell.className = 'loop-details-cell';
+        detailsCell.appendChild(renderLoopSlots(set));
+        detailsRow.appendChild(detailsCell);
 
         // Click handler ONLY for the chevron icon cell
         const expandCell = mainRow.querySelector('[data-expand-trigger]');
@@ -715,6 +688,43 @@ function renderRhythmSetsTable() {
             e.stopPropagation();
             toggleExpandRow(index);
         });
+
+        bindLoopSlotInteractions(detailsRow);
+
+        const actionsCell = mainRow.querySelector('.actions-cell');
+        if (actionsCell) {
+            if (isReadOnlyMode) {
+                const playButton = document.createElement('button');
+                playButton.className = 'btn btn-primary btn-mini';
+                playButton.disabled = loopCount === 0;
+                playButton.innerHTML = '<i class="fas fa-play"></i> Play Set';
+                playButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    openLoopPlayer(set.rhythmSetId);
+                });
+                actionsCell.appendChild(playButton);
+            } else {
+                const editButton = document.createElement('button');
+                editButton.className = 'btn btn-primary btn-mini';
+                editButton.style.marginRight = '5px';
+                editButton.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                editButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    editRhythmSet(set.rhythmSetId, set.rhythmFamily, numericSetNo);
+                });
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-danger btn-mini';
+                deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                deleteButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    deleteRhythmSet(set.rhythmSetId);
+                });
+
+                actionsCell.appendChild(editButton);
+                actionsCell.appendChild(deleteButton);
+            }
+        }
 
         tbody.appendChild(mainRow);
         tbody.appendChild(detailsRow);
@@ -725,74 +735,144 @@ function renderLoopSlots(rhythmSet) {
     const loopTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
     const availableFiles = rhythmSet.availableFiles || [];
     const files = rhythmSet.files || {};
-    
-    let html = '<div class="loop-grid">';
-    
+    const encodedRhythmSetId = encodeURIComponent(String(rhythmSet.rhythmSetId || ''));
+    const slotIdToken = String(rhythmSet.rhythmSetId || '').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+
+    const fragment = document.createDocumentFragment();
+    const grid = document.createElement('div');
+    grid.className = 'loop-grid';
+    fragment.appendChild(grid);
+
     loopTypes.forEach(loopType => {
         // Check both with and without .mp3 extension (API returns without extension)
         const hasLoop = availableFiles.includes(loopType) || availableFiles.includes(loopType + '.mp3');
         const filename = files[loopType] || '';
-        const slotClass = hasLoop ? 'has-loop' : 'empty';
-        const loopName = loopType.replace(/(\d)/, ' $1');
+        const encodedFilename = encodeURIComponent(String(filename || ''));
+        const loopName = loopType.replace(/(\d)/, ' $1').toUpperCase();
         const loopIcon = loopType.includes('loop') ? 'music' : 'drum';
-        const slotId = `loop-slot-${rhythmSet.rhythmSetId}-${loopType}`;
-        const dragDropAttributes = isReadOnlyMode
-            ? ''
-            : `ondragover="handleDragOver(event)" 
-                 ondragleave="handleDragLeave(event)"
-                 ondrop="handleDrop(event, '${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')"`;
-        
-        html += `
-            <div class="loop-slot ${slotClass}" id="${slotId}" ${dragDropAttributes}>
-                <div class="loop-slot-header">
-                    <span class="loop-slot-title">
-                        <i class="fas fa-${loopIcon}"></i> ${loopName.toUpperCase()}
-                    </span>
-                    ${hasLoop ? 
-                        `<span class="badge badge-success" style="font-size: 10px;">✓</span>` : 
-                        `<span class="badge badge-danger" style="font-size: 10px;">Empty</span>`
-                    }
-                </div>
-                ${isReadOnlyMode ? '' : `<div class="drag-drop-hint" style="font-size: 11px; color: #888; margin: 5px 0;">
-                    <i class="fas fa-upload"></i> Drag & drop or click
-                </div>`}
-                <div class="loop-slot-actions">
-                    ${hasLoop ? `
-                        <button class="btn btn-primary btn-mini" onclick="playLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}', '${escapeHtml(filename)}')">
-                            <i class="fas fa-play"></i> Play
-                        </button>
-                        ${isReadOnlyMode ? '' : `<button class="btn btn-danger btn-mini" onclick="removeLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>`}
-                    ` : ''}
-                    ${isReadOnlyMode ? '' : `<button class="btn btn-success btn-mini" onclick="uploadSingleLoop('${escapeHtml(rhythmSet.rhythmSetId)}', '${loopType}')">
-                        <i class="fas fa-upload"></i> ${hasLoop ? 'Replace' : 'Upload'}
-                    </button>`}
-                </div>
-                <div class="loop-slot-info">
-                    ${hasLoop ? 
-                        `<i class="fas fa-check-circle" style="color: #27ae60;"></i> Loop available${rhythmSet.originalFilenames && rhythmSet.originalFilenames[loopType] ? ` <span style="color: #7f8c8d; font-size: 11px;">(Original: ${escapeHtml(rhythmSet.originalFilenames[loopType])})</span>` : ''}` : 
-                        `<i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i> No loop uploaded`
-                    }
-                </div>
-            </div>
-        `;
+        const slotId = `loop-slot-${slotIdToken}-${loopType}`;
+
+        const slot = document.createElement('div');
+        slot.className = `loop-slot ${hasLoop ? 'has-loop' : 'empty'}`;
+        slot.id = slotId;
+        if (!isReadOnlyMode) {
+            slot.dataset.dropZone = 'true';
+            slot.dataset.rhythmSetId = encodedRhythmSetId;
+            slot.dataset.loopType = loopType;
+        }
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'loop-slot-header';
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'loop-slot-title';
+        const titleIcon = document.createElement('i');
+        titleIcon.className = `fas fa-${loopIcon}`;
+        titleSpan.appendChild(titleIcon);
+        titleSpan.appendChild(document.createTextNode(' ' + loopName));
+        header.appendChild(titleSpan);
+        const badge = document.createElement('span');
+        badge.className = hasLoop ? 'badge badge-success' : 'badge badge-danger';
+        badge.style.fontSize = '10px';
+        badge.textContent = hasLoop ? '\u2713' : 'Empty';
+        header.appendChild(badge);
+        slot.appendChild(header);
+
+        // Drag-drop hint
+        if (!isReadOnlyMode) {
+            const hint = document.createElement('div');
+            hint.className = 'drag-drop-hint';
+            hint.style.cssText = 'font-size: 11px; color: #888; margin: 5px 0;';
+            const hintIcon = document.createElement('i');
+            hintIcon.className = 'fas fa-upload';
+            hint.appendChild(hintIcon);
+            hint.appendChild(document.createTextNode(' Drag & drop or click'));
+            slot.appendChild(hint);
+        }
+
+        // Actions
+        const actions = document.createElement('div');
+        actions.className = 'loop-slot-actions';
+        if (hasLoop) {
+            const playBtn = document.createElement('button');
+            playBtn.className = 'btn btn-primary btn-mini loop-slot-play-btn';
+            playBtn.dataset.rhythmSetId = encodedRhythmSetId;
+            playBtn.dataset.loopType = loopType;
+            playBtn.dataset.filename = encodedFilename;
+            const playIcon = document.createElement('i');
+            playIcon.className = 'fas fa-play';
+            playBtn.appendChild(playIcon);
+            playBtn.appendChild(document.createTextNode(' Play'));
+            actions.appendChild(playBtn);
+
+            if (!isReadOnlyMode) {
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn btn-danger btn-mini loop-slot-remove-btn';
+                removeBtn.dataset.rhythmSetId = encodedRhythmSetId;
+                removeBtn.dataset.loopType = loopType;
+                const removeIcon = document.createElement('i');
+                removeIcon.className = 'fas fa-trash';
+                removeBtn.appendChild(removeIcon);
+                removeBtn.appendChild(document.createTextNode(' Remove'));
+                actions.appendChild(removeBtn);
+            }
+        }
+        if (!isReadOnlyMode) {
+            const uploadBtn = document.createElement('button');
+            uploadBtn.className = 'btn btn-success btn-mini loop-slot-upload-btn';
+            uploadBtn.dataset.rhythmSetId = encodedRhythmSetId;
+            uploadBtn.dataset.loopType = loopType;
+            const uploadIcon = document.createElement('i');
+            uploadIcon.className = 'fas fa-upload';
+            uploadBtn.appendChild(uploadIcon);
+            uploadBtn.appendChild(document.createTextNode(' ' + (hasLoop ? 'Replace' : 'Upload')));
+            actions.appendChild(uploadBtn);
+        }
+        slot.appendChild(actions);
+
+        // Info
+        const info = document.createElement('div');
+        info.className = 'loop-slot-info';
+        const infoIcon = document.createElement('i');
+        if (hasLoop) {
+            infoIcon.className = 'fas fa-check-circle';
+            infoIcon.style.color = '#27ae60';
+            info.appendChild(infoIcon);
+            info.appendChild(document.createTextNode(' Loop available'));
+            if (rhythmSet.originalFilenames && rhythmSet.originalFilenames[loopType]) {
+                const origSpan = document.createElement('span');
+                origSpan.style.cssText = 'color: #7f8c8d; font-size: 11px;';
+                origSpan.textContent = ' (Original: ' + rhythmSet.originalFilenames[loopType] + ')';
+                info.appendChild(origSpan);
+            }
+        } else {
+            infoIcon.className = 'fas fa-exclamation-circle';
+            infoIcon.style.color = '#e74c3c';
+            info.appendChild(infoIcon);
+            info.appendChild(document.createTextNode(' No loop uploaded'));
+        }
+        slot.appendChild(info);
+
+        grid.appendChild(slot);
     });
-    
-    html += '</div>';
-    
+
     // Add "Test in Loop Player" button if rhythm set has loops
     if (availableFiles.length > 0) {
-        html += `
-            <div style="margin-top: 15px; text-align: center;">
-                <button class="btn btn-primary" onclick="openLoopPlayer('${escapeHtml(rhythmSet.rhythmSetId)}')" style="padding: 12px 30px; font-size: 14px;">
-                    <i class="fas fa-play-circle"></i> Test in Loop Player (${availableFiles.length}/6 loops)
-                </button>
-            </div>
-        `;
+        const testContainer = document.createElement('div');
+        testContainer.style.cssText = 'margin-top: 15px; text-align: center;';
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn btn-primary loop-set-test-btn';
+        testBtn.dataset.rhythmSetId = encodedRhythmSetId;
+        testBtn.style.cssText = 'padding: 12px 30px; font-size: 14px;';
+        const testIcon = document.createElement('i');
+        testIcon.className = 'fas fa-play-circle';
+        testBtn.appendChild(testIcon);
+        testBtn.appendChild(document.createTextNode(` Test in Loop Player (${availableFiles.length}/6 loops)`));
+        testContainer.appendChild(testBtn);
+        fragment.appendChild(testContainer);
     }
-    
-    return html;
+
+    return fragment;
 }
 
 function toggleExpandRow(index) {
@@ -811,6 +891,67 @@ function toggleExpandRow(index) {
         icon.classList.add('expanded');
         row.classList.add('expanded');
     }
+}
+
+function decodeDataValue(value) {
+    try {
+        return decodeURIComponent(value || '');
+    } catch (error) {
+        return value || '';
+    }
+}
+
+function bindLoopSlotInteractions(containerElement) {
+    if (!containerElement) return;
+
+    const dropZones = containerElement.querySelectorAll('[data-drop-zone="true"]');
+    dropZones.forEach(zone => {
+        if (isReadOnlyMode) return;
+
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('dragleave', handleDragLeave);
+        zone.addEventListener('drop', (event) => {
+            const rhythmSetId = decodeDataValue(zone.dataset.rhythmSetId);
+            const loopType = zone.dataset.loopType || '';
+            handleDrop(event, rhythmSetId, loopType);
+        });
+    });
+
+    const playButtons = containerElement.querySelectorAll('.loop-slot-play-btn');
+    playButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
+            const loopType = button.dataset.loopType || '';
+            const filename = decodeDataValue(button.dataset.filename);
+            playLoop(rhythmSetId, loopType, filename);
+        });
+    });
+
+    const removeButtons = containerElement.querySelectorAll('.loop-slot-remove-btn');
+    removeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
+            const loopType = button.dataset.loopType || '';
+            removeLoop(rhythmSetId, loopType);
+        });
+    });
+
+    const uploadButtons = containerElement.querySelectorAll('.loop-slot-upload-btn');
+    uploadButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
+            const loopType = button.dataset.loopType || '';
+            uploadSingleLoop(rhythmSetId, loopType);
+        });
+    });
+
+    const testButtons = containerElement.querySelectorAll('.loop-set-test-btn');
+    testButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
+            openLoopPlayer(rhythmSetId);
+        });
+    });
 }
 
 async function playLoop(rhythmSetId, loopType, filename) {
@@ -839,6 +980,10 @@ async function playLoop(rhythmSetId, loopType, filename) {
 }
 
 async function uploadSingleLoop(rhythmSetId, loopType) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     // Find the rhythm set to get metadata
     const rhythmSet = rhythmSets.find(s => s.rhythmSetId === rhythmSetId);
     if (!rhythmSet) {
@@ -896,11 +1041,6 @@ async function uploadSingleLoop(rhythmSetId, loopType) {
                 body: formData
             });
             
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || `Failed to upload ${loopType}`);
-            }
-            
             const result = await response.json();
             showAlert(`${loopType} uploaded successfully!`, 'success');
             
@@ -935,6 +1075,10 @@ async function uploadSingleLoop(rhythmSetId, loopType) {
             }
             
         } catch (error) {
+            if (error.message === 'AUTH_REQUIRED') {
+                handleAuthRequired();
+                return;
+            }
             showAlert(`Error: ${error.message}`, 'error');
         }
     };
@@ -955,6 +1099,10 @@ function previewLoops(rhythmSetId) {
 }
 
 async function deleteRhythmSet(rhythmSetId) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     if (!confirm(`Are you sure you want to delete rhythm set "${rhythmSetId}"?\n\nThis will permanently delete:\n- The rhythm set from the database\n- All associated loop files (loop1-3, fill1-3)\n\nThis action cannot be undone!`)) {
         return;
     }
@@ -964,48 +1112,50 @@ async function deleteRhythmSet(rhythmSetId) {
             method: 'DELETE'
         });
 
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({ error: 'Failed to delete rhythm set' }));
-            console.error('Delete failed:', err);
-            
-            // If songs are mapped, offer force delete option
-            if (err.mappedSongsCount > 0) {
-                const songsList = err.mappedSongs 
-                    ? err.mappedSongs.map(s => `  • ${s.title} (ID: ${s.id})`).join('\n')
-                    : '';
-                
-                const forceDelete = confirm(
-                    `Cannot delete rhythm set "${rhythmSetId}".\n\n` +
-                    `${err.mappedSongsCount} song(s) are currently mapped to it:\n${songsList}\n\n` +
-                    `Would you like to FORCE DELETE?\n\n` +
-                    `⚠️ This will:\n` +
-                    `- Unmap all songs (they will lose their rhythm set assignment)\n` +
-                    `- Delete the rhythm set from database\n` +
-                    `- Delete all loop files\n\n` +
-                    `This action cannot be undone!`
-                );
-                
-                if (forceDelete) {
-                    await forceDeleteRhythmSet(rhythmSetId);
-                }
-                return;
-            }
-            
-            throw new Error(err.error || 'Failed to delete rhythm set');
-        }
-
         const result = await response.json();
         showAlert(result.message || `Rhythm set "${rhythmSetId}" deleted successfully`, 'success');
         
         await loadRhythmSets();
 
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
+
+        const err = error.payload;
+        if (err && err.mappedSongsCount > 0) {
+            const songsList = err.mappedSongs
+                ? err.mappedSongs.map(s => `  • ${s.title} (ID: ${s.id})`).join('\n')
+                : '';
+
+            const forceDelete = confirm(
+                `Cannot delete rhythm set "${rhythmSetId}".\n\n` +
+                `${err.mappedSongsCount} song(s) are currently mapped to it:\n${songsList}\n\n` +
+                `Would you like to FORCE DELETE?\n\n` +
+                `⚠️ This will:\n` +
+                `- Unmap all songs (they will lose their rhythm set assignment)\n` +
+                `- Delete the rhythm set from database\n` +
+                `- Delete all loop files\n\n` +
+                `This action cannot be undone!`
+            );
+
+            if (forceDelete) {
+                await forceDeleteRhythmSet(rhythmSetId);
+            }
+            return;
+        }
+
         console.error('Delete error:', error);
         showAlert('Error: ' + error.message, 'error');
     }
 }
 
 async function forceDeleteRhythmSet(rhythmSetId) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     try {
         showAlert('Force deleting rhythm set...', 'success');
         
@@ -1013,23 +1163,26 @@ async function forceDeleteRhythmSet(rhythmSetId) {
             method: 'DELETE'
         });
 
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({ error: 'Failed to force delete rhythm set' }));
-            throw new Error(err.error || 'Failed to force delete rhythm set');
-        }
-
         const result = await response.json();
         showAlert(result.message || `Rhythm set "${rhythmSetId}" force deleted successfully`, 'success');
         
         await loadRhythmSets();
 
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         console.error('Force delete error:', error);
         showAlert('Error: ' + error.message, 'error');
     }
 }
 
 async function removeLoop(rhythmSetId, loopType) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     if (!confirm(`Are you sure you want to remove ${loopType} from rhythm set "${rhythmSetId}"?\n\nThis will permanently delete the loop file.\n\nThis action cannot be undone!`)) {
         return;
     }
@@ -1038,11 +1191,6 @@ async function removeLoop(rhythmSetId, loopType) {
         const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets/${rhythmSetId}/loops/${loopType}`, {
             method: 'DELETE'
         });
-
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({ error: 'Failed to remove loop' }));
-            throw new Error(err.error || 'Failed to remove loop');
-        }
 
         const result = await response.json();
         showAlert(result.message || `${loopType} removed successfully`, 'success');
@@ -1062,6 +1210,10 @@ async function removeLoop(rhythmSetId, loopType) {
         }
 
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         showAlert('Error: ' + error.message, 'error');
     }
 }
@@ -1106,12 +1258,20 @@ async function handleDrop(event, rhythmSetId, loopType) {
         showAlert('Please drop an MP3 or WAV file', 'error');
         return;
     }
+
+    if (!ensureWriteAccess()) {
+        return;
+    }
     
     // Upload the file
     await uploadFileForLoop(rhythmSetId, loopType, file);
 }
 
 async function uploadFileForLoop(rhythmSetId, loopType, file) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     // Find the rhythm set to get metadata
     const rhythmSet = rhythmSets.find(s => s.rhythmSetId === rhythmSetId);
     if (!rhythmSet) {
@@ -1150,11 +1310,6 @@ async function uploadFileForLoop(rhythmSetId, loopType, file) {
             body: formData
         });
         
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || `Failed to upload ${loopType}`);
-        }
-        
         showAlert(`${loopType} uploaded successfully!`, 'success');
         
         // Signal loop player to bypass cache and re-fetch files (loop file was replaced on disk)
@@ -1188,19 +1343,16 @@ async function uploadFileForLoop(rhythmSetId, loopType, file) {
         }
         
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         showAlert(`Error: ${error.message}`, 'error');
     }
 }
 
 function showAlert(message, type) {
-    const alertBox = document.getElementById('alertBox');
-    alertBox.textContent = message;
-    alertBox.className = `alert alert-${type}`;
-    alertBox.style.display = 'block';
-    
-    setTimeout(() => {
-        alertBox.style.display = 'none';
-    }, 5000);
+    window.AdminPage.showAlert('alertBox', message, type);
 }
 
 function escapeHtml(text) {
@@ -1328,8 +1480,9 @@ function createSimplePlayerUI(rhythmSet) {
         const hasLoop = files[loopType];
         html += `
             <button 
-                class="btn ${hasLoop ? 'btn-primary' : 'btn-secondary'}" 
-                ${hasLoop ? `onclick="playLoopPad('${loopType}')"` : 'disabled'}
+                class="btn ${hasLoop ? 'btn-primary' : 'btn-secondary'} loop-pad-btn" 
+                data-pad="${loopType}"
+                ${hasLoop ? '' : 'disabled'}
                 style="padding: 15px; font-size: 16px;">
                 <i class="fas fa-play-circle"></i><br>
                 ${loopType.toUpperCase()}
@@ -1353,8 +1506,9 @@ function createSimplePlayerUI(rhythmSet) {
         const hasFill = files[fillType];
         html += `
             <button 
-                class="btn ${hasFill ? 'btn-warning' : 'btn-secondary'}" 
-                ${hasFill ? `onclick="playLoopPad('${fillType}')"` : 'disabled'}
+                class="btn ${hasFill ? 'btn-warning' : 'btn-secondary'} loop-pad-btn" 
+                data-pad="${fillType}"
+                ${hasFill ? '' : 'disabled'}
                 style="padding: 15px; font-size: 16px;">
                 <i class="fas fa-bolt"></i><br>
                 ${fillType.toUpperCase()}
@@ -1378,7 +1532,7 @@ function createSimplePlayerUI(rhythmSet) {
                             <i class="fas fa-volume-up"></i> Volume: <span id="volumeValue">100</span>%
                         </label>
                         <input type="range" id="volumeSlider" min="0" max="100" value="100" 
-                               style="width: 100%;" oninput="updateVolume(this.value)">
+                               style="width: 100%;">
                     </div>
                     
                     <div>
@@ -1386,13 +1540,13 @@ function createSimplePlayerUI(rhythmSet) {
                             <i class="fas fa-tachometer-alt"></i> Tempo: <span id="tempoValue">100</span>%
                         </label>
                         <input type="range" id="tempoSlider" min="50" max="200" value="100" 
-                               style="width: 100%;" oninput="updateTempo(this.value)">
+                               style="width: 100%;">
                     </div>
                 </div>
                 
                 <div style="margin-bottom: 15px;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="autoFillCheckbox" onchange="toggleAutoFill(this.checked)" checked>
+                        <input type="checkbox" id="autoFillCheckbox" checked>
                         <span style="color: #bbb;">
                             <i class="fas fa-magic"></i> Auto-fill (play fill before switching loops)
                         </span>
@@ -1400,10 +1554,10 @@ function createSimplePlayerUI(rhythmSet) {
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button class="btn btn-success" onclick="startPlayer()" style="padding: 12px; font-size: 14px;">
+                    <button class="btn btn-success" id="startPlayerBtn" style="padding: 12px; font-size: 14px;">
                         <i class="fas fa-play"></i> Start / Resume
                     </button>
-                    <button class="btn btn-danger" onclick="stopPlayer()" style="padding: 12px; font-size: 14px;">
+                    <button class="btn btn-danger" id="stopPlayerBtn" style="padding: 12px; font-size: 14px;">
                         <i class="fas fa-stop"></i> Stop
                     </button>
                 </div>
@@ -1417,6 +1571,57 @@ function createSimplePlayerUI(rhythmSet) {
     `;
     
     container.innerHTML = html;
+    bindPlayerUIControls(container);
+}
+
+function bindPlayerUIControls(container) {
+    if (!container) return;
+
+    const padButtons = container.querySelectorAll('.loop-pad-btn[data-pad]');
+    padButtons.forEach(button => {
+        if (button.disabled) return;
+        button.addEventListener('click', () => {
+            const padName = button.dataset.pad || '';
+            if (padName) {
+                playLoopPad(padName);
+            }
+        });
+    });
+
+    const volumeSlider = container.querySelector('#volumeSlider');
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', () => {
+            updateVolume(volumeSlider.value);
+        });
+    }
+
+    const tempoSlider = container.querySelector('#tempoSlider');
+    if (tempoSlider) {
+        tempoSlider.addEventListener('input', () => {
+            updateTempo(tempoSlider.value);
+        });
+    }
+
+    const autoFillCheckbox = container.querySelector('#autoFillCheckbox');
+    if (autoFillCheckbox) {
+        autoFillCheckbox.addEventListener('change', () => {
+            toggleAutoFill(autoFillCheckbox.checked);
+        });
+    }
+
+    const startButton = container.querySelector('#startPlayerBtn');
+    if (startButton) {
+        startButton.addEventListener('click', () => {
+            startPlayer();
+        });
+    }
+
+    const stopButton = container.querySelector('#stopPlayerBtn');
+    if (stopButton) {
+        stopButton.addEventListener('click', () => {
+            stopPlayer();
+        });
+    }
 }
 
 /**
@@ -1433,11 +1638,11 @@ async function playLoopPad(padName) {
         
         if (padName.startsWith('fill')) {
             rhythmManagerPlayer.playFill(padName);
-            if (status) status.innerHTML = `<i class="fas fa-bolt"></i> Playing ${padName.toUpperCase()}...`;
+            setPlayerStatus(status, 'fa-bolt', `Playing ${padName.toUpperCase()}...`);
         } else {
             rhythmManagerPlayer.switchToLoop(padName);
             await rhythmManagerPlayer.play();
-            if (status) status.innerHTML = `<i class="fas fa-play-circle"></i> Playing ${padName.toUpperCase()}...`;
+            setPlayerStatus(status, 'fa-play-circle', `Playing ${padName.toUpperCase()}...`);
         }
     } catch (error) {
         console.error('Error playing pad:', error);
@@ -1456,7 +1661,7 @@ async function startPlayer() {
         await rhythmManagerPlayer.play();
         
         const status = document.getElementById('playerStatus');
-        if (status) status.innerHTML = `<i class="fas fa-play-circle"></i> Playing...`;
+        setPlayerStatus(status, 'fa-play-circle', 'Playing...');
     } catch (error) {
         console.error('Error starting player:', error);
         showAlert('Error: ' + error.message, 'error');
@@ -1472,7 +1677,7 @@ function stopPlayer() {
     rhythmManagerPlayer.pause();
     
     const status = document.getElementById('playerStatus');
-    if (status) status.innerHTML = `<i class="fas fa-stop-circle"></i> Stopped`;
+    setPlayerStatus(status, 'fa-stop-circle', 'Stopped');
 }
 
 /**
@@ -1509,9 +1714,20 @@ function toggleAutoFill(enabled) {
     
     const status = document.getElementById('playerStatus');
     if (status) {
-        const icon = enabled ? '<i class="fas fa-magic"></i>' : '<i class="fas fa-ban"></i>';
-        status.innerHTML = `${icon} Auto-fill ${enabled ? 'enabled' : 'disabled'}`;
+        const iconClass = enabled ? 'fa-magic' : 'fa-ban';
+        setPlayerStatus(status, iconClass, `Auto-fill ${enabled ? 'enabled' : 'disabled'}`);
     }
+}
+
+function setPlayerStatus(statusElement, iconClass, message) {
+    if (!statusElement) return;
+
+    statusElement.textContent = '';
+
+    const icon = document.createElement('i');
+    icon.className = `fas ${iconClass}`;
+    statusElement.appendChild(icon);
+    statusElement.appendChild(document.createTextNode(` ${message}`));
 }
 
 /**
@@ -1532,6 +1748,10 @@ function closeLoopPlayer() {
  * Edit Rhythm Set ID
  */
 function editRhythmSet(rhythmSetId, rhythmFamily, rhythmSetNo) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     const modal = document.getElementById('editRhythmSetModal');
     const currentId = document.getElementById('editCurrentRhythmSetId');
     const familyInput = document.getElementById('editRhythmFamily');
@@ -1603,6 +1823,10 @@ async function updateEditPreview() {
  * Save the edited rhythm set
  */
 async function saveRhythmSetEdit() {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
     const originalId = document.getElementById('editOriginalRhythmSetId').value;
     const newFamily = document.getElementById('editRhythmFamily').value.trim();
     const newSetNo = parseInt(document.getElementById('editRhythmSetNo').value);
@@ -1649,11 +1873,6 @@ async function saveRhythmSetEdit() {
             })
         });
         
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({ error: 'Failed to update rhythm set' }));
-            throw new Error(err.error || 'Failed to update rhythm set');
-        }
-        
         const result = await response.json();
         
         showAlert(
@@ -1673,6 +1892,10 @@ async function saveRhythmSetEdit() {
         await loadRhythmSets();
         
     } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         console.error('Edit error:', error);
         showAlert('Error: ' + error.message, 'error');
     }
