@@ -965,8 +965,8 @@ node scripts/core/check-rhythm-set-songs.js "drum4-4_4"
 # Step 2: Find similar songs
 node scripts/core/suggest-rhythm-assignments.js "Sweetheart Hain" --min-score=45 --unassigned
 
-# Step 3: Review report
-cat rhythm-assignment-suggestions-2026-03-28.md
+# Step 3: Review generated report
+ls -1 rhythm-assignment-suggestions-*.md
 
 # Step 4: Apply high-confidence matches (optional)
 node scripts/core/suggest-rhythm-assignments.js "Sweetheart Hain" --min-score=70 --apply
@@ -995,7 +995,7 @@ node scripts/core/suggest-rhythm-assignments.js "Sweetheart Hain" --min-score=70
 
 ### Documentation References
 
-- **Implementation Details**: See CODE_DOCUMENTATION.md, Session #10
+- **Implementation Details**: See CHANGELOG.md, Session #10
 - **API Integration**: See server.js, lines for profile update hooks
 - **Scoring Algorithm**: See suggest-rhythm-assignments.js, scoreProfileMatch() function
 - **Profile Schema**: See build-rhythm-set-profiles.js, profile structure
@@ -1029,7 +1029,7 @@ node scripts/core/suggest-rhythm-assignments.js "Sweetheart Hain" --min-score=70
 - [x] 13+ active profiles covering major rhythm families
 - [x] Configurable scoring weights
 - [x] Production-ready with error handling
-- [x] Complete documentation in CODE_DOCUMENTATION.md
+- [x] Complete documentation in CHANGELOG.md
 - [x] Integration with existing server.js APIs
 
 ---

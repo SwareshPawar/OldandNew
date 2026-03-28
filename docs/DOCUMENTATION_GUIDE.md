@@ -4,7 +4,7 @@
 
 ### Core Documentation (Always Update These)
 
-1. **`CODE_DOCUMENTATION.md`** - Single Source of Truth (6500+ lines)
+1. **`CHANGELOG.md`** - Single Source of Truth (6500+ lines)
    - **Section 8**: All bugs encountered and resolved
    - **Section 9**: Development sessions and features
    - **Security**: Vulnerability tracking
@@ -31,7 +31,7 @@
    - Code style guide
    - **Update**: When changing development process
 
-5. **`DOCUMENTATION_AI_GUIDE.md`** - This file
+5. **`DOCUMENTATION_GUIDE.md`** - This file
    - How AI assistants should use documentation
    - Where to add what type of content
    - **Update**: When documentation structure changes
@@ -53,7 +53,7 @@
 ```
 📚 Active Documentation (6 files):
 
-CODE_DOCUMENTATION.md           → Complete change history, bugs, sessions (6500+ lines)
+CHANGELOG.md           → Complete change history, bugs, sessions (6500+ lines)
 ├── Section 8: BUGS             → All bugs ever fixed
 └── Section 9: SESSIONS         → Development sessions and features
 
@@ -64,7 +64,7 @@ LOOP_PLAYER_DOCUMENTATION.md    → Loop system technical reference (590 lines)
 
 README.md                       → User-facing quickstart (265 lines)
 CONTRIBUTING.md                 → Development workflow (454 lines)
-DOCUMENTATION_AI_GUIDE.md       → This file (for AI assistants)
+DOCUMENTATION_GUIDE.md       → This file (for AI assistants)
 CHORD_ACCIDENTAL_NORMALIZATION.md → Chord accidental canonicalization policy
 
 docs/archive/*                  → Historical documentation archive (read-only)
@@ -73,7 +73,7 @@ docs/archive/*                  → Historical documentation archive (read-only)
 ### When User Reports a Bug
 
 1. **Check if already documented**:
-   - Search `CODE_DOCUMENTATION.md` Section 8 for similar bugs
+   - Search `CHANGELOG.md` Section 8 for similar bugs
    - Search `LOOP_PLAYER_DOCUMENTATION.md` Troubleshooting section
 
 2. **Gather context**:
@@ -85,7 +85,7 @@ docs/archive/*                  → Historical documentation archive (read-only)
    - Make code changes
    - Test thoroughly
 
-4. **Document in CODE_DOCUMENTATION.md Section 8**:
+4. **Document in CHANGELOG.md Section 8**:
    ```markdown
    ### Bug #X: [Title]
    **Date:** [Date]
@@ -139,8 +139,8 @@ keherwa_4_4_fast_qawalli_LOOP1.wav
 
 **DON'T**: Create separate markdown files for each issue in repo root
 **DO**: Update existing main documents:
-- Bug? → `CODE_DOCUMENTATION.md` Section 8
-- New feature? → `CODE_DOCUMENTATION.md` Section 9
+- Bug? → `CHANGELOG.md` Section 8
+- New feature? → `CHANGELOG.md` Section 9
 - Loop system change? → `LOOP_PLAYER_DOCUMENTATION.md`
 - Major feature docs? → Update `README.md` overview
 
@@ -152,7 +152,7 @@ keherwa_4_4_fast_qawalli_LOOP1.wav
 
 1. **Make code changes**
 2. **Test changes**
-3. **Update `CODE_DOCUMENTATION.md`** (mandatory)
+3. **Update `CHANGELOG.md`** (mandatory)
 4. **Update feature-specific docs** if needed:
    - Loop changes → `LOOP_PLAYER_DOCUMENTATION.md`
 5. **Update version number** in header
@@ -162,13 +162,13 @@ keherwa_4_4_fast_qawalli_LOOP1.wav
 
 ```bash
 # Find bug documentation
-grep -n "Bug #" CODE_DOCUMENTATION.md
+grep -n "Bug #" CHANGELOG.md
 
 # Find loop system info
 grep -n "Matching Logic" LOOP_PLAYER_DOCUMENTATION.md
 
 # Find recent changes
-head -100 CODE_DOCUMENTATION.md  # Check version and last updated
+head -100 CHANGELOG.md  # Check version and last updated
 
 # Find specific feature
 grep -r "feature_name" *.md
@@ -189,7 +189,7 @@ grep -r "feature_name" *.md
 - **Last Major Fix**: Genre array matching bug (Bug #5)
 
 ### Known Issues
-- None critical (see CODE_DOCUMENTATION.md Section 8 for resolved bugs)
+- None critical (see CHANGELOG.md Section 8 for resolved bugs)
 
 ### Active Features
 - Loop player with 6-pad interface
@@ -203,13 +203,13 @@ grep -r "feature_name" *.md
 ## 📋 Quick Checklist for AI
 
 Before answering questions:
-- [ ] Check CODE_DOCUMENTATION.md for history
+- [ ] Check CHANGELOG.md for history
 - [ ] Check feature-specific docs (LOOP_PLAYER, etc.)
 - [ ] Verify current version numbers
 - [ ] Look at actual code if docs unclear
 
 After making changes:
-- [ ] Update CODE_DOCUMENTATION.md
+- [ ] Update CHANGELOG.md
 - [ ] Update feature-specific docs if needed
 - [ ] Update version number
 - [ ] Include file paths and line numbers
@@ -219,7 +219,7 @@ After making changes:
 
 ## 💡 Tips for Better Understanding
 
-1. **Start with CODE_DOCUMENTATION.md** - Has complete project history
+1. **Start with CHANGELOG.md** - Has complete project history
 2. **For loop issues** → LOOP_PLAYER_DOCUMENTATION.md has all details
 3. **Data structures matter** - Songs use arrays/numbers, loops use strings/categories
 4. **Only 6 files to check** - Much easier to find information now!

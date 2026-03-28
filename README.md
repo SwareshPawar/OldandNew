@@ -47,6 +47,19 @@ Open the main app at `http://localhost:3001` or the admin pages at `http://local
 
 ---
 
+## Documentation
+
+All technical documentation is now organized in the `docs/` folder.
+
+- Start here: [docs/INDEX.md](docs/INDEX.md)
+- Architecture: [docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md)
+- Function reference: [docs/FUNCTION_INVENTORY.md](docs/FUNCTION_INVENTORY.md)
+- Known issues and duplication: [docs/CODE_ISSUES_AND_DUPLICATION.md](docs/CODE_ISSUES_AND_DUPLICATION.md)
+- Loop system: [docs/LOOPS_ARCHITECTURE.md](docs/LOOPS_ARCHITECTURE.md)
+- Changelog/history: [docs/CHANGELOG.md](docs/CHANGELOG.md)
+
+---
+
 ## Environments
 
 This app runs in two environments. API URL resolution is centralized in `scripts/core/api-base.js` — there is no duplication.
@@ -148,13 +161,11 @@ Shared backend utilities under `utils/`:
 
 ```
 OldandNew/
-│
 ├── index.html                      # Main SPA entry point
 ├── main.js                         # App bootstrap, orchestration, global state
 ├── styles.css                      # Application styles
 ├── server.js                       # Express backend + all API routes
 ├── service-worker.js               # Minimal PWA (install/activate only)
-│
 ├── scripts/                        # Extracted frontend modules (IIFE + window.* pattern)
 │   ├── core/
 │   │   ├── api-base.js             # window.AppApiBase — API URL resolution
@@ -162,19 +173,10 @@ OldandNew/
 │   ├── shared/
 │   │   ├── admin-page.js           # window.AdminPage — alerts, auth banner, audio preview
 │   │   ├── rhythm-set.js           # window.RhythmSetUtils — family/ID normalization
-│   │   ├── chord-normalization.js  # window.ChordNormalization — accidental normalization
-│   │   └── dom.js                  # window.DOMHelpers — modal, search history, highlightText
-│   └── features/
-│       ├── auth-ui.js              # window.AuthUI — login/register/logout button state
-│       ├── password-reset.js       # window.PasswordResetUI — OTP flow
 │       ├── songs-ui.js             # window.SongsUI — song list load/render/count
 │       ├── song-crud-ui.js         # window.SongCRUDUI — edit/delete modal flows
 │       ├── song-preview-ui.js      # window.SongPreviewUI — preview, transpose, auto-scroll
-│       ├── setlists.js             # window.SetlistsUI — global/personal setlist CRUD
-│       ├── smart-setlists.js       # window.SmartSetlistsUI — server-backed smart setlists
-│       ├── rhythm-sets.js          # window.RhythmSetsUI — rhythm-set admin tab
 │       ├── admin-ui.js             # window.AdminUI — user management, recommendation weights
-│       └── mobile-ui.js            # window.MobileUI — touch nav, draggable panels
 │
 ├── loop-player-pad.js              # Web Audio API loop engine (6 pads + melodic crossfade)
 ├── loop-player-pad-ui.js           # Loop player UI: pad interface, resolution, metadata cache
@@ -203,11 +205,9 @@ OldandNew/
 │   └── rhythm-set.js               # Backend rhythm-set helpers
 │
 ├── api/
-│   └── index.js                    # Vercel serverless entry (re-exports server.js)
 │
 ├── loops/
 │   ├── loops-metadata.json         # Rhythm loop file registry and conditions
-│   └── melodies/                   # Melodic samples: atmosphere_*.wav, tanpura_*.wav
 │
 ├── uploads/
 │   └── loops/                      # Uploaded rhythm loop audio files (.wav/.mp3)
@@ -215,17 +215,7 @@ OldandNew/
 ├── legacy/
 │   └── runtime/                    # Archived deprecated files (Phase 5 audit)
 │                                   # loop-player.js, rhythm-sets-manager.js, etc.
-│
-├── docs/
-│   ├── CODEBASE_GUIDE.md           # Architecture overview, data flow, API surface, admin features
-│   ├── FUNCTION_INVENTORY.md       # Per-file function inventory for all active JS files
-│   ├── CODE_ISSUES_AND_DUPLICATION.md  # Technical debt, duplication, cleanup backlog
-│   └── REFACTOR_PLAN.md            # Phased refactor implementation log (Phases 1–6 complete)
-│
-├── backups/                        # Manual code backups (not part of runtime)
-├── scripts/ (migration)            # One-off migration and validation scripts at root level
 └── vercel.json                     # Vercel deployment config
-```
 
 ---
 
@@ -242,7 +232,7 @@ The active runtime uses a **deterministic `rhythmSetId` resolution** model:
 
 Melodic pads (atmosphere/tanpura) use a **recursive crossfade scheduling chain** — each loop boundary creates a new source that fades in while the old one fades out (2.0 s start/stop, 1.5 s crossfade). Audio graph: `Source → sourceGain → pad.gainNode → destination`.
 
-See [LOOP_PLAYER_DOCUMENTATION.md](LOOP_PLAYER_DOCUMENTATION.md) for the full reference.
+See [docs/LOOP_PLAYER_DOCUMENTATION.md](docs/LOOP_PLAYER_DOCUMENTATION.md) for the full reference.
 
 ### Admin Workflow (Two-Screen Design)
 
@@ -309,9 +299,9 @@ Songs use a numeric `id` field (not MongoDB's `_id`):
 
 | File | Contents |
 |---|---|
-| [LOOP_PLAYER_DOCUMENTATION.md](LOOP_PLAYER_DOCUMENTATION.md) | Loop player subsystem: crossfade architecture, file naming, matching logic, API contracts, function reference |
-| [CHORD_ACCIDENTAL_NORMALIZATION.md](CHORD_ACCIDENTAL_NORMALIZATION.md) | Chord accidental normalization policy and conversion tables |
-| [RHYTHM_SET_PROFILE_LEARNING_PLAN.md](RHYTHM_SET_PROFILE_LEARNING_PLAN.md) | Rhythm set profile learning system: implementation plan, profile schema, scoring algorithm, CLI tools |
+| [docs/LOOP_PLAYER_DOCUMENTATION.md](docs/LOOP_PLAYER_DOCUMENTATION.md) | Loop player subsystem: crossfade architecture, file naming, matching logic, API contracts, function reference |
+| [docs/CHORD_ACCIDENTAL_NORMALIZATION.md](docs/CHORD_ACCIDENTAL_NORMALIZATION.md) | Chord accidental normalization policy and conversion tables |
+| [docs/RHYTHM_SET_PROFILE_LEARNING_PLAN.md](docs/RHYTHM_SET_PROFILE_LEARNING_PLAN.md) | Rhythm set profile learning system: implementation plan, profile schema, scoring algorithm, CLI tools |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development workflow, coding standards, commit process |
 
 ### Documentation lookup order

@@ -317,13 +317,13 @@ node scripts/core/check-rhythm-set-songs.js "drum4-4_4"
 node scripts/core/suggest-rhythm-assignments.js "Sweetheart Hain" --min-score=45 --unassigned
 
 # Review generated report
-cat rhythm-assignment-suggestions-2026-03-28.md
+ls -1 rhythm-assignment-suggestions-*.md
 
 # Auto-apply high-confidence matches
 node scripts/core/suggest-rhythm-assignments.js "Song Title" --min-score=70 --apply
 ```
 
-**Documentation**: See RHYTHM_SET_PROFILE_LEARNING_PLAN.md for complete implementation details and CODE_DOCUMENTATION.md Session #10.
+**Documentation**: See docs/RHYTHM_SET_PROFILE_LEARNING_PLAN.md for complete implementation details and CHANGELOG.md Session #10.
 
 Related HTML pages:
 

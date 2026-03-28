@@ -43,7 +43,7 @@ Thank you for considering contributing to this project! This guide will help you
 
 5. **Read the documentation**
    ```bash
-   # Open and read CODE_DOCUMENTATION.md
+   # Open and read docs/CHANGELOG.md
    # Pay special attention to the "DOCUMENTATION MAINTENANCE HOOK" section
    ```
 
@@ -63,7 +63,7 @@ This is **not optional**. The project uses a Documentation Maintenance Hook to e
 
 ### What to Document
 
-**Every change must be added to `CODE_DOCUMENTATION.md` in the appropriate section:**
+**Every change must be added to `docs/CHANGELOG.md` in the appropriate section:**
 
 | Change Type | Documentation Section | Format |
 |-------------|----------------------|--------|
@@ -135,7 +135,7 @@ When you commit code changes:
 
 1. **Pre-commit hook runs automatically**
 2. **Checks if you modified code files** (`.js`, `.html`, `.css`)
-3. **Verifies `CODE_DOCUMENTATION.md` is also staged**
+3. **Verifies `docs/CHANGELOG.md` is also staged**
 4. **Confirms documentation was actually modified** (not just staged unchanged)
 5. **Asks you to verify documentation is complete**
 6. **Only then allows the commit**
@@ -147,7 +147,7 @@ When you commit code changes:
 ### Before Starting Work
 
 1. **Check existing documentation**
-   - Read `CODE_DOCUMENTATION.md` for current state
+   - Read `docs/CHANGELOG.md` for current state
    - Look for related bugs/features already documented
    - Understand the architecture sections
 
@@ -174,7 +174,7 @@ When you commit code changes:
 
 ### Before Committing
 
-1. **Update CODE_DOCUMENTATION.md**
+1. **Update docs/CHANGELOG.md**
    - Add your changes in the appropriate section
    - Follow the template format
    - Include code snippets for critical changes
@@ -184,7 +184,7 @@ When you commit code changes:
 2. **Stage your changes**
    ```bash
    git add main.js server.js  # Your code files
-   git add CODE_DOCUMENTATION.md  # CRITICAL!
+   git add docs/CHANGELOG.md  # CRITICAL!
    ```
 
 3. **Commit**
@@ -287,7 +287,7 @@ Brief description (Bug #X or Session #X)
 Longer explanation if needed. Reference the documentation
 section where details can be found.
 
-See CODE_DOCUMENTATION.md Section 8, Bug #2 for full details.
+See docs/CHANGELOG.md Section 8, Bug #2 for full details.
 ```
 
 ### Good Commit Messages
@@ -342,7 +342,7 @@ See CODE_DOCUMENTATION.md Section 8, Bug #2 for full details.
    [Brief overview of changes]
    
    ## Documentation
-   - See CODE_DOCUMENTATION.md Section X
+   - See docs/CHANGELOG.md Section X
    - Bug #X or Session #X
    
    ## Testing
@@ -364,7 +364,7 @@ See CODE_DOCUMENTATION.md Section 8, Bug #2 for full details.
 
 Reviewers will check:
 
-- [ ] CODE_DOCUMENTATION.md updated appropriately
+- [ ] docs/CHANGELOG.md updated appropriately
 - [ ] Code follows style guidelines
 - [ ] No obvious security issues
 - [ ] Performance is acceptable
@@ -395,7 +395,7 @@ git commit --no-verify
 
 If you bypass the hook, you **must** document immediately after.
 
-### ❌ Never modify CODE_DOCUMENTATION.md without code changes
+### ❌ Never modify docs/CHANGELOG.md without code changes
 
 Documentation should reflect actual code. Don't document future plans or ideas in this file.
 
@@ -438,7 +438,7 @@ Documentation should reflect actual code. Don't document future plans or ideas i
 
 ## 📞 Questions?
 
-- Read `CODE_DOCUMENTATION.md` first
+- Read `docs/CHANGELOG.md` first
 - Check if your question is answered in this document
 - Look at existing bug/session documentation for examples
 - Contact project maintainers

@@ -41,7 +41,7 @@
 - `loop-player-pad.js`
 - `loop-player-pad-ui.js`
 - `loop-rhythm-manager.js`
-- `CODE_DOCUMENTATION.md`
+- `CHANGELOG.md`
 
 ### Validation
 - ✅ Same-slot re-upload now replaces instead of duplicating metadata

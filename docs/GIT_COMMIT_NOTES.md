@@ -34,7 +34,7 @@ Fixed two linked issues in Loop & Rhythm Set Manager and loop player:
 4. **loop-rhythm-manager.js**
    - After successful upload, writes `localStorage.setItem('loopFilesReplacedAt', Date.now().toString())`
 
-5. **CODE_DOCUMENTATION.md**
+5. **CHANGELOG.md**
    - Added Bug #10 entry
    - Added Session 7 documentation update
    - Updated version to 1.20.2 and last-updated timestamp
@@ -54,14 +54,14 @@ Fix loop replacement dedup + stale playback cache (Bug #10)
 - Add loop replacement signal from manager UI
 - Force loop player reload and bypass browser cache after replacements
 
-See CODE_DOCUMENTATION.md Section 8, Bug #10.
+See CHANGELOG.md Section 8, Bug #10.
 
 Files modified:
 - server.js
 - loop-player-pad.js
 - loop-player-pad-ui.js
 - loop-rhythm-manager.js
-- CODE_DOCUMENTATION.md
+- CHANGELOG.md
 ```
 
 ## Impact
