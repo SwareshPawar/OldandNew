@@ -229,94 +229,99 @@ function applyReadOnlyModeUI() {
 function setupQuickPlayListeners() {
     const setSelect = document.getElementById('quickRhythmSetSelect');
     if (setSelect) {
-        setSelect.addEventListener('change', updateQuickLoopOptions);
+        setSelect.addEventListener('change', handleQuickRhythmSetChange);
     }
 }
 
 function updateQuickPlayControls() {
     const setSelect = document.getElementById('quickRhythmSetSelect');
     const setInfo = document.getElementById('quickSetInfo');
+    const previewBox = document.getElementById('quickRhythmSetPreview');
     if (!setSelect || !setInfo) return;
 
     setSelect.innerHTML = '<option value="">Select rhythm set ID...</option>';
     rhythmSets.forEach(set => {
         const availableCount = (set.availableFiles || []).length;
+        const notesText = typeof set.notes === 'string' ? set.notes.trim() : '';
         const option = document.createElement('option');
         option.value = set.rhythmSetId;
-        option.textContent = `${set.rhythmSetId} (${availableCount}/6)`;
+        option.textContent = notesText
+            ? `${set.rhythmSetId} - ${notesText} (${availableCount}/6)`
+            : `${set.rhythmSetId} (${availableCount}/6)`;
         setSelect.appendChild(option);
     });
 
-    if (rhythmSets.length > 0) {
-        setSelect.value = rhythmSets[0].rhythmSetId;
+    setSelect.value = '';
+    setInfo.textContent = 'Select a rhythm set to open the loop player';
+    if (previewBox) {
+        previewBox.style.display = 'none';
     }
-
-    setInfo.textContent = `${rhythmSets.length} rhythm set IDs loaded`;
-    updateQuickLoopOptions();
 }
 
-function updateQuickLoopOptions() {
+async function handleQuickRhythmSetChange() {
     const setSelect = document.getElementById('quickRhythmSetSelect');
-    const loopSelect = document.getElementById('quickLoopTypeSelect');
     const quickInfo = document.getElementById('quickSetInfo');
-    if (!setSelect || !loopSelect || !quickInfo) return;
+    const previewBox = document.getElementById('quickRhythmSetPreview');
+    const previewId = document.getElementById('quickPreviewRhythmSetId');
+    const previewNotes = document.getElementById('quickPreviewRhythmSetNotes');
+    if (!setSelect || !quickInfo) return;
 
     const rhythmSetId = setSelect.value;
     const selectedSet = rhythmSets.find(set => set.rhythmSetId === rhythmSetId);
-    loopSelect.innerHTML = '<option value="">Select loop...</option>';
 
     if (!selectedSet) {
-        quickInfo.textContent = `${rhythmSets.length} rhythm set IDs loaded`;
+        quickInfo.textContent = 'Select a rhythm set to open the loop player';
+        if (previewBox) {
+            previewBox.style.display = 'none';
+        }
+        closeLoopPlayer();
         return;
     }
 
-    const orderedTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
-    const available = new Set(selectedSet.availableFiles || []);
-    const files = selectedSet.files || {};
-    let added = 0;
+    const loopCount = (selectedSet.availableFiles || []).length;
+    quickInfo.textContent = `${selectedSet.rhythmSetId} has ${loopCount} loop${loopCount === 1 ? '' : 's'} available`;
+    if (previewId) {
+        previewId.textContent = selectedSet.rhythmSetId || '-';
+    }
+    if (previewNotes) {
+        previewNotes.textContent = selectedSet.notes?.trim() || 'No notes';
+    }
+    if (previewBox) {
+        previewBox.style.display = 'block';
+    }
 
-    orderedTypes.forEach(loopType => {
-        if (!available.has(loopType) || !files[loopType]) return;
-        const option = document.createElement('option');
-        option.value = loopType;
-        option.textContent = `${loopType.toUpperCase()} (${files[loopType]})`;
-        loopSelect.appendChild(option);
-        added += 1;
-    });
-
-    quickInfo.textContent = `${selectedSet.rhythmSetId} has ${added} loop${added === 1 ? '' : 's'} available`;
+    try {
+        await switchQuickPlayerSelection(selectedSet, document.getElementById('quickPlayPanel'));
+    } catch (error) {
+        console.error('Error switching quick player selection:', error);
+        showAlert(error.message, 'error');
+    }
 }
 
-function playQuickLoop() {
-    const setSelect = document.getElementById('quickRhythmSetSelect');
-    const loopSelect = document.getElementById('quickLoopTypeSelect');
-    if (!setSelect || !loopSelect) return;
-
-    const rhythmSetId = setSelect.value;
-    const loopType = loopSelect.value;
-    if (!rhythmSetId || !loopType) {
-        showAlert('Please select a rhythm set and loop', 'warning');
-        return;
-    }
-
-    const selectedSet = rhythmSets.find(set => set.rhythmSetId === rhythmSetId);
-    const filename = selectedSet?.files?.[loopType];
-    if (!filename) {
-        showAlert('Selected loop file is not available', 'error');
-        return;
-    }
-
-    playLoop(rhythmSetId, loopType, filename);
+function getPreferredStartLoop(rhythmSet) {
+    const files = rhythmSet?.files || {};
+    const preferredOrder = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    return preferredOrder.find(loopType => !!files[loopType]) || null;
 }
 
-function openQuickSetPlayer() {
-    const setSelect = document.getElementById('quickRhythmSetSelect');
-    if (!setSelect || !setSelect.value) {
-        showAlert('Please select a rhythm set first', 'warning');
+async function switchQuickPlayerSelection(rhythmSet, anchorElement) {
+    if (!rhythmSet) return;
+
+    if (rhythmManagerPlayer) {
+        rhythmManagerPlayer.pause();
+        rhythmManagerPlayer.nextLoop = null;
+        rhythmManagerPlayer.nextFill = null;
+    }
+
+    await openLoopPlayer(rhythmSet.rhythmSetId, anchorElement);
+
+    const startLoop = getPreferredStartLoop(rhythmSet);
+    if (!startLoop) {
+        showAlert('No playable loops available for this rhythm set.', 'warning');
         return;
     }
 
-    openLoopPlayer(setSelect.value);
+    await startPlayerAtPad(startLoop);
 }
 
 function populateRhythmFamilyList() {
@@ -614,6 +619,7 @@ function renderRhythmSetsTable() {
         const mainRow = document.createElement('tr');
         mainRow.className = 'rhythm-set-row';
         mainRow.id = `row-${index}`;
+        mainRow.dataset.rhythmSetId = set.rhythmSetId;
         if (isSelected) {
             mainRow.style.backgroundColor = '#3a3a5a';
         }
@@ -719,13 +725,23 @@ function renderRhythmSetsTable() {
                 const playButton = document.createElement('button');
                 playButton.className = 'btn btn-primary btn-mini';
                 playButton.disabled = loopCount === 0;
-                playButton.innerHTML = '<i class="fas fa-play"></i> Play Set';
+                playButton.innerHTML = `<i class="fas fa-play-circle"></i> Test in Loop Player (${loopCount}/6 loops)`;
                 playButton.addEventListener('click', (event) => {
                     event.stopPropagation();
-                    openLoopPlayer(set.rhythmSetId);
+                    openLoopPlayer(set.rhythmSetId, mainRow);
                 });
                 actionsCell.appendChild(playButton);
             } else {
+                const testButton = document.createElement('button');
+                testButton.className = 'btn btn-success btn-mini';
+                testButton.style.marginRight = '5px';
+                testButton.disabled = loopCount === 0;
+                testButton.innerHTML = `<i class="fas fa-play-circle"></i> Test in Loop Player (${loopCount}/6 loops)`;
+                testButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    openLoopPlayer(set.rhythmSetId, mainRow);
+                });
+
                 const editButton = document.createElement('button');
                 editButton.className = 'btn btn-primary btn-mini';
                 editButton.style.marginRight = '5px';
@@ -753,6 +769,7 @@ function renderRhythmSetsTable() {
                     deleteRhythmSet(set.rhythmSetId);
                 });
 
+                actionsCell.appendChild(testButton);
                 actionsCell.appendChild(editButton);
                 actionsCell.appendChild(duplicateButton);
                 actionsCell.appendChild(deleteButton);
@@ -912,22 +929,6 @@ function renderLoopSlots(rhythmSet) {
         grid.appendChild(slot);
     });
 
-    // Add "Test in Loop Player" button if rhythm set has loops
-    if (availableFiles.length > 0) {
-        const testContainer = document.createElement('div');
-        testContainer.style.cssText = 'margin-top: 15px; text-align: center;';
-        const testBtn = document.createElement('button');
-        testBtn.className = 'btn btn-primary loop-set-test-btn';
-        testBtn.dataset.rhythmSetId = encodedRhythmSetId;
-        testBtn.style.cssText = 'padding: 12px 30px; font-size: 14px;';
-        const testIcon = document.createElement('i');
-        testIcon.className = 'fas fa-play-circle';
-        testBtn.appendChild(testIcon);
-        testBtn.appendChild(document.createTextNode(` Test in Loop Player (${availableFiles.length}/6 loops)`));
-        testContainer.appendChild(testBtn);
-        fragment.appendChild(testContainer);
-    }
-
     return fragment;
 }
 
@@ -1020,13 +1021,6 @@ function bindLoopSlotInteractions(containerElement) {
         });
     });
 
-    const testButtons = containerElement.querySelectorAll('.loop-set-test-btn');
-    testButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
-            openLoopPlayer(rhythmSetId);
-        });
-    });
 }
 
 async function playLoop(rhythmSetId, loopType, filename) {
@@ -2118,11 +2112,98 @@ function escapeHtml(text) {
 
 let rhythmManagerPlayer = null;
 let currentPlayerRhythmSet = null;
+let loopPlayerOriginalParent = null;
+let loopPlayerOriginalNextSibling = null;
+
+function getRhythmSetMainRow(rhythmSetId) {
+    return Array.from(document.querySelectorAll('tr.rhythm-set-row')).find(
+        row => row.dataset.rhythmSetId === rhythmSetId
+    ) || null;
+}
+
+function rememberLoopPlayerOriginalPosition() {
+    const playerPanel = document.getElementById('loopPlayerPanel');
+    if (!playerPanel) return;
+
+    if (!loopPlayerOriginalParent) {
+        loopPlayerOriginalParent = playerPanel.parentNode;
+        loopPlayerOriginalNextSibling = playerPanel.nextSibling;
+    }
+}
+
+function moveLoopPlayerInline(anchorRow) {
+    const playerPanel = document.getElementById('loopPlayerPanel');
+    if (!playerPanel || !anchorRow) return;
+
+    rememberLoopPlayerOriginalPosition();
+
+    const existingInlineRow = document.getElementById('inlineLoopPlayerRow');
+    if (existingInlineRow) {
+        existingInlineRow.remove();
+    }
+
+    const inlineRow = document.createElement('tr');
+    inlineRow.id = 'inlineLoopPlayerRow';
+    inlineRow.className = 'loop-player-inline-row';
+
+    const inlineCell = document.createElement('td');
+    inlineCell.colSpan = 8;
+    inlineCell.style.padding = '0 0 12px 0';
+    inlineCell.appendChild(playerPanel);
+    inlineRow.appendChild(inlineCell);
+
+    const nextRow = anchorRow.nextElementSibling;
+    const insertAfter = nextRow && nextRow.classList.contains('loop-details-row')
+        ? nextRow
+        : anchorRow;
+    insertAfter.insertAdjacentElement('afterend', inlineRow);
+}
+
+function moveLoopPlayerAfterElement(anchorElement) {
+    const playerPanel = document.getElementById('loopPlayerPanel');
+    if (!playerPanel || !anchorElement) return;
+
+    rememberLoopPlayerOriginalPosition();
+
+    const existingInlineRow = document.getElementById('inlineLoopPlayerRow');
+    if (existingInlineRow) {
+        existingInlineRow.remove();
+    }
+
+    anchorElement.insertAdjacentElement('afterend', playerPanel);
+}
+
+function moveLoopPlayerToAnchor(anchorElement) {
+    if (!anchorElement) return;
+
+    if (anchorElement.tagName === 'TR') {
+        moveLoopPlayerInline(anchorElement);
+        return;
+    }
+
+    moveLoopPlayerAfterElement(anchorElement);
+}
+
+function restoreLoopPlayerPosition() {
+    const playerPanel = document.getElementById('loopPlayerPanel');
+    if (!playerPanel || !loopPlayerOriginalParent) return;
+
+    const inlineRow = document.getElementById('inlineLoopPlayerRow');
+    if (!inlineRow) return;
+
+    if (loopPlayerOriginalNextSibling && loopPlayerOriginalNextSibling.parentNode === loopPlayerOriginalParent) {
+        loopPlayerOriginalParent.insertBefore(playerPanel, loopPlayerOriginalNextSibling);
+    } else {
+        loopPlayerOriginalParent.appendChild(playerPanel);
+    }
+
+    inlineRow.remove();
+}
 
 /**
  * Open loop player for a specific rhythm set
  */
-async function openLoopPlayer(rhythmSetId) {
+async function openLoopPlayer(rhythmSetId, anchorElement = null) {
     const rhythmSet = rhythmSets.find(s => s.rhythmSetId === rhythmSetId);
     if (!rhythmSet) {
         showAlert('Rhythm set not found', 'error');
@@ -2137,11 +2218,15 @@ async function openLoopPlayer(rhythmSetId) {
     }
 
     currentPlayerRhythmSet = rhythmSet;
+    const resolvedAnchorElement = anchorElement || getRhythmSetMainRow(rhythmSetId);
 
     // Show the player panel
     const playerPanel = document.getElementById('loopPlayerPanel');
+    if (resolvedAnchorElement) {
+        moveLoopPlayerToAnchor(resolvedAnchorElement);
+    }
     playerPanel.style.display = 'block';
-    playerPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    playerPanel.scrollIntoView({ behavior: 'smooth', block: resolvedAnchorElement ? 'nearest' : 'start' });
 
     try {
         // Create or reuse player instance
@@ -2322,7 +2407,95 @@ function createSimplePlayerUI(rhythmSet) {
     `;
     
     container.innerHTML = html;
+
+    if (rhythmManagerPlayer) {
+        rhythmManagerPlayer.onStartSelectionChange = () => {
+            updateSimplePlayerPadSelection(container);
+            const status = document.getElementById('playerStatus');
+            if (status && !rhythmManagerPlayer.isPlaying) {
+                setPlayerStatus(status, 'fa-info-circle', getSimplePlayerStartStatusText());
+            }
+        };
+
+        rhythmManagerPlayer.onPadActive = (padName) => {
+            updateSimplePlayerPadSelection(container, padName);
+        };
+
+        rhythmManagerPlayer.onLoopChange = (padName) => {
+            const status = document.getElementById('playerStatus');
+            if (status && padName) {
+                setPlayerStatus(
+                    status,
+                    padName.startsWith('fill') ? 'fa-bolt' : 'fa-play-circle',
+                    `Playing ${formatSimplePlayerPadName(padName)}...`
+                );
+            }
+        };
+    }
+
     bindPlayerUIControls(container);
+    updateSimplePlayerPadSelection(container);
+
+    const status = document.getElementById('playerStatus');
+    if (status) {
+        setPlayerStatus(status, 'fa-info-circle', getSimplePlayerStartStatusText());
+    }
+}
+
+function formatSimplePlayerPadName(padName) {
+    return String(padName || '').replace(/(\d+)/, ' $1').toUpperCase();
+}
+
+function getSimplePlayerStartSelection() {
+    const selection = typeof rhythmManagerPlayer?.getStartSelection === 'function'
+        ? rhythmManagerPlayer.getStartSelection()
+        : { loopName: null, fillName: null };
+
+    return {
+        loopName: selection.loopName || 'loop1',
+        fillName: selection.fillName || null
+    };
+}
+
+function getSimplePlayerStartStatusText() {
+    const startSelection = getSimplePlayerStartSelection();
+
+    if (startSelection.fillName) {
+        return `Start: ${formatSimplePlayerPadName(startSelection.fillName)} -> ${formatSimplePlayerPadName(startSelection.loopName)}`;
+    }
+
+    return `Start: ${formatSimplePlayerPadName(startSelection.loopName)}`;
+}
+
+function updateSimplePlayerPadSelection(container, activePadName = null) {
+    if (!container || !rhythmManagerPlayer) return;
+
+    const startSelection = getSimplePlayerStartSelection();
+    const padButtons = container.querySelectorAll('.loop-pad-btn[data-pad]');
+
+    padButtons.forEach(button => {
+        const padName = button.dataset.pad || '';
+        const isPlayingPad = rhythmManagerPlayer.isPlaying && padName === activePadName;
+        const isStartSelected = !rhythmManagerPlayer.isPlaying
+            && (padName === startSelection.loopName || padName === startSelection.fillName);
+
+        if (isPlayingPad) {
+            button.style.boxShadow = '0 0 0 3px rgba(243, 156, 18, 0.6), 0 8px 18px rgba(0, 0, 0, 0.28)';
+            button.style.transform = 'translateY(-2px)';
+            button.style.filter = 'brightness(1.1)';
+            button.style.outline = 'none';
+        } else if (isStartSelected) {
+            button.style.boxShadow = '0 0 0 2px rgba(133, 193, 233, 0.75), 0 4px 10px rgba(0, 0, 0, 0.2)';
+            button.style.transform = 'translateY(-1px)';
+            button.style.filter = 'brightness(1.04)';
+            button.style.outline = '1px solid rgba(133, 193, 233, 0.35)';
+        } else {
+            button.style.boxShadow = '';
+            button.style.transform = '';
+            button.style.filter = '';
+            button.style.outline = '';
+        }
+    });
 }
 
 function bindPlayerUIControls(container) {
@@ -2382,22 +2555,62 @@ async function playLoopPad(padName) {
     if (!rhythmManagerPlayer) return;
     
     try {
+        const status = document.getElementById('playerStatus');
+
+        if (!rhythmManagerPlayer.isPlaying) {
+            if (padName.startsWith('fill')) {
+                rhythmManagerPlayer.playFill(padName);
+            } else {
+                rhythmManagerPlayer.switchToLoop(padName);
+            }
+
+            updateSimplePlayerPadSelection(document.getElementById('loopPlayerContainer'));
+            setPlayerStatus(status, padName.startsWith('fill') ? 'fa-bolt' : 'fa-play-circle', getSimplePlayerStartStatusText());
+            return;
+        }
+
         // Initialize audio context if needed (requires user gesture)
         await rhythmManagerPlayer.initialize();
         
-        const status = document.getElementById('playerStatus');
-        
         if (padName.startsWith('fill')) {
             rhythmManagerPlayer.playFill(padName);
-            setPlayerStatus(status, 'fa-bolt', `Playing ${padName.toUpperCase()}...`);
+            setPlayerStatus(status, 'fa-bolt', `Playing ${formatSimplePlayerPadName(padName)}...`);
         } else {
             rhythmManagerPlayer.switchToLoop(padName);
             await rhythmManagerPlayer.play();
-            setPlayerStatus(status, 'fa-play-circle', `Playing ${padName.toUpperCase()}...`);
+            setPlayerStatus(status, 'fa-play-circle', `Playing ${formatSimplePlayerPadName(padName)}...`);
         }
     } catch (error) {
         console.error('Error playing pad:', error);
         showAlert(error.message, 'error');
+    }
+}
+
+async function startPlayerAtPad(padName) {
+    if (!rhythmManagerPlayer || !padName) return;
+
+    try {
+        rhythmManagerPlayer.pause();
+        rhythmManagerPlayer.clearStartSelection(false);
+
+        if (padName.startsWith('fill')) {
+            rhythmManagerPlayer.setStartFill(padName);
+        } else {
+            rhythmManagerPlayer.setStartLoop(padName);
+        }
+
+        await rhythmManagerPlayer.play();
+
+        const status = document.getElementById('playerStatus');
+        const startSelection = getSimplePlayerStartSelection();
+        const statusLabel = startSelection.fillName ? 'fa-bolt' : 'fa-play-circle';
+        const statusMessage = startSelection.fillName
+            ? `Starting ${formatSimplePlayerPadName(startSelection.fillName)} -> ${formatSimplePlayerPadName(startSelection.loopName)}...`
+            : `Playing ${formatSimplePlayerPadName(startSelection.loopName)}...`;
+        setPlayerStatus(status, statusLabel, statusMessage);
+    } catch (error) {
+        console.error('Error starting player at pad:', error);
+        throw error;
     }
 }
 
@@ -2412,7 +2625,12 @@ async function startPlayer() {
         await rhythmManagerPlayer.play();
         
         const status = document.getElementById('playerStatus');
-        setPlayerStatus(status, 'fa-play-circle', 'Playing...');
+        const startSelection = getSimplePlayerStartSelection();
+        const statusLabel = startSelection.fillName ? 'fa-bolt' : 'fa-play-circle';
+        const statusMessage = startSelection.fillName
+            ? `Starting ${formatSimplePlayerPadName(startSelection.fillName)} -> ${formatSimplePlayerPadName(startSelection.loopName)}...`
+            : `Playing ${formatSimplePlayerPadName(startSelection.loopName)}...`;
+        setPlayerStatus(status, statusLabel, statusMessage);
     } catch (error) {
         console.error('Error starting player:', error);
         showAlert(error.message, 'error');
@@ -2428,7 +2646,8 @@ function stopPlayer() {
     rhythmManagerPlayer.pause();
     
     const status = document.getElementById('playerStatus');
-    setPlayerStatus(status, 'fa-stop-circle', 'Stopped');
+    updateSimplePlayerPadSelection(document.getElementById('loopPlayerContainer'));
+    setPlayerStatus(status, 'fa-stop-circle', `${getSimplePlayerStartStatusText()} | Stopped`);
 }
 
 /**
@@ -2491,6 +2710,7 @@ function closeLoopPlayer() {
     
     const playerPanel = document.getElementById('loopPlayerPanel');
     playerPanel.style.display = 'none';
+    restoreLoopPlayerPosition();
     
     currentPlayerRhythmSet = null;
 }

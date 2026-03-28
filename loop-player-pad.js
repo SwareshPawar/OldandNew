@@ -27,6 +27,8 @@ class LoopPlayerPad {
         this.currentLoop = 'loop1';
         this.nextLoop = null;
         this.nextFill = null;
+        this.startLoopSelection = null;
+        this.startFillSelection = null;
         this.loopTimeout = null;
         
         // Melodic pads state
@@ -69,6 +71,7 @@ class LoopPlayerPad {
         // Callbacks
         this.onLoopChange = null;
         this.onPadActive = null;
+        this.onStartSelectionChange = null;
         this.onMelodicPadToggle = null;
         this.onMelodicError = null;
         this.onError = null;
@@ -211,6 +214,7 @@ class LoopPlayerPad {
             console.log(forceReload ? '🔄 Force-reloading loop files (post-upload refresh)' : '🗑️ Clearing old loop data');
             this.rawAudioData.clear();
             this.audioBuffers.clear();
+            this.clearStartSelection(false);
         }
 
         // Only fetch raw audio data (don't decode yet - requires user gesture)
@@ -231,6 +235,81 @@ class LoopPlayerPad {
         await Promise.all(loadPromises);
         
         console.log(`Successfully fetched ${this.rawAudioData.size} loop files for song ${songId}`);
+    }
+
+    _emitStartSelectionChange() {
+        if (typeof this.onStartSelectionChange === 'function') {
+            this.onStartSelectionChange(this.getStartSelection());
+        }
+    }
+
+    getStartSelection() {
+        return {
+            loopName: this.startLoopSelection,
+            fillName: this.startFillSelection
+        };
+    }
+
+    clearStartSelection(notify = true) {
+        this.startLoopSelection = null;
+        this.startFillSelection = null;
+        if (notify) {
+            this._emitStartSelectionChange();
+        }
+    }
+
+    setStartLoop(loopName) {
+        if (loopName !== null && !['loop1', 'loop2', 'loop3'].includes(loopName)) {
+            return;
+        }
+
+        this.startLoopSelection = loopName;
+        this._emitStartSelectionChange();
+    }
+
+    setStartFill(fillName) {
+        if (fillName !== null && !['fill1', 'fill2', 'fill3'].includes(fillName)) {
+            return;
+        }
+
+        this.startFillSelection = fillName;
+        this._emitStartSelectionChange();
+    }
+
+    _getResolvedStartSequence() {
+        return {
+            loopName: this.startLoopSelection || 'loop1',
+            fillName: this.startFillSelection || null
+        };
+    }
+
+    _startPlaybackSequence(fillName, loopName) {
+        const targetLoop = ['loop1', 'loop2', 'loop3'].includes(loopName) ? loopName : 'loop1';
+        const fillBuffer = fillName ? this.audioBuffers.get(fillName) : null;
+
+        this.currentLoop = targetLoop;
+        this.nextLoop = null;
+        this.nextFill = null;
+
+        if (!fillName || !fillBuffer) {
+            if (this.onPadActive && targetLoop) this.onPadActive(targetLoop);
+            if (this.onLoopChange) this.onLoopChange(targetLoop);
+            this._playLoop(targetLoop, true);
+            return;
+        }
+
+        if (this.onPadActive) this.onPadActive(fillName);
+        if (this.onLoopChange) this.onLoopChange(fillName);
+        this._playLoop(fillName, false);
+
+        const fillDuration = fillBuffer.duration / this.playbackRate;
+        this.loopTimeout = setTimeout(() => {
+            if (!this.isPlaying) return;
+
+            if (this.onPadActive && targetLoop) this.onPadActive(targetLoop);
+            if (this.onLoopChange) this.onLoopChange(targetLoop);
+            this._playLoop(targetLoop, true);
+        }, fillDuration * 1000);
     }
     
     /**
@@ -345,7 +424,8 @@ class LoopPlayerPad {
             // Now start actual playback
             this.isPlaying = true;
             this.isInitializing = false;
-            this._playLoop(this.currentLoop, true);
+            const startSequence = this._getResolvedStartSequence();
+            this._startPlaybackSequence(startSequence.fillName, startSequence.loopName);
             
         } catch (error) {
             this.isInitializing = false;
@@ -462,6 +542,8 @@ class LoopPlayerPad {
         if (!this.isPlaying) return;
         
         this.isPlaying = false;
+        this.nextLoop = null;
+        this.nextFill = null;
         
         // Stop current source
         if (this.currentSource) {
@@ -492,6 +574,11 @@ class LoopPlayerPad {
             return;
         }
 
+        if (!this.isPlaying) {
+            this.setStartLoop(loopName);
+            return;
+        }
+
         // If auto-fill is on, queue fill matching the CURRENT loop (source)
         if (this.autoFill && loopName !== this.currentLoop) {
             const currentLoopNum = this.currentLoop.replace('loop', '');
@@ -507,6 +594,11 @@ class LoopPlayerPad {
      */
     playFill(fillName) {
         if (!['fill1', 'fill2', 'fill3'].includes(fillName)) {
+            return;
+        }
+
+        if (!this.isPlaying) {
+            this.setStartFill(fillName);
             return;
         }
 

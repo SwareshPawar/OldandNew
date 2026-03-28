@@ -4,8 +4,8 @@
 
 **Old & New Songs Application**  
 **Generated:** February 13, 2026  
-**Last Updated:** March 28, 2026 - Rhythm Set Profile Learning & Loop Management Enhancements  
-**Version:** 1.21.0
+**Last Updated:** March 29, 2026 - Loop Player Start Sequence & Inline Admin Playback Enhancements  
+**Version:** 1.22.0
 
 ---
 
@@ -7556,6 +7556,113 @@ Error: Could not create profile indexes: The field 'unique' is not valid for an 
 
 ---
 
+### Session #12: Loop Player Start Sequence & Inline Admin Playback
+**Date:** March 29, 2026  
+**Status:** ✅ COMPLETED
+
+**Objective:**
+Improve loop-player usability across both the song player and the admin rhythm-set workspace by reducing scroll friction, simplifying quick playback, and allowing users to preselect how playback should begin.
+
+**Problems Solved:**
+1. Rhythm-set testing required scrolling to a fixed player panel instead of opening near the clicked action.
+2. Quick Loop Playback had redundant controls and did not open automatically from selection.
+3. Switching the quick-play dropdown while audio was active required awkward manual stop/restart behavior.
+4. Users could not define a paused start sequence such as `fill2 -> loop2` before pressing Play.
+5. The same visual highlight was being used for both "selected for next start" and "currently sounding", which made the UI ambiguous.
+6. Quick Loop Playback dropdown options did not expose rhythm-set notes inline.
+
+**Implemented Solution:**
+
+**1. Inline Admin Loop Player Mounting**
+**Files:** `loop-rhythm-manager.js`, `loop-rhythm-manager.html`
+
+- Moved "Test in Loop Player" from the expanded details area into the main rhythm-set action row.
+- Added inline mounting helpers so the existing player panel can be temporarily moved under the clicked rhythm-set row.
+- Preserved close behavior by restoring the player panel to its original location when closed.
+- Applied the same mounting idea to Quick Loop Playback so the player opens directly under the quick-play panel.
+
+**2. Quick Loop Playback Simplification**
+**Files:** `loop-rhythm-manager.html`, `loop-rhythm-manager.js`
+
+- Removed the secondary loop dropdown and action buttons from Quick Loop Playback.
+- Changed the primary dropdown to default to an empty selection.
+- Selecting a rhythm set now automatically:
+    - opens the inline player,
+    - loads the selected rhythm set,
+    - updates quick-play info and preview,
+    - starts the preferred first loop automatically.
+- Added rhythm-set notes directly inside dropdown labels and in the quick preview block.
+
+**3. Immediate Rhythm-Set Switching in Quick Playback**
+**Files:** `loop-rhythm-manager.js`
+
+- Dropdown changes now pause current playback, clear queued next loop/fill state, load the new loop set immediately, and auto-start the preferred first loop.
+- This bypasses the old pending-reload behavior for the quick-play admin flow, eliminating the need for manual stop-first interaction.
+
+**4. Paused Start-Sequence Selection in Shared Loop Player**
+**Files:** `loop-player-pad.js`, `loop-player-pad-ui.js`, `loop-rhythm-manager.js`
+
+- Added engine-level paused start-selection state with:
+    - `startLoopSelection`
+    - `startFillSelection`
+    - `getStartSelection()`
+    - `setStartLoop()`
+    - `setStartFill()`
+    - `clearStartSelection()`
+- Updated playback startup so the engine now resolves the start sequence as follows:
+    - No selection: start from `loop1`
+    - Loop only: start from that loop
+    - Fill + loop: start from selected fill, then transition to selected loop
+    - Fill only: start from selected fill, then fall back to `loop1`
+- Updated both the shared song player UI and the admin rhythm manager player so pad clicks while stopped define the next start sequence instead of forcing immediate playback.
+
+**5. Separate CSS/Visual States for Stopped vs Playing Pads**
+**Files:** `loop-player-pad-ui.js`, `loop-rhythm-manager.js`
+
+- Removed the hardcoded default active state from loop1 in the shared player HTML.
+- Added a dedicated stopped-state selection style for pads chosen as the next playback start.
+- Kept the stronger active glow only for the pad that is actually sounding.
+- Adjusted fill behavior so when a fill is sounding, only the fill is highlighted until the destination loop begins.
+- Added parallel visual treatment in the admin simple player using inline button styles for:
+    - current playback,
+    - paused start selection,
+    - neutral state.
+
+**Files Modified:**
+- `loop-rhythm-manager.html`
+- `loop-rhythm-manager.js`
+- `loop-player-pad.js`
+- `loop-player-pad-ui.js`
+- `README.md`
+- `docs/LOOP_PLAYER_DOCUMENTATION.md`
+- `docs/CHANGELOG.md`
+
+**Testing & Validation:**
+- ✅ No diagnostics in `loop-rhythm-manager.js`
+- ✅ No diagnostics in `loop-rhythm-manager.html`
+- ✅ No diagnostics in `loop-player-pad.js`
+- ✅ No diagnostics in `loop-player-pad-ui.js`
+- ✅ Verified code paths for:
+    - inline player mounting and restore
+    - quick-play dropdown autoload behavior
+    - immediate quick-play set switching
+    - paused start selection for loop-only and fill-to-loop flows
+    - separate visual states for playing vs start-selected pads
+
+**Behavior Summary:**
+- Rhythm set row action: click Test -> player opens inline beneath that rhythm set
+- Quick Loop Playback: choose a set -> player opens inline and starts automatically
+- While stopped: choose loop/fill pads to define the next playback start sequence
+- While playing: only the currently sounding fill or loop remains highlighted
+
+**Impact:**
+- Reduced scrolling and panel hunting during admin testing
+- Faster quick audition workflow for rhythm-set review
+- Clearer playback intent before starting audio
+- More accurate visual feedback during fill transitions and loop starts
+
+---
+
 ## 15. PROJECT OVERVIEW
 
 ### Application Purpose
@@ -7615,9 +7722,14 @@ Error: Could not create profile indexes: The field 'unique' is not valid for an 
 
 ---
 
-**Document End - Last Updated: March 9, 2026, 1:42 AM - Version 1.20.0 - Comprehensive Single Source of Truth**
+**Document End - Last Updated: March 29, 2026 - Version 1.22.0 - Comprehensive Single Source of Truth**
 
 **Recent Updates:**
+- Documented Session #12: Loop Player Start Sequence & Inline Admin Playback (March 29, 2026)
+    * Moved rhythm-set testing into the main action row with inline player mounting
+    * Simplified Quick Loop Playback to a single dropdown with inline autoload behavior
+    * Added paused start-sequence selection (`fill -> loop` or direct loop start)
+    * Split visual states for start-selected pads vs currently playing pads
 - Added Documentation Maintenance Hook (mandatory update process)
 - Documented Session #1: Delta Sync & Loader Timing Improvements
   * Performance: 90%+ faster subsequent page loads

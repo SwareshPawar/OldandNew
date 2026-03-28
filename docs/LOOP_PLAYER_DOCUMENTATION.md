@@ -2,10 +2,11 @@
 
 > Status: Supporting subsystem reference. For the current canonical documentation set, start with `docs/CODEBASE_GUIDE.md`, `docs/FUNCTION_INVENTORY.md`, and `docs/CODE_ISSUES_AND_DUPLICATION.md`.
 
-**Version**: 3.1.0  
-**Last Updated**: March 28, 2026
+**Version**: 3.2.0  
+**Last Updated**: March 29, 2026
 
 **Changelog**:
+- v3.2.0: Added paused start-sequence selection for rhythm pads, distinct visual states for "start selected" vs "currently playing", and inline admin playback flows for rhythm-set testing and quick playback switching.
 - v3.1.0: Admin-only "Save Global" tempo button — persists `loopTempoPercent` per song to MongoDB; tempo restored on player init. Delta sync server-side cursor fix (`X-Sync-Cursor` header). New endpoint `PATCH /api/songs/:id/loop-tempo`.
 - v3.0.0: Switched to deterministic `rhythmSetId` runtime flow, added Rhythm Mapper admin workspace, and documented rename/recompute lifecycle
 - v2.0.4: Added comprehensive Function Reference section
@@ -42,6 +43,7 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
    - Standalone admin workspace for rhythm set lifecycle
    - Create, edit, rename, and manage loop slots per set
    - Preview and test loops with integrated player panel
+   - Inline test-player mounting under the clicked rhythm set or quick playback panel
 
 5. **Rhythm Mapper** (`rhythm-mapper.html` + `rhythm-mapper.js`)
    - Batch map songs to rhythm sets
@@ -55,6 +57,8 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
 7. **UI Integration** (`loop-player-pad-ui.js`)
    - 6-pad interface (3 loops + 3 fills)
    - Deterministic loop set resolution by `song.rhythmSetId`
+   - Paused start-sequence selection (loop-only or fill -> loop)
+   - Separate styling for selected-start pads vs currently playing pads
    - Volume and tempo controls (90-110% range)
    - Tempo reset button for quick return to 100%
    - **NEW**: Admin-only "Save Global" tempo button — saves current tempo slider value as `loopTempoPercent` on the song document. Only shown when `currentUser.isAdmin` is `true`. On next load, `initializeLoopPlayer()` restores the saved tempo automatically.
@@ -289,6 +293,25 @@ Each playback source gets its own `GainNode` for independent fade control. Durin
 - Availability checks use GET requests to avoid HEAD restrictions on some CDNs.
 - Major and minor keys share the same pad samples (for example, Cm uses C).
 
+## Start Sequence Behavior
+
+When the player is loaded but currently stopped, rhythm pad clicks can define how the next playback should begin instead of starting immediately.
+
+Behavior rules:
+- No paused selection: playback starts from `loop1`
+- Loop selected only: playback starts directly from that selected loop
+- Fill and loop selected: playback starts from the selected fill and then transitions into the selected loop
+- Fill selected without a loop: playback starts from that fill and then falls back to `loop1`
+
+Visual rules:
+- Stopped state uses a lighter "start selected" highlight
+- Playing state uses the stronger active highlight only for the pad currently sounding
+- During fill playback, only the fill is highlighted until the destination loop actually begins
+
+Admin workflow notes:
+- In Loop & Rhythm Set Manager, "Test in Loop Player" now lives in the main action row and opens the player inline under the clicked rhythm set
+- Quick Loop Playback now uses a single dropdown, opens inline automatically, and can switch rhythm sets without requiring a manual stop first
+
 ### Sample Naming
 
 ```
@@ -470,6 +493,10 @@ Delete a loop file
 |----------|------------|---------|-------------|
 | `loadLoops(loopMap, songId)` | loopMap: Object, songId: Number | Promise<void> | Load and decode loop audio files for a song. Checks if reload is needed before loading. |
 | `needsLoopReload(songId, newLoopMap)` | songId: Number, newLoopMap: Object | Boolean | Determines if loops need reloading by comparing song ID and loop URLs. |
+| `getStartSelection()` | None | Object | Return paused start-selection state as `{ loopName, fillName }`. |
+| `setStartLoop(loopName)` | loopName: String\|null | void | Set or clear the loop used when the next playback starts from a stopped state. |
+| `setStartFill(fillName)` | fillName: String\|null | void | Set or clear the fill used before the next playback starts from a stopped state. |
+| `clearStartSelection(notify)` | notify: Boolean | void | Reset paused start selections during reload/reset flows. |
 | `play(loopKey)` | loopKey: String | void | Start playing a specific loop (loop1, loop2, loop3). |
 | `stop()` | None | void | Stop all loop playback. |
 | `switchLoop(newLoopKey, useAutoFill)` | newLoopKey: String, useAutoFill: Boolean | void | Switch to a different loop with optional auto-fill transition. |
@@ -516,6 +543,8 @@ Delete a loop file
 | `initializeLoopPlayer(songId)` | songId: Number | Promise<void> | Main initialization function. Finds matching loops, restores saved `loopTempoPercent` (calls `setPlaybackRate()` + sets slider), sets up UI. |
 | `getSavedLoopTempoPercent(song)` | song: Object | Number | **NEW** Reads `song.loopTempoPercent`, clamps to 90–110, falls back to 100. Used to restore tempo on init. |
 | `getLoopsMetadata()` | None | Promise<Object> | Load loops metadata from API (cached). |
+| `getLoopPlayerStartStatusText(loopPlayer)` | loopPlayer: Object | String | Build the paused start-sequence status text shown before playback begins. |
+| `updateLoopPlayerStartPadUI(container, loopPlayer)` | container: HTMLElement, loopPlayer: Object | void | Apply the distinct stopped-state start-selection styling to pads. |
 | `setupLoopPlayerEventListeners(songId, loopMap)` | songId: Number, loopMap: Object | void | Setup all event listeners with clone-replace pattern to prevent duplicates. |
 
 #### Matching Functions
@@ -738,21 +767,16 @@ For issues or questions:
 
 ---
 
-**Version**: 2.0.3  
-**Last Updated**: February 28, 2026 - 11:45 AM  
+**Version**: 3.2.0  
+**Last Updated**: March 29, 2026  
 **Author**: Loop Player System Team  
 
-**Changes in v2.0.3** (February 28, 2026):
-- **CRITICAL FIX**: Genre array matching bug - songs with multi-select genres now properly match loops
-- Added flexible genre matching (partial string match) for better compatibility
-- Clarified tempo BPM-to-category conversion system
-- Updated documentation to reflect actual data structure (genres array, not genre string)
+**Changes in v3.2.0** (March 29, 2026):
+- Added paused start-sequence selection for loop pads before playback begins
+- Added distinct UI states for stopped start-selection vs currently playing pads
+- Documented inline admin playback flows for rhythm-set testing and quick playback switching
+- Added function reference entries for paused start-selection helpers
 
-**Changes in v2.0.2**:
-- Individual file upload system with auto-renaming
-- Tempo reset button added
-- Graceful error handling for corrupt audio files
-- Admin panel integration (Loop Manager link)
-- Clarified compulsory vs optional matching conditions
-- Melodic pads use API_BASE_URL and GET checks for production support
-- Major/minor key normalization for melodic pads
+**Changes in v3.1.0**:
+- Admin-only global tempo save and restore per song
+- Delta sync cursor documentation updates

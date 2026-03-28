@@ -101,9 +101,9 @@ The GitHub Pages site is **static only** — it has no server. All API calls are
 - **Auto-scroll** — configurable speed for live performance
 - **Setlists** — global, personal, and smart (condition-based auto-generation)
 - **Recommendation weights** — admin-configurable signal weights for smart setlist matching
-- **Rhythm loop player** — deterministic 6-pad playback (3 loops + 3 fills) resolved by `rhythmSetId`
+- **Rhythm loop player** — deterministic 6-pad playback (3 loops + 3 fills) resolved by `rhythmSetId`, with paused start-sequence selection for direct loop starts or fill-to-loop entry
 - **Melodic pads** — atmosphere and tanpura samples organized by musical key with seamless crossfade looping
-- **Admin tools** — rhythm set lifecycle management, loop uploads, song-to-rhythm-set mapping
+- **Admin tools** — rhythm set lifecycle management, inline loop-player testing, quick playback switching, loop uploads, song-to-rhythm-set mapping
 - **Rhythm set profile learning** — AI-driven song suggestions based on profile analysis of 191 songs across 13 rhythm sets
 - **Loop management** — swap loops between slots, select existing loops, duplicate rhythm sets with real-time validation
 - **CLI suggestion tools** — profile-based song matching scripts for automated rhythm set assignments

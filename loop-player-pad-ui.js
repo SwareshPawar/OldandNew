@@ -273,7 +273,7 @@ function getLoopPlayerHTML(songId) {
         <div class="loop-pads-grid" id="padGrid-${songId}">
             <!-- Top Row: Loops -->
             <div class="loop-pads-row">
-                <button class="loop-pad loop-pad-active" data-loop="loop1" id="pad-loop1-${songId}">
+                <button class="loop-pad" data-loop="loop1" id="pad-loop1-${songId}">
                     <span class="pad-number">1</span>
                     <span class="pad-label">Loop 1</span>
                 </button>
@@ -434,6 +434,46 @@ async function updateMelodicPadAvailability(songId, effectiveKey) {
 // Make the function globally accessible for transpose handlers
 window.updateMelodicPadAvailability = updateMelodicPadAvailability;
 
+function formatLoopPadName(loopName) {
+    return String(loopName || '').replace(/(\d+)/, ' $1').toUpperCase();
+}
+
+function getLoopPlayerStartSequence(loopPlayer) {
+    const selection = typeof loopPlayer?.getStartSelection === 'function'
+        ? loopPlayer.getStartSelection()
+        : { loopName: null, fillName: null };
+
+    return {
+        loopName: selection.loopName || 'loop1',
+        fillName: selection.fillName || null
+    };
+}
+
+function getLoopPlayerStartStatusText(loopPlayer) {
+    const startSequence = getLoopPlayerStartSequence(loopPlayer);
+
+    if (startSequence.fillName) {
+        return `Start: ${formatLoopPadName(startSequence.fillName)} -> ${formatLoopPadName(startSequence.loopName)}`;
+    }
+
+    return `Start: ${formatLoopPadName(startSequence.loopName)}`;
+}
+
+function updateLoopPlayerStartPadUI(container, loopPlayer) {
+    if (!container || !loopPlayer || loopPlayer.isPlaying) {
+        return;
+    }
+
+    const { loopName, fillName } = getLoopPlayerStartSequence(loopPlayer);
+    const allPads = container.querySelectorAll('.loop-pad[data-loop]');
+    allPads.forEach(pad => {
+        const padLoopName = pad.dataset.loop;
+        const shouldBeSelected = padLoopName === loopName || padLoopName === fillName;
+        pad.classList.remove('loop-pad-active');
+        pad.classList.toggle('loop-pad-start-selected', shouldBeSelected);
+    });
+}
+
 /**
  * Initialize loop player for a song
  */
@@ -559,17 +599,21 @@ async function initializeLoopPlayer(songId) {
     
     loopPlayerInstance.onPadActive = (padName) => {
         // Update active state on pads
-        const allPads = container.querySelectorAll('.loop-pad');
+        const allPads = container.querySelectorAll('.loop-pad[data-loop]');
         allPads.forEach(pad => {
-            if (padName && pad.dataset.loop === padName) {
-                pad.classList.add('loop-pad-active');
-            } else if (padName && !padName.startsWith('fill')) {
-                // Don't remove active from loops when fill is playing
-                if (pad.dataset.loop && pad.dataset.loop.startsWith('loop')) {
-                    pad.classList.remove('loop-pad-active');
-                }
-            }
+            const isActive = padName && pad.dataset.loop === padName;
+            pad.classList.toggle('loop-pad-active', isActive);
+            pad.classList.remove('loop-pad-start-selected');
         });
+    };
+
+    loopPlayerInstance.onStartSelectionChange = () => {
+        updateLoopPlayerStartPadUI(container, loopPlayerInstance);
+
+        const status = document.getElementById(`loopStatus-${songId}`);
+        if (status && !loopPlayerInstance.isPlaying) {
+            status.textContent = getLoopPlayerStartStatusText(loopPlayerInstance);
+        }
     };
 
     loopPlayerInstance.onMelodicPadToggle = (padType, isPlaying) => {
@@ -701,7 +745,7 @@ async function initializeLoopPlayer(songId) {
                 status.style.color = '#ffc107'; // Warning color
             } else if (loadedCount >= 6) {
                 const melodicStatus = melodicCount > 0 ? ` | Melodic: ${melodicCount}/${totalMelodic}` : ' | No melodic samples';
-                status.textContent = `Ready - ${rhythmSetId}${melodicStatus} (Click Play to initialize audio)`;
+                status.textContent = `Ready - ${rhythmSetId}${melodicStatus} | ${getLoopPlayerStartStatusText(loopPlayerInstance)}`;
                 status.title = `Mapped rhythm set: ${rhythmSetId}`;
                 status.style.color = ''; // Reset color
             } else {
@@ -752,9 +796,19 @@ async function initializeLoopPlayer(songId) {
                 } else if (loopName.startsWith('fill')) {
                     loopPlayerInstance.playFill(loopName);
                 }
+
+                if (!loopPlayerInstance.isPlaying) {
+                    updateLoopPlayerStartPadUI(container, loopPlayerInstance);
+                    const status = document.getElementById(`loopStatus-${songId}`);
+                    if (status) {
+                        status.textContent = getLoopPlayerStartStatusText(loopPlayerInstance);
+                    }
+                }
             }
         });
     });
+
+    updateLoopPlayerStartPadUI(container, loopPlayerInstance);
     
     // Play/Pause button - remove old listener by cloning
     if (playBtn) {
@@ -768,6 +822,10 @@ async function initializeLoopPlayer(songId) {
                 loopPlayerInstance.pause();
                 newPlayBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 newPlayBtn.classList.remove('playing');
+                if (status) {
+                    status.textContent = getLoopPlayerStartStatusText(loopPlayerInstance);
+                }
+                updateLoopPlayerStartPadUI(container, loopPlayerInstance);
                 // Hide floating stop button when song stops
                 if (typeof window.hideFloatingStopButton === 'function') {
                     const song = songs?.find(s => s.id === songId);
@@ -780,9 +838,13 @@ async function initializeLoopPlayer(songId) {
                     newPlayBtn.classList.add('playing');
                     newPlayBtn.disabled = false;
                     
-                    // Show immediate status - user sees "Playing: LOOP 1" right away
+                    const startSequence = getLoopPlayerStartSequence(loopPlayerInstance);
+
+                    // Show immediate status reflecting selected start sequence
                     if (status) {
-                        status.textContent = 'Playing: LOOP 1';
+                        status.textContent = startSequence.fillName
+                            ? `Starting: ${formatLoopPadName(startSequence.fillName)} -> ${formatLoopPadName(startSequence.loopName)}`
+                            : `Playing: ${formatLoopPadName(startSequence.loopName)}`;
                     }
                     
                     // Show floating stop button immediately
@@ -1229,6 +1291,18 @@ const loopPlayerStyles = `
         0 0 20px rgba(243, 156, 18, 0.4),
         0 4px 8px rgba(0,0,0,0.3);
     animation: activePadGlow 2s ease-in-out infinite alternate;
+}
+
+.loop-pad-start-selected {
+    background: linear-gradient(135deg,
+        rgba(52, 152, 219, 0.18) 0%,
+        rgba(41, 128, 185, 0.16) 50%,
+        rgba(26, 82, 118, 0.16) 100%);
+    border-color: rgba(133, 193, 233, 0.95);
+    color: #eef7ff;
+    box-shadow:
+        0 0 0 2px rgba(133, 193, 233, 0.45),
+        0 4px 10px rgba(0,0,0,0.22);
 }
 
 @keyframes activePadGlow {

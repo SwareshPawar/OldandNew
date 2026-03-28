@@ -650,21 +650,12 @@
                     <option value="">Loading rhythm sets...</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="quickLoopTypeSelect">Available Loop</label>
-                <select id="quickLoopTypeSelect">
-                    <option value="">Select rhythm set first...</option>
-                </select>
-            </div>
         </div>
 
-        <div class="quick-play-actions">
-            <button class="btn btn-primary" onclick="playQuickLoop()">
-                <i class="fas fa-play"></i> Play Selected Loop
-            </button>
-            <button class="btn btn-success" onclick="openQuickSetPlayer()">
-                <i class="fas fa-play-circle"></i> Open Set Player
-            </button>
+        <div class="info-box" id="quickRhythmSetPreview" style="display: none; margin-top: 15px;">
+            <strong>Rhythm Set ID:</strong> <span id="quickPreviewRhythmSetId">-</span>
+            <br>
+            <strong>Notes:</strong> <span id="quickPreviewRhythmSetNotes">-</span>
         </div>
 
         <div id="quickSetInfo" class="quick-play-note">Loading rhythm sets...</div>
