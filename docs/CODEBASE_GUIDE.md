@@ -1,6 +1,6 @@
 # Codebase Guide
 
-Generated: 2026-03-27
+Generated: 2026-03-27 (updated 2026-03-28)
 
 This is one of the three canonical documentation files for the current codebase.
 
@@ -137,7 +137,7 @@ Primary server responsibilities:
 
 Primary collections inferred from code:
 
-- OldNewSongs
+- OldNewSongs — songs carry `rhythmFamily`, `rhythmSetNo`, `rhythmSetId`, and `loopTempoPercent` (new: admin-saved loop playback tempo, integer 90–110)
 - DeletedSongs
 - RhythmSets
 - Users
@@ -176,6 +176,7 @@ The active loop playback stack is pad-based.
   - UI integration and song-to-loop-set resolution
   - Metadata loading and cache invalidation
   - Loop-player visibility logic
+  - **NEW (March 2026)**: Admin-only "Save Global" tempo button — persists `loopTempoPercent` per song to MongoDB via `PATCH /api/songs/:id/loop-tempo`; saved tempo restored on every `initializeLoopPlayer()` call
 - loop-player-pad-soundtouch.js
   - Alternate engine path with SoundTouch-based tempo control
 - loop-player-pad-tonejs.js
@@ -353,6 +354,8 @@ Current runtime entry points load loop-player-pad.js and loop-player-pad-ui.js. 
 3. server.js reads and writes MongoDB documents.
 4. Results are cached in window.dataCache and reflected into the DOM.
 
+**Delta Sync Cursor**: `GET /api/songs` and `GET /api/songs/deleted` both emit an `X-Sync-Cursor` header — an ISO timestamp the server captures *before* executing the query. The client (`loadSongsWithProgress`) stores this cursor as `window.dataCache.lastSyncTimestamp.songs` instead of using `new Date()` locally, eliminating the race window where backend writes during the fetch could be missed on the next delta sync.
+
 ### Rhythm-Set Flow
 
 1. Songs carry rhythmFamily, rhythmSetNo, and rhythmSetId.
@@ -388,11 +391,12 @@ The backend exposes a large route surface. Major groups visible in server.js:
   - /api/users/:id/admin
   - /api/users/:id/remove-admin
 - Songs
-  - /api/songs
+  - /api/songs — includes `X-Sync-Cursor` response header (server-side timestamp captured before query)
   - /api/songs/:id
   - /api/songs/:id/rhythm-set
+  - /api/songs/:id/loop-tempo — admin-only PATCH, persists per-song loop playback tempo (90–110%)
   - /api/songs/scan
-  - /api/songs/deleted
+  - /api/songs/deleted — includes `X-Sync-Cursor` response header
 - User data
   - /api/userdata
 - Global setlists
@@ -445,7 +449,7 @@ Representative functions:
 - authFetch
 - cachedFetch
 - invalidateCache
-- loadSongsWithProgress
+- loadSongsWithProgress — **delta sync now uses `X-Sync-Cursor` response header** from server (server-side timestamp captured before query) to avoid race window; helpers `readSyncCursor()` and `getEarlierSyncCursor()` added
 - loadUserData
 - loadSettings
 

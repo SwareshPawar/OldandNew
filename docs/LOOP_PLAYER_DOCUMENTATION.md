@@ -2,10 +2,11 @@
 
 > Status: Supporting subsystem reference. For the current canonical documentation set, start with `docs/CODEBASE_GUIDE.md`, `docs/FUNCTION_INVENTORY.md`, and `docs/CODE_ISSUES_AND_DUPLICATION.md`.
 
-**Version**: 3.0.0  
-**Last Updated**: March 9, 2026
+**Version**: 3.1.0  
+**Last Updated**: March 28, 2026
 
 **Changelog**:
+- v3.1.0: Admin-only "Save Global" tempo button — persists `loopTempoPercent` per song to MongoDB; tempo restored on player init. Delta sync server-side cursor fix (`X-Sync-Cursor` header). New endpoint `PATCH /api/songs/:id/loop-tempo`.
 - v3.0.0: Switched to deterministic `rhythmSetId` runtime flow, added Rhythm Mapper admin workspace, and documented rename/recompute lifecycle
 - v2.0.4: Added comprehensive Function Reference section
 - v2.0.3: Added tempo BPM-to-category conversion details and genre array documentation
@@ -56,6 +57,7 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
    - Deterministic loop set resolution by `song.rhythmSetId`
    - Volume and tempo controls (90-110% range)
    - Tempo reset button for quick return to 100%
+   - **NEW**: Admin-only "Save Global" tempo button — saves current tempo slider value as `loopTempoPercent` on the song document. Only shown when `currentUser.isAdmin` is `true`. On next load, `initializeLoopPlayer()` restores the saved tempo automatically.
 
 8. **API Endpoints** (`server.js`)
    - `/api/loops/metadata` - Get loops metadata
@@ -66,6 +68,9 @@ The Loop Player System provides dynamic rhythm accompaniment for songs using pre
    - `/api/rhythm-sets/recommend` - Recommendation endpoint for mapping
    - `/api/rhythm-sets/:rhythmSetId/recompute` - Recompute derived metadata
    - `/api/song-metadata` - Provides rhythm families used by dropdowns
+   - `/api/songs/:id/loop-tempo` - **NEW** Admin-only PATCH; saves `loopTempoPercent` (90–110) to the song document in MongoDB (fields: `loopTempoPercent`, `updatedAt`, `updatedBy`)
+   - `/api/songs` - **Updated**: now emits `X-Sync-Cursor` response header (server-side ISO timestamp before query) for reliable delta sync
+   - `/api/songs/deleted` - **Updated**: now emits `X-Sync-Cursor` response header
 
 9. **Melodic Pads** (`loop-player-pad.js` + `melodic-loops-manager.html`)
    - Atmosphere and tanpura pads per key
@@ -508,7 +513,8 @@ Delete a loop file
 
 | Function | Parameters | Returns | Description |
 |----------|------------|---------|-------------|
-| `initializeLoopPlayer(songId)` | songId: Number | Promise<void> | Main initialization function. Finds matching loops and sets up UI. |
+| `initializeLoopPlayer(songId)` | songId: Number | Promise<void> | Main initialization function. Finds matching loops, restores saved `loopTempoPercent` (calls `setPlaybackRate()` + sets slider), sets up UI. |
+| `getSavedLoopTempoPercent(song)` | song: Object | Number | **NEW** Reads `song.loopTempoPercent`, clamps to 90–110, falls back to 100. Used to restore tempo on init. |
 | `getLoopsMetadata()` | None | Promise<Object> | Load loops metadata from API (cached). |
 | `setupLoopPlayerEventListeners(songId, loopMap)` | songId: Number, loopMap: Object | void | Setup all event listeners with clone-replace pattern to prevent duplicates. |
 
@@ -526,7 +532,7 @@ Delete a loop file
 
 | Function | Parameters | Returns | Description |
 |----------|------------|---------|-------------|
-| `getLoopPlayerHTML(songId)` | songId: Number | String | Generate complete loop player HTML structure. |
+| `getLoopPlayerHTML(songId)` | songId: Number | String | Generate complete loop player HTML structure. Includes admin-only "Save Global" tempo button when `currentUser.isAdmin` is `true`. |
 | `toggleLoopPlayer(songId)` | songId: Number | void | Toggle expand/collapse state (saves to localStorage). |
 | `cleanupLoopPlayer()` | None | void | Clean up loop player state and stop all playback. |
 | `showLoopPlayer(songId)` | songId: Number | void | Show loop player UI. |
