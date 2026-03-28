@@ -1182,144 +1182,6 @@
       }
     },
     {
-      "id": "rd_pattern_2_loop1",
-      "filename": "rd_pattern_2_LOOP1.wav",
-      "type": "loop",
-      "number": 1,
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "rd_pattern_2",
-      "conditions": {
-        "taal": "rd_pattern",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-22T06:34:34.141Z",
-        "description": "loop1 for rd_pattern_2"
-      },
-      "files": {
-        "loop1": "rd_pattern_2_LOOP1.wav"
-      }
-    },
-    {
-      "id": "rd_pattern_2_loop2",
-      "filename": "rd_pattern_2_LOOP2.wav",
-      "type": "loop",
-      "number": 2,
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "rd_pattern_2",
-      "conditions": {
-        "taal": "rd_pattern",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-22T06:34:39.868Z",
-        "description": "loop2 for rd_pattern_2"
-      },
-      "files": {
-        "loop2": "rd_pattern_2_LOOP2.wav"
-      }
-    },
-    {
-      "id": "rd_pattern_2_loop3",
-      "filename": "rd_pattern_2_LOOP3.wav",
-      "type": "loop",
-      "number": 3,
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "rd_pattern_2",
-      "conditions": {
-        "taal": "rd_pattern",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-22T06:34:59.461Z",
-        "description": "loop3 for rd_pattern_2"
-      },
-      "files": {
-        "loop3": "rd_pattern_2_LOOP3.wav"
-      }
-    },
-    {
-      "id": "rd_pattern_2_fill1",
-      "filename": "rd_pattern_2_FILL1.wav",
-      "type": "fill",
-      "number": 1,
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "rd_pattern_2",
-      "conditions": {
-        "taal": "rd_pattern",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-22T06:35:10.711Z",
-        "description": "fill1 for rd_pattern_2"
-      },
-      "files": {
-        "fill1": "rd_pattern_2_FILL1.wav"
-      }
-    },
-    {
-      "id": "rd_pattern_2_fill2",
-      "filename": "rd_pattern_2_FILL2.wav",
-      "type": "fill",
-      "number": 2,
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "rd_pattern_2",
-      "conditions": {
-        "taal": "rd_pattern",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-22T06:35:13.587Z",
-        "description": "fill2 for rd_pattern_2"
-      },
-      "files": {
-        "fill2": "rd_pattern_2_FILL2.wav"
-      }
-    },
-    {
-      "id": "rd_pattern_2_fill3",
-      "filename": "rd_pattern_2_FILL3.wav",
-      "type": "fill",
-      "number": 3,
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 2,
-      "rhythmSetId": "rd_pattern_2",
-      "conditions": {
-        "taal": "rd_pattern",
-        "timeSignature": "4/4",
-        "tempo": "medium",
-        "genre": "acoustic"
-      },
-      "metadata": {
-        "duration": 0,
-        "uploadedAt": "2026-03-22T06:35:38.540Z",
-        "description": "fill3 for rd_pattern_2"
-      },
-      "files": {
-        "fill3": "rd_pattern_2_FILL3.wav"
-      }
-    },
-    {
       "id": "dadra_fast_1_fill1",
       "filename": "dadra_fast_1_FILL1.wav",
       "type": "fill",
@@ -3801,6 +3663,2166 @@
       },
       "files": {
         "fill2": "drum_6_slow_1_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_1_loop3",
+      "filename": "rd_4_congo_1_LOOP3.wav",
+      "originalFilename": "117-OP4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_4_congo_1",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:52:11.985Z",
+        "description": "loop3 for rd_4_congo_1"
+      },
+      "files": {
+        "loop3": "rd_4_congo_1_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_1_fill3",
+      "filename": "rd_4_congo_1_FILL3.wav",
+      "originalFilename": "117-OP4-F1_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_4_congo_1",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:52:18.581Z",
+        "description": "fill3 for rd_4_congo_1"
+      },
+      "files": {
+        "fill3": "rd_4_congo_1_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_1_fill1",
+      "filename": "rd_4_congo_1_FILL1.wav",
+      "originalFilename": "117-OP4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_4_congo_1",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:52:23.477Z",
+        "description": "fill1 for rd_4_congo_1"
+      },
+      "files": {
+        "fill1": "rd_4_congo_1_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_1_fill2",
+      "filename": "rd_4_congo_1_FILL2.wav",
+      "originalFilename": "117-OP4-F1_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_4_congo_1",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:52:26.444Z",
+        "description": "fill2 for rd_4_congo_1"
+      },
+      "files": {
+        "fill2": "rd_4_congo_1_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_1_loop1",
+      "filename": "rd_4_congo_1_LOOP1.wav",
+      "originalFilename": "117-OP4-V2_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_4_congo_1",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:53:06.883Z",
+        "description": "loop1 for rd_4_congo_1"
+      },
+      "files": {
+        "loop1": "rd_4_congo_1_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_1_loop2",
+      "filename": "rd_4_congo_1_LOOP2.wav",
+      "originalFilename": "117-OP4-V1_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_4_congo_1",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:53:19.365Z",
+        "description": "loop2 for rd_4_congo_1"
+      },
+      "files": {
+        "loop2": "rd_4_congo_1_LOOP2.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_2_loop1",
+      "filename": "dadra_mid_2_LOOP1.wav",
+      "originalFilename": "128-SLOW4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_mid_2",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:56:45.957Z",
+        "description": "loop1 for dadra_mid_2"
+      },
+      "files": {
+        "loop1": "dadra_mid_2_LOOP1.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_2_loop2",
+      "filename": "dadra_mid_2_LOOP2.wav",
+      "originalFilename": "128-SLOW4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_mid_2",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:56:51.444Z",
+        "description": "loop2 for dadra_mid_2"
+      },
+      "files": {
+        "loop2": "dadra_mid_2_LOOP2.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_2_loop3",
+      "filename": "dadra_mid_2_LOOP3.wav",
+      "originalFilename": "128-SLOW4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_mid_2",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:57:03.640Z",
+        "description": "loop3 for dadra_mid_2"
+      },
+      "files": {
+        "loop3": "dadra_mid_2_LOOP3.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_2_fill1",
+      "filename": "dadra_mid_2_FILL1.wav",
+      "originalFilename": "128-SLOW4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_mid_2",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:57:21.663Z",
+        "description": "fill1 for dadra_mid_2"
+      },
+      "files": {
+        "fill1": "dadra_mid_2_FILL1.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_2_fill3",
+      "filename": "dadra_mid_2_FILL3.wav",
+      "originalFilename": "128-SLOW4-F4_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_mid_2",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:57:35.799Z",
+        "description": "fill3 for dadra_mid_2"
+      },
+      "files": {
+        "fill3": "dadra_mid_2_FILL3.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_2_fill2",
+      "filename": "dadra_mid_2_FILL2.wav",
+      "originalFilename": "128-SLOW4-F1_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "dadra_mid_2",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T03:58:31.036Z",
+        "description": "fill2 for dadra_mid_2"
+      },
+      "files": {
+        "fill2": "dadra_mid_2_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_2_loop1",
+      "filename": "drum4-4_2_LOOP1.wav",
+      "originalFilename": "95-DRUM4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "drum4-4_2",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:11:21.156Z",
+        "description": "loop1 for drum4-4_2"
+      },
+      "files": {
+        "loop1": "drum4-4_2_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_2_loop2",
+      "filename": "drum4-4_2_LOOP2.wav",
+      "originalFilename": "95-DRUM4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "drum4-4_2",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:11:30.416Z",
+        "description": "loop2 for drum4-4_2"
+      },
+      "files": {
+        "loop2": "drum4-4_2_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_2_loop3",
+      "filename": "drum4-4_2_LOOP3.wav",
+      "originalFilename": "95-DRUM4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "drum4-4_2",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:11:39.517Z",
+        "description": "loop3 for drum4-4_2"
+      },
+      "files": {
+        "loop3": "drum4-4_2_LOOP3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_2_fill1",
+      "filename": "drum4-4_2_FILL1.wav",
+      "originalFilename": "95-DRUM4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "drum4-4_2",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:12:01.801Z",
+        "description": "fill1 for drum4-4_2"
+      },
+      "files": {
+        "fill1": "drum4-4_2_FILL1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_2_fill2",
+      "filename": "drum4-4_2_FILL2.wav",
+      "originalFilename": "95-DRUM4-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "drum4-4_2",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:12:11.683Z",
+        "description": "fill2 for drum4-4_2"
+      },
+      "files": {
+        "fill2": "drum4-4_2_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_2_fill3",
+      "filename": "drum4-4_2_FILL3.wav",
+      "originalFilename": "95-DRUM4-F3_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "drum4-4_2",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:12:18.117Z",
+        "description": "fill3 for drum4-4_2"
+      },
+      "files": {
+        "fill3": "drum4-4_2_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_2_loop1",
+      "filename": "rd_4_congo_2_LOOP1.wav",
+      "originalFilename": "115-DRUM2-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_4_congo_2",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:13:15.390Z",
+        "description": "loop1 for rd_4_congo_2"
+      },
+      "files": {
+        "loop1": "rd_4_congo_2_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_2_loop2",
+      "filename": "rd_4_congo_2_LOOP2.wav",
+      "originalFilename": "115-DRUM2-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_4_congo_2",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:13:18.964Z",
+        "description": "loop2 for rd_4_congo_2"
+      },
+      "files": {
+        "loop2": "rd_4_congo_2_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_2_loop3",
+      "filename": "rd_4_congo_2_LOOP3.wav",
+      "originalFilename": "115-DRUM2-V5_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_4_congo_2",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:13:40.192Z",
+        "description": "loop3 for rd_4_congo_2"
+      },
+      "files": {
+        "loop3": "rd_4_congo_2_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_2_fill1",
+      "filename": "rd_4_congo_2_FILL1.wav",
+      "originalFilename": "115-DRUM2-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_4_congo_2",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:14:00.770Z",
+        "description": "fill1 for rd_4_congo_2"
+      },
+      "files": {
+        "fill1": "rd_4_congo_2_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_2_fill2",
+      "filename": "rd_4_congo_2_FILL2.wav",
+      "originalFilename": "115-DRUM2-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_4_congo_2",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:14:12.281Z",
+        "description": "fill2 for rd_4_congo_2"
+      },
+      "files": {
+        "fill2": "rd_4_congo_2_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_2_fill3",
+      "filename": "rd_4_congo_2_FILL3.wav",
+      "originalFilename": "115-DRUM2-F3_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 2,
+      "rhythmSetId": "rd_4_congo_2",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:14:18.150Z",
+        "description": "fill3 for rd_4_congo_2"
+      },
+      "files": {
+        "fill3": "rd_4_congo_2_FILL3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_3_loop1",
+      "filename": "drum4-4_3_LOOP1.wav",
+      "originalFilename": "120-DRUM4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum4-4_3",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:16:17.603Z",
+        "description": "loop1 for drum4-4_3"
+      },
+      "files": {
+        "loop1": "drum4-4_3_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_3_loop2",
+      "filename": "drum4-4_3_LOOP2.wav",
+      "originalFilename": "120-DRUM4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum4-4_3",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:16:28.072Z",
+        "description": "loop2 for drum4-4_3"
+      },
+      "files": {
+        "loop2": "drum4-4_3_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_3_loop3",
+      "filename": "drum4-4_3_LOOP3.wav",
+      "originalFilename": "120-DRUM4-F3_2.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum4-4_3",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:16:32.567Z",
+        "description": "loop3 for drum4-4_3"
+      },
+      "files": {
+        "loop3": "drum4-4_3_LOOP3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_3_fill1",
+      "filename": "drum4-4_3_FILL1.wav",
+      "originalFilename": "120-DRUM4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum4-4_3",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:16:58.421Z",
+        "description": "fill1 for drum4-4_3"
+      },
+      "files": {
+        "fill1": "drum4-4_3_FILL1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_3_fill3",
+      "filename": "drum4-4_3_FILL3.wav",
+      "originalFilename": "120-DRUM4-F2_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum4-4_3",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:17:44.900Z",
+        "description": "fill3 for drum4-4_3"
+      },
+      "files": {
+        "fill3": "drum4-4_3_FILL3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_3_fill2",
+      "filename": "drum4-4_3_FILL2.wav",
+      "originalFilename": "120-DRUM4-F1_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum4-4_3",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:17:54.792Z",
+        "description": "fill2 for drum4-4_3"
+      },
+      "files": {
+        "fill2": "drum4-4_3_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum3-4_3_loop1",
+      "filename": "drum3-4_3_LOOP1.wav",
+      "originalFilename": "78-Slo6-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum3-4_3",
+      "conditions": {
+        "taal": "drum3-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:20:27.259Z",
+        "description": "loop1 for drum3-4_3"
+      },
+      "files": {
+        "loop1": "drum3-4_3_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum3-4_3_loop2",
+      "filename": "drum3-4_3_LOOP2.wav",
+      "originalFilename": "78-Slo6-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum3-4_3",
+      "conditions": {
+        "taal": "drum3-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:20:33.567Z",
+        "description": "loop2 for drum3-4_3"
+      },
+      "files": {
+        "loop2": "drum3-4_3_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum3-4_3_loop3",
+      "filename": "drum3-4_3_LOOP3.wav",
+      "originalFilename": "78-Slo6-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum3-4_3",
+      "conditions": {
+        "taal": "drum3-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:20:46.236Z",
+        "description": "loop3 for drum3-4_3"
+      },
+      "files": {
+        "loop3": "drum3-4_3_LOOP3.wav"
+      }
+    },
+    {
+      "id": "drum3-4_3_fill1",
+      "filename": "drum3-4_3_FILL1.wav",
+      "originalFilename": "78-Slo6-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum3-4_3",
+      "conditions": {
+        "taal": "drum3-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:20:55.031Z",
+        "description": "fill1 for drum3-4_3"
+      },
+      "files": {
+        "fill1": "drum3-4_3_FILL1.wav"
+      }
+    },
+    {
+      "id": "drum3-4_3_fill2",
+      "filename": "drum3-4_3_FILL2.wav",
+      "originalFilename": "78-Slo6-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum3-4_3",
+      "conditions": {
+        "taal": "drum3-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:21:06.618Z",
+        "description": "fill2 for drum3-4_3"
+      },
+      "files": {
+        "fill2": "drum3-4_3_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum3-4_3_fill3",
+      "filename": "drum3-4_3_FILL3.wav",
+      "originalFilename": "78-Slo6-F3_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "drum3-4_3",
+      "conditions": {
+        "taal": "drum3-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:21:16.726Z",
+        "description": "fill3 for drum3-4_3"
+      },
+      "files": {
+        "fill3": "drum3-4_3_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_3_loop1",
+      "filename": "rd_4_congo_3_LOOP1.wav",
+      "originalFilename": "90-RD4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "rd_4_congo_3",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:22:13.727Z",
+        "description": "loop1 for rd_4_congo_3"
+      },
+      "files": {
+        "loop1": "rd_4_congo_3_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_3_loop2",
+      "filename": "rd_4_congo_3_LOOP2.wav",
+      "originalFilename": "90-RD4-V2wav_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "rd_4_congo_3",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:22:30.536Z",
+        "description": "loop2 for rd_4_congo_3"
+      },
+      "files": {
+        "loop2": "rd_4_congo_3_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_3_loop3",
+      "filename": "rd_4_congo_3_LOOP3.wav",
+      "originalFilename": "90-RD4-V3wav_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "rd_4_congo_3",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:22:37.632Z",
+        "description": "loop3 for rd_4_congo_3"
+      },
+      "files": {
+        "loop3": "rd_4_congo_3_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_3_fill1",
+      "filename": "rd_4_congo_3_FILL1.wav",
+      "originalFilename": "90-RD4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "rd_4_congo_3",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:22:46.614Z",
+        "description": "fill1 for rd_4_congo_3"
+      },
+      "files": {
+        "fill1": "rd_4_congo_3_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_3_fill2",
+      "filename": "rd_4_congo_3_FILL2.wav",
+      "originalFilename": "90-RD4-F2wav_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "rd_4_congo_3",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:22:51.749Z",
+        "description": "fill2 for rd_4_congo_3"
+      },
+      "files": {
+        "fill2": "rd_4_congo_3_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_3_fill3",
+      "filename": "rd_4_congo_3_FILL3.wav",
+      "originalFilename": "90-RD4-F3wav_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "rd_4_congo_3",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:22:58.750Z",
+        "description": "fill3 for rd_4_congo_3"
+      },
+      "files": {
+        "fill3": "rd_4_congo_3_FILL3.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_3_loop1",
+      "filename": "dadra_mid_3_LOOP1.wav",
+      "originalFilename": "128-DHUM4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "dadra_mid_3",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:27:15.354Z",
+        "description": "loop1 for dadra_mid_3"
+      },
+      "files": {
+        "loop1": "dadra_mid_3_LOOP1.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_3_loop2",
+      "filename": "dadra_mid_3_LOOP2.wav",
+      "originalFilename": "128-DHUM4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "dadra_mid_3",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:27:23.292Z",
+        "description": "loop2 for dadra_mid_3"
+      },
+      "files": {
+        "loop2": "dadra_mid_3_LOOP2.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_3_loop3",
+      "filename": "dadra_mid_3_LOOP3.wav",
+      "originalFilename": "128-DHUM4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "dadra_mid_3",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:27:29.905Z",
+        "description": "loop3 for dadra_mid_3"
+      },
+      "files": {
+        "loop3": "dadra_mid_3_LOOP3.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_3_fill1",
+      "filename": "dadra_mid_3_FILL1.wav",
+      "originalFilename": "128-DHUM4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "dadra_mid_3",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:27:39.710Z",
+        "description": "fill1 for dadra_mid_3"
+      },
+      "files": {
+        "fill1": "dadra_mid_3_FILL1.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_3_fill2",
+      "filename": "dadra_mid_3_FILL2.wav",
+      "originalFilename": "128-DHUM4-F3_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "dadra_mid_3",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:27:45.127Z",
+        "description": "fill2 for dadra_mid_3"
+      },
+      "files": {
+        "fill2": "dadra_mid_3_FILL2.wav"
+      }
+    },
+    {
+      "id": "dadra_mid_3_fill3",
+      "filename": "dadra_mid_3_FILL3.wav",
+      "originalFilename": "128-DHUM4-F4_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 3,
+      "rhythmSetId": "dadra_mid_3",
+      "conditions": {
+        "taal": "dadra_mid",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:27:50.278Z",
+        "description": "fill3 for dadra_mid_3"
+      },
+      "files": {
+        "fill3": "dadra_mid_3_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_4_loop1",
+      "filename": "rd_4_congo_4_LOOP1.wav",
+      "originalFilename": "108-RD4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "rd_4_congo_4",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:29:29.092Z",
+        "description": "loop1 for rd_4_congo_4"
+      },
+      "files": {
+        "loop1": "rd_4_congo_4_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_4_loop2",
+      "filename": "rd_4_congo_4_LOOP2.wav",
+      "originalFilename": "108-RD4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "rd_4_congo_4",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:29:34.516Z",
+        "description": "loop2 for rd_4_congo_4"
+      },
+      "files": {
+        "loop2": "rd_4_congo_4_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_4_loop3",
+      "filename": "rd_4_congo_4_LOOP3.wav",
+      "originalFilename": "108-RD4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "rd_4_congo_4",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:29:46.756Z",
+        "description": "loop3 for rd_4_congo_4"
+      },
+      "files": {
+        "loop3": "rd_4_congo_4_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_4_fill1",
+      "filename": "rd_4_congo_4_FILL1.wav",
+      "originalFilename": "108-RD4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "rd_4_congo_4",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:29:55.309Z",
+        "description": "fill1 for rd_4_congo_4"
+      },
+      "files": {
+        "fill1": "rd_4_congo_4_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_4_fill2",
+      "filename": "rd_4_congo_4_FILL2.wav",
+      "originalFilename": "108-RD4-F1_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "rd_4_congo_4",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:30:01.359Z",
+        "description": "fill2 for rd_4_congo_4"
+      },
+      "files": {
+        "fill2": "rd_4_congo_4_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_4_fill3",
+      "filename": "rd_4_congo_4_FILL3.wav",
+      "originalFilename": "108-RD4-F1_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "rd_4_congo_4",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:30:08.699Z",
+        "description": "fill3 for rd_4_congo_4"
+      },
+      "files": {
+        "fill3": "rd_4_congo_4_FILL3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_4_loop1",
+      "filename": "drum4-4_4_LOOP1.wav",
+      "originalFilename": "115-KOI4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "drum4-4_4",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:31:07.844Z",
+        "description": "loop1 for drum4-4_4"
+      },
+      "files": {
+        "loop1": "drum4-4_4_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_4_loop2",
+      "filename": "drum4-4_4_LOOP2.wav",
+      "originalFilename": "115-KOI4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "drum4-4_4",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:31:13.944Z",
+        "description": "loop2 for drum4-4_4"
+      },
+      "files": {
+        "loop2": "drum4-4_4_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_4_loop3",
+      "filename": "drum4-4_4_LOOP3.wav",
+      "originalFilename": "115-KOI4-V4_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "drum4-4_4",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:31:26.241Z",
+        "description": "loop3 for drum4-4_4"
+      },
+      "files": {
+        "loop3": "drum4-4_4_LOOP3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_4_fill1",
+      "filename": "drum4-4_4_FILL1.wav",
+      "originalFilename": "115-KOI4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "drum4-4_4",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:31:33.108Z",
+        "description": "fill1 for drum4-4_4"
+      },
+      "files": {
+        "fill1": "drum4-4_4_FILL1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_4_fill2",
+      "filename": "drum4-4_4_FILL2.wav",
+      "originalFilename": "115-KOI4-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "drum4-4_4",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:31:38.757Z",
+        "description": "fill2 for drum4-4_4"
+      },
+      "files": {
+        "fill2": "drum4-4_4_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_4_fill3",
+      "filename": "drum4-4_4_FILL3.wav",
+      "originalFilename": "115-KOI4-F3_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 4,
+      "rhythmSetId": "drum4-4_4",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:31:45.835Z",
+        "description": "fill3 for drum4-4_4"
+      },
+      "files": {
+        "fill3": "drum4-4_4_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_5_loop3",
+      "filename": "rd_4_congo_5_LOOP3.wav",
+      "originalFilename": "115-RD4-V4_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "rd_4_congo_5",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:33:59.266Z",
+        "description": "loop3 for rd_4_congo_5"
+      },
+      "files": {
+        "loop3": "rd_4_congo_5_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_5_fill3",
+      "filename": "rd_4_congo_5_FILL3.wav",
+      "originalFilename": "115-RD4-F3_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "rd_4_congo_5",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:34:23.870Z",
+        "description": "fill3 for rd_4_congo_5"
+      },
+      "files": {
+        "fill3": "rd_4_congo_5_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_5_loop1",
+      "filename": "rd_4_congo_5_LOOP1.wav",
+      "originalFilename": "115-RD4-V2_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "rd_4_congo_5",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:35:08.958Z",
+        "description": "loop1 for rd_4_congo_5"
+      },
+      "files": {
+        "loop1": "rd_4_congo_5_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_5_loop2",
+      "filename": "rd_4_congo_5_LOOP2.wav",
+      "originalFilename": "115-RD4-V1wav_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "rd_4_congo_5",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:35:14.589Z",
+        "description": "loop2 for rd_4_congo_5"
+      },
+      "files": {
+        "loop2": "rd_4_congo_5_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_5_fill2",
+      "filename": "rd_4_congo_5_FILL2.wav",
+      "originalFilename": "115-RD4-F1wav_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "rd_4_congo_5",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:36:01.709Z",
+        "description": "fill2 for rd_4_congo_5"
+      },
+      "files": {
+        "fill2": "rd_4_congo_5_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_5_fill1",
+      "filename": "rd_4_congo_5_FILL1.wav",
+      "originalFilename": "115-RD4-F3_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "rd_4_congo_5",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:36:11.166Z",
+        "description": "fill1 for rd_4_congo_5"
+      },
+      "files": {
+        "fill1": "rd_4_congo_5_FILL1.wav"
+      }
+    },
+    {
+      "id": "goa_1_loop1",
+      "filename": "goa_1_LOOP1.wav",
+      "originalFilename": "120-GOA4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "goa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "goa_1",
+      "conditions": {
+        "taal": "goa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:38:09.693Z",
+        "description": "loop1 for goa_1"
+      },
+      "files": {
+        "loop1": "goa_1_LOOP1.wav"
+      }
+    },
+    {
+      "id": "goa_1_loop2",
+      "filename": "goa_1_LOOP2.wav",
+      "originalFilename": "120-GOA4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "goa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "goa_1",
+      "conditions": {
+        "taal": "goa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:38:15.966Z",
+        "description": "loop2 for goa_1"
+      },
+      "files": {
+        "loop2": "goa_1_LOOP2.wav"
+      }
+    },
+    {
+      "id": "goa_1_loop3",
+      "filename": "goa_1_LOOP3.wav",
+      "originalFilename": "120-GOA4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "goa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "goa_1",
+      "conditions": {
+        "taal": "goa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:38:20.840Z",
+        "description": "loop3 for goa_1"
+      },
+      "files": {
+        "loop3": "goa_1_LOOP3.wav"
+      }
+    },
+    {
+      "id": "goa_1_fill1",
+      "filename": "goa_1_FILL1.wav",
+      "originalFilename": "120-GOA4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "goa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "goa_1",
+      "conditions": {
+        "taal": "goa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:38:26.851Z",
+        "description": "fill1 for goa_1"
+      },
+      "files": {
+        "fill1": "goa_1_FILL1.wav"
+      }
+    },
+    {
+      "id": "goa_1_fill2",
+      "filename": "goa_1_FILL2.wav",
+      "originalFilename": "120-GOA4-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "goa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "goa_1",
+      "conditions": {
+        "taal": "goa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:38:31.443Z",
+        "description": "fill2 for goa_1"
+      },
+      "files": {
+        "fill2": "goa_1_FILL2.wav"
+      }
+    },
+    {
+      "id": "goa_1_fill3",
+      "filename": "goa_1_FILL3.wav",
+      "originalFilename": "120-GOA4-F2_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "goa",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "goa_1",
+      "conditions": {
+        "taal": "goa",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:38:35.957Z",
+        "description": "fill3 for goa_1"
+      },
+      "files": {
+        "fill3": "goa_1_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_6_loop1",
+      "filename": "rd_4_congo_6_LOOP1.wav",
+      "originalFilename": "120-RD4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "rd_4_congo_6",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:39:52.806Z",
+        "description": "loop1 for rd_4_congo_6"
+      },
+      "files": {
+        "loop1": "rd_4_congo_6_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_6_loop2",
+      "filename": "rd_4_congo_6_LOOP2.wav",
+      "originalFilename": "120-RD4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "rd_4_congo_6",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:39:57.852Z",
+        "description": "loop2 for rd_4_congo_6"
+      },
+      "files": {
+        "loop2": "rd_4_congo_6_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_6_loop3",
+      "filename": "rd_4_congo_6_LOOP3.wav",
+      "originalFilename": "120-RD4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "rd_4_congo_6",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:40:01.635Z",
+        "description": "loop3 for rd_4_congo_6"
+      },
+      "files": {
+        "loop3": "rd_4_congo_6_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_6_fill1",
+      "filename": "rd_4_congo_6_FILL1.wav",
+      "originalFilename": "120-RD4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "rd_4_congo_6",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:40:11.798Z",
+        "description": "fill1 for rd_4_congo_6"
+      },
+      "files": {
+        "fill1": "rd_4_congo_6_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_6_fill2",
+      "filename": "rd_4_congo_6_FILL2.wav",
+      "originalFilename": "120-RD4-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "rd_4_congo_6",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:40:16.884Z",
+        "description": "fill2 for rd_4_congo_6"
+      },
+      "files": {
+        "fill2": "rd_4_congo_6_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_6_fill3",
+      "filename": "rd_4_congo_6_FILL3.wav",
+      "originalFilename": "120-RD4-F4_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "rd_4_congo_6",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:40:22.025Z",
+        "description": "fill3 for rd_4_congo_6"
+      },
+      "files": {
+        "fill3": "rd_4_congo_6_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_7_loop1",
+      "filename": "rd_4_congo_7_LOOP1.wav",
+      "originalFilename": "128-RD4-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 7,
+      "rhythmSetId": "rd_4_congo_7",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:42:24.951Z",
+        "description": "loop1 for rd_4_congo_7"
+      },
+      "files": {
+        "loop1": "rd_4_congo_7_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_7_loop2",
+      "filename": "rd_4_congo_7_LOOP2.wav",
+      "originalFilename": "128-RD4-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 7,
+      "rhythmSetId": "rd_4_congo_7",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:42:30.203Z",
+        "description": "loop2 for rd_4_congo_7"
+      },
+      "files": {
+        "loop2": "rd_4_congo_7_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_7_loop3",
+      "filename": "rd_4_congo_7_LOOP3.wav",
+      "originalFilename": "128-RD4-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 7,
+      "rhythmSetId": "rd_4_congo_7",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:42:46.578Z",
+        "description": "loop3 for rd_4_congo_7"
+      },
+      "files": {
+        "loop3": "rd_4_congo_7_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_7_fill1",
+      "filename": "rd_4_congo_7_FILL1.wav",
+      "originalFilename": "128-RD4-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 7,
+      "rhythmSetId": "rd_4_congo_7",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:42:54.521Z",
+        "description": "fill1 for rd_4_congo_7"
+      },
+      "files": {
+        "fill1": "rd_4_congo_7_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_7_fill2",
+      "filename": "rd_4_congo_7_FILL2.wav",
+      "originalFilename": "128-RD4-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 7,
+      "rhythmSetId": "rd_4_congo_7",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:43:00.235Z",
+        "description": "fill2 for rd_4_congo_7"
+      },
+      "files": {
+        "fill2": "rd_4_congo_7_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_4_congo_7_fill3",
+      "filename": "rd_4_congo_7_FILL3.wav",
+      "originalFilename": "128-RD4-F3_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 7,
+      "rhythmSetId": "rd_4_congo_7",
+      "conditions": {
+        "taal": "rd_4_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:43:08.186Z",
+        "description": "fill3 for rd_4_congo_7"
+      },
+      "files": {
+        "fill3": "rd_4_congo_7_FILL3.wav"
+      }
+    },
+    {
+      "id": "rd_6_congo_1_loop1",
+      "filename": "rd_6_congo_1_LOOP1.wav",
+      "originalFilename": "165-RD6-V1_1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "rd_6_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_6_congo_1",
+      "conditions": {
+        "taal": "rd_6_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:44:14.921Z",
+        "description": "loop1 for rd_6_congo_1"
+      },
+      "files": {
+        "loop1": "rd_6_congo_1_LOOP1.wav"
+      }
+    },
+    {
+      "id": "rd_6_congo_1_loop2",
+      "filename": "rd_6_congo_1_LOOP2.wav",
+      "originalFilename": "165-RD6-V2_1.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "rd_6_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_6_congo_1",
+      "conditions": {
+        "taal": "rd_6_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:44:19.423Z",
+        "description": "loop2 for rd_6_congo_1"
+      },
+      "files": {
+        "loop2": "rd_6_congo_1_LOOP2.wav"
+      }
+    },
+    {
+      "id": "rd_6_congo_1_loop3",
+      "filename": "rd_6_congo_1_LOOP3.wav",
+      "originalFilename": "165-RD6-V3_1.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "rd_6_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_6_congo_1",
+      "conditions": {
+        "taal": "rd_6_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:44:24.631Z",
+        "description": "loop3 for rd_6_congo_1"
+      },
+      "files": {
+        "loop3": "rd_6_congo_1_LOOP3.wav"
+      }
+    },
+    {
+      "id": "rd_6_congo_1_fill1",
+      "filename": "rd_6_congo_1_FILL1.wav",
+      "originalFilename": "165-RD6-F1_1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "rd_6_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_6_congo_1",
+      "conditions": {
+        "taal": "rd_6_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:44:31.757Z",
+        "description": "fill1 for rd_6_congo_1"
+      },
+      "files": {
+        "fill1": "rd_6_congo_1_FILL1.wav"
+      }
+    },
+    {
+      "id": "rd_6_congo_1_fill2",
+      "filename": "rd_6_congo_1_FILL2.wav",
+      "originalFilename": "165-RD6-F2_1.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "rd_6_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_6_congo_1",
+      "conditions": {
+        "taal": "rd_6_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:44:36.234Z",
+        "description": "fill2 for rd_6_congo_1"
+      },
+      "files": {
+        "fill2": "rd_6_congo_1_FILL2.wav"
+      }
+    },
+    {
+      "id": "rd_6_congo_1_fill3",
+      "filename": "rd_6_congo_1_FILL3.wav",
+      "originalFilename": "165-RD6-F3_1.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "rd_6_congo",
+      "rhythmSetNo": 1,
+      "rhythmSetId": "rd_6_congo_1",
+      "conditions": {
+        "taal": "rd_6_congo",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T04:44:40.336Z",
+        "description": "fill3 for rd_6_congo_1"
+      },
+      "files": {
+        "fill3": "rd_6_congo_1_FILL3.wav"
       }
     }
   ],
