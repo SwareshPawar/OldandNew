@@ -916,6 +916,20 @@ function updateProgress(taskName, customPercent = null) {
 async function loadSongsWithProgress(forceRefresh = false) {
     try {
         updateProgress('spinnerInit');
+
+        const readSyncCursor = (response, fallback = null) => {
+            try {
+                return response?.headers?.get('X-Sync-Cursor') || fallback;
+            } catch {
+                return fallback;
+            }
+        };
+
+        const getEarlierSyncCursor = (first, second) => {
+            if (!first) return second || null;
+            if (!second) return first;
+            return first < second ? first : second;
+        };
         
         // Determine if we should do delta sync or full fetch
         const hasCachedSongs = window.dataCache.songs && window.dataCache.songs.length > 0;
@@ -940,6 +954,10 @@ async function loadSongsWithProgress(forceRefresh = false) {
                     authFetch(`${API_BASE_URL}/api/songs?since=${encodeURIComponent(lastSyncTime)}`),
                     authFetch(`${API_BASE_URL}/api/songs/deleted?since=${encodeURIComponent(lastSyncTime)}`)
                 ]);
+                const deltaSyncCursor = getEarlierSyncCursor(
+                    readSyncCursor(deltaSongsResponse, lastSyncTime),
+                    readSyncCursor(deletedIdsResponse, lastSyncTime)
+                ) || lastSyncTime;
                 
                 updateProgress('fetchSongs', 60);
                 
@@ -985,7 +1003,7 @@ async function loadSongsWithProgress(forceRefresh = false) {
                     // Update cache and localStorage with merged data
                     window.dataCache.songs = songs;
                     window.dataCache.lastFetch.songs = Date.now();
-                    window.dataCache.lastSyncTimestamp.songs = new Date().toISOString();
+                    window.dataCache.lastSyncTimestamp.songs = deltaSyncCursor;
                     
                     try {
                         localStorage.setItem('songs', JSON.stringify(songs));
@@ -1008,11 +1026,13 @@ async function loadSongsWithProgress(forceRefresh = false) {
             console.log('📥 Full sync: downloading all songs');
             
             let response;
+            let fullSyncCursor = null;
             try {
                 updateProgress('fetchSongs', 10);
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
                 response = await cachedFetch(`${API_BASE_URL}/api/songs`, true); // Force fresh fetch
+                fullSyncCursor = readSyncCursor(response, new Date().toISOString());
                 
                 updateProgress('fetchSongs', 80);
                 await new Promise(resolve => setTimeout(resolve, 50));
@@ -1056,7 +1076,7 @@ async function loadSongsWithProgress(forceRefresh = false) {
             // Update cache with full dataset and current timestamp
             window.dataCache.songs = unique;
             window.dataCache.lastFetch.songs = Date.now();
-            window.dataCache.lastSyncTimestamp.songs = new Date().toISOString();
+            window.dataCache.lastSyncTimestamp.songs = fullSyncCursor || new Date().toISOString();
             
             try {
                 localStorage.setItem('songs', JSON.stringify(unique));

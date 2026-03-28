@@ -138,6 +138,15 @@ function getEffectiveKey(song, transposeLevel = 0) {
     return keys[finalIndex];
 }
 
+function getSavedLoopTempoPercent(song) {
+    const rawValue = Number(song?.loopTempoPercent);
+    if (!Number.isFinite(rawValue)) {
+        return 100;
+    }
+
+    return Math.max(90, Math.min(110, Math.round(rawValue)));
+}
+
 /**
  * Check if two time signatures are equivalent
  * Examples: 6/8 ≡ 3/4, 9/8 ≡ 3/4, 12/8 ≡ 4/4
@@ -244,6 +253,8 @@ async function shouldShowLoopPlayer(song) {
  * Generate HTML for loop player with pads
  */
 function getLoopPlayerHTML(songId) {
+    const canSaveGlobalTempo = typeof currentUser !== 'undefined' && currentUser && currentUser.isAdmin;
+
     return `
 <div class="loop-player-container" id="loopPlayerContainer-${songId}" style="display: none;">
     <div class="loop-player-header">
@@ -356,6 +367,11 @@ function getLoopPlayerHTML(songId) {
                 <button class="loop-tempo-reset-btn" id="loopTempoReset-${songId}" title="Reset to 100%">
                     <i class="fas fa-undo"></i>
                 </button>
+                ${canSaveGlobalTempo ? `
+                <button class="loop-tempo-save-btn" id="loopTempoSave-${songId}" title="Save this tempo for all users">
+                    <i class="fas fa-save"></i>
+                    <span>Save Global</span>
+                </button>` : ''}
             </div>
         </div>
 
@@ -528,6 +544,9 @@ async function initializeLoopPlayer(songId) {
     // Set song key and transpose for melodic pads
     // Note: We reload samples (3rd param = true) when song changes to ensure correct key samples are loaded
     await loopPlayerInstance.setSongKeyAndTranspose(song.key, transposeLevel, true);
+
+    const savedTempoPercent = getSavedLoopTempoPercent(song);
+    loopPlayerInstance.setPlaybackRate(savedTempoPercent / 100);
     
     // Set up callbacks
     loopPlayerInstance.onLoopChange = (loopName) => {
@@ -836,6 +855,14 @@ async function initializeLoopPlayer(songId) {
     const tempoSlider = document.getElementById(`loopTempo-${songId}`);
     const tempoValue = document.getElementById(`loopTempoValue-${songId}`);
     const tempoResetBtn = document.getElementById(`loopTempoReset-${songId}`);
+    const tempoSaveBtn = document.getElementById(`loopTempoSave-${songId}`);
+
+    if (tempoSlider) {
+        tempoSlider.value = String(savedTempoPercent);
+    }
+    if (tempoValue) {
+        tempoValue.textContent = `${savedTempoPercent}%`;
+    }
     
     if (tempoSlider) {
         const newTempoSlider = tempoSlider.cloneNode(true);
@@ -859,6 +886,61 @@ async function initializeLoopPlayer(songId) {
                 currentTempoSlider.value = '100';
                 loopPlayerInstance.setPlaybackRate(1.0);
                 if (tempoValue) tempoValue.textContent = '100%';
+            }
+        });
+    }
+
+    if (tempoSaveBtn) {
+        const newTempoSaveBtn = tempoSaveBtn.cloneNode(true);
+        tempoSaveBtn.parentNode.replaceChild(newTempoSaveBtn, tempoSaveBtn);
+
+        newTempoSaveBtn.addEventListener('click', async () => {
+            const currentTempoSlider = document.getElementById(`loopTempo-${songId}`);
+            const tempoPercent = parseInt(currentTempoSlider?.value || '100', 10);
+
+            newTempoSaveBtn.disabled = true;
+            newTempoSaveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/songs/${songId}/loop-tempo`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken') || ''}`
+                    },
+                    body: JSON.stringify({ loopTempoPercent: tempoPercent })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to save loop tempo');
+                }
+
+                const updatedSong = await response.json();
+                Object.assign(song, updatedSong);
+
+                if (Array.isArray(songs)) {
+                    const songIndex = songs.findIndex(entry => entry.id == songId);
+                    if (songIndex !== -1) {
+                        songs[songIndex] = { ...songs[songIndex], ...updatedSong };
+                    }
+                }
+
+                if (typeof updateSongInCache === 'function') {
+                    updateSongInCache(updatedSong, false);
+                }
+
+                if (typeof showNotification === 'function') {
+                    showNotification(`Saved global tempo ${tempoPercent}% for this song.`);
+                }
+            } catch (error) {
+                console.error('Failed to save loop tempo:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification(error.message || 'Failed to save loop tempo', 'error');
+                }
+            } finally {
+                newTempoSaveBtn.disabled = false;
+                newTempoSaveBtn.innerHTML = '<i class="fas fa-save"></i><span>Save Global</span>';
             }
         });
     }
@@ -1366,6 +1448,41 @@ const loopPlayerStyles = `
     transform: scale(0.95);
 }
 
+.loop-tempo-save-btn {
+    background: linear-gradient(135deg,
+        rgba(76, 125, 96, 0.92) 0%,
+        rgba(104, 154, 122, 0.92) 100%);
+    border: 1px solid rgba(189, 232, 202, 0.65);
+    border-radius: 6px;
+    min-height: 26px;
+    padding: 0 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    font-size: 0.75em;
+    font-weight: 600;
+    color: #f6fff8;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+
+.loop-tempo-save-btn:hover {
+    background: linear-gradient(135deg,
+        rgba(88, 142, 110, 1) 0%,
+        rgba(122, 176, 140, 1) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.loop-tempo-save-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+    transform: none;
+}
+
 /* ===== MELODIC PADS STYLES ===== */
 
 .melodic-pads-row {
@@ -1629,6 +1746,12 @@ const loopPlayerStyles = `
         font-size: 0.7em;
         margin-left: 2px;
     }
+
+    .loop-tempo-save-btn {
+        min-height: 24px;
+        padding: 0 8px;
+        font-size: 0.7em;
+    }
     
     .volume-control-group {
         padding: 10px 12px;
@@ -1692,6 +1815,12 @@ const loopPlayerStyles = `
     .loop-tempo-reset-btn {
         width: 22px;
         height: 22px;
+        font-size: 0.65em;
+    }
+
+    .loop-tempo-save-btn {
+        min-height: 22px;
+        padding: 0 7px;
         font-size: 0.65em;
     }
     

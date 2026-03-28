@@ -972,6 +972,15 @@ function buildSongRhythmFields({ rhythmSetId, rhythmFamily, rhythmSetNo, rhythmR
   };
 }
 
+function normalizeLoopTempoPercent(value, fallback = 100) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return fallback;
+  }
+
+  return Math.max(90, Math.min(110, Math.round(numericValue)));
+}
+
 async function listSongsMappedToRhythmSet(rhythmSetId) {
   if (!songsCollection || !rhythmSetId) return [];
   return songsCollection.find({ rhythmSetId }).toArray();
@@ -1291,6 +1300,9 @@ app.post('/api/reset-password', async (req, res) => {
 // Get list of deleted song IDs since a timestamp (for delta sync)
 app.get('/api/songs/deleted', authMiddleware, async (req, res) => {
   try {
+    const syncCursor = new Date().toISOString();
+    res.set('X-Sync-Cursor', syncCursor);
+
     const { since } = req.query;
     if (!since) {
       return res.json([]); // No timestamp provided, return empty array
@@ -2438,6 +2450,9 @@ app.put('/api/profile-scoring-config', authMiddleware, requireAdmin, async (req,
 
 app.get('/api/songs', authMiddleware, async (req, res) => {
   try {
+    const syncCursor = new Date().toISOString();
+    res.set('X-Sync-Cursor', syncCursor);
+
     // Support delta fetching: if ?since=TIMESTAMP is provided, only return songs updated after that
     const { since } = req.query;
     let query = {};
@@ -2706,6 +2721,42 @@ app.patch('/api/songs/:id/rhythm-set', authMiddleware, requireAdmin, async (req,
     }
 
     const updatedSong = await songsCollection.findOne({ id: numericId });
+    res.json(updatedSong);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin-only: persist loop playback tempo for a song so it is reused across sessions for all users.
+app.patch('/api/songs/:id/loop-tempo', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const numericId = parseInt(req.params.id, 10);
+    const existingSong = await songsCollection.findOne({ id: numericId });
+    if (!existingSong) {
+      return res.status(404).json({ error: 'Song not found' });
+    }
+
+    const loopTempoPercent = normalizeLoopTempoPercent(req.body?.loopTempoPercent, null);
+    if (loopTempoPercent === null) {
+      return res.status(400).json({ error: 'loopTempoPercent must be a number between 90 and 110' });
+    }
+
+    const cap = str => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+    const updatedBy = cap(req.user.firstName || req.user.username);
+    const updatedAt = new Date().toISOString();
+
+    await songsCollection.updateOne(
+      { id: numericId },
+      {
+        $set: {
+          loopTempoPercent,
+          updatedAt,
+          updatedBy
+        }
+      }
+    );
+
+    const updatedSong = normalizeSongAccidentals(await songsCollection.findOne({ id: numericId }));
     res.json(updatedSong);
   } catch (err) {
     res.status(500).json({ error: err.message });

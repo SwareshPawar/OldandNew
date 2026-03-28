@@ -339,6 +339,30 @@ Before marking vulnerabilities as fixed:
          - [loop-rhythm-manager.js](loop-rhythm-manager.js#L593) and [loop-rhythm-manager.js](loop-rhythm-manager.js#L833) - set `loopFilesReplacedAt` after successful upload
      - **Impact**: Loop player now plays newly uploaded audio immediately instead of stale previous audio.
 
+25. **✅ Loop Player: Admin-Only Global Tempo Save Per Song**
+     - **Problem**: Loop pad tempo changes were runtime-only, so reopening the same song always reset the slider and playback rate to `100%`.
+     - **Fixes**:
+         - Added an admin-only `Save Global` button next to the loop tempo slider.
+         - Persisted saved tempo as `loopTempoPercent` on the song document.
+         - Added dedicated admin endpoint `PATCH /api/songs/:id/loop-tempo`.
+         - Loop player now restores the saved tempo automatically when the song preview is opened again.
+     - **Locations**:
+         - [loop-player-pad-ui.js](loop-player-pad-ui.js#L350) - admin-only save control and restore flow
+         - [server.js](server.js#L2700) - loop tempo persistence endpoint
+     - **Impact**: Administrators can set a preferred loop playback tempo once per song and have it retained across future loads until changed again.
+
+26. **✅ Song Delta Sync: Server-Side Cursor Prevents Missed Backend Changes**
+     - **Problem**: Song delta sync advanced the local sync timestamp after the request completed, which could skip song updates or deletions that happened on the backend during the request window.
+     - **Fixes**:
+         - Added `X-Sync-Cursor` headers to `GET /api/songs` and `GET /api/songs/deleted` using a server timestamp captured before query execution.
+         - Updated the client delta merge flow to persist the server-provided cursor instead of using a post-response `new Date().toISOString()` value.
+         - Updated full song sync to store the same server cursor, keeping full and delta sync behavior aligned.
+     - **Locations**:
+         - [server.js](server.js#L1301) - deleted-song delta cursor header
+         - [server.js](server.js#L2447) - song delta/full cursor header
+         - [main.js](main.js#L915) - client sync cursor handling in `loadSongsWithProgress()`
+     - **Impact**: Backend song changes are now far less likely to be skipped between sync cycles, especially during concurrent admin edits and deletes.
+
 ### Completed Fixes - Session 6 (February 15, 2026 - Evening)
 
 16. **✅ Loop Player: Individual File Uploads with Auto-Renaming**
