@@ -36,6 +36,7 @@ let deletedSongsCollection;
 let rhythmSetsCollection;
 let rhythmSetProfilesCollection;
 let profileScoringConfigCollection;
+let loopsMetadataCollection;
 
 // Create uploads directory (use /tmp in serverless environments)
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -157,14 +158,18 @@ async function connectToDatabase() {
     rhythmSetsCollection = db.collection('RhythmSets');
     rhythmSetProfilesCollection = db.collection('RhythmSetProfiles');
     profileScoringConfigCollection = db.collection('ProfileScoringConfig');
+    loopsMetadataCollection = db.collection('LoopsMetadata');
     
     // Create indexes for profile collections
     try {
       await rhythmSetProfilesCollection.createIndex({ rhythmSetId: 1 }, { unique: true });
-      await profileScoringConfigCollection.createIndex({ _id: 1 }, { unique: true });
+      // Note: _id is already indexed and unique by default, no need to create index
     } catch (err) {
       console.warn('Could not create profile indexes:', err.message);
     }
+    
+    // Ensure loops metadata document exists in MongoDB
+    await ensureLoopsMetadataDocument();
     
     await bootstrapRhythmSetsFromMetadata();
     isConnected = true;
@@ -379,21 +384,193 @@ function isEquivalentTimeSignature(left, right) {
   return Array.isArray(map[left]) && map[left].includes(right);
 }
 
-function readLoopsMetadataSafe() {
-  try {
-    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
-    if (!fs.existsSync(metadataPath)) {
-      return { version: '2.0', loops: [] };
-    }
-    const parsed = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-    if (!Array.isArray(parsed.loops)) {
-      parsed.loops = [];
-    }
-    return parsed;
-  } catch (error) {
-    console.warn('Failed to read loops metadata for rhythm recommendation:', error.message);
+// ============================================================================
+// LOOPS METADATA MONGODB FUNCTIONS (single source of truth)
+// ============================================================================
+
+/**
+ * Read loops metadata from MongoDB (single source of truth)
+ * Works in both production and local development
+ */
+async function readLoopsMetadata() {
+  if (!loopsMetadataCollection) {
+    console.warn('⚠️ LoopsMetadata collection not initialized');
     return { version: '2.0', loops: [] };
   }
+  
+  try {
+    const doc = await loopsMetadataCollection.findOne({ _id: 'loops-metadata' });
+    if (doc && doc.data) {
+      return doc.data;
+    }
+    // If no data in MongoDB yet, return empty structure
+    return { version: '2.0', loops: [] };
+  } catch (error) {
+    console.error('⚠️ Failed to read loops metadata from MongoDB:', error.message);
+    return { version: '2.0', loops: [] };
+  }
+}
+
+/**
+ * Write loops metadata to MongoDB (single source of truth)
+ * Works in both production and local development
+ */
+async function writeLoopsMetadata(metadata) {
+  if (!loopsMetadataCollection) {
+    throw new Error('LoopsMetadata collection not initialized');
+  }
+  
+  try {
+    await loopsMetadataCollection.updateOne(
+      { _id: 'loops-metadata' },
+      {
+        $set: {
+          data: metadata,
+          updatedAt: new Date()
+        }
+      },
+      { upsert: true }
+    );
+  } catch (error) {
+    console.error('⚠️ Failed to save loops metadata to MongoDB:', error.message);
+    throw error;
+  }
+}
+
+function buildDefaultLoopsMetadata() {
+  return {
+    version: '2.0',
+    loops: [],
+    rhythmSets: [],
+    tempoRanges: {
+      slow: { min: 0, max: 80, label: 'Slow' },
+      medium: { min: 80, max: 120, label: 'Medium' },
+      fast: { min: 120, max: 999, label: 'Fast' }
+    },
+    supportedTaals: ['keherwa', 'dadra', 'rupak', 'jhaptal', 'teental', 'ektaal'],
+    supportedGenres: ['acoustic', 'rock', 'rd', 'qawalli', 'blues'],
+    supportedTimeSignatures: ['4/4', '3/4', '6/8', '7/8']
+  };
+}
+
+function buildLoopsMetadataFromDisk() {
+  const metadata = buildDefaultLoopsMetadata();
+
+  let files = [];
+  try {
+    files = fs.readdirSync(loopsDir);
+  } catch (error) {
+    console.warn('Could not read loops directory for metadata migration:', error.message);
+    return metadata;
+  }
+
+  // Expected naming: {rhythmSetId}_{TYPE}{number}.wav
+  // Example: dadra_1_LOOP1.wav
+  const audioFiles = files.filter(file => /\.(wav|mp3|m4a)$/i.test(file));
+  const loops = [];
+
+  audioFiles.forEach(filename => {
+    const stem = path.parse(filename).name;
+    const match = stem.match(/^(.*)_(LOOP|FILL)(\d+)$/i);
+    if (!match) return;
+
+    const rhythmSetId = String(match[1] || '').trim().toLowerCase();
+    const type = String(match[2] || '').toLowerCase();
+    const number = Number.parseInt(match[3], 10);
+    if (!rhythmSetId || !Number.isInteger(number) || number <= 0) return;
+
+    const parsed = parseRhythmSetId(rhythmSetId);
+    const rhythmFamily = parsed?.rhythmFamily || normalizeRhythmFamily(rhythmSetId.split('_').slice(0, -1).join('_'));
+    const rhythmSetNo = parsed?.rhythmSetNo || normalizeRhythmSetNo(rhythmSetId.split('_').pop()) || RHYTHM_SET_DEFAULT_NO;
+
+    loops.push({
+      id: `${rhythmSetId}_${type}${number}`,
+      filename,
+      type,
+      number,
+      rhythmFamily,
+      rhythmSetNo,
+      rhythmSetId,
+      conditions: {
+        taal: rhythmFamily || '',
+        timeSignature: '',
+        tempo: '',
+        genre: ''
+      },
+      metadata: {
+        duration: 0,
+        uploadedAt: new Date().toISOString(),
+        description: ''
+      }
+    });
+  });
+
+  metadata.loops = loops;
+  metadata.rhythmSets = buildRhythmSetIndexFromMetadata(metadata).map(set => ({
+    rhythmSetId: set.rhythmSetId,
+    rhythmFamily: set.rhythmFamily,
+    rhythmSetNo: set.rhythmSetNo,
+    fileCount: set.loopCount
+  }));
+
+  return metadata;
+}
+
+/**
+ * Ensure loops metadata document exists in MongoDB
+ */
+async function ensureLoopsMetadataDocument() {
+  if (!loopsMetadataCollection) {
+    return;
+  }
+
+  const existing = await loopsMetadataCollection.findOne({ _id: 'loops-metadata' });
+  const existingLoopsCount = Array.isArray(existing?.data?.loops) ? existing.data.loops.length : 0;
+  if (existing && existingLoopsCount > 0) {
+    return;
+  }
+
+  const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+  let seedData = null;
+
+  if (fs.existsSync(metadataPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+      if (parsed && typeof parsed === 'object') {
+        if (!Array.isArray(parsed.loops)) {
+          parsed.loops = [];
+        }
+        parsed.rhythmSets = buildRhythmSetIndexFromMetadata(parsed).map(set => ({
+          rhythmSetId: set.rhythmSetId,
+          rhythmFamily: set.rhythmFamily,
+          rhythmSetNo: set.rhythmSetNo,
+          fileCount: set.loopCount
+        }));
+        seedData = parsed;
+      }
+    } catch (error) {
+      console.warn('Failed reading legacy loops-metadata.json, falling back to disk scan:', error.message);
+    }
+  }
+
+  if (!seedData) {
+    seedData = buildLoopsMetadataFromDisk();
+  }
+
+  await loopsMetadataCollection.updateOne(
+    { _id: 'loops-metadata' },
+    {
+      $set: {
+        data: seedData,
+        createdAt: new Date(),
+        source: fs.existsSync(metadataPath) ? 'legacy-file-migration' : 'disk-scan-migration'
+      }
+    },
+    { upsert: true }
+  );
+
+  const actionLabel = existing ? 'repaired' : 'initialized';
+  console.log(`✅ Loops metadata ${actionLabel} in MongoDB (${seedData.loops?.length || 0} loop entries)`);
 }
 
 function getLoopRhythmFields(loop) {
@@ -534,7 +711,7 @@ async function recomputeRhythmSetDerivedMetadata(rhythmSetId) {
 }
 
 async function recommendRhythmSetForSong(song) {
-  const metadata = readLoopsMetadataSafe();
+  const metadata = await readLoopsMetadata();
   const sets = buildRhythmSetIndexFromMetadata(metadata);
   if (!sets.length) return null;
 
@@ -763,9 +940,127 @@ function resolveSongRhythmSelection(songPayload, recommendation) {
   };
 }
 
+function buildSongRhythmFields({ rhythmSetId, rhythmFamily, rhythmSetNo, rhythmRecommendation = null }) {
+  if (!rhythmSetId) {
+    return {
+      rhythmSetId: null,
+      rhythmFamily: null,
+      rhythmSetNo: null,
+      rhythmRecommendation: null
+    };
+  }
+
+  const parsed = parseRhythmSetId(rhythmSetId);
+  const normalizedFamily = normalizeRhythmFamily(rhythmFamily || parsed?.rhythmFamily || '');
+  const normalizedSetNo = normalizeRhythmSetNo(rhythmSetNo || parsed?.rhythmSetNo || null);
+  const normalizedSetId = buildRhythmSetId(normalizedFamily, normalizedSetNo);
+
+  if (!normalizedSetId) {
+    return {
+      rhythmSetId: null,
+      rhythmFamily: null,
+      rhythmSetNo: null,
+      rhythmRecommendation: null
+    };
+  }
+
+  return {
+    rhythmSetId: normalizedSetId,
+    rhythmFamily: normalizedFamily,
+    rhythmSetNo: normalizedSetNo,
+    rhythmRecommendation: rhythmRecommendation || null
+  };
+}
+
+async function listSongsMappedToRhythmSet(rhythmSetId) {
+  if (!songsCollection || !rhythmSetId) return [];
+  return songsCollection.find({ rhythmSetId }).toArray();
+}
+
+async function reassignSongsForRhythmSetRename(oldRhythmSetId, targetRhythmSetId, actor = 'system', updatedAt = new Date().toISOString()) {
+  const targetFields = buildSongRhythmFields({ rhythmSetId: targetRhythmSetId });
+  if (!targetFields.rhythmSetId) {
+    throw new Error('Invalid target rhythm set for song reassignment');
+  }
+
+  return songsCollection.updateMany(
+    { rhythmSetId: oldRhythmSetId },
+    {
+      $set: {
+        rhythmSetId: targetFields.rhythmSetId,
+        rhythmFamily: targetFields.rhythmFamily,
+        rhythmSetNo: targetFields.rhythmSetNo,
+        rhythmRecommendation: null,
+        updatedAt,
+        updatedBy: actor
+      }
+    }
+  );
+}
+
+async function unassignSongsFromRhythmSet(rhythmSetId, actor = 'system', updatedAt = new Date().toISOString()) {
+  const clearFields = buildSongRhythmFields({ rhythmSetId: null });
+
+  return songsCollection.updateMany(
+    { rhythmSetId },
+    {
+      $set: {
+        ...clearFields,
+        updatedAt,
+        updatedBy: actor
+      }
+    }
+  );
+}
+
+function evaluateSongRhythmIntegrity(song) {
+  const rhythmSetId = song?.rhythmSetId || null;
+
+  if (!rhythmSetId) {
+    const shouldBeCleared = buildSongRhythmFields({ rhythmSetId: null });
+    const hasMismatch =
+      (song?.rhythmFamily ?? null) !== shouldBeCleared.rhythmFamily ||
+      (song?.rhythmSetNo ?? null) !== shouldBeCleared.rhythmSetNo ||
+      (song?.rhythmRecommendation ?? null) !== shouldBeCleared.rhythmRecommendation;
+
+    return {
+      valid: !hasMismatch,
+      reason: hasMismatch ? 'orphaned-rhythm-fields-without-rhythmSetId' : 'ok',
+      expected: shouldBeCleared
+    };
+  }
+
+  const parsed = parseRhythmSetId(rhythmSetId);
+  if (!parsed) {
+    return {
+      valid: false,
+      reason: 'invalid-rhythmSetId-format',
+      expected: buildSongRhythmFields({ rhythmSetId: null })
+    };
+  }
+
+  const expected = buildSongRhythmFields({
+    rhythmSetId,
+    rhythmFamily: parsed.rhythmFamily,
+    rhythmSetNo: parsed.rhythmSetNo,
+    rhythmRecommendation: song?.rhythmRecommendation || null
+  });
+
+  const valid =
+    song?.rhythmSetId === expected.rhythmSetId &&
+    (song?.rhythmFamily ?? null) === expected.rhythmFamily &&
+    Number(song?.rhythmSetNo ?? null) === Number(expected.rhythmSetNo ?? null);
+
+  return {
+    valid,
+    reason: valid ? 'ok' : 'rhythm-fields-mismatch',
+    expected
+  };
+}
+
 async function bootstrapRhythmSetsFromMetadata() {
   if (!rhythmSetsCollection) return;
-  const metadata = readLoopsMetadataSafe();
+  const metadata = await readLoopsMetadata();
   const sets = buildRhythmSetIndexFromMetadata(metadata);
   if (!sets.length) return;
 
@@ -774,18 +1069,20 @@ async function bootstrapRhythmSetsFromMetadata() {
 
 async function renameRhythmSetInLoopsMetadata(oldRhythmSetId, newRhythmFamily, newRhythmSetNo, newRhythmSetId) {
   if (!oldRhythmSetId || !newRhythmSetId) {
-    return { updatedLoops: 0 };
+    return { updatedLoops: 0, renamedFiles: 0 };
   }
 
-  const metadataPath = path.join(__dirname, 'loops', 'loops-metadata.json');
-  if (!fs.existsSync(metadataPath)) {
-    return { updatedLoops: 0 };
+  const metadata = await readLoopsMetadata();
+  if (!metadata || !metadata.loops) {
+    return { updatedLoops: 0, renamedFiles: 0 };
   }
 
-  const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
   const loops = Array.isArray(metadata.loops) ? metadata.loops : [];
   let updatedLoops = 0;
+  let renamedFiles = 0;
+  const loopsDir = path.join(__dirname, 'loops');
 
+  // Update loop metadata AND rename actual files
   metadata.loops = loops.map(loop => {
     const normalizedLoop = { ...loop };
     const { rhythmSetId } = getLoopRhythmFields(normalizedLoop);
@@ -793,21 +1090,54 @@ async function renameRhythmSetInLoopsMetadata(oldRhythmSetId, newRhythmFamily, n
       return normalizedLoop;
     }
 
+    // Rename the actual file in the repository
+    try {
+      const oldFilename = normalizedLoop.filename;
+      if (oldFilename) {
+        const oldFilePath = path.join(loopsDir, oldFilename);
+        
+        // Calculate new filename: replace rhythmSetId in filename
+        // Format: ${rhythmSetId}_${TYPE}${number}.wav
+        const newFilename = oldFilename.replace(oldRhythmSetId, newRhythmSetId);
+        const newFilePath = path.join(loopsDir, newFilename);
+        
+        // Only rename if file exists and old/new are different
+        if (oldFilename !== newFilename && fs.existsSync(oldFilePath)) {
+          fs.renameSync(oldFilePath, newFilePath);
+          normalizedLoop.filename = newFilename;
+          renamedFiles++;
+          console.log(`✅ Renamed file: ${oldFilename} → ${newFilename}`);
+        }
+      }
+      
+      // Update the loop ID to match new rhythmSetId
+      if (normalizedLoop.id) {
+        normalizedLoop.id = normalizedLoop.id.replace(oldRhythmSetId, newRhythmSetId);
+      }
+    } catch (error) {
+      console.error(`⚠️ Failed to rename file for loop ${normalizedLoop.id}:`, error.message);
+      // Continue with metadata update even if file rename fails
+    }
+
+    // Update metadata references
     normalizedLoop.rhythmFamily = newRhythmFamily;
     normalizedLoop.rhythmSetNo = newRhythmSetNo;
     normalizedLoop.rhythmSetId = newRhythmSetId;
+    
     // Sync conditions.taal with the new rhythmFamily for consistent fallback resolution
     if (normalizedLoop.conditions && typeof normalizedLoop.conditions === 'object') {
       normalizedLoop.conditions = { ...normalizedLoop.conditions, taal: newRhythmFamily };
     }
+    
     updatedLoops += 1;
     return normalizedLoop;
   });
 
   if (!updatedLoops) {
-    return { updatedLoops: 0 };
+    return { updatedLoops: 0, renamedFiles: 0 };
   }
 
+  // Update rhythmSets index in metadata
   metadata.rhythmSets = buildRhythmSetIndexFromMetadata(metadata).map(set => ({
     rhythmSetId: set.rhythmSetId,
     rhythmFamily: set.rhythmFamily,
@@ -815,13 +1145,15 @@ async function renameRhythmSetInLoopsMetadata(oldRhythmSetId, newRhythmFamily, n
     fileCount: set.loopCount
   }));
 
+  // Save updated metadata to MongoDB
   try {
-    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+    await writeLoopsMetadata(metadata);
+    console.log(`✅ Updated ${updatedLoops} loop metadata entries, renamed ${renamedFiles} files`);
   } catch (error) {
-    console.warn('Could not persist loops metadata after rhythm set rename:', error.message);
+    console.error('⚠️ Could not persist loops metadata after rhythm set rename:', error.message);
   }
 
-  return { updatedLoops };
+  return { updatedLoops, renamedFiles };
 }
 
 // User registration
@@ -977,11 +1309,102 @@ app.get('/api/songs/deleted', authMiddleware, async (req, res) => {
   }
 });
 
+// Admin: inspect and optionally repair song rhythm assignment integrity
+app.post('/api/admin/songs/rhythm-integrity', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const repair = req.body?.repair === true;
+    const limit = Math.min(Math.max(parseInt(req.body?.limit, 10) || 5000, 1), 50000);
+    const actor = req.user.firstName || req.user.username || 'admin';
+    const now = new Date().toISOString();
+
+    const songs = await songsCollection.find(
+      {},
+      {
+        projection: {
+          _id: 0,
+          id: 1,
+          title: 1,
+          rhythmSetId: 1,
+          rhythmFamily: 1,
+          rhythmSetNo: 1,
+          rhythmRecommendation: 1
+        }
+      }
+    ).limit(limit).toArray();
+
+    const issues = [];
+    const bulkOps = [];
+
+    songs.forEach(song => {
+      const result = evaluateSongRhythmIntegrity(song);
+      if (result.valid) return;
+
+      issues.push({
+        id: song.id,
+        title: song.title,
+        reason: result.reason,
+        current: {
+          rhythmSetId: song.rhythmSetId ?? null,
+          rhythmFamily: song.rhythmFamily ?? null,
+          rhythmSetNo: song.rhythmSetNo ?? null
+        },
+        expected: {
+          rhythmSetId: result.expected.rhythmSetId,
+          rhythmFamily: result.expected.rhythmFamily,
+          rhythmSetNo: result.expected.rhythmSetNo
+        }
+      });
+
+      if (repair) {
+        bulkOps.push({
+          updateOne: {
+            filter: { id: song.id },
+            update: {
+              $set: {
+                rhythmSetId: result.expected.rhythmSetId,
+                rhythmFamily: result.expected.rhythmFamily,
+                rhythmSetNo: result.expected.rhythmSetNo,
+                rhythmRecommendation: result.expected.rhythmRecommendation,
+                updatedAt: now,
+                updatedBy: actor
+              }
+            }
+          }
+        });
+      }
+    });
+
+    let repairedCount = 0;
+    if (repair && bulkOps.length > 0) {
+      const writeResult = await songsCollection.bulkWrite(bulkOps, { ordered: false });
+      repairedCount = writeResult.modifiedCount || 0;
+
+      const affectedRhythmSetIds = new Set();
+      issues.forEach(issue => {
+        if (issue.current.rhythmSetId) affectedRhythmSetIds.add(issue.current.rhythmSetId);
+        if (issue.expected.rhythmSetId) affectedRhythmSetIds.add(issue.expected.rhythmSetId);
+      });
+
+      await Promise.all(Array.from(affectedRhythmSetIds).map(recomputeRhythmSetDerivedMetadata));
+    }
+
+    res.json({
+      scanned: songs.length,
+      issueCount: issues.length,
+      repaired: repairedCount,
+      repairApplied: repair,
+      issues: issues.slice(0, 200)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/rhythm-sets', authMiddleware, async (req, res) => {
   try {
     await bootstrapRhythmSetsFromMetadata();
 
-    const metadata = readLoopsMetadataSafe();
+    const metadata = await readLoopsMetadata();
     const metadataSets = buildRhythmSetIndexFromMetadata(metadata);
     const metadataMap = new Map(metadataSets.map(set => [set.rhythmSetId, set]));
 
@@ -1149,17 +1572,11 @@ app.put('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async (re
     }
 
     if (isRename) {
-      const songUpdateResult = await songsCollection.updateMany(
-        { rhythmSetId: parsed.rhythmSetId },
-        {
-          $set: {
-            rhythmSetId: targetRhythmSetId,
-            rhythmFamily: targetRhythmFamily,
-            rhythmSetNo: targetRhythmSetNo,
-            updatedAt: updates.updatedAt,
-            updatedBy: updates.updatedBy
-          }
-        }
+      const songUpdateResult = await reassignSongsForRhythmSetRename(
+        parsed.rhythmSetId,
+        targetRhythmSetId,
+        updates.updatedBy,
+        updates.updatedAt
       );
 
       await renameRhythmSetInLoopsMetadata(
@@ -1229,7 +1646,7 @@ app.delete('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async 
     }
 
     // Check if any songs are currently mapped to this rhythm set
-    const mappedSongs = await songsCollection.find({ rhythmSetId: rhythmSetId }).toArray();
+    const mappedSongs = await listSongsMappedToRhythmSet(rhythmSetId);
     if (mappedSongs.length > 0) {
       const songTitles = mappedSongs.map(s => `"${s.title}" (ID: ${s.id})`).join(', ');
       return res.status(400).json({ 
@@ -1240,7 +1657,7 @@ app.delete('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async 
     }
 
     // Get loop files associated with this rhythm set from metadata
-    const metadata = readLoopsMetadataSafe();
+    const metadata = await readLoopsMetadata();
     const loopsToDelete = [];
     
     if (metadata && metadata.loops) {
@@ -1277,9 +1694,8 @@ app.delete('/api/rhythm-sets/:rhythmSetId', authMiddleware, requireAdmin, async 
       const updatedLoops = metadata.loops.filter(loop => loop.rhythmSetId !== rhythmSetId);
       metadata.loops = updatedLoops;
       
-      const metadataPath = path.join(loopsDir, 'loops-metadata.json');
       try {
-        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+        await writeLoopsMetadata(metadata);
       } catch (err) {
         console.error('Failed to update metadata after deleting loops:', err);
       }
@@ -1309,15 +1725,16 @@ app.delete('/api/rhythm-sets/:rhythmSetId/force', authMiddleware, requireAdmin, 
     }
 
     // Unmap all songs that reference this rhythm set
-    const unmapResult = await songsCollection.updateMany(
-      { rhythmSetId: rhythmSetId },
-      { $unset: { rhythmSetId: "" } }
+    const unmapResult = await unassignSongsFromRhythmSet(
+      rhythmSetId,
+      req.user.firstName || req.user.username,
+      new Date().toISOString()
     );
     
     console.log(`Unmapped ${unmapResult.modifiedCount} songs from rhythm set ${rhythmSetId}`);
 
     // Get loop files associated with this rhythm set from metadata
-    const metadata = readLoopsMetadataSafe();
+    const metadata = await readLoopsMetadata();
     const loopsToDelete = [];
     
     if (metadata && metadata.loops) {
@@ -1354,9 +1771,8 @@ app.delete('/api/rhythm-sets/:rhythmSetId/force', authMiddleware, requireAdmin, 
       const updatedLoops = metadata.loops.filter(loop => loop.rhythmSetId !== rhythmSetId);
       metadata.loops = updatedLoops;
       
-      const metadataPath = path.join(loopsDir, 'loops-metadata.json');
       try {
-        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+        await writeLoopsMetadata(metadata);
       } catch (err) {
         console.error('Failed to update metadata after deleting loops:', err);
       }
@@ -1389,7 +1805,7 @@ app.delete('/api/rhythm-sets/:rhythmSetId/loops/:loopType', authMiddleware, requ
     }
 
     // Read metadata
-    const metadata = readLoopsMetadataSafe();
+    const metadata = await readLoopsMetadata();
     if (!metadata || !metadata.loops) {
       return res.status(404).json({ error: 'No loops metadata found' });
     }
@@ -1424,9 +1840,8 @@ app.delete('/api/rhythm-sets/:rhythmSetId/loops/:loopType', authMiddleware, requ
     );
 
     // Save updated metadata
-    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
     try {
-      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      await writeLoopsMetadata(metadata);
     } catch (err) {
       console.error('Failed to update metadata:', err);
       return res.status(500).json({ error: 'Failed to update metadata' });
@@ -1439,6 +1854,421 @@ app.delete('/api/rhythm-sets/:rhythmSetId/loops/:loopType', authMiddleware, requ
       fileDeleted
     });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/rhythm-sets/:rhythmSetId/loops/copy
+ * Copy a loop file to another slot within the same rhythm set
+ */
+app.post('/api/rhythm-sets/:rhythmSetId/loops/copy', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { rhythmSetId } = req.params;
+    const { sourceFilename, targetLoopType } = req.body;
+
+    if (!sourceFilename || !targetLoopType) {
+      return res.status(400).json({ error: 'sourceFilename and targetLoopType are required' });
+    }
+
+    // Validate targetLoopType
+    const validLoopTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    if (!validLoopTypes.includes(targetLoopType)) {
+      return res.status(400).json({ error: 'Invalid target loop type. Must be one of: loop1-3, fill1-3' });
+    }
+
+    // Parse target type and number
+    const targetType = targetLoopType.includes('loop') ? 'loop' : 'fill';
+    const targetNumber = parseInt(targetLoopType.match(/\d+/)[0], 10);
+
+    // Read metadata
+    const metadata = await readLoopsMetadata();
+    if (!metadata || !metadata.loops) {
+      return res.status(404).json({ error: 'No loops metadata found' });
+    }
+
+    // Find source loop entry
+    const sourceLoopEntry = metadata.loops.find(loop => loop.filename === sourceFilename);
+    if (!sourceLoopEntry) {
+      return res.status(404).json({ error: `Source loop file ${sourceFilename} not found in metadata` });
+    }
+
+    // Check if source file exists
+    const sourceFilePath = path.join(loopsDir, sourceFilename);
+    if (!fs.existsSync(sourceFilePath)) {
+      return res.status(404).json({ error: `Source loop file ${sourceFilename} does not exist` });
+    }
+
+    // Generate new filename for the copy
+    const ext = path.extname(sourceFilename);
+    const timestamp = Date.now();
+    const newFilename = `${rhythmSetId}_${targetType}${targetNumber}_${timestamp}${ext}`;
+    const targetFilePath = path.join(loopsDir, newFilename);
+
+    // Copy the file
+    try {
+      fs.copyFileSync(sourceFilePath, targetFilePath);
+    } catch (err) {
+      console.error('Failed to copy file:', err);
+      return res.status(500).json({ error: 'Failed to copy loop file' });
+    }
+
+    // Check if target slot already has a loop and remove it
+    const existingLoopIndex = metadata.loops.findIndex(loop =>
+      loop.rhythmSetId === rhythmSetId &&
+      loop.type === targetType &&
+      loop.number === targetNumber
+    );
+
+    if (existingLoopIndex !== -1) {
+      const existingLoop = metadata.loops[existingLoopIndex];
+      const existingFilePath = path.join(loopsDir, existingLoop.filename);
+      if (fs.existsSync(existingFilePath)) {
+        try {
+          fs.unlinkSync(existingFilePath);
+        } catch (err) {
+          console.warn(`Failed to delete existing loop file ${existingLoop.filename}:`, err);
+        }
+      }
+      metadata.loops.splice(existingLoopIndex, 1);
+    }
+
+    // Create new metadata entry
+    const newLoopEntry = {
+      rhythmSetId: rhythmSetId,
+      type: targetType,
+      number: targetNumber,
+      filename: newFilename,
+      originalFilename: sourceLoopEntry.originalFilename || sourceFilename,
+      taal: sourceLoopEntry.taal || rhythmSetId.split('_').slice(0, -1).join('_'),
+      timeSignature: sourceLoopEntry.timeSignature || '4/4',
+      tempo: sourceLoopEntry.tempo || 'medium',
+      genre: sourceLoopEntry.genre || 'acoustic',
+      description: `Copied from ${sourceFilename}`,
+      uploadedAt: new Date().toISOString()
+    };
+
+    metadata.loops.push(newLoopEntry);
+
+    // Save updated metadata
+    try {
+      await writeLoopsMetadata(metadata);
+    } catch (err) {
+      console.error('Failed to update metadata:', err);
+      return res.status(500).json({ error: 'Failed to update metadata' });
+    }
+
+    res.json({
+      success: true,
+      message: `Loop copied to ${targetLoopType} successfully`,
+      sourceFilename,
+      newFilename,
+      targetLoopType
+    });
+  } catch (err) {
+    console.error('Error copying loop:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/rhythm-sets/loops/swap
+ * Swap loop files between two slots (can be same or different rhythm sets)
+ */
+app.post('/api/rhythm-sets/loops/swap', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { slot1, slot2 } = req.body;
+
+    if (!slot1 || !slot2 || !slot1.rhythmSetId || !slot1.loopType || !slot1.filename ||
+        !slot2.rhythmSetId || !slot2.loopType || !slot2.filename) {
+      return res.status(400).json({ error: 'Both slot1 and slot2 with rhythmSetId, loopType, and filename are required' });
+    }
+
+    // Validate loopTypes
+    const validLoopTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    if (!validLoopTypes.includes(slot1.loopType) || !validLoopTypes.includes(slot2.loopType)) {
+      return res.status(400).json({ error: 'Invalid loop type. Must be one of: loop1-3, fill1-3' });
+    }
+
+    // Read metadata
+    const metadata = await readLoopsMetadata();
+    if (!metadata || !metadata.loops) {
+      return res.status(404).json({ error: 'No loops metadata found' });
+    }
+
+    // Parse slot1 type and number
+    const slot1Type = slot1.loopType.includes('loop') ? 'loop' : 'fill';
+    const slot1Number = parseInt(slot1.loopType.match(/\d+/)[0], 10);
+
+    // Parse slot2 type and number
+    const slot2Type = slot2.loopType.includes('loop') ? 'loop' : 'fill';
+    const slot2Number = parseInt(slot2.loopType.match(/\d+/)[0], 10);
+
+    // Find both loop entries in metadata
+    const loop1Index = metadata.loops.findIndex(loop =>
+      loop.rhythmSetId === slot1.rhythmSetId &&
+      loop.type === slot1Type &&
+      loop.number === slot1Number
+    );
+
+    const loop2Index = metadata.loops.findIndex(loop =>
+      loop.rhythmSetId === slot2.rhythmSetId &&
+      loop.type === slot2Type &&
+      loop.number === slot2Number
+    );
+
+    if (loop1Index === -1) {
+      return res.status(404).json({ error: `Loop ${slot1.loopType} not found for rhythm set ${slot1.rhythmSetId}` });
+    }
+
+    if (loop2Index === -1) {
+      return res.status(404).json({ error: `Loop ${slot2.loopType} not found for rhythm set ${slot2.rhythmSetId}` });
+    }
+
+    // Swap the filenames in metadata (keeping rhythm set assignments)
+    const loop1 = metadata.loops[loop1Index];
+    const loop2 = metadata.loops[loop2Index];
+
+    const tempFilename = loop1.filename;
+    const tempOriginalFilename = loop1.originalFilename;
+
+    metadata.loops[loop1Index].filename = loop2.filename;
+    metadata.loops[loop1Index].originalFilename = loop2.originalFilename || loop2.filename;
+    metadata.loops[loop1Index].uploadedAt = new Date().toISOString();
+    metadata.loops[loop1Index].description = `Swapped from ${slot2.rhythmSetId} ${slot2.loopType}`;
+
+    metadata.loops[loop2Index].filename = tempFilename;
+    metadata.loops[loop2Index].originalFilename = tempOriginalFilename || tempFilename;
+    metadata.loops[loop2Index].uploadedAt = new Date().toISOString();
+    metadata.loops[loop2Index].description = `Swapped from ${slot1.rhythmSetId} ${slot1.loopType}`;
+
+    // Save updated metadata
+    try {
+      await writeLoopsMetadata(metadata);
+    } catch (err) {
+      console.error('Failed to update metadata:', err);
+      return res.status(500).json({ error: 'Failed to update metadata' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Loops swapped successfully',
+      slot1: {
+        rhythmSetId: slot1.rhythmSetId,
+        loopType: slot1.loopType,
+        newFilename: loop2.filename
+      },
+      slot2: {
+        rhythmSetId: slot2.rhythmSetId,
+        loopType: slot2.loopType,
+        newFilename: tempFilename
+      }
+    });
+  } catch (err) {
+    console.error('Error swapping loops:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/rhythm-sets/:rhythmSetId/loops/assign
+ * Assign an existing loop file to a slot (creates symlink reference in metadata)
+ */
+app.post('/api/rhythm-sets/:rhythmSetId/loops/assign', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { rhythmSetId } = req.params;
+    const { loopType, filename } = req.body;
+
+    if (!loopType || !filename) {
+      return res.status(400).json({ error: 'loopType and filename are required' });
+    }
+
+    // Validate loopType
+    const validLoopTypes = ['loop1', 'loop2', 'loop3', 'fill1', 'fill2', 'fill3'];
+    if (!validLoopTypes.includes(loopType)) {
+      return res.status(400).json({ error: 'Invalid loop type. Must be one of: loop1-3, fill1-3' });
+    }
+
+    // Parse type and number
+    const type = loopType.includes('loop') ? 'loop' : 'fill';
+    const number = parseInt(loopType.match(/\d+/)[0], 10);
+
+    // Read metadata
+    const metadata = await readLoopsMetadata();
+    if (!metadata || !metadata.loops) {
+      return res.status(404).json({ error: 'No loops metadata found' });
+    }
+
+    // Find the source loop entry by filename
+    const sourceLoopEntry = metadata.loops.find(loop => loop.filename === filename);
+    if (!sourceLoopEntry) {
+      return res.status(404).json({ error: `Loop file ${filename} not found in metadata` });
+    }
+
+    // Check if file exists
+    const sourceFilePath = path.join(loopsDir, filename);
+    if (!fs.existsSync(sourceFilePath)) {
+      return res.status(404).json({ error: `Loop file ${filename} does not exist` });
+    }
+
+    // Check if target slot already has a loop and remove it from metadata only
+    // (we don't delete the file since it might be used elsewhere)
+    const existingLoopIndex = metadata.loops.findIndex(loop =>
+      loop.rhythmSetId === rhythmSetId &&
+      loop.type === type &&
+      loop.number === number
+    );
+
+    let replacedLoop = null;
+    if (existingLoopIndex !== -1) {
+      replacedLoop = metadata.loops[existingLoopIndex];
+      metadata.loops.splice(existingLoopIndex, 1);
+    }
+
+    // Create new metadata entry that references the existing file
+    const newLoopEntry = {
+      rhythmSetId: rhythmSetId,
+      type: type,
+      number: number,
+      filename: filename, // Reference to existing file
+      originalFilename: sourceLoopEntry.originalFilename || filename,
+      taal: sourceLoopEntry.taal || rhythmSetId.split('_').slice(0, -1).join('_'),
+      timeSignature: sourceLoopEntry.timeSignature || '4/4',
+      tempo: sourceLoopEntry.tempo || 'medium',
+      genre: sourceLoopEntry.genre || 'acoustic',
+      description: `Assigned to ${rhythmSetId} ${loopType}`,
+      uploadedAt: new Date().toISOString(),
+      sharedFile: true // Flag to indicate this file is shared across multiple slots
+    };
+
+    metadata.loops.push(newLoopEntry);
+
+    // Save updated metadata
+    try {
+      await writeLoopsMetadata(metadata);
+    } catch (err) {
+      console.error('Failed to update metadata:', err);
+      return res.status(500).json({ error: 'Failed to update metadata' });
+    }
+
+    res.json({
+      success: true,
+      message: `Loop ${filename} assigned to ${loopType} successfully`,
+      filename,
+      loopType,
+      replacedLoop: replacedLoop ? replacedLoop.filename : null
+    });
+  } catch (err) {
+    console.error('Error assigning loop:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/rhythm-sets/duplicate
+ * Duplicate a rhythm set with all its loop references
+ */
+app.post('/api/rhythm-sets/duplicate', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { sourceRhythmSetId, newRhythmSetId } = req.body;
+
+    if (!sourceRhythmSetId || !newRhythmSetId) {
+      return res.status(400).json({ error: 'sourceRhythmSetId and newRhythmSetId are required' });
+    }
+
+    // Validate newRhythmSetId format (should be rhythmFamily_setNumber)
+    if (!newRhythmSetId.includes('_')) {
+      return res.status(400).json({ error: 'Invalid rhythm set ID format. Must be rhythmFamily_setNumber (e.g., keherwa_2)' });
+    }
+
+    // Read metadata
+    const metadata = await readLoopsMetadata();
+    if (!metadata || !metadata.loops) {
+      return res.status(404).json({ error: 'No loops metadata found' });
+    }
+
+    // Check if new rhythm set ID already exists
+    const existingLoops = metadata.loops.filter(loop => loop.rhythmSetId === newRhythmSetId);
+    if (existingLoops.length > 0) {
+      return res.status(400).json({ error: `Rhythm set "${newRhythmSetId}" already exists` });
+    }
+
+    // Find all loops for the source rhythm set
+    const sourceLoops = metadata.loops.filter(loop => loop.rhythmSetId === sourceRhythmSetId);
+    if (sourceLoops.length === 0) {
+      return res.status(404).json({ error: `Source rhythm set "${sourceRhythmSetId}" has no loops` });
+    }
+
+    // Create new loop entries referencing the same files
+    const newLoops = sourceLoops.map(sourceLoop => ({
+      rhythmSetId: newRhythmSetId,
+      type: sourceLoop.type,
+      number: sourceLoop.number,
+      filename: sourceLoop.filename, // Reference same file
+      originalFilename: sourceLoop.originalFilename || sourceLoop.filename,
+      taal: sourceLoop.taal,
+      timeSignature: sourceLoop.timeSignature,
+      tempo: sourceLoop.tempo,
+      genre: sourceLoop.genre,
+      description: `Duplicated from ${sourceRhythmSetId}`,
+      uploadedAt: new Date().toISOString(),
+      sharedFile: true // Flag to indicate this file is shared
+    }));
+
+    // Add new loops to metadata
+    metadata.loops.push(...newLoops);
+
+    // Save updated metadata
+    try {
+      await writeLoopsMetadata(metadata);
+    } catch (err) {
+      console.error('Failed to update metadata:', err);
+      return res.status(500).json({ error: 'Failed to update metadata' });
+    }
+
+    // If RhythmSets collection exists in MongoDB, create entry there too
+    try {
+      const db = req.app.locals.db;
+      if (db) {
+        const rhythmSetsCollection = db.collection('RhythmSets');
+        
+        // Check if source exists in MongoDB
+        const sourceDbEntry = await rhythmSetsCollection.findOne({ rhythmSetId: sourceRhythmSetId });
+        
+        if (sourceDbEntry) {
+          // Create new entry based on source
+          const [rhythmFamily, ...setNoParts] = newRhythmSetId.split('_');
+          const rhythmSetNo = setNoParts.join('_');
+          
+          const newDbEntry = {
+            rhythmSetId: newRhythmSetId,
+            rhythmFamily: rhythmFamily,
+            rhythmSetNo: rhythmSetNo,
+            taal: sourceDbEntry.taal || rhythmFamily,
+            timeSignature: sourceDbEntry.timeSignature || '4/4',
+            tempo: sourceDbEntry.tempo || 'medium',
+            genre: sourceDbEntry.genre || 'acoustic',
+            description: `Duplicate of ${sourceRhythmSetId}`,
+            createdAt: new Date().toISOString()
+          };
+          
+          await rhythmSetsCollection.insertOne(newDbEntry);
+        }
+      }
+    } catch (dbErr) {
+      console.warn('Failed to create MongoDB entry (non-critical):', dbErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: `Rhythm set "${newRhythmSetId}" created successfully`,
+      sourceRhythmSetId,
+      newRhythmSetId,
+      loopsCopied: newLoops.length,
+      loops: newLoops.map(l => `${l.type}${l.number}`)
+    });
+  } catch (err) {
+    console.error('Error duplicating rhythm set:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1746,11 +2576,8 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
                           (Object.prototype.hasOwnProperty.call(req.body, 'rhythmSetId') && !req.body.rhythmSetId);
 
     if (isUnassigning) {
-      // Explicitly unassigning - set all rhythm fields to null
-      req.body.rhythmSetId = null;
-      req.body.rhythmFamily = null;
-      req.body.rhythmSetNo = null;
-      req.body.rhythmRecommendation = null;
+      // Explicitly unassigning - use centralized rhythm field shape
+      Object.assign(req.body, buildSongRhythmFields({ rhythmSetId: null }));
       console.log(`Unassigning rhythm set from song ${numericId}`);
     } else {
       // Normal update - use recommendation logic
@@ -1764,10 +2591,14 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
         });
       }
 
-      req.body.rhythmFamily = resolvedRhythm.rhythmFamily || existingSong.rhythmFamily;
-      req.body.rhythmSetNo = resolvedRhythm.rhythmSetNo || existingSong.rhythmSetNo;
-      req.body.rhythmSetId = resolvedRhythm.rhythmSetId || existingSong.rhythmSetId;
-      req.body.rhythmRecommendation = resolvedRhythm.recommendation || existingSong.rhythmRecommendation || null;
+      const targetRhythmSetId = resolvedRhythm.rhythmSetId || existingSong.rhythmSetId;
+      const normalizedRhythm = buildSongRhythmFields({
+        rhythmSetId: targetRhythmSetId,
+        rhythmFamily: resolvedRhythm.rhythmFamily || existingSong.rhythmFamily,
+        rhythmSetNo: resolvedRhythm.rhythmSetNo || existingSong.rhythmSetNo,
+        rhythmRecommendation: resolvedRhythm.recommendation || existingSong.rhythmRecommendation || null
+      });
+      Object.assign(req.body, normalizedRhythm);
     }
 
     // Always set updatedAt to now on edit
@@ -1837,17 +2668,15 @@ app.patch('/api/songs/:id/rhythm-set', authMiddleware, requireAdmin, async (req,
     let updateFields = { updatedAt, updatedBy };
 
     if (!rhythmSetId) {
-      // Unassign rhythm set
-      updateFields.rhythmSetId = null;
-      updateFields.rhythmFamily = null;
-      updateFields.rhythmSetNo = null;
-      updateFields.rhythmRecommendation = null;
+      Object.assign(updateFields, buildSongRhythmFields({ rhythmSetId: null }));
     } else {
       const parsed = parseRhythmSetId(rhythmSetId);
       if (!parsed) return res.status(400).json({ error: 'Invalid rhythmSetId format' });
-      updateFields.rhythmSetId = parsed.rhythmSetId;
-      updateFields.rhythmFamily = parsed.rhythmFamily;
-      updateFields.rhythmSetNo = parsed.rhythmSetNo;
+      Object.assign(updateFields, buildSongRhythmFields({
+        rhythmSetId: parsed.rhythmSetId,
+        rhythmFamily: parsed.rhythmFamily,
+        rhythmSetNo: parsed.rhythmSetNo
+      }));
     }
 
     await songsCollection.updateOne({ id: numericId }, { $set: updateFields });
@@ -2511,9 +3340,12 @@ app.get('/api/song-metadata', async (req, res) => {
  */
 app.get('/api/loops/metadata', async (req, res) => {
   try {
-    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
-    
-    if (!fs.existsSync(metadataPath)) {
+    // Read from MongoDB (single source of truth)
+    let metadata = await readLoopsMetadata();
+    let metadataChanged = false;
+
+    // If no loops yet, initialize with default structure
+    if (!metadata || !metadata.loops || !Array.isArray(metadata.loops) || metadata.loops.length === 0) {
       // Get song metadata to populate defaults
       const mainJsPath = path.join(__dirname, 'main.js');
       const mainJsContent = fs.readFileSync(mainJsPath, 'utf8');
@@ -2565,10 +3397,10 @@ app.get('/api/loops/metadata', async (req, res) => {
       });
     }
 
-    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-    let metadataChanged = false;
-
+    // Ensure loops is an array
     metadata.loops = Array.isArray(metadata.loops) ? metadata.loops : [];
+    
+    // Normalize loop fields
     metadata.loops = metadata.loops.map(loop => {
       const normalizedLoop = { ...loop };
       const { rhythmFamily, rhythmSetNo, rhythmSetId } = getLoopRhythmFields(normalizedLoop);
@@ -2641,11 +3473,11 @@ app.get('/api/loops/metadata', async (req, res) => {
     }
 
     if (metadataChanged) {
-      // Save updated metadata (skip in serverless - ephemeral file system)
+      // Save updated metadata to MongoDB
       try {
-        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+        await writeLoopsMetadata(metadata);
       } catch (err) {
-        console.warn('Could not write metadata (serverless mode):', err.message);
+        console.warn('Could not write metadata:', err.message);
       }
     }
 
@@ -2711,13 +3543,11 @@ app.post('/api/loops/upload', authMiddleware, blockLoopUploadsInProduction, loop
       return res.status(400).json({ error: 'Invalid rhythmFamily/rhythmSetNo combination' });
     }
 
-    // Load existing metadata
-    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
-    let metadata;
-
-    if (fs.existsSync(metadataPath)) {
-      metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-    } else {
+    // Load existing metadata from MongoDB
+    let metadata = await readLoopsMetadata();
+    
+    // Ensure metadata has all required fields
+    if (!metadata || !metadata.loops) {
       metadata = {
         version: '2.0',
         loops: [],
@@ -2799,11 +3629,11 @@ app.post('/api/loops/upload', authMiddleware, blockLoopUploadsInProduction, loop
       uploadedFiles.push(correctFilename);
     }
 
-    // Save updated metadata (skip in serverless - ephemeral file system)
+    // Save updated metadata
     try {
-      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      await writeLoopsMetadata(metadata);
     } catch (err) {
-      console.warn('Could not write metadata (serverless mode):', err.message);
+      console.warn('Could not write metadata:', err.message);
     }
 
     await ensureRhythmSetDocument({ rhythmSetId, rhythmFamily, rhythmSetNo }, req.user.firstName || req.user.username, 'loop-upload');
@@ -2849,13 +3679,14 @@ app.post('/api/loops/upload-single', authMiddleware, blockLoopUploadsInProductio
       return res.status(400).json({ error: 'Invalid rhythmFamily/rhythmSetNo combination' });
     }
 
-    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+    // Load existing metadata from MongoDB
     let metadata;
 
     try {
-      if (fs.existsSync(metadataPath)) {
-        metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-      } else {
+      metadata = await readLoopsMetadata();
+      
+      // Ensure metadata has all required fields
+      if (!metadata || !metadata.loops) {
         metadata = {
           version: '2.0',
           loops: [],
@@ -2936,7 +3767,7 @@ app.post('/api/loops/upload-single', authMiddleware, blockLoopUploadsInProductio
 
     // Save updated metadata
     try {
-      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      await writeLoopsMetadata(metadata);
     } catch (err) {
       console.error('Error writing metadata:', err);
       return res.status(500).json({ error: 'Failed to update loop metadata' });
@@ -2992,17 +3823,16 @@ app.put('/api/loops/:loopId/replace', authMiddleware, requireAdmin, blockLoopUpl
     }
     
     try {
-      const metadataPath = path.join(loopsDir, 'loops-metadata.json');
+      const metadata = await readLoopsMetadata();
       
-      if (!fs.existsSync(metadataPath)) {
+      if (!metadata || !metadata.loops) {
         // Clean up uploaded file
         if (fs.existsSync(req.file.path)) {
           fs.unlinkSync(req.file.path);
         }
-        return res.status(404).json({ error: 'Metadata file not found' });
+        return res.status(404).json({ error: 'Metadata not found' });
       }
       
-      const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
       const loopEntry = metadata.loops.find(loop => loop.id === loopId);
       
       if (!loopEntry) {
@@ -3032,9 +3862,9 @@ app.put('/api/loops/:loopId/replace', authMiddleware, requireAdmin, blockLoopUpl
       
       // Save updated metadata
       try {
-        fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+        await writeLoopsMetadata(metadata);
       } catch (err) {
-        console.warn('Could not write metadata (serverless mode):', err.message);
+        console.warn('Could not write metadata:', err.message);
       }
       
       console.log(`🔄 Replaced loop file: ${loopEntry.filename}`);
@@ -3061,13 +3891,13 @@ app.put('/api/loops/:loopId/replace', authMiddleware, requireAdmin, blockLoopUpl
 app.delete('/api/loops/:loopId', authMiddleware, async (req, res) => {
   try {
     const { loopId } = req.params;
-    const metadataPath = path.join(loopsDir, 'loops-metadata.json');
 
-    if (!fs.existsSync(metadataPath)) {
-      return res.status(404).json({ error: 'Metadata file not found' });
+    const metadata = await readLoopsMetadata();
+
+    if (!metadata || !metadata.loops) {
+      return res.status(404).json({ error: 'Metadata not found' });
     }
 
-    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
     const loopEntry = metadata.loops.find(loop => loop.id === loopId);
 
     if (!loopEntry) {
@@ -3087,11 +3917,11 @@ app.delete('/api/loops/:loopId', authMiddleware, async (req, res) => {
     // Remove from metadata
     metadata.loops = metadata.loops.filter(loop => loop.id !== loopId);
 
-    // Save updated metadata (skip in serverless - ephemeral file system)
+    // Save updated metadata
     try {
-      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      await writeLoopsMetadata(metadata);
     } catch (err) {
-      console.warn('Could not write metadata (serverless mode):', err.message);
+      console.warn('Could not write metadata:', err.message);
     }
 
     res.json({ success: true, deleted: loopEntry.filename });

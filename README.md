@@ -91,6 +91,9 @@ The GitHub Pages site is **static only** — it has no server. All API calls are
 - **Rhythm loop player** — deterministic 6-pad playback (3 loops + 3 fills) resolved by `rhythmSetId`
 - **Melodic pads** — atmosphere and tanpura samples organized by musical key with seamless crossfade looping
 - **Admin tools** — rhythm set lifecycle management, loop uploads, song-to-rhythm-set mapping
+- **Rhythm set profile learning** — AI-driven song suggestions based on profile analysis of 191 songs across 13 rhythm sets
+- **Loop management** — swap loops between slots, select existing loops, duplicate rhythm sets with real-time validation
+- **CLI suggestion tools** — profile-based song matching scripts for automated rhythm set assignments
 - **Delta sync** — incremental song cache refresh (~90% faster than full reload)
 - **PWA** — installable, minimal service worker
 - **Mobile UI** — collapsible panels, touch navigation, responsive breakpoints
@@ -178,12 +181,21 @@ OldandNew/
 │
 ├── loop-manager.html               # Admin: rhythm loop upload/replace
 ├── loop-manager.js                 # Rhythm loop upload management
-├── loop-rhythm-manager.html        # Admin: rhythm set lifecycle (create/edit/delete/slots)
-├── loop-rhythm-manager.js          # Rhythm set workspace (slots, player, drag-drop upload)
+├── loop-rhythm-manager.html        # Admin: rhythm set lifecycle (create/edit/delete/slots/swap/duplicate)
+├── loop-rhythm-manager.js          # Rhythm set workspace (slots, player, swap, select, duplicate)
 ├── melodic-loops-manager.html      # Admin: melodic pad sample management
 ├── melodic-loops-manager.js        # Melodic sample upload by key
 ├── rhythm-mapper.html              # Admin: batch song-to-rhythm-set assignment
 ├── rhythm-mapper.js                # Song mapper, bulk select, assign/unassign
+│
+├── scripts/
+│   ├── core/                       # Core utility scripts
+│   │   ├── api-base.js             # API URL resolution
+│   │   ├── auth-client.js          # JWT token management
+│   │   ├── build-rhythm-set-profiles.js        # NEW: Initial profile generation (276 lines)
+│   │   ├── rhythm-set-profile-manager.js       # NEW: Profile update logic (378 lines)
+│   │   ├── suggest-rhythm-assignments.js       # NEW: AI-driven song suggestions (219 lines)
+│   │   └── check-rhythm-set-songs.js           # NEW: Quick rhythm set song lookup (44 lines)
 │
 ├── utils/
 │   ├── auth.js                     # Backend auth helpers (JWT, OTP, bcrypt)
@@ -273,9 +285,10 @@ Songs use a numeric `id` field (not MongoDB's `_id`):
 | Personal setlists | `GET/POST /api/my-setlists`, add/remove-song variants |
 | Smart setlists | `GET/POST/PUT/DELETE /api/smart-setlists` |
 | Recommendation weights | `GET/PUT /api/recommendation-weights` |
-| Rhythm sets | `GET/POST /api/rhythm-sets`, `PUT/DELETE /api/rhythm-sets/:rhythmSetId`, `POST /api/rhythm-sets/:rhythmSetId/recompute` |
+| Rhythm sets | `GET/POST /api/rhythm-sets`, `PUT/DELETE /api/rhythm-sets/:rhythmSetId`, `POST /api/rhythm-sets/:rhythmSetId/recompute`, `POST /api/rhythm-sets/duplicate` |
 | Rhythm loop files | `GET /api/loops/metadata`, `POST /api/loops/upload-single`, `DELETE /api/loops/:loopId`, `POST /api/loops/:loopId/replace` |
-| Rhythm set loop slots | `DELETE /api/rhythm-sets/:rhythmSetId/loops/:loopType` |
+| Rhythm set loop slots | `DELETE /api/rhythm-sets/:rhythmSetId/loops/:loopType`, `POST /api/rhythm-sets/loops/swap`, `POST /api/rhythm-sets/loops/assign`, `POST /api/rhythm-sets/loops/copy` |
+| Rhythm set profiles | `GET /api/rhythm-set-profiles`, `GET /api/rhythm-set-profiles/:rhythmSetId` (Profile learning system) |
 | Melodic loops | `GET/POST /api/melodic-loops`, `POST /api/melodic-loops/upload`, `POST /api/melodic-loops/:id/replace`, `DELETE /api/melodic-loops/:id` |
 | Metadata | `GET /api/song-metadata`, `GET /api/debug/db` |
 
@@ -298,6 +311,7 @@ Songs use a numeric `id` field (not MongoDB's `_id`):
 |---|---|
 | [LOOP_PLAYER_DOCUMENTATION.md](LOOP_PLAYER_DOCUMENTATION.md) | Loop player subsystem: crossfade architecture, file naming, matching logic, API contracts, function reference |
 | [CHORD_ACCIDENTAL_NORMALIZATION.md](CHORD_ACCIDENTAL_NORMALIZATION.md) | Chord accidental normalization policy and conversion tables |
+| [RHYTHM_SET_PROFILE_LEARNING_PLAN.md](RHYTHM_SET_PROFILE_LEARNING_PLAN.md) | Rhythm set profile learning system: implementation plan, profile schema, scoring algorithm, CLI tools |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development workflow, coding standards, commit process |
 
 ### Documentation lookup order
@@ -358,6 +372,40 @@ Manual testing checklist:
 - Authentication and password reset OTP flow
 - Loop player: play, switch loop, adjust volume/tempo
 - Admin pages: rhythm set create/edit/delete, slot upload, mapper assign/unassign
+- Loop management: swap loops, select existing loops, duplicate rhythm sets
+- Profile-based song suggestions via CLI tools
+
+---
+
+## CLI Tools for Rhythm Set Management
+
+### Profile Building & Song Suggestions
+
+```bash
+# Build initial rhythm set profiles from existing song assignments
+node scripts/core/build-rhythm-set-profiles.js
+
+# Find similar songs for a specific rhythm set (by reference song)
+node scripts/core/suggest-rhythm-assignments.js "Sweetheart Hain" --min-score=45
+
+# Find only unassigned similar songs
+node scripts/core/suggest-rhythm-assignments.js "Song Title" --unassigned --min-score=50
+
+# Auto-apply assignments for high-confidence matches
+node scripts/core/suggest-rhythm-assignments.js "Song Title" --min-score=70 --apply
+
+# Check what songs are currently assigned to a rhythm set
+node scripts/core/check-rhythm-set-songs.js "keherwa_1"
+```
+
+### Profile Learning System Features
+
+- **13 Active Profiles**: Built from 191 songs across rhythm sets
+- **6-Dimension Scoring**: Mood, genre, taal, time signature, BPM, rhythm category
+- **Configurable Weights**: Adjustable scoring weights via ProfileScoringConfig collection
+- **Automated Updates**: Profiles refresh automatically on song assignments
+- **Markdown Reports**: Generates detailed suggestion reports with match reasons
+- **Batch Processing**: Optional auto-apply mode for bulk assignments
 
 ---
 

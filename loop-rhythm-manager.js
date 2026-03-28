@@ -7,6 +7,7 @@ const deriveRhythmSetFields = window.RhythmSetUtils.deriveRhythmSetFields;
 let rhythmSets = [];
 let selectedRhythmSet = null;
 let isReadOnlyMode = false;
+let swapState = null; // Track swap selection: { rhythmSetId, loopType, filename }
 let loopFiles = {
     loop1: null,
     loop2: null,
@@ -734,6 +735,16 @@ function renderRhythmSetsTable() {
                     editRhythmSet(set.rhythmSetId, set.rhythmFamily, numericSetNo);
                 });
 
+                const duplicateButton = document.createElement('button');
+                duplicateButton.className = 'btn btn-secondary btn-mini';
+                duplicateButton.style.marginRight = '5px';
+                duplicateButton.innerHTML = '<i class="fas fa-copy"></i> Duplicate';
+                duplicateButton.title = 'Create a copy of this rhythm set';
+                duplicateButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    duplicateRhythmSet(set.rhythmSetId);
+                });
+
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'btn btn-danger btn-mini';
                 deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete';
@@ -743,6 +754,7 @@ function renderRhythmSetsTable() {
                 });
 
                 actionsCell.appendChild(editButton);
+                actionsCell.appendChild(duplicateButton);
                 actionsCell.appendChild(deleteButton);
             }
         }
@@ -827,6 +839,18 @@ function renderLoopSlots(rhythmSet) {
             actions.appendChild(playBtn);
 
             if (!isReadOnlyMode) {
+                const swapBtn = document.createElement('button');
+                swapBtn.className = 'btn btn-secondary btn-mini loop-slot-swap-btn';
+                swapBtn.dataset.rhythmSetId = encodedRhythmSetId;
+                swapBtn.dataset.loopType = loopType;
+                swapBtn.dataset.filename = filename;
+                const swapIcon = document.createElement('i');
+                swapIcon.className = 'fas fa-exchange-alt';
+                swapBtn.appendChild(swapIcon);
+                swapBtn.appendChild(document.createTextNode(' Swap'));
+                swapBtn.title = 'Swap this loop with another slot';
+                actions.appendChild(swapBtn);
+
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'btn btn-danger btn-mini loop-slot-remove-btn';
                 removeBtn.dataset.rhythmSetId = encodedRhythmSetId;
@@ -848,6 +872,17 @@ function renderLoopSlots(rhythmSet) {
             uploadBtn.appendChild(uploadIcon);
             uploadBtn.appendChild(document.createTextNode(' ' + (hasLoop ? 'Replace' : 'Upload')));
             actions.appendChild(uploadBtn);
+
+            const selectBtn = document.createElement('button');
+            selectBtn.className = 'btn btn-secondary btn-mini loop-slot-select-btn';
+            selectBtn.dataset.rhythmSetId = encodedRhythmSetId;
+            selectBtn.dataset.loopType = loopType;
+            const selectIcon = document.createElement('i');
+            selectIcon.className = 'fas fa-list';
+            selectBtn.appendChild(selectIcon);
+            selectBtn.appendChild(document.createTextNode(' Select'));
+            selectBtn.title = 'Select from existing loop files';
+            actions.appendChild(selectBtn);
         }
         slot.appendChild(actions);
 
@@ -963,6 +998,25 @@ function bindLoopSlotInteractions(containerElement) {
             const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
             const loopType = button.dataset.loopType || '';
             uploadSingleLoop(rhythmSetId, loopType);
+        });
+    });
+
+    const swapButtons = containerElement.querySelectorAll('.loop-slot-swap-btn');
+    swapButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
+            const loopType = button.dataset.loopType || '';
+            const filename = button.dataset.filename || '';
+            handleSwapClick(rhythmSetId, loopType, filename);
+        });
+    });
+
+    const selectButtons = containerElement.querySelectorAll('.loop-slot-select-btn');
+    selectButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const rhythmSetId = decodeDataValue(button.dataset.rhythmSetId);
+            const loopType = button.dataset.loopType || '';
+            selectExistingLoop(rhythmSetId, loopType);
         });
     });
 
@@ -1119,6 +1173,347 @@ function previewLoops(rhythmSetId) {
     alert(`Available loops for ${rhythmSetId}:\n\n${loopsList}\n\nNote: Full preview player coming soon!`);
 }
 
+// ============================================================================
+// DUPLICATE RHYTHM SET
+// ============================================================================
+
+async function duplicateRhythmSet(sourceRhythmSetId) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
+    // Find the source rhythm set
+    const sourceSet = rhythmSets.find(s => s.rhythmSetId === sourceRhythmSetId);
+    if (!sourceSet) {
+        showAlert('Source rhythm set not found', 'error');
+        return;
+    }
+
+    // Parse the source rhythm set ID to suggest a name
+    const parts = sourceRhythmSetId.split('_');
+    const rhythmFamily = parts.slice(0, -1).join('_');
+    const sourceSetNo = parts[parts.length - 1];
+
+    // Create a modal dialog to get the new rhythm set name
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background-color: #2c2c2c;
+        border-radius: 10px;
+        padding: 30px;
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    `;
+
+    const title = document.createElement('h3');
+    title.style.cssText = 'margin: 0 0 20px 0; color: #9b59b6; font-size: 20px;';
+    title.innerHTML = `<i class="fas fa-copy"></i> Duplicate Rhythm Set`;
+    dialog.appendChild(title);
+
+    const description = document.createElement('p');
+    description.style.cssText = 'color: #e0e0e0; margin-bottom: 20px;';
+    description.textContent = `Create a copy of "${sourceRhythmSetId}" with all loop references.`;
+    dialog.appendChild(description);
+
+    const sourceInfo = document.createElement('div');
+    sourceInfo.style.cssText = 'background-color: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 20px;';
+    sourceInfo.innerHTML = `
+        <div style="color: #7f8c8d; margin-bottom: 10px;"><strong style="color: #3498db;">Source Rhythm Set:</strong></div>
+        <div style="color: #e0e0e0; margin-bottom: 5px;">• ID: ${sourceRhythmSetId}</div>
+        <div style="color: #e0e0e0; margin-bottom: 5px;">• Loops: ${(sourceSet.availableFiles || []).length}/6</div>
+        <div style="color: #e0e0e0;">• Songs using this: ${sourceSet.mappedSongsCount || 0}</div>
+    `;
+    dialog.appendChild(sourceInfo);
+
+    const formGroup = document.createElement('div');
+    formGroup.style.cssText = 'margin-bottom: 20px;';
+
+    const label = document.createElement('label');
+    label.style.cssText = 'display: block; color: #e0e0e0; margin-bottom: 10px; font-weight: bold;';
+    label.textContent = 'New Rhythm Set ID:';
+    formGroup.appendChild(label);
+
+    // Show rhythm family prefix
+    const familyLabel = document.createElement('div');
+    familyLabel.style.cssText = 'color: #7f8c8d; font-size: 14px; margin-bottom: 5px;';
+    familyLabel.innerHTML = `<strong>Rhythm Family:</strong> ${rhythmFamily}`;
+    formGroup.appendChild(familyLabel);
+
+    // Dropdown for set number selection
+    const selectContainer = document.createElement('div');
+    selectContainer.style.cssText = 'margin-bottom: 10px;';
+    
+    const setNoSelect = document.createElement('select');
+    setNoSelect.id = 'duplicateSetNoSelect';
+    setNoSelect.style.cssText = `
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #444;
+        border-radius: 5px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        font-size: 16px;
+    `;
+    selectContainer.appendChild(setNoSelect);
+    formGroup.appendChild(selectContainer);
+
+    // Find existing set numbers for this family
+    const existingSetNos = rhythmSets
+        .filter(set => normalizeRhythmFamily(set.rhythmFamily) === normalizeRhythmFamily(rhythmFamily))
+        .map(set => set.rhythmSetNo)
+        .sort((a, b) => {
+            // Handle numeric and string set numbers
+            const aNum = parseInt(a);
+            const bNum = parseInt(b);
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return aNum - bNum;
+            }
+            return String(a).localeCompare(String(b));
+        });
+
+    const maxNumericSetNo = existingSetNos
+        .map(n => parseInt(n))
+        .filter(n => !isNaN(n))
+        .reduce((max, n) => Math.max(max, n), 0);
+
+    // Generate available numbers
+    const availableNumbers = [];
+    for (let i = 1; i <= maxNumericSetNo + 5; i++) {
+        if (!existingSetNos.includes(i) && !existingSetNos.includes(String(i))) {
+            availableNumbers.push(i);
+        }
+    }
+
+    // Build dropdown options
+    setNoSelect.innerHTML = '<option value="">Select set number...</option>';
+    
+    if (availableNumbers.length > 0) {
+        const optgroup1 = document.createElement('optgroup');
+        optgroup1.label = 'Available Set Numbers';
+        availableNumbers.slice(0, 10).forEach(num => {
+            const option = document.createElement('option');
+            option.value = num;
+            option.textContent = `Set ${num} (available)`;
+            optgroup1.appendChild(option);
+        });
+        setNoSelect.appendChild(optgroup1);
+    }
+
+    if (existingSetNos.length > 0) {
+        const optgroup2 = document.createElement('optgroup');
+        optgroup2.label = 'Existing Sets (reference only)';
+        existingSetNos.forEach(num => {
+            const option = document.createElement('option');
+            option.value = num;
+            option.textContent = `Set ${num} (already exists)`;
+            option.disabled = true;
+            optgroup2.appendChild(option);
+        });
+        setNoSelect.appendChild(optgroup2);
+    }
+
+    const optgroup3 = document.createElement('optgroup');
+    optgroup3.label = 'Custom Set Number';
+    const customOption = document.createElement('option');
+    customOption.value = '__custom__';
+    customOption.textContent = 'Enter custom set number...';
+    optgroup3.appendChild(customOption);
+    setNoSelect.appendChild(optgroup3);
+
+    // Custom input field (hidden by default)
+    const customInputContainer = document.createElement('div');
+    customInputContainer.style.cssText = 'margin-top: 10px; display: none;';
+    
+    const customInput = document.createElement('input');
+    customInput.type = 'text';
+    customInput.placeholder = 'Enter custom set number (e.g., 2, fast_1, slow_2)';
+    customInput.style.cssText = `
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #444;
+        border-radius: 5px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        font-size: 16px;
+    `;
+    customInputContainer.appendChild(customInput);
+    formGroup.appendChild(customInputContainer);
+
+    // Preview of full rhythm set ID
+    const previewDiv = document.createElement('div');
+    previewDiv.style.cssText = 'background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-top: 10px; display: none;';
+    
+    const previewLabel = document.createElement('div');
+    previewLabel.style.cssText = 'color: #7f8c8d; font-size: 12px; margin-bottom: 5px;';
+    previewLabel.textContent = 'New Rhythm Set ID:';
+    previewDiv.appendChild(previewLabel);
+    
+    const previewId = document.createElement('div');
+    previewId.style.cssText = 'color: #27ae60; font-size: 16px; font-weight: bold;';
+    previewDiv.appendChild(previewId);
+    formGroup.appendChild(previewDiv);
+
+    const statusMsg = document.createElement('div');
+    statusMsg.style.cssText = 'margin-top: 10px; font-size: 13px; display: none;';
+    formGroup.appendChild(statusMsg);
+
+    dialog.appendChild(formGroup);
+
+    // Real-time validation function
+    function validateAndPreview() {
+        let setNumber = '';
+        
+        if (setNoSelect.value === '__custom__') {
+            setNumber = customInput.value.trim();
+        } else if (setNoSelect.value) {
+            setNumber = setNoSelect.value;
+        }
+
+        if (!setNumber) {
+            previewDiv.style.display = 'none';
+            statusMsg.style.display = 'none';
+            createBtn.disabled = true;
+            return false;
+        }
+
+        const newRhythmSetId = `${rhythmFamily}_${setNumber}`;
+        previewId.textContent = newRhythmSetId;
+        previewDiv.style.display = 'block';
+
+        // Check if it already exists
+        const exists = rhythmSets.some(s => s.rhythmSetId === newRhythmSetId);
+        
+        if (exists) {
+            statusMsg.innerHTML = '<i class="fas fa-times-circle"></i> This rhythm set ID already exists';
+            statusMsg.style.color = '#e74c3c';
+            statusMsg.style.display = 'block';
+            previewId.style.color = '#e74c3c';
+            createBtn.disabled = true;
+            return false;
+        } else {
+            statusMsg.innerHTML = '<i class="fas fa-check-circle"></i> This rhythm set ID is available';
+            statusMsg.style.color = '#27ae60';
+            statusMsg.style.display = 'block';
+            previewId.style.color = '#27ae60';
+            createBtn.disabled = false;
+            return true;
+        }
+    }
+
+    // Event listeners for real-time validation
+    setNoSelect.addEventListener('change', () => {
+        if (setNoSelect.value === '__custom__') {
+            customInputContainer.style.display = 'block';
+            customInput.focus();
+        } else {
+            customInputContainer.style.display = 'none';
+        }
+        validateAndPreview();
+    });
+
+    customInput.addEventListener('input', validateAndPreview);
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; gap: 10px;';
+
+    const createBtn = document.createElement('button');
+    createBtn.className = 'btn btn-success';
+    createBtn.style.cssText = 'flex: 1; padding: 12px;';
+    createBtn.innerHTML = '<i class="fas fa-check"></i> Create Duplicate';
+    createBtn.disabled = true;
+    createBtn.onclick = async () => {
+        let setNumber = '';
+        
+        if (setNoSelect.value === '__custom__') {
+            setNumber = customInput.value.trim();
+        } else {
+            setNumber = setNoSelect.value;
+        }
+
+        if (!setNumber) {
+            return;
+        }
+
+        const newRhythmSetId = `${rhythmFamily}_${setNumber}`;
+
+        // Final check
+        if (rhythmSets.some(s => s.rhythmSetId === newRhythmSetId)) {
+            return;
+        }
+
+        modal.remove();
+        await performDuplication(sourceRhythmSetId, newRhythmSetId, sourceSet);
+    };
+    buttonContainer.appendChild(createBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-secondary';
+    cancelBtn.style.cssText = 'flex: 1; padding: 12px;';
+    cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+    cancelBtn.onclick = () => modal.remove();
+    buttonContainer.appendChild(cancelBtn);
+
+    dialog.appendChild(buttonContainer);
+
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+}
+
+async function performDuplication(sourceRhythmSetId, newRhythmSetId, sourceSet) {
+    try {
+        showAlert(`Creating duplicate rhythm set "${newRhythmSetId}"...`, 'success');
+
+        const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets/duplicate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sourceRhythmSetId: sourceRhythmSetId,
+                newRhythmSetId: newRhythmSetId
+            })
+        });
+
+        const result = await response.json();
+        showAlert(`Rhythm set "${newRhythmSetId}" created successfully with ${result.loopsCopied || 0} loop references!`, 'success');
+
+        // Reload rhythm sets
+        await loadRhythmSets();
+
+        // Find and expand the new rhythm set
+        const newSetIndex = rhythmSets.findIndex(s => s.rhythmSetId === newRhythmSetId);
+        if (newSetIndex !== -1) {
+            setTimeout(() => {
+                toggleExpandRow(newSetIndex);
+                // Scroll to the new rhythm set
+                const newRow = document.getElementById(`row-${newSetIndex}`);
+                if (newRow) {
+                    newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+
+    } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
+        showAlert(error.message, 'error');
+    }
+}
+
 async function deleteRhythmSet(rhythmSetId) {
     if (!ensureWriteAccess()) {
         return;
@@ -1195,6 +1590,341 @@ async function forceDeleteRhythmSet(rhythmSetId) {
             return;
         }
         console.error('Force delete error:', error);
+        showAlert(error.message, 'error');
+    }
+}
+
+// ============================================================================
+// SWAP LOOP FUNCTIONALITY
+// ============================================================================
+
+function handleSwapClick(rhythmSetId, loopType, filename) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
+    if (!filename) {
+        showAlert('Loop file not found', 'error');
+        return;
+    }
+
+    // If no swap is in progress, start one
+    if (!swapState) {
+        swapState = { rhythmSetId, loopType, filename };
+        
+        // Highlight the selected slot
+        highlightSwapSlot(rhythmSetId, loopType, true);
+        
+        showAlert(`${loopType.replace(/(\d)/, ' $1').toUpperCase()} selected. Click another loop to swap with.`, 'info');
+        
+        // Update all swap buttons to show "Complete Swap" or "Cancel"
+        updateSwapButtonStates();
+        return;
+    }
+
+    // If clicking the same slot, cancel swap
+    if (swapState.rhythmSetId === rhythmSetId && swapState.loopType === loopType) {
+        cancelSwap();
+        return;
+    }
+
+    // Complete the swap
+    performSwap(swapState.rhythmSetId, swapState.loopType, swapState.filename, rhythmSetId, loopType, filename);
+}
+
+function highlightSwapSlot(rhythmSetId, loopType, highlight) {
+    const slotIdToken = String(rhythmSetId || '').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+    const slotId = `loop-slot-${slotIdToken}-${loopType}`;
+    const slot = document.getElementById(slotId);
+    
+    if (slot) {
+        if (highlight) {
+            slot.style.border = '3px solid #9b59b6';
+            slot.style.boxShadow = '0 0 15px rgba(155, 89, 182, 0.5)';
+        } else {
+            slot.style.border = '';
+            slot.style.boxShadow = '';
+        }
+    }
+}
+
+function updateSwapButtonStates() {
+    const allSwapButtons = document.querySelectorAll('.loop-slot-swap-btn');
+    allSwapButtons.forEach(btn => {
+        const btnRhythmSetId = decodeDataValue(btn.dataset.rhythmSetId);
+        const btnLoopType = btn.dataset.loopType;
+        
+        if (swapState && swapState.rhythmSetId === btnRhythmSetId && swapState.loopType === btnLoopType) {
+            // This is the selected slot - show cancel
+            btn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-warning');
+        } else if (swapState) {
+            // Other slots - show they can complete the swap
+            btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Swap Here';
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+        } else {
+            // Normal state
+            btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Swap';
+            btn.classList.remove('btn-warning', 'btn-success');
+            btn.classList.add('btn-secondary');
+        }
+    });
+}
+
+function cancelSwap() {
+    if (swapState) {
+        highlightSwapSlot(swapState.rhythmSetId, swapState.loopType, false);
+        swapState = null;
+        updateSwapButtonStates();
+        showAlert('Swap cancelled', 'info');
+    }
+}
+
+async function performSwap(rhythmSetId1, loopType1, filename1, rhythmSetId2, loopType2, filename2) {
+    try {
+        showAlert(`Swapping ${loopType1} with ${loopType2}...`, 'success');
+
+        const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets/loops/swap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                slot1: { rhythmSetId: rhythmSetId1, loopType: loopType1, filename: filename1 },
+                slot2: { rhythmSetId: rhythmSetId2, loopType: loopType2, filename: filename2 }
+            })
+        });
+
+        const result = await response.json();
+        showAlert('Loops swapped successfully!', 'success');
+
+        // Clear swap state and highlights
+        highlightSwapSlot(rhythmSetId1, loopType1, false);
+        if (rhythmSetId2 !== rhythmSetId1) {
+            highlightSwapSlot(rhythmSetId2, loopType2, false);
+        }
+        swapState = null;
+
+        // Signal loop player to bypass cache
+        localStorage.setItem('loopFilesReplacedAt', Date.now().toString());
+
+        // Reload rhythm sets
+        await loadRhythmSets();
+
+        // Re-expand both rhythm sets if different
+        const rhythmSetIds = [rhythmSetId1];
+        if (rhythmSetId2 !== rhythmSetId1) {
+            rhythmSetIds.push(rhythmSetId2);
+        }
+
+        rhythmSetIds.forEach(rsId => {
+            const rhythmSetIndex = rhythmSets.findIndex(s => s.rhythmSetId === rsId);
+            if (rhythmSetIndex !== -1) {
+                setTimeout(() => {
+                    toggleExpandRow(rhythmSetIndex);
+                }, 100);
+            }
+        });
+
+    } catch (error) {
+        cancelSwap();
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
+        showAlert(error.message, 'error');
+    }
+}
+
+// ============================================================================
+// SELECT EXISTING LOOP FUNCTIONALITY
+// ============================================================================
+
+async function selectExistingLoop(rhythmSetId, loopType) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
+    // Gather all unique loop files from all rhythm sets
+    const allLoopFiles = new Set();
+    rhythmSets.forEach(set => {
+        if (set.files) {
+            Object.values(set.files).forEach(filename => {
+                if (filename) {
+                    allLoopFiles.add(filename);
+                }
+            });
+        }
+    });
+
+    const sortedFiles = Array.from(allLoopFiles).sort();
+
+    if (sortedFiles.length === 0) {
+        showAlert('No loop files available in the database', 'error');
+        return;
+    }
+
+    // Create a modal dialog with dropdown
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background-color: #2c2c2c;
+        border-radius: 10px;
+        padding: 30px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    `;
+
+    const title = document.createElement('h3');
+    title.style.cssText = 'margin: 0 0 20px 0; color: #9b59b6; font-size: 20px;';
+    title.innerHTML = `<i class="fas fa-list"></i> Select Loop for ${loopType.replace(/(\d)/, ' $1').toUpperCase()}`;
+    dialog.appendChild(title);
+
+    const description = document.createElement('p');
+    description.style.cssText = 'color: #e0e0e0; margin-bottom: 20px;';
+    description.textContent = `Choose an existing loop file from the database (${sortedFiles.length} available):`;
+    dialog.appendChild(description);
+
+    const searchContainer = document.createElement('div');
+    searchContainer.style.cssText = 'margin-bottom: 15px;';
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search loop files...';
+    searchInput.style.cssText = `
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #444;
+        border-radius: 5px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        font-size: 14px;
+    `;
+    searchContainer.appendChild(searchInput);
+    dialog.appendChild(searchContainer);
+
+    const listContainer = document.createElement('div');
+    listContainer.style.cssText = `
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #444;
+        border-radius: 5px;
+        background-color: #1a1a1a;
+        margin-bottom: 20px;
+    `;
+
+    const renderList = (filterText = '') => {
+        listContainer.innerHTML = '';
+        const filtered = sortedFiles.filter(f => 
+            f.toLowerCase().includes(filterText.toLowerCase())
+        );
+
+        if (filtered.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.style.cssText = 'padding: 20px; text-align: center; color: #7f8c8d;';
+            noResults.textContent = 'No files match your search';
+            listContainer.appendChild(noResults);
+            return;
+        }
+
+        filtered.forEach(filename => {
+            const item = document.createElement('div');
+            item.style.cssText = `
+                padding: 12px;
+                border-bottom: 1px solid #2c2c2c;
+                cursor: pointer;
+                transition: background-color 0.2s;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            `;
+            item.onmouseover = () => item.style.backgroundColor = '#3a2a4a';
+            item.onmouseout = () => item.style.backgroundColor = '';
+
+            const fileInfo = document.createElement('span');
+            fileInfo.style.cssText = 'color: #e0e0e0; flex: 1;';
+            fileInfo.textContent = filename;
+            item.appendChild(fileInfo);
+
+            const selectBtn = document.createElement('button');
+            selectBtn.className = 'btn btn-success btn-mini';
+            selectBtn.innerHTML = '<i class="fas fa-check"></i> Select';
+            selectBtn.onclick = async () => {
+                modal.remove();
+                await assignExistingLoop(rhythmSetId, loopType, filename);
+            };
+            item.appendChild(selectBtn);
+
+            listContainer.appendChild(item);
+        });
+    };
+
+    searchInput.oninput = (e) => renderList(e.target.value);
+    renderList();
+
+    dialog.appendChild(listContainer);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-secondary';
+    cancelBtn.style.cssText = 'width: 100%; padding: 12px;';
+    cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+    cancelBtn.onclick = () => modal.remove();
+    dialog.appendChild(cancelBtn);
+
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+}
+
+async function assignExistingLoop(rhythmSetId, loopType, filename) {
+    try {
+        showAlert(`Assigning ${filename} to ${loopType}...`, 'success');
+
+        const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets/${rhythmSetId}/loops/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                loopType: loopType,
+                filename: filename
+            })
+        });
+
+        const result = await response.json();
+        showAlert(`${filename} assigned to ${loopType} successfully!`, 'success');
+
+        // Signal loop player to bypass cache
+        localStorage.setItem('loopFilesReplacedAt', Date.now().toString());
+
+        // Reload and re-expand
+        const currentRhythmSetId = rhythmSetId;
+        await loadRhythmSets();
+
+        const rhythmSetIndex = rhythmSets.findIndex(s => s.rhythmSetId === currentRhythmSetId);
+        if (rhythmSetIndex !== -1) {
+            setTimeout(() => {
+                toggleExpandRow(rhythmSetIndex);
+            }, 100);
+        }
+
+    } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
         showAlert(error.message, 'error');
     }
 }
