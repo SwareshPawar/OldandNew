@@ -79,27 +79,15 @@
         document.getElementById('editSongTime').value = song.time || song.timeSignature;
         deps.updateTaalDropdown('editSongTime', 'editSongTaal', song.taal);
 
-        const parsedRhythmSetNo = song.rhythmSetNo || (() => {
-            if (!song.rhythmSetId) return '';
-            const match = String(song.rhythmSetId).match(/_([0-9]+)$/);
-            return match ? match[1] : '';
-        })();
-        const resolvedRhythmFamily = deps.normalizeRhythmFamilyValue(song.rhythmFamily || song.taal || '');
-
-        const editRhythmFamilyEl = document.getElementById('editSongRhythmFamily');
-        const editRhythmSetNoEl = document.getElementById('editSongRhythmSetNo');
-        if (editRhythmFamilyEl) editRhythmFamilyEl.value = resolvedRhythmFamily;
-        if (editRhythmSetNoEl) editRhythmSetNoEl.value = parsedRhythmSetNo;
+        // Set rhythm set dropdown
+        const editRhythmSetEl = document.getElementById('editSongRhythmSet');
+        if (editRhythmSetEl) {
+            editRhythmSetEl.value = song.rhythmSetId || '';
+        }
 
         const editRhythmCategoryEl = document.getElementById('editSongRhythmCategory');
         if (editRhythmCategoryEl) {
             editRhythmCategoryEl.value = deps.normalizeRhythmCategoryValue(song.rhythmCategory || '');
-        }
-        deps.updateRhythmSetIdPreview('editSongRhythmFamily', 'editSongRhythmSetNo', 'editSongRhythmSetIdPreview');
-
-        const editRhythmPreviewEl = document.getElementById('editSongRhythmSetIdPreview');
-        if (editRhythmPreviewEl && song.rhythmSetId) {
-            editRhythmPreviewEl.value = song.rhythmSetId;
         }
 
         deps.setupSearchableMultiselect('editSongGenre', 'editGenreDropdown', 'editSelectedGenres', deps.GENRES, true);
@@ -195,11 +183,8 @@
         const selectedMoods = Array.from((editMoodDropdown && editMoodDropdown._allSelections) || []);
         const selectedArtists = Array.from((editArtistDropdown && editArtistDropdown._allSelections) || []);
 
-        const editRhythmFamilyInput = document.getElementById('editSongRhythmFamily')?.value || '';
-        const editRhythmSetNoInput = document.getElementById('editSongRhythmSetNo')?.value || '';
-        const editRhythmFamily = deps.normalizeRhythmFamilyValue(editRhythmFamilyInput);
-        const editRhythmSetNo = parseInt(editRhythmSetNoInput, 10);
-        const editRhythmSetId = deps.buildRhythmSetIdValue(editRhythmFamily, editRhythmSetNo);
+        const editRhythmSetIdInput = document.getElementById('editSongRhythmSet')?.value || '';
+        const editRhythmSetId = editRhythmSetIdInput.trim();
 
         const original = (deps.getSongs() || []).find((song) => song.id == id) || {};
         const currentUser = deps.getCurrentUser ? deps.getCurrentUser() : null;
@@ -215,8 +200,6 @@
             time: document.getElementById('editSongTime').value,
             taal: document.getElementById('editSongTaal').value,
             genres: selectedGenres,
-            ...(editRhythmFamily ? { rhythmFamily: editRhythmFamily } : {}),
-            ...(Number.isInteger(editRhythmSetNo) && editRhythmSetNo > 0 ? { rhythmSetNo: editRhythmSetNo } : {}),
             ...(editRhythmSetId ? { rhythmSetId: editRhythmSetId } : {}),
             lyrics,
             createdBy: original.createdBy || (currentUser && currentUser.username) || undefined,

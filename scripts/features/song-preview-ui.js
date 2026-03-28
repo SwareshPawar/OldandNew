@@ -460,6 +460,11 @@
                     <span class="preview-meta-label">Genre</span>
                     <span class="preview-meta-value">${song.genre}</span>
                 </div>` : ''}
+                ${song.rhythmCategory ? `
+                <div class="preview-meta-row">
+                    <span class="preview-meta-label">Rhythm Category</span>
+                    <span class="preview-meta-value">${song.rhythmCategory}</span>
+                </div>` : ''}
                 ${isAdmin ? `
                 <div class="preview-meta-row preview-rhythm-set-row">
                     <span class="preview-meta-label">Rhythm Set</span>

@@ -590,7 +590,7 @@ function renderRhythmSetsTable() {
     const tbody = document.getElementById('rhythmSetsTableBody');
     
     if (rhythmSets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No rhythm sets found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No rhythm sets found</td></tr>';
         return;
     }
 
@@ -668,6 +668,27 @@ function renderRhythmSetsTable() {
         statusTd.appendChild(statusBadge);
         mainRow.appendChild(statusTd);
 
+        const notesTd = document.createElement('td');
+        notesTd.style.maxWidth = '200px';
+        notesTd.style.cursor = 'pointer';
+        notesTd.title = 'Click to edit notes';
+        notesTd.dataset.rhythmSetId = set.rhythmSetId;
+        notesTd.dataset.notes = set.notes || '';
+        
+        const notesContent = document.createElement('div');
+        notesContent.className = 'notes-content';
+        notesContent.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #aaa; font-size: 13px;';
+        notesContent.textContent = set.notes || '(click to add notes)';
+        notesTd.appendChild(notesContent);
+        
+        if (!isReadOnlyMode) {
+            notesTd.addEventListener('click', (e) => {
+                e.stopPropagation();
+                editNotes(set.rhythmSetId, set.notes || '');
+            });
+        }
+        mainRow.appendChild(notesTd);
+
         const actionsTd = document.createElement('td');
         actionsTd.className = 'actions-cell';
         mainRow.appendChild(actionsTd);
@@ -677,7 +698,7 @@ function renderRhythmSetsTable() {
         detailsRow.className = 'loop-details-row';
         detailsRow.id = `details-${index}`;
         const detailsCell = document.createElement('td');
-        detailsCell.colSpan = 7;
+        detailsCell.colSpan = 8;
         detailsCell.className = 'loop-details-cell';
         detailsCell.appendChild(renderLoopSlots(set));
         detailsRow.appendChild(detailsCell);
@@ -1914,4 +1935,55 @@ function closeEditModal() {
     document.getElementById('editOriginalRhythmSetId').value = '';
     document.getElementById('editNewRhythmSetIdPreview').textContent = '-';
     document.getElementById('editConflictWarning').style.display = 'none';
+}
+
+/**
+ * Edit notes for a rhythm set (inline editing)
+ */
+function editNotes(rhythmSetId, currentNotes) {
+    if (!ensureWriteAccess()) {
+        return;
+    }
+
+    const newNotes = prompt('Edit Notes for ' + rhythmSetId + ':', currentNotes || '');
+    
+    // User clicked cancel or didn't change anything
+    if (newNotes === null || newNotes === currentNotes) {
+        return;
+    }
+
+    // Save the notes
+    saveNotes(rhythmSetId, newNotes);
+}
+
+/**
+ * Save notes to the backend
+ */
+async function saveNotes(rhythmSetId, notes) {
+    try {
+        const response = await authFetch(`${API_BASE_URL}/api/rhythm-sets/${encodeURIComponent(rhythmSetId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes })
+        });
+
+        showAlert(`Notes updated for ${rhythmSetId}`, 'success');
+        
+        // Update the local rhythmSets array
+        const setIndex = rhythmSets.findIndex(s => s.rhythmSetId === rhythmSetId);
+        if (setIndex !== -1) {
+            rhythmSets[setIndex].notes = notes;
+        }
+        
+        // Re-render the table to show updated notes
+        renderRhythmSetsTable();
+
+    } catch (error) {
+        if (error.message === 'AUTH_REQUIRED') {
+            handleAuthRequired();
+            return;
+        }
+        console.error('Save notes error:', error);
+        showAlert('Failed to save notes: ' + error.message, 'error');
+    }
 }

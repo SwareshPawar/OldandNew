@@ -5824,6 +5824,246 @@
       "files": {
         "fill3": "rd_6_congo_1_FILL3.wav"
       }
+    },
+    {
+      "id": "drum4-4_5_loop1",
+      "filename": "drum4-4_5_LOOP1.wav",
+      "originalFilename": "DRUM-Koi Kahe-V1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "drum4-4_5",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:47:58.646Z",
+        "description": "loop1 for drum4-4_5"
+      },
+      "files": {
+        "loop1": "drum4-4_5_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_5_loop2",
+      "filename": "drum4-4_5_LOOP2.wav",
+      "originalFilename": "DRUM-Koi Kahe-V2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "drum4-4_5",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:48:02.328Z",
+        "description": "loop2 for drum4-4_5"
+      },
+      "files": {
+        "loop2": "drum4-4_5_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_5_fill2",
+      "filename": "drum4-4_5_FILL2.wav",
+      "originalFilename": "DRUM-Koi Kahe-F2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "drum4-4_5",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:48:20.721Z",
+        "description": "fill2 for drum4-4_5"
+      },
+      "files": {
+        "fill2": "drum4-4_5_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_5_fill1",
+      "filename": "drum4-4_5_FILL1.wav",
+      "originalFilename": "DRUM-Koi Kahe-F1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 5,
+      "rhythmSetId": "drum4-4_5",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:48:30.801Z",
+        "description": "fill1 for drum4-4_5"
+      },
+      "files": {
+        "fill1": "drum4-4_5_FILL1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_6_loop1",
+      "filename": "drum4-4_6_LOOP1.wav",
+      "originalFilename": "DRUM-mainn mila-v1.wav",
+      "type": "loop",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "drum4-4_6",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:49:52.327Z",
+        "description": "loop1 for drum4-4_6"
+      },
+      "files": {
+        "loop1": "drum4-4_6_LOOP1.wav"
+      }
+    },
+    {
+      "id": "drum4-4_6_loop2",
+      "filename": "drum4-4_6_LOOP2.wav",
+      "originalFilename": "DRUM-mainn mila-v2.wav",
+      "type": "loop",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "drum4-4_6",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:49:57.774Z",
+        "description": "loop2 for drum4-4_6"
+      },
+      "files": {
+        "loop2": "drum4-4_6_LOOP2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_6_loop3",
+      "filename": "drum4-4_6_LOOP3.wav",
+      "originalFilename": "DRUM-mainn mila-V3.wav",
+      "type": "loop",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "drum4-4_6",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:50:09.365Z",
+        "description": "loop3 for drum4-4_6"
+      },
+      "files": {
+        "loop3": "drum4-4_6_LOOP3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_6_fill3",
+      "filename": "drum4-4_6_FILL3.wav",
+      "originalFilename": "DRUM-mainn mila-F3.wav",
+      "type": "fill",
+      "number": 3,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "drum4-4_6",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:50:13.676Z",
+        "description": "fill3 for drum4-4_6"
+      },
+      "files": {
+        "fill3": "drum4-4_6_FILL3.wav"
+      }
+    },
+    {
+      "id": "drum4-4_6_fill2",
+      "filename": "drum4-4_6_FILL2.wav",
+      "originalFilename": "DRUM-mainn mila-F2.wav",
+      "type": "fill",
+      "number": 2,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "drum4-4_6",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:50:21.439Z",
+        "description": "fill2 for drum4-4_6"
+      },
+      "files": {
+        "fill2": "drum4-4_6_FILL2.wav"
+      }
+    },
+    {
+      "id": "drum4-4_6_fill1",
+      "filename": "drum4-4_6_FILL1.wav",
+      "originalFilename": "DRUM-mainn mila-F1.wav",
+      "type": "fill",
+      "number": 1,
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 6,
+      "rhythmSetId": "drum4-4_6",
+      "conditions": {
+        "taal": "drum4-4",
+        "timeSignature": "4/4",
+        "tempo": "medium",
+        "genre": "acoustic"
+      },
+      "metadata": {
+        "duration": 0,
+        "uploadedAt": "2026-03-28T06:50:27.612Z",
+        "description": "fill1 for drum4-4_6"
+      },
+      "files": {
+        "fill1": "drum4-4_6_FILL1.wav"
+      }
     }
   ],
   "tempoRanges": {
@@ -5935,12 +6175,6 @@
       "rhythmSetId": "dadra_slow_3",
       "rhythmFamily": "dadra_slow",
       "rhythmSetNo": 3,
-      "fileCount": 6
-    },
-    {
-      "rhythmSetId": "rd_pattern_2",
-      "rhythmFamily": "rd_pattern",
-      "rhythmSetNo": 2,
       "fileCount": 6
     },
     {
@@ -6080,6 +6314,108 @@
       "rhythmFamily": "drum_6_slow",
       "rhythmSetNo": 1,
       "fileCount": 4
+    },
+    {
+      "rhythmSetId": "rd_4_congo_1",
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 1,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "dadra_mid_2",
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 2,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "drum4-4_2",
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 2,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rd_4_congo_2",
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 2,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "drum4-4_3",
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 3,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "drum3-4_3",
+      "rhythmFamily": "drum3-4",
+      "rhythmSetNo": 3,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rd_4_congo_3",
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 3,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "dadra_mid_3",
+      "rhythmFamily": "dadra_mid",
+      "rhythmSetNo": 3,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rd_4_congo_4",
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 4,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "drum4-4_4",
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 4,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rd_4_congo_5",
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 5,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "goa_1",
+      "rhythmFamily": "goa",
+      "rhythmSetNo": 1,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rd_4_congo_6",
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 6,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rd_4_congo_7",
+      "rhythmFamily": "rd_4_congo",
+      "rhythmSetNo": 7,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "rd_6_congo_1",
+      "rhythmFamily": "rd_6_congo",
+      "rhythmSetNo": 1,
+      "fileCount": 6
+    },
+    {
+      "rhythmSetId": "drum4-4_5",
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 5,
+      "fileCount": 4
+    },
+    {
+      "rhythmSetId": "drum4-4_6",
+      "rhythmFamily": "drum4-4",
+      "rhythmSetNo": 6,
+      "fileCount": 6
     }
   ]
 }

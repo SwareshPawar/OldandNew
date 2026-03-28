@@ -22,11 +22,20 @@ const {
   parseRhythmSetId
 } = require('./utils/rhythm-set');
 
+// Rhythm set profile system
+const { scoreProfileMatch } = require('./scripts/core/rhythm-set-profile-scorer');
+const { 
+  handleRhythmSetChange,
+  updateRhythmSetProfile 
+} = require('./scripts/core/rhythm-set-profile-manager');
+
 const app = express();
 let db;
 let songsCollection;
 let deletedSongsCollection;
 let rhythmSetsCollection;
+let rhythmSetProfilesCollection;
+let profileScoringConfigCollection;
 
 // Create uploads directory (use /tmp in serverless environments)
 const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -146,6 +155,17 @@ async function connectToDatabase() {
     songsCollection = db.collection('OldNewSongs');
     deletedSongsCollection = db.collection('DeletedSongs');
     rhythmSetsCollection = db.collection('RhythmSets');
+    rhythmSetProfilesCollection = db.collection('RhythmSetProfiles');
+    profileScoringConfigCollection = db.collection('ProfileScoringConfig');
+    
+    // Create indexes for profile collections
+    try {
+      await rhythmSetProfilesCollection.createIndex({ rhythmSetId: 1 }, { unique: true });
+      await profileScoringConfigCollection.createIndex({ _id: 1 }, { unique: true });
+    } catch (err) {
+      console.warn('Could not create profile indexes:', err.message);
+    }
+    
     await bootstrapRhythmSetsFromMetadata();
     isConnected = true;
   } catch (err) {
@@ -536,7 +556,21 @@ async function recommendRhythmSetForSong(song) {
     }
   }
 
-  // If caller already provided explicit family/no, honor deterministic choice when present in metadata.
+  // EXPLICIT SELECTION: Check if rhythmSetId was provided directly (current UI approach)
+  if (song?.rhythmSetId) {
+    const explicitMatch = sets.find(s => s.rhythmSetId === song.rhythmSetId);
+    if (explicitMatch) {
+      return {
+        rhythmSetId: explicitMatch.rhythmSetId,
+        rhythmFamily: explicitMatch.rhythmFamily,
+        rhythmSetNo: explicitMatch.rhythmSetNo,
+        score: 100,
+        reason: 'explicit-selection'
+      };
+    }
+  }
+
+  // LEGACY EXPLICIT: If caller provided explicit family/no (old UI approach)
   const explicitFamily = normalizeRhythmFamily(song?.rhythmFamily || '');
   const explicitNo = normalizeRhythmSetNo(song?.rhythmSetNo || song?.setNo || null);
   const explicitId = buildRhythmSetId(explicitFamily, explicitNo);
@@ -553,6 +587,96 @@ async function recommendRhythmSetForSong(song) {
     }
   }
 
+  // PROFILE-BASED RECOMMENDATION: Try intelligent learning-based matching
+  try {
+    const profileRecommendation = await recommendFromProfiles(song, sets);
+    if (profileRecommendation && profileRecommendation.score >= 10) {
+      // Profile-based succeeded with reasonable score
+      return profileRecommendation;
+    }
+    // If profile recommendation score is too low (<10), fall through to legacy
+    if (profileRecommendation) {
+      console.log(`⚠️  Profile score too low (${profileRecommendation.score}), falling back to legacy`);
+    }
+  } catch (error) {
+    console.error('❌ Error in profile-based recommendation:', error.message);
+    // Fall through to legacy on error
+  }
+
+  // LEGACY SCORING: Fallback static property matching
+  return recommendFromLegacyLogic(song, sets, rhythmSetCategoryMap);
+}
+
+/**
+ * Profile-based recommendation using learned patterns
+ */
+async function recommendFromProfiles(song, sets) {
+  if (!rhythmSetProfilesCollection) {
+    return null; // Profiles not initialized
+  }
+
+  // Fetch all profiles
+  const profiles = await rhythmSetProfilesCollection.find({}).toArray();
+  
+  if (!profiles || profiles.length === 0) {
+    console.log('ℹ️  No rhythm set profiles found');
+    return null;
+  }
+
+  // Get scoring weights configuration
+  let weights = { mood: 22, genre: 18, taal: 18, rhythmCategory: 10, bpm: 18, timeSignature: 14 }; // defaults
+  if (profileScoringConfigCollection) {
+    try {
+      const config = await profileScoringConfigCollection.findOne({ _id: 'default' });
+      if (config && config.weights) {
+        weights = config.weights;
+      }
+    } catch (err) {
+      console.warn('Could not load scoring weights config, using defaults');
+    }
+  }
+
+  // Score each profile
+  const scored = [];
+  for (const profile of profiles) {
+    const matchResult = scoreProfileMatch(song, profile, weights);
+    
+    // Only consider sets that exist in metadata
+    const setExists = sets.find(s => s.rhythmSetId === profile.rhythmSetId);
+    if (!setExists) continue;
+    
+    scored.push({
+      rhythmSetId: profile.rhythmSetId,
+      rhythmFamily: setExists.rhythmFamily,
+      rhythmSetNo: setExists.rhythmSetNo,
+      score: matchResult.score,
+      details: matchResult.details,
+      profileSize: matchResult.profileSize,
+      reason: 'profile-match'
+    });
+  }
+
+  if (scored.length === 0) {
+    return null;
+  }
+
+  // Sort by score descending
+  scored.sort((a, b) => b.score - a.score);
+
+  // Return best match
+  const best = scored[0];
+  console.log(`🎯 Profile-based recommendation: ${best.rhythmSetId} (score: ${best.score}, based on ${best.profileSize} songs)`);
+  if (best.details && best.details.length > 0) {
+    console.log(`   Reasons: ${best.details.join('; ')}`);
+  }
+
+  return best;
+}
+
+/**
+ * Legacy static property-based recommendation
+ */
+function recommendFromLegacyLogic(song, sets, rhythmSetCategoryMap) {
   const songFamily = normalizeRhythmFamily(song?.taal || song?.rhythmFamily || '');
   const songRhythmCategory = normalizeRhythmCategory(song?.rhythmCategory || '');
   const songTime = String(song?.time || song?.timeSignature || '').trim();
@@ -602,9 +726,13 @@ async function recommendRhythmSetForSong(song) {
         rhythmFamily: set.rhythmFamily,
         rhythmSetNo: set.rhythmSetNo,
         score,
-        reason: 'auto-top-recommendation'
+        reason: 'legacy-static-match'
       };
     }
+  }
+
+  if (best) {
+    console.log(`📊 Legacy recommendation: ${best.rhythmSetId} (score: ${best.score})`);
   }
 
   return best;
@@ -1315,6 +1443,169 @@ app.delete('/api/rhythm-sets/:rhythmSetId/loops/:loopType', authMiddleware, requ
   }
 });
 
+// ======================================
+// RHYTHM SET PROFILE API ENDPOINTS
+// ======================================
+
+// Get all rhythm set profiles (summary)
+app.get('/api/rhythm-set-profiles', authMiddleware, async (req, res) => {
+  try {
+    if (!rhythmSetProfilesCollection) {
+      return res.status(503).json({ error: 'Profile system not initialized' });
+    }
+    
+    const profiles = await rhythmSetProfilesCollection
+      .find({})
+      .project({ rhythmSetId: 1, totalSongs: 1, updatedAt: 1, lastRecalculatedAt: 1, _id: 0 })
+      .sort({ rhythmSetId: 1 })
+      .toArray();
+    
+    res.json(profiles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get profile for a specific rhythm set
+app.get('/api/rhythm-sets/:rhythmSetId/profile', authMiddleware, async (req, res) => {
+  try {
+    if (!rhythmSetProfilesCollection) {
+      return res.status(503).json({ error: 'Profile system not initialized' });
+    }
+    
+    const profile = await rhythmSetProfilesCollection.findOne({ 
+      rhythmSetId: req.params.rhythmSetId 
+    });
+    
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found for this rhythm set' });
+    }
+    
+    res.json(profile);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Force recalculate profile for a rhythm set (admin only)
+app.post('/api/rhythm-sets/:rhythmSetId/profile/recalculate', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    if (!rhythmSetProfilesCollection) {
+      return res.status(503).json({ error: 'Profile system not initialized' });
+    }
+    
+    const rhythmSetId = req.params.rhythmSetId;
+    
+    // Trigger profile recalculation
+    await updateRhythmSetProfile(
+      rhythmSetProfilesCollection,
+      songsCollection,
+      rhythmSetId,
+      true // force recalculation
+    );
+    
+    // Return updated profile
+    const updated = await rhythmSetProfilesCollection.findOne({ rhythmSetId });
+    
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get scoring weights configuration
+app.get('/api/profile-scoring-config', authMiddleware, async (req, res) => {
+  try {
+    if (!profileScoringConfigCollection) {
+      return res.status(503).json({ error: 'Profile config system not initialized' });
+    }
+    
+    const config = await profileScoringConfigCollection.findOne({ _id: 'default' });
+    
+    if (!config) {
+      // Return default weights if no config exists
+      return res.json({
+        _id: 'default',
+        weights: {
+          mood: 22,
+          genre: 18,
+          taal: 18,
+          rhythmCategory: 10,
+          bpm: 18,
+          timeSignature: 14
+        }
+      });
+    }
+    
+    res.json(config);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update scoring weights configuration (admin only)
+app.put('/api/profile-scoring-config', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    if (!profileScoringConfigCollection) {
+      return res.status(503).json({ error: 'Profile config system not initialized' });
+    }
+    
+    const { weights } = req.body;
+    
+    if (!weights) {
+      return res.status(400).json({ error: 'weights object is required' });
+    }
+    
+    // Validate weights
+    if (typeof weights.mood !== 'number' || 
+        typeof weights.genre !== 'number' ||
+        typeof weights.taal !== 'number' ||
+        typeof weights.rhythmCategory !== 'number' ||
+        typeof weights.bpm !== 'number' ||
+        typeof weights.timeSignature !== 'number') {
+      return res.status(400).json({ 
+        error: 'All weight values must be numbers' 
+      });
+    }
+    
+    // Optional validation: check if weights sum to 100
+    const total = weights.mood + weights.genre + weights.taal + weights.rhythmCategory + weights.bpm + weights.timeSignature;
+    if (Math.abs(total - 100) > 1) {
+      return res.status(400).json({ 
+        error: `Weights should sum to approximately 100 (current sum: ${total})` 
+      });
+    }
+    
+    const config = {
+      _id: 'default',
+      weights: {
+        mood: weights.mood,
+        genre: weights.genre,
+        taal: weights.taal,
+        rhythmCategory: weights.rhythmCategory,
+        bpm: weights.bpm,
+        timeSignature: weights.timeSignature
+      },
+      updatedAt: new Date().toISOString(),
+      updatedBy: req.user.firstName || req.user.username
+    };
+    
+    await profileScoringConfigCollection.updateOne(
+      { _id: 'default' },
+      { $set: config },
+      { upsert: true }
+    );
+    
+    res.json(config);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ======================================
+// SONG API ENDPOINTS
+// ======================================
+
 app.get('/api/songs', authMiddleware, async (req, res) => {
   try {
     // Support delta fetching: if ?since=TIMESTAMP is provided, only return songs updated after that
@@ -1418,6 +1709,16 @@ app.post('/api/songs', authMiddleware, async (req, res) => {
     );
     await recomputeRhythmSetDerivedMetadata(insertedSong.rhythmSetId);
 
+    // Async profile update (non-blocking)
+    handleRhythmSetChange(
+      rhythmSetProfilesCollection,
+      songsCollection,
+      insertedSong.id,
+      null, // no old assignment
+      insertedSong.rhythmSetId,
+      insertedSong
+    ).catch(err => console.error('Profile update error:', err.message));
+
     res.status(201).json(insertedSong);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1503,6 +1804,18 @@ app.put('/api/songs/:id', authMiddleware, async (req, res) => {
       await recomputeRhythmSetDerivedMetadata(existingSong.rhythmSetId);
     }
 
+    // Async profile update (non-blocking) - only if rhythm set changed
+    if (existingSong.rhythmSetId !== updatedSong.rhythmSetId) {
+      handleRhythmSetChange(
+        rhythmSetProfilesCollection,
+        songsCollection,
+        numericId,
+        existingSong.rhythmSetId,
+        updatedSong.rhythmSetId,
+        updatedSong
+      ).catch(err => console.error('Profile update error:', err.message));
+    }
+
     res.json(updatedSong);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1550,6 +1863,19 @@ app.patch('/api/songs/:id/rhythm-set', authMiddleware, requireAdmin, async (req,
       await recomputeRhythmSetDerivedMetadata(existingSong.rhythmSetId);
     }
 
+    // Async profile update (non-blocking) - only if rhythm set changed
+    if (existingSong.rhythmSetId !== updateFields.rhythmSetId) {
+      const updatedSongData = await songsCollection.findOne({ id: numericId });
+      handleRhythmSetChange(
+        rhythmSetProfilesCollection,
+        songsCollection,
+        numericId,
+        existingSong.rhythmSetId,
+        updateFields.rhythmSetId,
+        updatedSongData
+      ).catch(err => console.error('Profile update error:', err.message));
+    }
+
     const updatedSong = await songsCollection.findOne({ id: numericId });
     res.json(updatedSong);
   } catch (err) {
@@ -1577,6 +1903,16 @@ app.delete('/api/songs/:id', authMiddleware, requireAdmin, async (req, res) => {
 
     if (existingSong?.rhythmSetId) {
       await recomputeRhythmSetDerivedMetadata(existingSong.rhythmSetId);
+      
+      // Async profile update (non-blocking) - song removed from profile
+      handleRhythmSetChange(
+        rhythmSetProfilesCollection,
+        songsCollection,
+        songId,
+        existingSong.rhythmSetId,
+        null, // deleted
+        existingSong
+      ).catch(err => console.error('Profile update error:', err.message));
     }
     
     res.json({ message: 'Song deleted' });

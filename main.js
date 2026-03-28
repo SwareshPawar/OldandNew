@@ -237,24 +237,53 @@ function populateRhythmCategoryDropdown(dropdownId) {
     }
 }
 
-async function hydrateRhythmFamilies() {
-    populateRhythmFamilyDropdown('songRhythmFamily', []);
-    populateRhythmFamilyDropdown('editSongRhythmFamily', []);
+async function populateRhythmSetDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const selectedValue = dropdown.value;
+    dropdown.innerHTML = '<option value="">Auto-assign from recommendation</option>';
 
     try {
-        const response = await authFetch(`${API_BASE_URL}/api/song-metadata`);
-        if (!response.ok) return;
-        const metadata = await response.json();
-        const serverFamilies = Array.isArray(metadata.rhythmFamilies)
-            ? metadata.rhythmFamilies.map(normalizeRhythmFamilyValue).filter(Boolean)
-            : [];
+        const res = await authFetch(`${API_BASE_URL}/api/rhythm-sets`);
+        if (!res.ok) {
+            console.warn('Failed to fetch rhythm sets');
+            return;
+        }
+        const sets = await res.json();
+        sets.sort((a, b) => (a.rhythmSetId || '').localeCompare(b.rhythmSetId || ''));
+        
+        sets.forEach(rs => {
+            const opt = document.createElement('option');
+            opt.value = rs.rhythmSetId;
+            
+            // Build display text with notes
+            let displayText = rs.rhythmSetId;
+            if (rs.notes && rs.notes.trim()) {
+                const notes = rs.notes.trim();
+                const truncatedNotes = notes.length > 40 ? notes.substring(0, 40) + '...' : notes;
+                displayText += ` → ${truncatedNotes}`;
+            } else if (rs.rhythmFamily) {
+                displayText += ` (${rs.rhythmFamily})`;
+            }
+            
+            opt.textContent = displayText;
+            opt.title = rs.notes ? `${rs.rhythmSetId}\n\nNotes: ${rs.notes}` : rs.rhythmSetId;
+            dropdown.appendChild(opt);
+        });
 
-        const uniqueFamilies = Array.from(new Set(serverFamilies)).sort();
-        populateRhythmFamilyDropdown('songRhythmFamily', uniqueFamilies);
-        populateRhythmFamilyDropdown('editSongRhythmFamily', uniqueFamilies);
+        if (selectedValue && sets.find(s => s.rhythmSetId === selectedValue)) {
+            dropdown.value = selectedValue;
+        }
     } catch (error) {
-        console.warn('Could not hydrate rhythm families from server metadata:', error);
+        console.warn('Could not populate rhythm set dropdown:', error);
     }
+}
+
+async function hydrateRhythmFamilies() {
+    // Populate rhythm set dropdowns for add and edit forms
+    await populateRhythmSetDropdown('songRhythmSet');
+    await populateRhythmSetDropdown('editSongRhythmSet');
 }
 
 const ARTISTS = [
@@ -8307,7 +8336,20 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                         sets.forEach(rs => {
                             const opt = document.createElement('option');
                             opt.value = rs.rhythmSetId;
-                            opt.textContent = rs.rhythmSetId + (rs.rhythmFamily ? ` (${rs.rhythmFamily})` : '');
+                            
+                            // Build display text: rhythmSetId with notes (truncated if too long)
+                            let displayText = rs.rhythmSetId;
+                            if (rs.notes && rs.notes.trim()) {
+                                const notes = rs.notes.trim();
+                                // Truncate notes if longer than 50 characters
+                                const truncatedNotes = notes.length > 50 ? notes.substring(0, 50) + '...' : notes;
+                                displayText += ` → ${truncatedNotes}`;
+                            } else if (rs.rhythmFamily) {
+                                displayText += ` (${rs.rhythmFamily})`;
+                            }
+                            
+                            opt.textContent = displayText;
+                            opt.title = rs.notes ? `${rs.rhythmSetId}\n\nNotes: ${rs.notes}` : rs.rhythmSetId; // Full notes in tooltip
                             if (rs.rhythmSetId === song.rhythmSetId) opt.selected = true;
                             rhythmSetSelect.appendChild(opt);
                         });
@@ -9919,11 +9961,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     const selectedMoods = Array.from(moodDropdown._allSelections || []);
                     const selectedArtists = Array.from(artistDropdown._allSelections || []);
 
-                    const rhythmFamilyInput = document.getElementById('songRhythmFamily')?.value || '';
-                    const rhythmSetNoInput = document.getElementById('songRhythmSetNo')?.value || '';
-                    const rhythmFamily = normalizeRhythmFamilyValue(rhythmFamilyInput);
-                    const rhythmSetNo = parseInt(rhythmSetNoInput, 10);
-                    const rhythmSetId = buildRhythmSetIdValue(rhythmFamily, rhythmSetNo);
+                    const rhythmSetIdInput = document.getElementById('songRhythmSet')?.value || '';
+                    const rhythmSetId = rhythmSetIdInput.trim();
                     
                     const newSong = {
                         title: title,
@@ -9936,8 +9975,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                         time: document.getElementById('songTime').value,
                         taal: document.getElementById('songTaal').value,
                         genres: selectedGenres,
-                        ...(rhythmFamily ? { rhythmFamily } : {}),
-                        ...(Number.isInteger(rhythmSetNo) && rhythmSetNo > 0 ? { rhythmSetNo } : {}),
                         ...(rhythmSetId ? { rhythmSetId } : {}),
                         lyrics: lyrics,
                         createdBy: (currentUser && currentUser.username) ? currentUser.username : undefined,
@@ -9999,11 +10036,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                             updateSelectedMultiselect('selectedGenres', 'genreDropdown', true, 'songGenre');
                             updateSelectedMultiselect('selectedMoods', 'moodDropdown', true, 'songMood');
                             updateSelectedMultiselect('selectedArtists', 'artistDropdown', true, 'songArtist');
-                            const songRhythmSetNoEl = document.getElementById('songRhythmSetNo');
-                            if (songRhythmSetNoEl) songRhythmSetNoEl.value = '';
-                            const songRhythmFamilyEl = document.getElementById('songRhythmFamily');
-                            if (songRhythmFamilyEl) songRhythmFamilyEl.value = '';
-                            updateRhythmSetIdPreview('songRhythmFamily', 'songRhythmSetNo', 'songRhythmSetIdPreview');
+                            const songRhythmSetEl = document.getElementById('songRhythmSet');
+                            if (songRhythmSetEl) songRhythmSetEl.value = '';
                             
                             // Update cache directly instead of invalidating
                             updateSongInCache(addedSong, true);
