@@ -882,6 +882,69 @@ No implementation changes are planned unless this verification discovers a concr
 - `node --check main.js` passed.
 - `git diff --check` passed.
 
+### 2026-09-09 - Favorites Panel Overlay Regression Review
+
+**Status:** Complete; regression corrected.
+
+**Root cause:**
+
+- Favorites rendered correctly inside the Songs panel, but selecting Favorites from the Home drawer did not close the Home drawer lifecycle.
+- `mobile-home-open` and `.mobile-home-backdrop.open` remained active, dimming the underlying Favorites panel.
+- Favorites also did not explicitly reset the Songs view mode, so stale `mobile-setlist-mode` could remain after a prior setlist view.
+
+**Correction:**
+
+- Added the existing Home close lifecycle to the Favorites click path.
+- Reset Songs view mode to `all` in the existing Favorites handler.
+- Preserved existing Favorites rendering, search/catalogue state, authentication, and permissions.
+
+**Verification at 375px:**
+
+- Favorites rendered 111 songs.
+- Favorites opacity was `1` and filter was `none`.
+- Body no longer contained `mobile-home-open`.
+- Home backdrop computed to `display: none`.
+- Songs panel no longer retained `mobile-setlist-mode`.
+- Bottom navigation remained visible.
+
+**Validation:**
+
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 3E: Mobile Bottom Navigation Content Clearance
+
+**Status:** Implemented and verified.
+
+**Correction:**
+
+- Added shared mobile clearance variables based on the measured 65px fixed bottom navigation:
+  - `--mobile-bottom-nav-height`
+  - `--mobile-bottom-clearance`
+- Applied the shared clearance to the actual mobile scroll containers:
+  - `.sidebar`
+  - `.songs-section`
+  - `.preview-section`
+- Updated mobile notifications to use the same safe-area-aware clearance.
+- Kept the bottom navigation fixed and unchanged.
+- No panel-specific arbitrary padding, feature behavior, or desktop layout changes were introduced.
+
+**Fresh-load verification:**
+
+- 360px, 375px, and 412px: fixed nav measured 65px and scroll-container clearance resolved to 77px (`65px + safe-area + 12px`).
+- Preview final lyric content reached above the navigation; at 375px the final line bottom was `705px` while nav top was `735px`.
+- Songs and Setlist panels received the same scroll clearance.
+- Home sidebar received the same scroll clearance.
+- Notifications resolve above the nav clearance.
+- 1024px: mobile clearance variables were absent; desktop panel padding and notification positioning remained unchanged.
+
+**Validation:**
+
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
 ### Environment limitation
 
 The browser smoke check used an unauthenticated local file session. The existing application produced an authentication-related `401` warning while attempting protected data loading. This was not introduced by the mobile shell. Full authenticated checks still require a valid local session and running API environment.

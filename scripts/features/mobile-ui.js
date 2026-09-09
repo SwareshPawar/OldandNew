@@ -169,31 +169,6 @@
         updatePositions();
     }
 
-    function updateMobileActiveSetlist(deps) {
-        const card = document.getElementById('mobileActiveSetlistCard');
-        const name = document.getElementById('mobileActiveSetlistName');
-        const count = document.getElementById('mobileActiveSetlistCount');
-        const openButton = document.getElementById('mobileActiveSetlistOpen');
-        if (!card || !name || !count) return;
-
-        const currentSetlist = deps && typeof deps.getCurrentViewingSetlist === 'function'
-            ? deps.getCurrentViewingSetlist()
-            : null;
-        if (!currentSetlist) {
-            name.textContent = 'No setlist selected';
-            count.textContent = 'Choose a setlist to begin';
-            card.classList.remove('has-selection');
-            if (openButton) openButton.disabled = true;
-            return;
-        }
-
-        const songs = Array.isArray(currentSetlist.songs) ? currentSetlist.songs.length : 0;
-        name.textContent = currentSetlist.name || 'Active setlist';
-        count.textContent = `${songs} ${songs === 1 ? 'song' : 'songs'}`;
-        card.classList.add('has-selection');
-        if (openButton) openButton.disabled = false;
-    }
-
     function updateMobileSetlistDrawerTitle(deps) {
         return deps?.getCurrentViewingSetlist?.() || null;
     }
@@ -237,7 +212,6 @@
             });
         }
 
-        updateMobileActiveSetlist(deps || mobileUIDeps);
         sidebar.classList.remove('hidden');
         sidebar.classList.add('mobile-home-drawer-open');
         backdrop.classList.add('open');
@@ -471,19 +445,18 @@
         const closeButton = document.getElementById('mobileHomeClose');
         const backdrop = document.getElementById('mobileHomeBackdrop');
         const setlistDropdown = document.getElementById('setlistDropdown');
-        const setlistOpenButton = document.getElementById('mobileActiveSetlistOpen');
         const setlistCloseButton = document.getElementById('mobileSetlistClose');
         const setlistBackdrop = document.getElementById('mobileSetlistBackdrop');
         const showAllButton = document.getElementById('showAll');
+        const showFavoritesButton = document.getElementById('showFavorites');
         closeButton?.addEventListener('click', closeMobileHomeDrawer);
         backdrop?.addEventListener('click', closeMobileHomeDrawer);
         showAllButton?.addEventListener('click', closeMobileHomeDrawer, true);
-        setlistOpenButton?.addEventListener('click', () => openMobileSetlistDrawer(mobileUIDeps));
+        showFavoritesButton?.addEventListener('click', closeMobileHomeDrawer, true);
         setlistCloseButton?.addEventListener('click', closeMobileSetlistDrawer);
         setlistBackdrop?.addEventListener('click', closeMobileSetlistDrawer);
         if (setlistDropdown && setlistDropdown.dataset.mobileHomeBound !== 'true') {
             setlistDropdown.dataset.mobileHomeBound = 'true';
-            setlistDropdown.addEventListener('change', () => updateMobileActiveSetlist(mobileUIDeps));
         }
 
         ['globalSetlistContent', 'mySetlistContent', 'smartSetlistContent'].forEach((id) => {
@@ -679,7 +652,6 @@
         mobileUIDeps = deps || null;
         createMobileNavButtons();
         createMobileModernShell();
-        updateMobileActiveSetlist(deps);
         setupMobileCatalogue();
         if (window.innerWidth <= 768) {
             addMobileTouchNavigation();
@@ -712,7 +684,6 @@
         activateMobileModernDestination,
         openMobileHomeDrawer,
         closeMobileHomeDrawer,
-        updateMobileActiveSetlist,
         openMobileSetlistDrawer,
         closeMobileSetlistDrawer,
         makeToggleDraggable,

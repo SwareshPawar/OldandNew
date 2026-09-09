@@ -4742,7 +4742,6 @@ body.dark-mode #installAppBtn {
         }
 
         .mobile-home-backdrop,
-        .mobile-active-setlist-card,
         .mobile-home-close,
         .mobile-catalog-toolbar,
         .mobile-selection-bar,
@@ -4756,7 +4755,19 @@ body.dark-mode #installAppBtn {
 
         @media (max-width: 768px) {
             body.mobile-modern-mode {
+                --mobile-bottom-nav-height: 65px;
+                --mobile-bottom-clearance: calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 12px);
                 padding-bottom: calc(76px + env(safe-area-inset-bottom));
+            }
+
+            body.mobile-modern-mode .sidebar,
+            body.mobile-modern-mode .songs-section,
+            body.mobile-modern-mode .preview-section {
+                padding-bottom: var(--mobile-bottom-clearance);
+            }
+
+            body.mobile-modern-mode .notification {
+                bottom: var(--mobile-bottom-clearance);
             }
 
             body.mobile-modern-mode .sidebar,
@@ -4790,62 +4801,6 @@ body.dark-mode #installAppBtn {
                 display: block;
             }
 
-            body.mobile-modern-mode .mobile-active-setlist-card {
-                display: flex;
-                width: calc(100% - 24px);
-                margin: 10px 12px 0;
-                padding: 10px 12px;
-                align-items: flex-start;
-                gap: 3px;
-                flex-direction: column;
-                border: 1px solid rgba(62, 63, 41, 0.15);
-                border-radius: 10px;
-                background: rgba(255, 252, 239, 0.7);
-                color: var(--primary-color, #3e3f29);
-                text-align: left;
-            }
-
-            body.mobile-modern-mode .mobile-active-setlist-card.has-selection {
-                border-color: var(--primary-color, #3e3f29);
-                background: var(--accent-color, #bca88d);
-            }
-
-            body.mobile-modern-mode .mobile-active-setlist-label {
-                font-size: 0.68rem;
-                font-weight: 700;
-                letter-spacing: 0.04em;
-                text-transform: uppercase;
-                opacity: 0.75;
-            }
-
-            body.mobile-modern-mode #mobileActiveSetlistName {
-                font-size: 0.95rem;
-            }
-
-            body.mobile-modern-mode #mobileActiveSetlistCount {
-                font-size: 0.72rem;
-                opacity: 0.8;
-            }
-
-            body.mobile-modern-mode #mobileActiveSetlistOpen {
-                min-height: 32px;
-                margin-top: 5px;
-                padding: 5px 9px;
-                border: 0;
-                border-radius: 6px;
-                background: var(--primary-color, #3e3f29);
-                color: var(--song-item-text-bg, #f7f3e8);
-                font: inherit;
-                font-size: 0.7rem;
-                font-weight: 700;
-                cursor: pointer;
-            }
-
-            body.mobile-modern-mode #mobileActiveSetlistOpen:disabled {
-                opacity: 0.45;
-                cursor: not-allowed;
-            }
-
             body.mobile-modern-mode .mobile-home-close {
                 position: absolute;
                 top: 12px;
@@ -4865,16 +4820,6 @@ body.dark-mode #installAppBtn {
             body.mobile-modern-mode .mobile-home-close:focus-visible {
                 outline: 3px solid var(--primary-color, #3e3f29);
                 outline-offset: 2px;
-            }
-
-            body.dark-mode.mobile-modern-mode .mobile-active-setlist-card {
-                border-color: rgba(236, 230, 214, 0.18);
-                background: rgba(35, 35, 26, 0.8);
-                color: var(--text-color, #ece6d6);
-            }
-
-            body.dark-mode.mobile-modern-mode .mobile-active-setlist-card.has-selection {
-                background: var(--sidebar-item-hover-bg, #4a4f3a);
             }
 
             body.dark-mode.mobile-modern-mode .mobile-home-close {
@@ -4903,7 +4848,7 @@ body.dark-mode #installAppBtn {
             }
 
             body.mobile-modern-mode .notification {
-                bottom: calc(76px + env(safe-area-inset-bottom) + 10px);
+                bottom: var(--mobile-bottom-clearance);
                 z-index: 2600;
                 max-width: calc(100vw - 24px);
             }

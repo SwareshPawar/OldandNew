@@ -9911,6 +9911,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 NewContent.classList.remove('active');
                 OldContent.classList.remove('active');
                 setlistSection.style.display = 'none';
+                setSongsViewMode('all');
                 deleteSection.style.display = 'none';
                 favoritesSection.style.display = 'block';
                 renderFavorites();
