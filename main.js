@@ -1,8 +1,33 @@
 // Register service worker for PWA installability
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+        // A controller already present at load time means this page was previously
+        // installed/visited; only then should a later controller change trigger a reload.
+        const hadExistingController = Boolean(navigator.serviceWorker.controller);
+
         navigator.serviceWorker.register('service-worker.js')
+            .then(registration => {
+                // Check the server for a newer service-worker.js right away and periodically,
+                // so installed webclips pick up updates without the user clearing cache.
+                registration.update().catch(() => {});
+                setInterval(() => registration.update().catch(() => {}), 60 * 60 * 1000);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        registration.update().catch(() => {});
+                    }
+                });
+            })
             .catch(err => console.warn('Service Worker registration failed:', err));
+
+        if (hadExistingController) {
+            // Reload once the new service worker takes control so the fresh code is applied.
+            let refreshingAfterUpdate = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshingAfterUpdate) return;
+                refreshingAfterUpdate = true;
+                window.location.reload();
+            });
+        }
     });
 }
 // --- GLOBAL CONSTANTS AND VARIABLES ---
