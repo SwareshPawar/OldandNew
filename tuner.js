@@ -64,19 +64,16 @@
         return a4 * Math.pow(2, (midi - 69) / 12);
     }
 
-    // Cents deviation of a detected frequency from the closest octave of the chosen target note.
-    function centsFromTarget(frequency, note, a4) {
-        let bestCents = 0;
-        let bestAbs = Infinity;
-        for (let octave = 0; octave <= 8; octave++) {
-            const idealFreq = noteToFrequency(note, octave, a4);
-            const cents = 1200 * Math.log2(frequency / idealFreq);
-            if (Math.abs(cents) < bestAbs) {
-                bestAbs = Math.abs(cents);
-                bestCents = cents;
-            }
-        }
-        return Math.round(bestCents);
+    // Auto-detects the nearest chromatic note (any note, any octave) for a given frequency,
+    // and how many cents sharp/flat the frequency is from that note's ideal pitch.
+    function nearestChromaticNote(frequency, a4) {
+        const midi = 69 + 12 * Math.log2(frequency / a4);
+        const rounded = Math.round(midi);
+        const noteIndex = ((rounded % 12) + 12) % 12;
+        return {
+            note: NOTE_NAMES[noteIndex],
+            cents: Math.round((midi - rounded) * 100)
+        };
     }
 
     // Autocorrelation-based pitch detection (ACF2+ style), a common public-domain approach
@@ -133,12 +130,12 @@
         return sampleRate / t0;
     }
 
-    function updateTunerDisplay(cents, hasSignal) {
+    function updateTunerDisplay(note, cents, hasSignal) {
         const noteEl = document.getElementById('tunerNote');
         const centsEl = document.getElementById('tunerCents');
         const needleEl = document.getElementById('tunerNeedle');
         const pillEl = document.getElementById('tunerInTunePill');
-        if (noteEl) noteEl.textContent = targetNote;
+        if (noteEl) noteEl.textContent = note;
 
         if (!hasSignal) {
             if (centsEl) centsEl.textContent = '-- cents';
@@ -204,8 +201,12 @@
                 const now = performance.now();
                 if (now - lastDisplayUpdate >= DISPLAY_INTERVAL_MS) {
                     lastDisplayUpdate = now;
-                    const cents = centsFromTarget(smoothedFrequency, targetNote, a4Reference);
-                    updateTunerDisplay(cents, true);
+                    const detected = nearestChromaticNote(smoothedFrequency, a4Reference);
+                    targetNote = detected.note;
+                    document.querySelectorAll('#tunerTargetNotes .tune-pitch-note-btn').forEach((btn) => {
+                        btn.classList.toggle('active', btn.dataset.note === detected.note);
+                    });
+                    updateTunerDisplay(detected.note, detected.cents, true);
                 }
             }
             rafId = requestAnimationFrame(update);
@@ -224,7 +225,7 @@
         const pillEl = document.getElementById('tunerInTunePill');
         if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" aria-hidden="true"></i> Idle';
         if (pillEl) pillEl.textContent = 'Tap Start Listening to begin';
-        updateTunerDisplay(0, false);
+        updateTunerDisplay(targetNote, 0, false);
     }
 
     function renderTargetNotes() {
@@ -237,7 +238,7 @@
             btn.addEventListener('click', () => {
                 targetNote = btn.dataset.note;
                 container.querySelectorAll('.tune-pitch-note-btn').forEach((b) => b.classList.toggle('active', b === btn));
-                updateTunerDisplay(0, false);
+                updateTunerDisplay(targetNote, 0, false);
             });
         });
     }
@@ -341,7 +342,7 @@
             btn.classList.toggle('active', parseInt(btn.dataset.freq, 10) === value);
         });
         updateToneDisplay();
-        updateTunerDisplay(0, false);
+        updateTunerDisplay(targetNote, 0, false);
     }
 
     function setupModeToggle() {

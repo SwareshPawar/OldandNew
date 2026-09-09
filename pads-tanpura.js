@@ -1,5 +1,10 @@
 // pads-tanpura.js
 // Standalone key-driven Atmosphere/Tanpura pad player, reusing the existing LoopPlayerPad audio engine.
+// Declared here (top-level, outside the IIFE below) so loop-player-pad.js's own
+// `typeof API_BASE_URL` check can see it - matches the resolution used by the main app,
+// so melodic sample URLs resolve correctly in production too, not just on localhost.
+const API_BASE_URL = window.AppApiBase ? window.AppApiBase.resolve() : window.location.origin;
+
 (function () {
     'use strict';
 
