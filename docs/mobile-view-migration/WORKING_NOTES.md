@@ -93,6 +93,15 @@ Record each migration phase here with:
 - `git diff --check` passes.
 - Confirmed outcome: the page loads correctly and no longer becomes unresponsive during catalogue initialization.
 
+### 2026-09-09 - Session fixes and Phase 6
+
+- Fixed the Phase 2E mobile panel-width regression (`min(88vw, 360px)` hardcode) by restoring `min(var(--sidebar-width), 88vw)` / `min(var(--songs-panel-width), 88vw)`; new first-load default is `70%`.
+- Raised `.modal` z-index above the mobile Home drawer so Settings and other modals render on top.
+- Simplified the mobile Song Preview action row to reuse the existing desktop `.song-preview-actions` (Setlist/Edit/Delete) directly; `AUTO` now lives in a standalone floating button.
+- Fixed Home panel `Favorites`/`Add New Song` button text clipping, favorites-count bracket wrapping, and centered/shrunk both buttons.
+- Implemented Phase 6 (Suggested Songs Drawer): mobile bottom-sheet presentation, `:has()`-based backdrop, and a double-close bug fix (`event.stopPropagation()` on the recommendations icon).
+- `service-worker.js` is no longer purely install-oriented: it now clears old caches, calls `clients.claim()` on activate, and forces `cache: 'no-store'` network fetches for same-origin `.js`/`.css`/`.html`; `main.js` checks for SW updates and reloads on `controllerchange`. This was a general PWA freshness fix, not a mobile-migration phase, but updates the Phase-0 baseline note above.
+
 ## Out of Scope for the Initial Migration
 
 - Backend API redesign

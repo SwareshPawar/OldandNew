@@ -483,12 +483,15 @@
         const setlistDropdown = document.getElementById('setlistDropdown');
         const setlistCloseButton = document.getElementById('mobileSetlistClose');
         const setlistBackdrop = document.getElementById('mobileSetlistBackdrop');
-        const showAllButton = document.getElementById('showAll');
-        const showFavoritesButton = document.getElementById('showFavorites');
         closeButton?.addEventListener('click', closeMobileHomeDrawer);
         backdrop?.addEventListener('click', closeMobileHomeDrawer);
-        showAllButton?.addEventListener('click', closeMobileHomeDrawer, true);
-        showFavoritesButton?.addEventListener('click', closeMobileHomeDrawer, true);
+        // True document-level capture so this runs before the target's own bubble-phase
+        // handler (registering directly on #showAll/#showFavorites does not guarantee order).
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('#showAll') || event.target.closest('#showFavorites')) {
+                closeMobileHomeDrawer();
+            }
+        }, true);
         setlistCloseButton?.addEventListener('click', closeMobileSetlistDrawer);
         setlistBackdrop?.addEventListener('click', closeMobileSetlistDrawer);
         if (setlistDropdown && setlistDropdown.dataset.mobileHomeBound !== 'true') {

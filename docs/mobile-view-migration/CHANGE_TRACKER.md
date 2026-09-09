@@ -2,7 +2,7 @@
 
 **Purpose:** Consultation record for the New&Old mobile modern mode.
 
-**Current stage:** Phase 3C complete: original Setlist view restored.
+**Current stage:** Phase 6 complete: Suggested Songs Drawer mobile presentation implemented and verified.
 
 **Last recorded:** 2026-09-09
 
@@ -1071,6 +1071,111 @@ No implementation changes are planned unless this verification discovers a concr
 
 - `node --check scripts/features/song-preview-ui.js` passed.
 - `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Mobile Panel Width Regression Fix and New Default
+
+**Status:** Fixed and verified.
+
+**Root cause:**
+
+- Phase 2E's equal-width fix hardcoded `width: min(88vw, 360px)` on `.sidebar`/`.songs-section` in mobile-modern-mode, silently overriding the existing settings-driven `--sidebar-width`/`--songs-panel-width` CSS variables from the Panel Width setting.
+
+**Correction:**
+
+- Replaced the hardcoded value with `min(var(--sidebar-width), 88vw)` and `min(var(--songs-panel-width), 88vw)` so mobile panels honor the saved Panel Width setting again while still clamping to the viewport.
+- Changed the first-load default (`loadSettings()` in `main.js`) from a 60%/20% mobile/desktop split to a single `70%` default for both `sidebarWidth` and `songsPanelWidth`.
+- No setlist, catalogue, or desktop behavior changed; desktop continues to read the same CSS variables unmodified.
+
+**Validation:**
+
+- Confirmed the settings slider once again changes mobile Home/Songs panel width.
+- Confirmed first-load (no saved setting) now resolves to 70%.
+- `node --check main.js` passed.
+
+### 2026-09-09 - Settings Modal Rendered Behind Home Drawer
+
+**Status:** Fixed and verified.
+
+**Root cause:**
+
+- The shared `.modal` z-index (`2000`) was lower than the mobile Home drawer (`2200`) and its backdrop (`2100`), so Settings (and other modals) opened from Home rendered underneath the drawer.
+
+**Correction:**
+
+- Raised the shared `.modal` z-index to `2300`, above all existing mobile Home drawer layers.
+- No modal markup, drawer markup, or desktop behavior changed.
+
+**Validation:**
+
+- Confirmed Settings now opens visibly above the Home drawer on mobile.
+
+### 2026-09-09 - Song Preview Action Row Simplification
+
+**Status:** Implemented and verified.
+
+**Changes:**
+
+- Removed the mobile-only `Setlist`/`More` action row and the `More` slide-out menu (Edit/Delete).
+- Mobile Song Preview now renders the same `.song-preview-actions` row already used on desktop: `Add to Setlist`, `Edit`, and permission-aware `Delete`, directly in one row.
+- Moved `AUTO` out of the action row entirely into a standalone floating circular button (`mobilePreviewFloatingAuto`) fixed above the bottom navigation, syncing its play/pause icon with existing auto-scroll state.
+
+**Preserved:**
+
+- Existing `previewSetlistBtn`, `previewEditBtn`, `previewDeleteBtn` handlers, admin-only Delete gating, and the existing `#toggleAutoScroll` auto-scroll implementation.
+- Desktop preview action row and styling.
+
+**Validation:**
+
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Home Panel Favorites/Add New Song Button Readability
+
+**Status:** Fixed and verified.
+
+**Issues fixed:**
+
+- `Favorites` and `Add New Song` button text was clipped (`white-space: nowrap`) on narrow phones, making the buttons appear empty.
+- The favorites count markup mixed loose text nodes with an inline count `<span>`, which wrapped unpredictably (`Favorites 121 )` / `(` on two lines).
+- Buttons were left-aligned and oversized for their short text content.
+
+**Correction:**
+
+- Restructured the favorites label markup into two atomic spans, `favorites-label` and `favorites-count-wrap` (the latter `white-space: nowrap`), so `(121)` never splits internally.
+- Removed the extra `margin-left` between `(` and the count.
+- Centered button text/icon (`justify-content`/`align-items`/`text-align: center`) and reduced `min-height` from 58-64px down to 46px now that the text reliably fits on one line.
+
+**Validation:**
+
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 6: Suggested Songs Drawer Mobile Presentation
+
+**Status:** Implemented and verified.
+
+**Files changed:**
+
+- `styles.css`
+  - Restyled `.suggested-songs-drawer` under `body.mobile-modern-mode` as a bottom-sheet (`min(78vh, 640px)`, rounded top corners, slide-up transform) instead of the legacy 55%-width sliver.
+  - Added a tap-to-close backdrop using `body.mobile-modern-mode:has(.suggested-songs-drawer.open)::before`, consistent with the `:has()` pattern already used elsewhere in the stylesheet (e.g. `li:has(#showAll)`); no JS changes were needed since the existing outside-click/Escape handling in `scripts/shared/dom.js` already closes the drawer.
+  - Restyled the header, close button, and `.suggested-song-item` rows to the mobile warm cream/olive theme with dark-mode colors and 44px-minimum touch targets.
+
+**Preserved:**
+
+- `getSuggestedSongs()` scoring/algorithm, `showSuggestedSongs()` rendering, and `closeSuggestedSongsDrawer()` lifecycle were not changed.
+- Desktop drawer presentation is unchanged.
+
+**Regression fixed during verification:**
+
+- Tapping the mobile `mobilePreviewRecommendations` icon opened and then immediately closed the drawer. The icon's click handler forwarded a synthetic `.click()` to `#toggleSuggestedSongs` (which opened the drawer), but the original click event then continued bubbling to `document`, where the existing outside-click handler saw the icon was neither the toggle button nor inside the drawer and closed it again in the same tick.
+- Fixed by calling `event.stopPropagation()` in the icon's click handler (`scripts/features/song-preview-ui.js`) so the original event no longer reaches the document-level outside-click listener.
+
+**Validation:**
+
+- `node --check scripts/features/song-preview-ui.js` passed.
 - `git diff --check` passed.
 
 ### Environment limitation

@@ -4,7 +4,7 @@
 }
 #showFavorites .favorites-count {
     font-weight: bold;
-    color: var(--title-color);
+    color: inherit;
     font-size: 0.9em;
     margin-left: 0;
 }
@@ -697,7 +697,6 @@
             font-weight: 900;
             font-size: 0.95rem;
             border: 2px solid var(--accent-color);
-            text-transform: uppercase;
             letter-spacing: 1px;
             box-shadow: 0 2px 6px rgba(62, 63, 41, 0.25);
             flex: 0 0 auto;
@@ -4870,8 +4869,8 @@ body.dark-mode #installAppBtn {
                 justify-content: flex-start;
                 padding: 12px 16px;
                 border-radius: 13px;
-                background: var(--primary-color, #3e3f29);
-                color: var(--form-bg, #f7f3e8);
+                background: var(--primary-color);
+                color: var(--accent-color);
                 font-size: 1rem;
                 font-weight: 800;
             }
@@ -5506,6 +5505,10 @@ body.dark-mode #installAppBtn {
 
             body.dark-mode.mobile-modern-mode .mobile-modern-nav-item i {
                 color: var(--accent-color, #bca88d);
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-modern-nav-item.active i {
+                color: var(--primary-color, #23231a);
             }
         }
 
@@ -6540,7 +6543,7 @@ body.dark-mode #installAppBtn {
                     padding: 8px 18px;
                     font-size: 1em;
                     cursor: pointer;
-                    color: #ffffff;
+                    color: var(--btn-text-light);
                     transition: background 0.2s, color 0.2s;
                 }
                 #adminPanelModal .admin-tab.active {
@@ -6567,17 +6570,17 @@ body.dark-mode #installAppBtn {
                 #adminPanelModal #usersTable th, #adminPanelModal #usersTable td {
                     padding: 10px 8px;
                     text-align: left;
-                    border-bottom: 1px solid #4A4F3A;
+                    border-bottom: 1px solid var(--song-item-border);
                     font-size: 1em;
-                    color: #ECE6D6;
-                    background: #23231A;
+                    color: var(--sidebar-text-color);
+                    background: var(--sidebar-item-bg);
                     word-break: break-all;
                 }
                 #adminPanelModal #usersTable th {
-                    background: #2d2c28;
-                    color: #3498db;
+                    background: var(--primary-color);
+                    color: var(--accent-color);
                     font-weight: 600;
-                    border-top: 1px solid #eaeaea;
+                    border-top: 1px solid var(--song-item-border);
                 }
                 #adminPanelModal #usersTable tr:last-child td {
                     border-bottom: none;
@@ -6601,7 +6604,7 @@ body.dark-mode #installAppBtn {
                     transition: background 0.2s;
                 }
                 #adminPanelModal .btn[disabled] {
-                    background: #aaa;
+                    background: var(--btn-secondary-bg);
                     cursor: not-allowed;
                 }
                 #adminPanelModal .notification {
