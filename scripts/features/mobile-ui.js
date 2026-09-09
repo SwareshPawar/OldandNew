@@ -173,6 +173,7 @@
         const card = document.getElementById('mobileActiveSetlistCard');
         const name = document.getElementById('mobileActiveSetlistName');
         const count = document.getElementById('mobileActiveSetlistCount');
+        const openButton = document.getElementById('mobileActiveSetlistOpen');
         if (!card || !name || !count) return;
 
         const currentSetlist = deps && typeof deps.getCurrentViewingSetlist === 'function'
@@ -182,6 +183,7 @@
             name.textContent = 'No setlist selected';
             count.textContent = 'Choose a setlist to begin';
             card.classList.remove('has-selection');
+            if (openButton) openButton.disabled = true;
             return;
         }
 
@@ -189,6 +191,33 @@
         name.textContent = currentSetlist.name || 'Active setlist';
         count.textContent = `${songs} ${songs === 1 ? 'song' : 'songs'}`;
         card.classList.add('has-selection');
+        if (openButton) openButton.disabled = false;
+    }
+
+    function updateMobileSetlistDrawerTitle(deps) {
+        return deps?.getCurrentViewingSetlist?.() || null;
+    }
+
+    function openMobileSetlistDrawer(deps) {
+        const section = document.getElementById('setlistSection');
+        if (!section) return;
+
+        if (!deps?.getCurrentViewingSetlist?.()) {
+            deps?.showNotification?.('Please select a setlist first');
+            return;
+        }
+
+        closeMobileHomeDrawer();
+        updateMobileSetlistDrawerTitle(deps);
+        section.style.display = 'block';
+        document.querySelector('.sidebar')?.classList.add('hidden');
+        document.querySelector('.songs-section')?.classList.remove('hidden');
+        document.querySelector('.preview-section')?.classList.remove('full-width');
+        updatePositions();
+    }
+
+    function closeMobileSetlistDrawer() {
+        closeMobileHomeDrawer();
     }
 
     function openMobileHomeDrawer(deps) {
@@ -401,9 +430,6 @@
         selectionAction?.addEventListener('click', addSelectedMobileSongs);
         setlistDropdown?.addEventListener('change', () => {
             updateMobileSelectionBar();
-            if (window.innerWidth <= 768 && setlistDropdown.value) {
-                window.setTimeout(() => document.getElementById('showAll')?.click(), 0);
-            }
         });
         ['keyFilter', 'genreFilter', 'moodFilter', 'artistFilter'].forEach((id) => {
             document.getElementById(id)?.addEventListener('change', updateMobileFilterLabel);
@@ -445,12 +471,44 @@
         const closeButton = document.getElementById('mobileHomeClose');
         const backdrop = document.getElementById('mobileHomeBackdrop');
         const setlistDropdown = document.getElementById('setlistDropdown');
+        const setlistOpenButton = document.getElementById('mobileActiveSetlistOpen');
+        const setlistCloseButton = document.getElementById('mobileSetlistClose');
+        const setlistBackdrop = document.getElementById('mobileSetlistBackdrop');
+        const showAllButton = document.getElementById('showAll');
         closeButton?.addEventListener('click', closeMobileHomeDrawer);
         backdrop?.addEventListener('click', closeMobileHomeDrawer);
+        showAllButton?.addEventListener('click', closeMobileHomeDrawer, true);
+        setlistOpenButton?.addEventListener('click', () => openMobileSetlistDrawer(mobileUIDeps));
+        setlistCloseButton?.addEventListener('click', closeMobileSetlistDrawer);
+        setlistBackdrop?.addEventListener('click', closeMobileSetlistDrawer);
         if (setlistDropdown && setlistDropdown.dataset.mobileHomeBound !== 'true') {
             setlistDropdown.dataset.mobileHomeBound = 'true';
             setlistDropdown.addEventListener('change', () => updateMobileActiveSetlist(mobileUIDeps));
         }
+
+        ['globalSetlistContent', 'mySetlistContent', 'smartSetlistContent'].forEach((id) => {
+            const content = document.getElementById(id);
+            if (!content || content.dataset.mobileSetlistBound === 'true') return;
+            content.dataset.mobileSetlistBound = 'true';
+            content.addEventListener('click', (event) => {
+                const item = event.target.closest('.setlist-item');
+                if (!item) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                closeMobileHomeDrawer();
+                if (id === 'smartSetlistContent') {
+                    mobileUIDeps?.openSmartSetlist?.(item.dataset.setlistId);
+                } else if (id === 'globalSetlistContent') {
+                    mobileUIDeps?.openGlobalSetlist?.(item.dataset.setlistId);
+                } else if (id === 'mySetlistContent') {
+                    mobileUIDeps?.openMySetlist?.(item.dataset.setlistId);
+                }
+                window.setTimeout(() => {
+                    document.querySelector('.songs-section')?.classList.remove('hidden');
+                    document.getElementById('setlistSection').style.display = 'block';
+                }, 0);
+            }, true);
+        });
 
         if (window.innerWidth <= 768) {
             activateMobileModernDestination('home');
@@ -655,6 +713,8 @@
         openMobileHomeDrawer,
         closeMobileHomeDrawer,
         updateMobileActiveSetlist,
+        openMobileSetlistDrawer,
+        closeMobileSetlistDrawer,
         makeToggleDraggable,
         initializeMobileUI,
     };

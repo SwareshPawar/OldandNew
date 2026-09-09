@@ -2243,6 +2243,15 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         let currentViewingSetlist = null;
         let currentSetlistType = null; // 'global' or 'my'
         let activeSetlistElementId = null; // Track which setlist item is active in sidebar
+        let songsViewMode = 'all';
+
+        function setSongsViewMode(mode) {
+            songsViewMode = mode === 'setlist' ? 'setlist' : 'all';
+            document.querySelector('.songs-section')?.classList.toggle(
+                'mobile-setlist-mode',
+                songsViewMode === 'setlist' && window.innerWidth <= 768
+            );
+        }
 
         // Update currentUser from localStorage (no redeclaration needed)
         try {
@@ -2881,8 +2890,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             setCurrentViewingSetlist: (v) => { currentViewingSetlist = v; },
             getCurrentSetlistType: () => currentSetlistType,
             setCurrentSetlistType: (v) => { currentSetlistType = v; },
+            getSongsViewMode: () => songsViewMode,
+            setSongsViewMode,
             getCurrentUser: () => currentUser,
             getJwtToken: () => jwtToken,
+            openAddManualSongModal,
             getSongs: () => songs,
             getActiveSetlistElementId: () => activeSetlistElementId,
             setActiveSetlistElementId: (v) => { activeSetlistElementId = v; },
@@ -2910,6 +2922,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             setCurrentViewingSetlist: (value) => { currentViewingSetlist = value; },
             getCurrentSetlistType: () => currentSetlistType,
             setCurrentSetlistType: (value) => { currentSetlistType = value; },
+            getSongsViewMode: () => songsViewMode,
+            setSongsViewMode,
         };
     }
 
@@ -2948,9 +2962,13 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             applyToggleButtonsVisibility,
             getCurrentViewingSetlist: () => currentViewingSetlist,
             getCurrentSetlistType: () => currentSetlistType,
+            getCurrentSetlistId: () => currentViewingSetlist?._id || currentViewingSetlist?.id || '',
             getSongs: () => songs,
             showNotification: (message, type) => showNotification(message, type),
             addToSpecificSetlist: (songId, setlistId) => addToSpecificSetlist(songId, setlistId),
+            openGlobalSetlist: (setlistId) => window.SetlistsUI?.showGlobalSetlistInMainSection(setlistId, getSetlistDeps()),
+            openMySetlist: (setlistId) => window.SetlistsUI?.showMySetlistInMainSection(setlistId, getSetlistDeps()),
+            openSmartSetlist: (setlistId) => window.SmartSetlistsUI?.showSmartSetlistInMainSection(setlistId, getSmartSetlistDeps()),
         };
     }
 
@@ -8704,6 +8722,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 getCurrentModal: () => currentModal,
                 getCurrentUser: () => currentUser,
                 getCurrentViewingSetlist: () => currentViewingSetlist,
+                getCurrentSetlistType: () => currentSetlistType,
                 getSongs: () => songs,
                 getFavorites: () => favorites,
                 CHORDS,
@@ -9673,6 +9692,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             // Tab switching
             NewTab.addEventListener('click', () => {
                 setlistSection.style.display = 'none';
+                document.querySelector('.songs-section')?.classList.remove('mobile-setlist-mode');
                 if (setlistSectionActions) setlistSectionActions.style.display = 'none';
                 deleteSection.style.display = 'none';
                 favoritesSection.style.display = 'none';
@@ -9851,6 +9871,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 NewContent.classList.add('active');
                 OldContent.classList.remove('active');
                 setlistSection.style.display = 'none';
+                setSongsViewMode('all');
                 deleteSection.style.display = 'none';
                 favoritesSection.style.display = 'none';
                 

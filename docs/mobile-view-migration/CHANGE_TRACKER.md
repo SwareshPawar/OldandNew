@@ -2,7 +2,7 @@
 
 **Purpose:** Consultation record for the New&Old mobile modern mode.
 
-**Current stage:** Phase 2B complete: mobile Songs catalogue.
+**Current stage:** Phase 3C complete: original Setlist view restored.
 
 **Last recorded:** 2026-09-09
 
@@ -368,6 +368,517 @@ Song Preview is the primary performance surface opened from Songs, not a fourth 
 **Validation commands:**
 
 - `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 2C: Mobile Song Preview Shell and Action Hierarchy
+
+**Status:** Implemented and verified.
+
+**Files changed:**
+
+- `scripts/features/song-preview-ui.js`
+  - Added mobile-only preview context showing `Setlist · Active` and the selected setlist name.
+  - Added a mobile recommendation icon that delegates to the existing Suggested Songs drawer.
+  - Added the mobile action hierarchy: `Setlist`, `AUTO`, and `More`.
+  - Delegated Setlist to the existing preview setlist action.
+  - Delegated AUTO to the existing global auto-scroll control.
+  - Used More to reveal existing Edit/Delete controls only; no new song actions or APIs were created.
+  - Kept existing lyrics/chord rendering, metadata, transpose, loop initialization, recommendation algorithm, and permissions unchanged.
+
+- `styles.css`
+  - Added mobile-only Song Preview hierarchy, active-setlist context, recommendation icon, and action styling.
+  - Hid the legacy global Auto-scroll control on mobile so AUTO appears exactly once.
+  - Explicitly hid all new mobile preview elements at desktop widths.
+  - Preserved the original desktop preview action row and styling.
+
+**Intentionally not changed:**
+
+- Backend/API contracts
+- Database schema
+- Recommendation algorithm or weights
+- Transpose semantics
+- Rhythm/Loop audio engine
+- Offline/cache behavior
+- Desktop preview layout and controls
+- Existing Song Preview renderer and panel/state architecture
+
+### 2026-09-09 - Phase 2C verification
+
+**Viewports tested:**
+
+- 360px
+- 375px
+- 412px
+- 1024px desktop
+
+**Results:**
+
+- Song Preview opened from the existing Songs catalogue at all mobile widths.
+- Title, favorite control, metadata, active-setlist context, and lyrics remained visible.
+- Mobile context displayed the active setlist name `Framish`.
+- Mobile action hierarchy rendered exactly as `Setlist`, `AUTO`, and `More`.
+- Recommendation icon was visible and populated the existing Suggested Songs drawer content.
+- AUTO delegated to the existing auto-scroll control and could be started/stopped.
+- More opened the existing Edit/Delete actions for the authenticated admin session.
+- Desktop kept the original preview action row; new mobile context, action row, and recommendation icon were hidden at 1024px.
+- No backend/API or desktop implementation changes were made.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+**Presentation correction during verification:**
+
+- Added desktop defaults hiding the new mobile preview elements.
+- Hid the legacy global Auto-scroll button itself on mobile, leaving the new preview AUTO action as the only visible auto-scroll control.
+
+### 2026-09-09 - Phase 2C Approval and Phase 2D Scope
+
+**Status:** Phase 2C accepted.
+
+The mobile Song Preview shell was approved because it modernizes presentation while preserving the existing song functionality underneath it.
+
+Phase 2D is limited to exposing verified Song-level secondary actions through mobile More. No new functionality may be invented, simplified, or substituted for an existing implementation.
+
+### 2026-09-09 - Phase 2D: Mobile Song-level More
+
+**Status:** Implemented and verified.
+
+**Existing actions exposed:**
+
+- Song Information - delegates to the existing metadata expansion control.
+- Edit Song - delegates to the existing permission-aware edit flow.
+- Reset Transpose - delegates to the existing personal transpose reset.
+- Delete Song - shown only for the existing admin-permitted path and delegates to the existing delete modal.
+- Rhythm / Loop - scrolls to the existing rhythm pad container when present.
+
+No backend/API, database, recommendation, transpose, audio, cache, routing, or desktop behavior was changed.
+
+### 2026-09-09 - Phase 2D verification
+
+**Viewports tested:**
+
+- 360px
+- 375px
+- 412px
+- 1024px desktop
+
+**Results:**
+
+- Mobile More opened and closed without changing the underlying Song Preview.
+- Menu exposed only existing actions: Song Information, Edit Song, Reset Transpose, Delete Song for the authenticated admin, and Rhythm / Loop.
+- Song Information delegated to the existing metadata expansion and revealed secondary metadata.
+- Reset Transpose delegated to the existing personal transpose reset.
+- Edit Song opened the existing edit modal.
+- Delete Song opened the existing permission-aware delete modal; the test was cancelled without deleting data.
+- Rhythm / Loop action targeted the existing loop-player container.
+- Desktop hid the mobile More menu and retained the original preview actions.
+- No backend/API, database, recommendation, transpose, audio, cache, routing, or desktop behavior changed.
+
+**Regression fixed during verification:**
+
+- Moved the `hasSongInformation` calculation below `chordsDisplay` initialization to prevent a preview initialization error.
+
+**Validation commands:**
+
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 2E: Integration Verification and Mobile Panel Sizing
+
+**Status:** Implemented and verified.
+
+Phase 2E remained integration verification only. The only regression fix was the unequal mobile Home/Songs panel sizing.
+
+**Sizing fix:**
+
+- Mobile modern mode now gives `.sidebar` and `.songs-section` the same automatic width: `min(88vw, 360px)`.
+- The existing persisted `sidebarWidth` and `songsPanelWidth` settings remain unchanged for desktop and non-modern layouts.
+- No routing, panel/state architecture, backend/API, or business logic changed.
+
+**Verification:**
+
+- Confirmed both mobile panels resolve to the same computed width at 360px, 375px, and 412px.
+- Confirmed desktop sizing remains governed by the existing settings at 1024px.
+- Confirmed Home drawer, Songs catalogue, Song Preview, Song-level More, active setlist context, and legacy navigation continue to use the existing integration paths.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 2F: End-to-End State and Context Verification
+
+**Status:** Complete; no implementation regression fix required.
+
+**Scope:**
+
+- Home -> Songs -> Song Preview -> Song-level More -> Songs flow.
+- Current song, active setlist, search, filters, sort, selected tab, transpose, recommendation context, panel visibility, and practical scroll-state preservation.
+- Equal automatic mobile panel sizing at 360px, 375px, and 412px.
+- Desktop preservation at 1024px.
+
+No implementation changes are planned unless this verification discovers a concrete regression.
+
+### 2026-09-09 - Phase 2F verification results
+
+**Authenticated flow:** Existing admin session with loaded catalogue and active `Framish (My)` setlist.
+
+**Connected flow results at 375px:**
+
+- Songs opened from the mobile shell.
+- Search `Ajeeb` and key filter `C` produced the expected filtered catalogue state.
+- Home opened with the active-setlist card and preserved search, key filter, selected tab, and catalogue count after close.
+- Song Preview opened without changing the active setlist.
+- Preview retained the current song and displayed `Setlist · Active` with `Framish`.
+- Song-level More opened the existing five verified actions and closed cleanly.
+- Recommendations populated through the existing drawer path.
+- Returning to Songs preserved the current song and Songs remained the catalogue view.
+- No add, delete, edit, or other persistent data mutation was performed during this pass.
+
+**Responsive results:**
+
+- 360px: sidebar and Songs panel both computed to `316.797px`.
+- 375px: sidebar and Songs panel both computed to `330px`.
+- 412px: sidebar and Songs panel both computed to `360px`.
+- 1024px: mobile shell and catalogue controls were hidden; existing desktop panel sizing and preview actions remained active.
+
+**Integration results:**
+
+- Active setlist remained context, not a Songs filter or setlist-only route.
+- Current song survived Home, More, recommendation drawer close, and return to Songs.
+- Existing panel/state architecture remained in use.
+- No new console/page errors were observed in the authenticated verification flow.
+- No implementation changes were required during Phase 2F.
+
+**Test harness note:**
+
+- For responsive verification, each viewport was selected before page reload so mobile initialization ran at the intended width. Resizing an already initialized desktop page in the browser harness does not reliably dispatch the app's resize lifecycle and is not representative of a fresh mobile load.
+
+### 2026-09-09 - Phase 3 Setlist Inventory Approved
+
+**Status:** Approved for implementation.
+
+**Existing types:**
+
+- Global Setlists: `/api/global-setlists`; admin mutation permissions.
+- My Setlists: `/api/my-setlists`; authenticated user mutation permissions.
+- Smart Setlists: `/api/smart-setlists`; condition-generated with creator/admin permissions.
+
+**Existing state:**
+
+- `currentViewingSetlist`
+- `currentSetlistType` (`global`, `my`, or `smart`)
+- `activeSetlistElementId`
+- `setlistDropdown.value`
+- `localStorage.selectedSetlist`
+- `window.setlistResequenceMode`
+
+**Existing actions to preserve:**
+
+- Select/open: `populateSetlistDropdown()`, `selectDropdownOption()`, `showGlobalSetlistInMainSection()`, `showMySetlistInMainSection()`, `showSmartSetlistInMainSection()`
+- Render: `renderGlobalSetlists()`, `renderMySetlists()`, `renderSmartSetlists()`, `displaySetlistSongs()`
+- Add/remove: `addSongToCurrentSetlist()`, `addManualSongToSetlist()`, `addToSpecificSetlist()`, `removeSongFromSetlist()`, `removeFromSpecificSetlist()`
+- Edit/delete: existing Global, My, and Smart handlers with their current permission checks
+- Reorder: `window.setlistResequenceMode`, drag/drop rendering, and existing save sequence requests
+- Smart actions: scan, refresh, edit, delete, and condition-based generation
+
+**Approved mobile scope:**
+
+- Add a mobile Setlist drawer/panel separate from the Songs catalogue.
+- Preserve Global, My, and Smart setlists.
+- Preserve ordered songs, New/Old grouping, preview, add, remove, edit, delete, reorder, refresh, and existing permission behavior.
+- Closing the drawer must restore the underlying screen, current song, active setlist, search, filters, sort, selected tab, transpose, recommendation context, and practical scroll state.
+- No new setlist behavior, API, schema, routing architecture, or permission model.
+
+### 2026-09-09 - Phase 3: Mobile Setlist Drawer
+
+**Status:** Implemented and verified.
+
+**Files changed:**
+
+- `index.html`
+  - Added an `Open Setlist` action to the Home active-setlist card.
+  - Added a mobile Setlist drawer, header, close control, backdrop, and DOM placeholder.
+
+- `scripts/features/mobile-ui.js`
+  - Added mobile Setlist drawer open/close state handling.
+  - Relocates the existing `#setlistSection` into the drawer while open instead of duplicating its markup or handlers.
+  - Restores the section to its original Songs-panel position on close.
+  - Preserves sidebar/Songs visibility and Preview scroll state.
+  - Hooks existing Global, My, and Smart folder clicks to open the drawer after their existing setlist handlers run.
+
+- `styles.css`
+  - Added mobile-only Setlist drawer, backdrop, header, active-setlist entry button, and dark-mode styling.
+  - Desktop drawer remains hidden and existing desktop setlist presentation is unchanged.
+
+- `main.js`
+  - Exposed existing current setlist identity to the mobile controller only.
+
+**Existing behavior preserved:**
+
+- Global, My, and Smart setlist rendering.
+- New/Old setlist tabs.
+- Ordered song rows and song preview navigation.
+- Add, remove, manual add, edit, delete, reorder, refresh, and existing More/actions.
+- Existing permission checks and API calls.
+- Existing `window.setlistResequenceMode` and save-sequence behavior.
+
+**Verification:**
+
+- 360px: drawer opened with 7 New and 4 Old songs; panel widths matched at `316.8px`.
+- 375px: drawer opened with 7 New and 4 Old songs; panel widths matched at `330px`.
+- 412px: drawer opened with 7 New and 4 Old songs; panel widths matched at `360px`.
+- 1024px: mobile drawer and shell remained hidden; existing desktop sizing remained active.
+- Closing the drawer restored `#setlistSection` to the Songs panel and removed the mobile drawer state.
+- No persistent setlist mutation was performed during this verification.
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+**Scope note:**
+
+- Phase 3 changes only the mobile presentation and integration boundary. No backend/API, schema, routing architecture, setlist semantics, or permission changes were made.
+
+### 2026-09-09 - Phase 3 Correction: Performance Workflow
+
+**Status:** Implemented and verified.
+
+**Corrections made:**
+
+- Setlist song taps close the mobile drawer automatically and open the existing Song Preview path immediately.
+- Added mobile-only Previous/Next controls sourced from the ordered active setlist songs.
+- Added mobile-only Back to Setlist control from Song Preview.
+- Reopening the drawer highlights and scrolls to the current preview song.
+- Restored the existing Global/My Add Song header action and connected it to the existing manual/existing-song modal flow.
+- Smart Setlist taps use the extracted dependency-aware Smart handler instead of the duplicate legacy handler path.
+- Fixed existing Smart Setlist hydration for primitive numeric song IDs so generated Smart songs render correctly.
+
+**Verified workflow at 375px:**
+
+- Home -> active Framish setlist -> drawer -> Pardes - Yeh Dil Deewana.
+- Drawer closed automatically and Preview opened immediately.
+- Next opened Kal Ho Naa Ho; Previous returned to Pardes - Yeh Dil Deewana.
+- Back to Setlist reopened Framish and selected the current preview song.
+- Global and My headers exposed existing edit/delete/reorder/save actions and Add Song.
+- Smart Deepchandi exposed Update, Edit, and Delete actions and rendered 18 songs: New (10), Old (8).
+- No persistent data mutation was performed during this correction verification.
+
+**Desktop verification:**
+
+- At 1024px the mobile Setlist drawer, Previous/Next controls, and Back to Setlist control were hidden.
+- Existing desktop preview actions and setlist presentation remained active.
+
+**Existing capability note:**
+
+- Add existing song and manual song remain the existing modal flow behind `addManualSongBtn`, `selectExistingSong()`, and `addManualSongToSetlist()`; no replacement flow or new API was introduced.
+
+**Validation:**
+
+- `node --check scripts/features/setlists.js` passed.
+- `node --check scripts/features/smart-setlists.js` passed.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 3 Regression Review: Duplicate Screen and Stale Backdrop
+
+**Status:** Complete; regressions corrected.
+
+**Root causes confirmed:**
+
+- `openMobileSetlistDrawer()` was moving `#setlistSection` into `#mobileSetlistDrawer`, creating a second full-screen presentation instead of using the existing Songs-panel section.
+- Selecting a setlist from Home could leave the Home drawer lifecycle active while the setlist presentation opened, allowing a stale Home backdrop to dim Song Preview.
+
+**Corrections:**
+
+- `openMobileSetlistDrawer()` now acts as a mobile presentation bridge only. It closes Home, keeps `#setlistSection` in `.songs-section`, reveals the existing Songs panel, and explicitly clears Setlist overlay state.
+- `closeMobileSetlistDrawer()` no longer hides or relocates the original setlist section when no mobile drawer state exists.
+- Setlist row selection now closes all mobile overlay state before calling the existing `showPreview()` path.
+- Smart Setlist taps use the extracted dependency-aware handler, avoiding the duplicate legacy handler error.
+- Smart primitive song IDs are hydrated against the existing catalogue so Smart generated rows render correctly.
+
+**Verification:**
+
+- At 375px, selecting Framish left `#setlistSection` parented by `.songs-section`.
+- Mobile Setlist drawer display was `none` after selection; Home and Setlist backdrops were both `display: none`.
+- Tapping a setlist song opened the existing Preview with opacity `1` and no CSS filter.
+- No extra click was needed to restore normal Preview interaction.
+- Active setlist context remained visible in Preview.
+- Smart Deepchandi rendered 18 songs with New (10) and Old (8) tabs.
+- At 1024px, mobile drawer, backdrop, performance navigation, and return controls were hidden; desktop controls remained active.
+- No backend/API/database, routing, recommendation, transpose, audio, cache, or desktop changes were made.
+
+**Validation commands:**
+
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check scripts/features/setlists.js` passed.
+- `node --check scripts/features/smart-setlists.js` passed.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 3B: Mobile Setlist Display Cleanup and Navigation Layer Correction
+
+**Status:** Implemented and verified.
+
+**Corrections:**
+
+- Removed mobile `Back to Setlist` markup, styling, and event handling.
+- Moved mobile active-setlist context below the Transpose block and reduced it to compact name/position text.
+- Kept Previous/Next grouped above the compact context and tied to the existing ordered setlist state.
+- Changed mobile setlist selection transition to use the existing Songs-panel `#setlistSection` without opening/reparenting a second drawer renderer.
+- Closed Home state during setlist selection in capture phase to prevent stale backdrop/flicker.
+- Kept the mobile bottom navigation above Home drawer layers.
+- Added safe-area-aware notification clearance above the bottom navigation.
+
+**Verification at 375px:**
+
+- Setlist selection left `#setlistSection` parented by `.songs-section`.
+- Mobile Setlist drawer and backdrops were `display: none` after selection.
+- Song Preview opened immediately from the existing setlist row.
+- Preview had opacity `1` and no filter/dimming.
+- `Back to Setlist` was absent.
+- Compact context rendered below Transpose as `Setlist · Framish / Song 1 of 11`.
+- Previous/Next remained visible and functional.
+- Home backdrop was cleared after setlist selection and song opening.
+- Bottom navigation remained rendered with z-index `2500`.
+- Notifications use `bottom: calc(76px + safe-area + 10px)` and z-index `2600` on mobile.
+
+**Desktop verification:**
+
+- At 1024px mobile drawer, mobile backdrop, mobile performance controls, compact notifier, and mobile navigation layers were hidden.
+- Existing desktop Preview and Setlist presentation remained active.
+
+**Preserved:**
+
+- Existing setlist state, renderers, tabs, actions, ordering, permissions, Preview renderer, APIs, transpose, recommendations, audio, cache, and desktop behavior.
+
+**Validation:**
+
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check scripts/features/setlists.js` passed.
+- `node --check scripts/features/smart-setlists.js` passed.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 3C: Restore Original Setlist View and Remove Previous/Next
+
+**Status:** Implemented and verified.
+
+**Corrections:**
+
+- Removed the inert Phase 3 mobile Setlist screen DOM/state/style remnants.
+- Restored the original distinction between All Songs catalogue mode and specific Setlist Songs-panel mode.
+- Mobile Global/My/Smart setlist selection now delegates once to the existing extracted setlist handler, closes Home, and leaves the existing `#setlistSection` visible inside `.songs-section`.
+- All Songs continues to use the existing complete catalogue handler and closes Home cleanly.
+- Removed the mobile Previous/Next implementation completely:
+  - ordering helper
+  - navigation helper
+  - Previous/Next markup
+  - position indicator
+  - event listeners
+  - related CSS
+- Removed song position text from the compact Preview context.
+- Kept compact `Setlist · <name>` context below Transpose.
+- Preserved existing setlist song rendering, New/Old tabs, add/remove, edit/delete, reorder, Smart behavior, Preview, permissions, APIs, and desktop layout.
+
+**Verification:**
+
+- 360px: My setlist displayed in `.songs-section`; Preview opened; no Back/Previous/Next/position; no backdrop.
+- 375px: All Songs showed the complete catalogue; My and Global showed their existing setlist rows; Smart showed generated rows through the existing renderer.
+- 412px: specific setlist view remained in `.songs-section`; mobile panel widths remained equal.
+- 1024px: original desktop setlist and Preview behavior remained active; mobile UI was hidden.
+- Switching All Songs -> My -> All Songs -> Global -> All Songs -> Smart produced the correct view mode at each step.
+- Setlist song selection opened the existing Preview immediately with opacity `1` and no filter/dimming.
+- Active setlist context remained visible without a position counter.
+- No duplicate mobile Setlist renderer or drawer element remains.
+- No persistent data mutation was performed during verification.
+
+**Validation:**
+
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check scripts/features/setlists.js` passed.
+- `node --check scripts/features/smart-setlists.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 3D: Remove Redundant Mobile Setlist View Layer
+
+**Status:** Implemented and verified.
+
+**Findings:**
+
+- The visible `Setlist View` title and action bar were produced by the existing `#setlistSection`.
+- The apparent duplicate was the existing Songs-panel `.sticky-header` catalogue controls remaining visible above that authoritative setlist section.
+- No second song renderer remained after the earlier drawer correction.
+
+**Corrections:**
+
+- Added mobile-only `.mobile-setlist-mode` presentation state to the existing Songs panel.
+- Specific Global/My/Smart setlist selection hides only the catalogue sticky header and leaves the original `#setlistSection` and its handlers active.
+- All Songs removes `.mobile-setlist-mode` and restores the normal catalogue controls.
+- Removed the remaining inert mobile Setlist screen DOM/state/style remnants.
+- Removed the Previous/Next implementation, position indicator, and Back to Setlist control completely.
+- Removed an accidental duplicate injected Global Add Song button.
+
+**Verification:**
+
+- All Songs: complete 552-song catalogue remained available with normal catalogue controls.
+- Global Setlist: one Songs-panel setlist presentation with 73 New and 18 Old songs.
+- My Setlist: one Songs-panel setlist presentation with its existing rows.
+- Smart Setlist: one Songs-panel generated presentation with 10 New and 8 Old songs.
+- Switching All Songs -> My -> All Songs -> Global -> All Songs -> Smart produced the correct view mode.
+- Setlist song Preview opened immediately with no Back, Previous, Next, or position counter.
+- Mobile setlist presentation remained inside `.songs-section`; no second drawer screen exists.
+- No stale backdrop or greyed Preview appeared.
+- 360px, 375px, and 412px mobile panel behavior remained intact.
+- 1024px desktop behavior remained unchanged.
+
+**Validation:**
+
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check scripts/features/setlists.js` passed.
+- `node --check scripts/features/smart-setlists.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Phase 3E: Setlist Songs Panel State Model
+
+**Status:** Implemented and verified.
+
+**State correction:**
+
+- Existing handlers now explicitly own the two Songs-panel modes:
+  - `all` from the existing All Songs handler.
+  - `setlist` from existing Global, My, and Smart setlist renderers.
+- The mobile controller no longer forces `showAll()` when the setlist dropdown changes.
+- The mobile controller no longer manually creates or maintains a separate setlist presentation.
+- The original `#setlistSection` remains authoritative.
+- `.mobile-setlist-mode` is presentation state derived from the explicit mode and only hides the catalogue sticky header on mobile.
+
+**Verification:**
+
+- All Songs at 360px and 412px: `mobile-setlist-mode` false, sticky catalogue header visible, `#setlistSection` hidden, 552 catalogue rows available.
+- My Setlist at 360px and 412px: `mobile-setlist-mode` true, sticky catalogue header hidden, `#setlistSection` visible, 7 New and 4 Old rows.
+- Global Setlist at 375px: existing `#setlistSection` visible with 73 New and 18 Old rows.
+- Smart Setlist at 375px: existing `#setlistSection` visible with 10 New and 8 Old generated rows.
+- All Songs transitions restore catalogue mode and hide the setlist section.
+- No mobile Setlist drawer element remains.
+- Setlist Preview still opens through the existing renderer with compact setlist context and no Previous/Next or Back control.
+- At 1024px, the original desktop mode remains active; no mobile mode class or mobile presentation appears.
+
+**Validation:**
+
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check scripts/features/setlists.js` passed.
+- `node --check scripts/features/smart-setlists.js` passed.
 - `node --check main.js` passed.
 - `git diff --check` passed.
 

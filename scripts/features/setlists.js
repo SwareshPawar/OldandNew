@@ -905,6 +905,7 @@
         if (!setlist) return;
         deps.setCurrentViewingSetlist(setlist);
         deps.setCurrentSetlistType('global');
+        deps.setSongsViewMode?.('setlist');
 
         const setlistHeader = document.getElementById('setlistViewHeader');
         if (setlistHeader) setlistHeader.textContent = setlist.name;
@@ -917,10 +918,12 @@
                 <button id="editSetlistSectionBtn" class="btn btn-secondary setlist-action-btn" title="Edit Setlist" aria-label="Edit Setlist"><i class="fas fa-edit"></i></button>
                 <button id="deleteSetlistSectionBtn" class="btn btn-danger setlist-action-btn" title="Delete Setlist" aria-label="Delete Setlist"><i class="fas fa-trash"></i></button>
                 <button id="resequenceSetlistSectionBtn" class="btn btn-primary setlist-action-btn" title="Resequence Songs" aria-label="Resequence Setlist"><i class="fas fa-random"></i></button>
+                <button id="addManualSongBtn" class="btn btn-primary setlist-action-btn" title="Add Song" aria-label="Add Song to Setlist"><i class="fas fa-plus"></i></button>
                 <button id="saveSetlistSequenceBtn" class="btn btn-success setlist-action-btn" style="display:none;" title="Save New Sequence" aria-label="Save Sequence"><i class="fas fa-save"></i> Save Sequence</button>`;
             const editBtn = document.getElementById('editSetlistSectionBtn');
             const delBtn = document.getElementById('deleteSetlistSectionBtn');
             const reseqBtn = document.getElementById('resequenceSetlistSectionBtn');
+            document.getElementById('addManualSongBtn')?.addEventListener('click', () => deps.openAddManualSongModal?.());
             const canEdit = deps.getCurrentUser()?.isAdmin;
             if (editBtn && delBtn) {
                 editBtn.style.opacity = canEdit ? '1' : '0.5';
@@ -964,6 +967,7 @@
         if (NewContent) NewContent.classList.remove('active');
         if (OldContent) OldContent.classList.remove('active');
         if (setlistSection) setlistSection.style.display = 'block';
+        document.querySelector('.songs-section')?.classList.add('mobile-setlist-mode');
         if (deleteSection) deleteSection.style.display = 'none';
         if (favoritesSection) favoritesSection.style.display = 'none';
 
@@ -1018,6 +1022,7 @@
         if (!setlist) return;
         deps.setCurrentViewingSetlist(setlist);
         deps.setCurrentSetlistType('my');
+        deps.setSongsViewMode?.('setlist');
 
         const setlistHeader = document.getElementById('setlistViewHeader');
         if (setlistHeader) setlistHeader.textContent = setlist.name;
@@ -1034,6 +1039,7 @@
             const editBtn = document.getElementById('editSetlistSectionBtn');
             const delBtn = document.getElementById('deleteSetlistSectionBtn');
             const reseqBtn = document.getElementById('resequenceSetlistSectionBtn');
+            document.getElementById('addManualSongBtn')?.addEventListener('click', () => deps.openAddManualSongModal?.());
             if (editBtn && delBtn) {
                 editBtn.style.opacity = '1'; delBtn.style.opacity = '1';
                 editBtn.style.cursor = 'pointer'; delBtn.style.cursor = 'pointer';
@@ -1072,6 +1078,7 @@
         if (NewContent) NewContent.classList.remove('active');
         if (OldContent) OldContent.classList.remove('active');
         if (setlistSection) setlistSection.style.display = 'block';
+        document.querySelector('.songs-section')?.classList.add('mobile-setlist-mode');
         if (deleteSection) deleteSection.style.display = 'none';
         if (favoritesSection) favoritesSection.style.display = 'none';
 
@@ -1183,6 +1190,12 @@
             li.querySelector('.setlist-song-info').addEventListener('click', () => {
                 clearSetlistSelections();
                 li.classList.add('selected');
+                if (window.innerWidth <= 768 && window.MobileUI && typeof window.MobileUI.closeMobileSetlistDrawer === 'function') {
+                    window.MobileUI.closeMobileSetlistDrawer();
+                    document.querySelector('.sidebar')?.classList.add('hidden');
+                    document.querySelector('.songs-section')?.classList.add('hidden');
+                    document.querySelector('.preview-section')?.classList.add('full-width');
+                }
                 deps.showPreview(song, false, context);
             });
             const removeBtn = li.querySelector('.remove-from-setlist-btn');

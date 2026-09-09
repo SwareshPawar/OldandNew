@@ -86,6 +86,31 @@ Create a mobile-specific New&Old experience that feels like a professional digit
 - Existing filters and search survive opening/closing drawers.
 - Edit/delete remain permission-aware.
 
+## Phase 2F - End-to-End State and Context Verification
+
+### Work
+
+- Verify the completed mobile shell, Home drawer, Songs catalogue, Song Preview, and Song-level More as one connected flow.
+- Verify preservation of current song, active setlist, search, filters, sorting, selected tab, transpose state, recommendation context, panel visibility, and scroll state where practical.
+- Verify Home -> Songs -> Preview -> More -> Songs transitions without reloads or accidental setlist navigation.
+- Verify active-setlist context remains consistent across Home, Songs, and Song Preview.
+- Verify recommendation selection opens the new song and updates the current-song context.
+- Verify mobile panel widths are equal and automatic at 360px, 375px, and 412px.
+- Verify desktop at 1024px remains on the existing layout and controls.
+- Make implementation changes only for regressions found during this verification.
+
+### Acceptance
+
+- No new console or runtime errors occur during the connected flow.
+- The current song remains stable across Home and More interactions.
+- Songs remains the complete catalogue while an active setlist is selected.
+- Search, filters, sort, and selected tab survive drawer/panel transitions.
+- Personal transpose remains attached to the current user/song context.
+- Recommendation context follows the current song.
+- Mobile Home and Songs panels use the same automatic width.
+- Desktop presentation remains unchanged.
+- Any regression fix is documented with the failing flow and retest result.
+
 ## Phase 4 - Song Preview Performance Surface
 
 ### Work

@@ -321,6 +321,7 @@
 
         deps.setCurrentViewingSetlist(smartSetlist);
         deps.setCurrentSetlistType('smart');
+        deps.setSongsViewMode?.('setlist');
 
         const newContent = document.getElementById('NewContent');
         const oldContent = document.getElementById('OldContent');
@@ -331,6 +332,7 @@
         if (newContent) newContent.classList.remove('active');
         if (oldContent) oldContent.classList.remove('active');
         if (setlistSection) setlistSection.style.display = 'block';
+        document.querySelector('.songs-section')?.classList.add('mobile-setlist-mode');
         if (deleteSection) deleteSection.style.display = 'none';
         if (favoritesSection) favoritesSection.style.display = 'none';
 
@@ -386,7 +388,10 @@
         }
 
         const fullSongData = smartSetlist.songs.map((smartSong) => {
-            const fullSong = deps.getSongs().find((song) => song.id === smartSong.id);
+            const smartSongId = smartSong && typeof smartSong === 'object'
+                ? (smartSong.id || smartSong._id || smartSong.songId)
+                : smartSong;
+            const fullSong = deps.getSongs().find((song) => String(song.id || song._id) === String(smartSongId));
             return fullSong || smartSong;
         }).filter(Boolean);
 
