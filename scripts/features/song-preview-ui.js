@@ -234,11 +234,19 @@
         if (!wasAutoScrollActive && toggleAutoScrollBtn) {
             toggleAutoScrollBtn.innerHTML = '<i class="fas fa-play"></i>';
             toggleAutoScrollBtn.classList.remove('active');
+            syncMobileFloatingAutoBtn(false);
         } else if (wasAutoScrollActive) {
             setTimeout(() => {
                 startAutoScroll('down', deps);
             }, 100);
         }
+    }
+
+    function syncMobileFloatingAutoBtn(isActive) {
+        const floatingAutoBtn = document.getElementById('mobilePreviewFloatingAuto');
+        if (!floatingAutoBtn) return;
+        floatingAutoBtn.innerHTML = isActive ? '<i class="fas fa-pause" aria-hidden="true"></i>' : '<i class="fas fa-play" aria-hidden="true"></i>';
+        floatingAutoBtn.classList.toggle('active', isActive);
     }
 
     function startAutoScroll(direction, deps) {
@@ -255,6 +263,7 @@
             toggleAutoScrollBtn.innerHTML = '<i class="fas fa-pause"></i>';
             toggleAutoScrollBtn.classList.add('active');
         }
+        syncMobileFloatingAutoBtn(true);
 
         const intervalId = setInterval(() => {
             if (deps.getIsUserScrolling()) return;
@@ -272,6 +281,7 @@
                     toggleAutoScrollBtn.innerHTML = '<i class="fas fa-play"></i>';
                     toggleAutoScrollBtn.classList.remove('active');
                 }
+                syncMobileFloatingAutoBtn(false);
                 return;
             }
 
@@ -305,12 +315,14 @@
                 toggleAutoScrollBtn.innerHTML = '<i class="fas fa-play"></i>';
                 toggleAutoScrollBtn.classList.remove('active');
             }
+            syncMobileFloatingAutoBtn(false);
         } else {
             startAutoScroll('down', deps);
             if (toggleAutoScrollBtn) {
                 toggleAutoScrollBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 toggleAutoScrollBtn.classList.add('active');
             }
+            syncMobileFloatingAutoBtn(true);
         }
     }
 
@@ -504,31 +516,9 @@
             </button>` : ''}
         </div>
 
-        <div class="mobile-preview-action-row" id="mobilePreviewActionRow">
-            <button class="mobile-preview-action mobile-preview-setlist-action" id="mobilePreviewSetlistAction" type="button">
-                <i class="fas fa-plus" aria-hidden="true"></i>
-                <span>Setlist</span>
-            </button>
-            <button class="mobile-preview-action mobile-preview-auto-action" id="mobilePreviewAutoAction" type="button">
-                <i class="fas fa-play" aria-hidden="true"></i>
-                <span>AUTO</span>
-            </button>
-            <button class="mobile-preview-action mobile-preview-more-action" id="mobilePreviewMoreAction" type="button" aria-expanded="false">
-                <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
-                <span>More</span>
-            </button>
-        </div>
-
-        <div class="mobile-preview-more-menu" id="mobilePreviewMoreMenu" aria-hidden="true">
-            <button class="mobile-preview-more-item preview-edit-btn" id="mobilePreviewEditAction" type="button">
-                <i class="fas fa-edit" aria-hidden="true"></i>
-                <span>Edit Song</span>
-            </button>
-            ${isAdmin ? `<button class="mobile-preview-more-item preview-delete-btn" id="mobilePreviewDeleteAction" type="button">
-                <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                <span>Delete Song</span>
-            </button>` : ''}
-        </div>
+        <button class="mobile-preview-floating-auto" id="mobilePreviewFloatingAuto" type="button" title="Auto Scroll">
+            <i class="fas fa-play" aria-hidden="true"></i>
+        </button>
 
         <div class="song-preview-transpose">
             <div class="preview-transpose-label">
@@ -626,32 +616,12 @@
             }
         });
 
-        document.getElementById('mobilePreviewSetlistAction').addEventListener('click', () => {
-            document.getElementById('previewSetlistBtn')?.click();
-        });
-
-        document.getElementById('mobilePreviewAutoAction').addEventListener('click', () => {
+        document.getElementById('mobilePreviewFloatingAuto').addEventListener('click', () => {
             document.getElementById('toggleAutoScroll')?.click();
         });
 
         document.getElementById('mobilePreviewRecommendations').addEventListener('click', () => {
             document.getElementById('toggleSuggestedSongs')?.click();
-        });
-
-        document.getElementById('mobilePreviewMoreAction').addEventListener('click', (event) => {
-            const action = event.currentTarget;
-            const container = songPreviewEl.querySelector('.song-preview-container');
-            const isOpen = container?.classList.toggle('mobile-preview-more-open') || false;
-            action.setAttribute('aria-expanded', String(isOpen));
-            document.getElementById('mobilePreviewMoreMenu')?.setAttribute('aria-hidden', String(!isOpen));
-        });
-
-        document.getElementById('mobilePreviewEditAction')?.addEventListener('click', () => {
-            document.getElementById('previewEditBtn')?.click();
-        });
-
-        document.getElementById('mobilePreviewDeleteAction')?.addEventListener('click', () => {
-            document.getElementById('previewDeleteBtn')?.click();
         });
 
 
