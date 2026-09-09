@@ -128,6 +128,14 @@
         <div class="sidebar hidden">
             <div class="sidebar-header">
                 <h2>New & Old</h2>
+                <div class="mobile-active-setlist-card" id="mobileActiveSetlistCard" aria-live="polite">
+                    <span class="mobile-active-setlist-label">Active Setlist</span>
+                    <strong id="mobileActiveSetlistName">No setlist selected</strong>
+                    <span id="mobileActiveSetlistCount">Choose a setlist to begin</span>
+                </div>
+                <button class="mobile-home-close" id="mobileHomeClose" type="button" aria-label="Close Home menu" title="Close Home menu">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
             </div>
             <ul class="sidebar-menu">
                 <button id="loginBtn" class="sidebar-btn btn-login" title="Login to access personal setlists and save favorites" aria-label="Login"><i class="fas fa-sign-in-alt"></i> Login</button>
@@ -272,6 +280,8 @@
             </div>
         </div>
 
+        <button class="mobile-home-backdrop" id="mobileHomeBackdrop" type="button" aria-label="Close Home menu"></button>
+
         <!-- Songs Panel -->
         <div class="songs-section hidden">
             <div class="sticky-header">
@@ -283,6 +293,20 @@
                 <div class="tabs">
                     <div class="setlist-tab active" id="NewTab" title="New Songs - Recently added songs and contemporary music" aria-label="New Songs Tab">New</div>
                     <div class="setlist-tab" id="OldTab" title="Old Songs - Classic and traditional songs" aria-label="Old Songs Tab">Old</div>
+                </div>
+                <div class="mobile-catalog-toolbar" id="mobileCatalogToolbar" aria-label="Mobile catalogue controls">
+                    <button class="mobile-catalog-control" id="mobileFiltersToggle" type="button" aria-expanded="false">
+                        <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                        <span id="mobileFiltersLabel">Filters · 0 active</span>
+                    </button>
+                    <button class="mobile-catalog-control" id="mobileSortToggle" type="button">
+                        <i class="fas fa-sort-amount-down" aria-hidden="true"></i>
+                        <span>Sort</span>
+                    </button>
+                    <button class="mobile-catalog-control" id="mobileSelectToggle" type="button" aria-pressed="false">
+                        <i class="fas fa-check-square" aria-hidden="true"></i>
+                        <span>Select</span>
+                    </button>
                 </div>
                 <div class="filters-row">
                     <div class="search-container">
@@ -319,6 +343,7 @@
                     <div class="search-results-header">Search Results</div>
                     <div id="searchResultsContent" class="scrollable-results"></div>
                 </div>
+                <button class="mobile-filters-backdrop" id="mobileFiltersBackdrop" type="button" aria-label="Close filters"></button>
             </div>
             <div class="tab-content active" id="NewContent"></div>
             <div class="tab-content" id="OldContent"></div>
@@ -359,6 +384,10 @@
             <div class="favorites-section" id="favoritesSection" style="display: none;">
                 <h3>Favorite Songs</h3>
                 <div id="favoritesContent"></div>
+            </div>
+            <div class="mobile-selection-bar" id="mobileSelectionBar" aria-live="polite">
+                <span id="mobileSelectionSummary">Select songs to add</span>
+                <button id="mobileSelectionAction" type="button" disabled>Add songs</button>
             </div>
         </div>
 
@@ -1338,6 +1367,20 @@
     <script src="main.js"></script>
     <script src="loop-player-pad.js"></script>
     <script src="loop-player-pad-ui.js"></script>
+    <nav class="mobile-modern-shell" id="mobileModernShell" aria-label="Primary mobile navigation">
+        <button class="mobile-modern-nav-item" type="button" data-mobile-destination="home" aria-label="Home">
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>Home</span>
+        </button>
+        <button class="mobile-modern-nav-item" type="button" data-mobile-destination="songs" aria-label="Songs">
+            <i class="fas fa-music" aria-hidden="true"></i>
+            <span>Songs</span>
+        </button>
+        <button class="mobile-modern-nav-item" type="button" data-mobile-destination="more" aria-label="More">
+            <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+            <span>More</span>
+        </button>
+    </nav>
     <!-- Suggested Songs Drawer -->
 <div class="suggested-songs-drawer" id="suggestedSongsDrawer">
     <div class="suggested-songs-header">

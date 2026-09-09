@@ -4736,6 +4736,397 @@ body.dark-mode #installAppBtn {
             }
         }
 
+        /* Mobile Modern Mode: presentation shell only. Feature drawers arrive in later phases. */
+        .mobile-modern-shell {
+            display: none;
+        }
+
+        .mobile-home-backdrop,
+        .mobile-active-setlist-card,
+        .mobile-home-close,
+        .mobile-catalog-toolbar,
+        .mobile-selection-bar,
+        .mobile-song-select-control {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            body.mobile-modern-mode {
+                padding-bottom: calc(76px + env(safe-area-inset-bottom));
+            }
+
+            body.mobile-modern-mode.mobile-home-open {
+                overflow: hidden;
+            }
+
+            body.mobile-modern-mode .sidebar.mobile-home-drawer-open {
+                z-index: 2200;
+                width: min(88vw, 360px);
+                box-shadow: 8px 0 28px rgba(62, 63, 41, 0.2);
+            }
+
+            body.mobile-modern-mode .mobile-home-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 2100;
+                display: none;
+                border: 0;
+                background: rgba(25, 28, 20, 0.42);
+                cursor: pointer;
+            }
+
+            body.mobile-modern-mode .mobile-home-backdrop.open {
+                display: block;
+            }
+
+            body.mobile-modern-mode .mobile-active-setlist-card {
+                display: flex;
+                width: calc(100% - 24px);
+                margin: 10px 12px 0;
+                padding: 10px 12px;
+                align-items: flex-start;
+                gap: 3px;
+                flex-direction: column;
+                border: 1px solid rgba(62, 63, 41, 0.15);
+                border-radius: 10px;
+                background: rgba(255, 252, 239, 0.7);
+                color: var(--primary-color, #3e3f29);
+                text-align: left;
+            }
+
+            body.mobile-modern-mode .mobile-active-setlist-card.has-selection {
+                border-color: var(--primary-color, #3e3f29);
+                background: var(--accent-color, #bca88d);
+            }
+
+            body.mobile-modern-mode .mobile-active-setlist-label {
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                opacity: 0.75;
+            }
+
+            body.mobile-modern-mode #mobileActiveSetlistName {
+                font-size: 0.95rem;
+            }
+
+            body.mobile-modern-mode #mobileActiveSetlistCount {
+                font-size: 0.72rem;
+                opacity: 0.8;
+            }
+
+            body.mobile-modern-mode .mobile-home-close {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                display: flex;
+                width: 36px;
+                height: 36px;
+                align-items: center;
+                justify-content: center;
+                border: 0;
+                border-radius: 50%;
+                background: rgba(62, 63, 41, 0.1);
+                color: var(--primary-color, #3e3f29);
+                cursor: pointer;
+            }
+
+            body.mobile-modern-mode .mobile-home-close:focus-visible {
+                outline: 3px solid var(--primary-color, #3e3f29);
+                outline-offset: 2px;
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-active-setlist-card {
+                border-color: rgba(236, 230, 214, 0.18);
+                background: rgba(35, 35, 26, 0.8);
+                color: var(--text-color, #ece6d6);
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-active-setlist-card.has-selection {
+                background: var(--sidebar-item-hover-bg, #4a4f3a);
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-home-close {
+                background: rgba(236, 230, 214, 0.12);
+                color: var(--text-color, #ece6d6);
+            }
+
+            body.mobile-modern-mode .mobile-nav-container,
+            body.mobile-modern-mode .panel-toggle.draggable {
+                display: none !important;
+            }
+
+            body.mobile-modern-mode .mobile-modern-shell {
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 2000;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                min-height: 64px;
+                padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
+                border-top: 1px solid rgba(62, 63, 41, 0.18);
+                background: var(--sidebar-bg, #f7f3e8);
+                box-shadow: 0 -8px 24px rgba(62, 63, 41, 0.12);
+            }
+
+            body.mobile-modern-mode .mobile-modern-nav-item {
+                display: flex;
+                min-width: 0;
+                min-height: 52px;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                flex-direction: column;
+                border: 0;
+                border-radius: 10px;
+                background: transparent;
+                color: var(--text-color, #3e3f29);
+                font: inherit;
+                font-size: 0.7rem;
+                font-weight: 600;
+                cursor: pointer;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            body.mobile-modern-mode .mobile-modern-nav-item i {
+                color: var(--primary-color, #3e3f29);
+                font-size: 1.05rem;
+            }
+
+            body.mobile-modern-mode .mobile-modern-nav-item.active {
+                background: var(--accent-color, #bca88d);
+                color: var(--primary-color, #3e3f29);
+            }
+
+            body.mobile-modern-mode .mobile-modern-nav-item:focus-visible {
+                outline: 3px solid var(--primary-color, #3e3f29);
+                outline-offset: -3px;
+            }
+
+            body.mobile-modern-mode .mobile-catalog-toolbar {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px;
+                margin: 8px 0;
+            }
+
+            body.mobile-modern-mode .mobile-catalog-control {
+                display: flex;
+                min-height: 42px;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                padding: 7px 5px;
+                border: 1px solid rgba(62, 63, 41, 0.18);
+                border-radius: 8px;
+                background: var(--song-item-text-bg, #f7f3e8);
+                color: var(--primary-color, #3e3f29);
+                font: inherit;
+                font-size: 0.72rem;
+                font-weight: 700;
+                cursor: pointer;
+                touch-action: manipulation;
+            }
+
+            body.mobile-modern-mode .mobile-catalog-control i {
+                color: var(--primary-color, #3e3f29);
+            }
+
+            body.mobile-modern-mode .mobile-catalog-control.active,
+            body.mobile-modern-mode .mobile-catalog-control:active {
+                background: var(--accent-color, #bca88d);
+            }
+
+            body.mobile-modern-mode .filters-row {
+                position: relative;
+                z-index: auto;
+                padding: 0;
+                background: transparent;
+            }
+
+            body.mobile-modern-mode .filters-row .search-container {
+                display: block;
+                margin-bottom: 6px;
+            }
+
+            body.mobile-modern-mode .filters-row .filter-row-1,
+            body.mobile-modern-mode .filters-row .filter-row-2 {
+                display: none;
+            }
+
+            body.mobile-modern-mode .songs-section.mobile-filters-open .filters-row {
+                position: fixed;
+                right: 12px;
+                bottom: calc(76px + env(safe-area-inset-bottom));
+                left: 12px;
+                z-index: 2300;
+                max-height: min(78vh, 520px);
+                overflow-y: auto;
+                padding: 14px;
+                border: 1px solid rgba(62, 63, 41, 0.2);
+                border-radius: 12px;
+                background: var(--song-item-text-bg, #f7f3e8);
+                box-shadow: 0 12px 30px rgba(62, 63, 41, 0.24);
+            }
+
+            body.mobile-modern-mode .songs-section.mobile-filters-open .filters-row .filter-row-1,
+            body.mobile-modern-mode .songs-section.mobile-filters-open .filters-row .filter-row-2 {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 7px;
+                margin-top: 8px;
+            }
+
+            body.mobile-modern-mode .songs-section.mobile-filters-open .filters-row .filter-row-2 {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            body.mobile-modern-mode .mobile-filters-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 2200;
+                display: none;
+                border: 0;
+                background: rgba(25, 28, 20, 0.42);
+            }
+
+            body.mobile-modern-mode .songs-section.mobile-filters-open .mobile-filters-backdrop {
+                display: block;
+            }
+
+            body.mobile-modern-mode .song-item {
+                position: relative;
+                min-height: 72px;
+                padding: 9px 10px;
+                border-radius: 7px;
+            }
+
+            body.mobile-modern-mode .song-item .song-title {
+                font-size: 0.92rem;
+            }
+
+            body.mobile-modern-mode .song-item .song-meta {
+                overflow: hidden;
+                font-size: 0.7rem;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            body.mobile-modern-mode .song-item .song-actions {
+                gap: 5px;
+            }
+
+            body.mobile-modern-mode .song-item .song-actions .toggle-setlist,
+            body.mobile-modern-mode .song-item .song-actions .edit-song,
+            body.mobile-modern-mode .song-item .song-actions .delete-song {
+                min-width: 38px;
+                min-height: 34px;
+                padding: 5px 8px;
+                border-radius: 6px;
+                font-size: 0.72rem;
+            }
+
+            body.mobile-modern-mode .mobile-song-select-control {
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                min-width: 32px;
+                height: 32px;
+                margin-right: 5px;
+                cursor: pointer;
+            }
+
+            body.mobile-modern-mode .mobile-song-select-control input {
+                width: 20px;
+                height: 20px;
+                accent-color: var(--primary-color, #3e3f29);
+            }
+
+            body.mobile-modern-mode.mobile-select-mode .mobile-song-select-control {
+                display: flex;
+            }
+
+            body.mobile-modern-mode .song-item.mobile-selected {
+                border-color: var(--primary-color, #3e3f29);
+                background: rgba(188, 168, 141, 0.28);
+            }
+
+            body.mobile-modern-mode.mobile-select-mode .mobile-selection-bar {
+                position: fixed;
+                right: 10px;
+                bottom: calc(76px + env(safe-area-inset-bottom));
+                left: 10px;
+                z-index: 2050;
+                display: flex;
+                min-height: 50px;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                padding: 7px 9px;
+                border: 1px solid rgba(62, 63, 41, 0.2);
+                border-radius: 10px;
+                background: var(--song-item-text-bg, #f7f3e8);
+                color: var(--primary-color, #3e3f29);
+                box-shadow: 0 8px 24px rgba(62, 63, 41, 0.18);
+            }
+
+            body.mobile-modern-mode .mobile-selection-bar span {
+                min-width: 0;
+                overflow: hidden;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            body.mobile-modern-mode .mobile-selection-bar button {
+                min-height: 36px;
+                padding: 6px 9px;
+                border: 0;
+                border-radius: 6px;
+                background: var(--primary-color, #3e3f29);
+                color: var(--song-item-text-bg, #f7f3e8);
+                font: inherit;
+                font-size: 0.7rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            body.mobile-modern-mode .mobile-selection-bar button:disabled {
+                opacity: 0.45;
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-catalog-control,
+            body.dark-mode.mobile-modern-mode .songs-section.mobile-filters-open .filters-row,
+            body.dark-mode.mobile-modern-mode .mobile-selection-bar {
+                border-color: rgba(236, 230, 214, 0.2);
+                background: var(--sidebar-bg, #23231a);
+                color: var(--text-color, #ece6d6);
+            }
+
+            body.dark-mode.mobile-modern-mode .song-item.mobile-selected {
+                background: rgba(74, 79, 58, 0.7);
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-modern-shell {
+                border-top-color: rgba(236, 230, 214, 0.2);
+                background: var(--sidebar-bg, #23231a);
+                box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3);
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-modern-nav-item {
+                color: var(--text-color, #ece6d6);
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-modern-nav-item i {
+                color: var(--accent-color, #bca88d);
+            }
+        }
+
         /* Hide on very small screens in landscape mode */
         @media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
             .mobile-nav-container {

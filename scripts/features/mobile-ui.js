@@ -3,6 +3,14 @@
 (function attachMobileUI(window) {
     if (!window) return;
 
+    let mobileUIDeps = null;
+    const mobileCatalogueState = {
+        bound: false,
+        selectMode: false,
+        selectedSongIds: new Set(),
+        observer: null,
+    };
+
     function updatePositions() {
         const sidebar = document.querySelector('.sidebar');
         const songsSection = document.querySelector('.songs-section');
@@ -134,6 +142,318 @@
                 toggleBothBtn.querySelector('i').className = areBothHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
                 updatePositions();
             });
+        }
+    }
+
+    function activateMobileModernDestination(destination) {
+        const navItems = document.querySelectorAll('[data-mobile-destination]');
+
+        navItems.forEach((item) => {
+            const isActive = item.dataset.mobileDestination === destination;
+            item.classList.toggle('active', isActive);
+            item.setAttribute('aria-current', isActive ? 'page' : 'false');
+        });
+
+        if (destination === 'home') {
+            openMobileHomeDrawer();
+        } else if (destination === 'songs') {
+            closeMobileHomeDrawer();
+            const sidebar = document.querySelector('.sidebar');
+            const songsSection = document.querySelector('.songs-section');
+            if (sidebar && songsSection) {
+                sidebar.classList.add('hidden');
+                songsSection.classList.remove('hidden');
+            }
+        }
+
+        updatePositions();
+    }
+
+    function updateMobileActiveSetlist(deps) {
+        const card = document.getElementById('mobileActiveSetlistCard');
+        const name = document.getElementById('mobileActiveSetlistName');
+        const count = document.getElementById('mobileActiveSetlistCount');
+        if (!card || !name || !count) return;
+
+        const currentSetlist = deps && typeof deps.getCurrentViewingSetlist === 'function'
+            ? deps.getCurrentViewingSetlist()
+            : null;
+        if (!currentSetlist) {
+            name.textContent = 'No setlist selected';
+            count.textContent = 'Choose a setlist to begin';
+            card.classList.remove('has-selection');
+            return;
+        }
+
+        const songs = Array.isArray(currentSetlist.songs) ? currentSetlist.songs.length : 0;
+        name.textContent = currentSetlist.name || 'Active setlist';
+        count.textContent = `${songs} ${songs === 1 ? 'song' : 'songs'}`;
+        card.classList.add('has-selection');
+    }
+
+    function openMobileHomeDrawer(deps) {
+        const sidebar = document.querySelector('.sidebar');
+        const songsSection = document.querySelector('.songs-section');
+        const previewSection = document.querySelector('.preview-section');
+        const backdrop = document.getElementById('mobileHomeBackdrop');
+        if (!sidebar || !songsSection || !backdrop) return;
+
+        if (!document.body.dataset.mobileHomeState) {
+            document.body.dataset.mobileHomeState = JSON.stringify({
+                sidebarHidden: sidebar.classList.contains('hidden'),
+                songsHidden: songsSection.classList.contains('hidden'),
+                sidebarScrollTop: sidebar.scrollTop,
+                songsScrollTop: songsSection.scrollTop,
+                previewScrollTop: previewSection ? previewSection.scrollTop : 0,
+            });
+        }
+
+        updateMobileActiveSetlist(deps || mobileUIDeps);
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('mobile-home-drawer-open');
+        backdrop.classList.add('open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('mobile-home-open');
+    }
+
+    function closeMobileHomeDrawer() {
+        const sidebar = document.querySelector('.sidebar');
+        const songsSection = document.querySelector('.songs-section');
+        const previewSection = document.querySelector('.preview-section');
+        const backdrop = document.getElementById('mobileHomeBackdrop');
+        if (!sidebar || !songsSection || !backdrop) return;
+
+        const savedState = document.body.dataset.mobileHomeState;
+        if (savedState) {
+            try {
+                const state = JSON.parse(savedState);
+                sidebar.classList.toggle('hidden', state.sidebarHidden);
+                songsSection.classList.toggle('hidden', state.songsHidden);
+                sidebar.scrollTop = state.sidebarScrollTop || 0;
+                songsSection.scrollTop = state.songsScrollTop || 0;
+                if (previewSection) previewSection.scrollTop = state.previewScrollTop || 0;
+            } catch (error) {
+                sidebar.classList.add('hidden');
+            }
+        }
+
+        sidebar.classList.remove('mobile-home-drawer-open');
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('mobile-home-open');
+        delete document.body.dataset.mobileHomeState;
+        updatePositions();
+    }
+
+    function getMobileSelectedSetlist() {
+        const dropdown = document.getElementById('setlistDropdown');
+        if (!dropdown || !dropdown.value) return null;
+
+        const option = dropdown.options[dropdown.selectedIndex];
+        const name = option ? option.textContent.replace(/\s*\((My|Global)\)\s*$/, '').trim() : 'Active setlist';
+        return { value: dropdown.value, name };
+    }
+
+    function updateMobileFilterLabel() {
+        const label = document.getElementById('mobileFiltersLabel');
+        if (!label) return;
+
+        const filterIds = ['keyFilter', 'genreFilter', 'moodFilter', 'artistFilter'];
+        const activeCount = filterIds.reduce((count, id) => {
+            const select = document.getElementById(id);
+            if (!select || !select.value || ['Key', 'Genre', 'Mood', 'Artist'].includes(select.value)) return count;
+            return count + 1;
+        }, 0);
+        label.textContent = `Filters · ${activeCount} active`;
+    }
+
+    function updateMobileSelectionBar() {
+        const summary = document.getElementById('mobileSelectionSummary');
+        const action = document.getElementById('mobileSelectionAction');
+        if (!summary || !action) return;
+
+        const count = mobileCatalogueState.selectedSongIds.size;
+        const activeSetlist = getMobileSelectedSetlist();
+        if (!count) {
+            summary.textContent = activeSetlist ? `Add songs to ${activeSetlist.name}` : 'Select songs to add';
+            action.textContent = activeSetlist ? `Add songs to ${activeSetlist.name}` : 'Select a setlist';
+            action.disabled = !activeSetlist;
+            return;
+        }
+
+        summary.textContent = activeSetlist ? `${count} selected` : 'Select a setlist to add songs';
+        action.textContent = activeSetlist ? `Add ${count} songs to ${activeSetlist.name}` : 'Select a setlist';
+        action.disabled = false;
+    }
+
+    function decorateMobileSongRows() {
+        const rows = document.querySelectorAll('#NewContent .song-item, #OldContent .song-item');
+        rows.forEach((row) => {
+            const songId = Number(row.dataset.songId);
+            const setlistButton = row.querySelector('.toggle-setlist');
+            const isInSetlist = setlistButton?.classList.contains('btn-delete');
+            if (setlistButton) {
+                const buttonText = isInSetlist ? '−' : '+';
+                const buttonLabel = isInSetlist ? 'Remove from active setlist' : 'Add to active setlist';
+                if (setlistButton.textContent !== buttonText) setlistButton.textContent = buttonText;
+                if (setlistButton.getAttribute('aria-label') !== buttonLabel) setlistButton.setAttribute('aria-label', buttonLabel);
+                if (setlistButton.title !== buttonLabel) setlistButton.title = buttonLabel;
+            }
+
+            let selectControl = row.querySelector('.mobile-song-select-control');
+            if (!selectControl) {
+                selectControl = document.createElement('label');
+                selectControl.className = 'mobile-song-select-control';
+                selectControl.title = 'Select song';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.className = 'mobile-song-select';
+                input.addEventListener('click', (event) => event.stopPropagation());
+                input.addEventListener('change', (event) => {
+                    if (event.target.checked) mobileCatalogueState.selectedSongIds.add(songId);
+                    else mobileCatalogueState.selectedSongIds.delete(songId);
+                    row.classList.toggle('mobile-selected', event.target.checked);
+                    updateMobileSelectionBar();
+                });
+                selectControl.appendChild(input);
+                const title = row.querySelector('.song-title');
+                if (title) title.before(selectControl);
+                else row.prepend(selectControl);
+            }
+
+            const input = selectControl.querySelector('input');
+            if (input) {
+                if (input.disabled !== isInSetlist) input.disabled = isInSetlist;
+                const isSelected = mobileCatalogueState.selectedSongIds.has(songId) && !isInSetlist;
+                if (input.checked !== isSelected) input.checked = isSelected;
+                if (row.classList.contains('mobile-selected') !== isSelected) row.classList.toggle('mobile-selected', isSelected);
+                if (isInSetlist) mobileCatalogueState.selectedSongIds.delete(songId);
+            }
+        });
+        updateMobileSelectionBar();
+    }
+
+    function setMobileSelectMode(enabled) {
+        mobileCatalogueState.selectMode = enabled;
+        document.body.classList.toggle('mobile-select-mode', enabled);
+        const toggle = document.getElementById('mobileSelectToggle');
+        if (toggle) {
+            toggle.classList.toggle('active', enabled);
+            toggle.setAttribute('aria-pressed', String(enabled));
+            const label = toggle.querySelector('span');
+            if (label) label.textContent = enabled ? 'Done' : 'Select';
+        }
+        if (!enabled) {
+            mobileCatalogueState.selectedSongIds.clear();
+            document.querySelectorAll('.mobile-song-select').forEach((input) => {
+                input.checked = false;
+            });
+            document.querySelectorAll('.song-item.mobile-selected').forEach((row) => row.classList.remove('mobile-selected'));
+        }
+        updateMobileSelectionBar();
+    }
+
+    function addSelectedMobileSongs() {
+        const activeSetlist = getMobileSelectedSetlist();
+        if (!activeSetlist) {
+            mobileUIDeps?.showNotification?.('Please select a setlist from the Home menu first');
+            openMobileHomeDrawer(mobileUIDeps);
+            return;
+        }
+
+        const selectedIds = Array.from(mobileCatalogueState.selectedSongIds);
+        selectedIds.forEach((songId) => {
+            if (typeof mobileUIDeps?.addToSpecificSetlist === 'function') {
+                mobileUIDeps.addToSpecificSetlist(songId, activeSetlist.value);
+            }
+        });
+        setMobileSelectMode(false);
+    }
+
+    function setupMobileCatalogue() {
+        if (mobileCatalogueState.bound) return;
+        mobileCatalogueState.bound = true;
+
+        const songsSection = document.querySelector('.songs-section');
+        const filtersToggle = document.getElementById('mobileFiltersToggle');
+        const sortToggle = document.getElementById('mobileSortToggle');
+        const filtersBackdrop = document.getElementById('mobileFiltersBackdrop');
+        const selectToggle = document.getElementById('mobileSelectToggle');
+        const selectionAction = document.getElementById('mobileSelectionAction');
+        const sortFilter = document.getElementById('sortFilter');
+        const setlistDropdown = document.getElementById('setlistDropdown');
+
+        const closeFilters = () => {
+            songsSection?.classList.remove('mobile-filters-open');
+            filtersToggle?.setAttribute('aria-expanded', 'false');
+        };
+        filtersToggle?.addEventListener('click', () => {
+            const isOpen = songsSection?.classList.toggle('mobile-filters-open');
+            filtersToggle.setAttribute('aria-expanded', String(Boolean(isOpen)));
+        });
+        filtersBackdrop?.addEventListener('click', closeFilters);
+        sortToggle?.addEventListener('click', () => {
+            songsSection?.classList.add('mobile-filters-open');
+            filtersToggle?.setAttribute('aria-expanded', 'true');
+            sortFilter?.focus();
+        });
+        selectToggle?.addEventListener('click', () => setMobileSelectMode(!mobileCatalogueState.selectMode));
+        selectionAction?.addEventListener('click', addSelectedMobileSongs);
+        setlistDropdown?.addEventListener('change', () => {
+            updateMobileSelectionBar();
+            if (window.innerWidth <= 768 && setlistDropdown.value) {
+                window.setTimeout(() => document.getElementById('showAll')?.click(), 0);
+            }
+        });
+        ['keyFilter', 'genreFilter', 'moodFilter', 'artistFilter'].forEach((id) => {
+            document.getElementById(id)?.addEventListener('change', updateMobileFilterLabel);
+        });
+
+        ['NewContent', 'OldContent'].forEach((id) => {
+            const content = document.getElementById(id);
+            if (!content) return;
+            const observer = new MutationObserver(decorateMobileSongRows);
+            observer.observe(content, { childList: true, subtree: true });
+            mobileCatalogueState.observer = observer;
+        });
+        updateMobileFilterLabel();
+        decorateMobileSongRows();
+    }
+
+    function createMobileModernShell() {
+        const shell = document.getElementById('mobileModernShell');
+        if (!shell || shell.dataset.bound === 'true') return;
+
+        shell.dataset.bound = 'true';
+        document.body.classList.toggle('mobile-modern-mode', window.innerWidth <= 768);
+
+        if (document.body.dataset.mobileModernResizeBound !== 'true') {
+            document.body.dataset.mobileModernResizeBound = 'true';
+            window.addEventListener('resize', () => {
+                document.body.classList.toggle('mobile-modern-mode', window.innerWidth <= 768);
+            });
+        }
+
+        shell.querySelectorAll('[data-mobile-destination]').forEach((item) => {
+            item.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                activateMobileModernDestination(item.dataset.mobileDestination);
+            });
+        });
+
+        const closeButton = document.getElementById('mobileHomeClose');
+        const backdrop = document.getElementById('mobileHomeBackdrop');
+        const setlistDropdown = document.getElementById('setlistDropdown');
+        closeButton?.addEventListener('click', closeMobileHomeDrawer);
+        backdrop?.addEventListener('click', closeMobileHomeDrawer);
+        if (setlistDropdown && setlistDropdown.dataset.mobileHomeBound !== 'true') {
+            setlistDropdown.dataset.mobileHomeBound = 'true';
+            setlistDropdown.addEventListener('change', () => updateMobileActiveSetlist(mobileUIDeps));
+        }
+
+        if (window.innerWidth <= 768) {
+            activateMobileModernDestination('home');
         }
     }
 
@@ -298,7 +618,11 @@
     }
 
     function initializeMobileUI(deps) {
+        mobileUIDeps = deps || null;
         createMobileNavButtons();
+        createMobileModernShell();
+        updateMobileActiveSetlist(deps);
+        setupMobileCatalogue();
         if (window.innerWidth <= 768) {
             addMobileTouchNavigation();
         }
@@ -309,11 +633,13 @@
         if (document.body.dataset.mobileUiResizeBound !== 'true') {
             document.body.dataset.mobileUiResizeBound = 'true';
             window.addEventListener('resize', () => {
+                document.body.classList.toggle('mobile-modern-mode', window.innerWidth <= 768);
                 const existingContainer = document.querySelector('.mobile-nav-container');
                 if (existingContainer) {
                     existingContainer.remove();
                 }
                 createMobileNavButtons();
+                createMobileModernShell();
                 const toggleButtonsVisibility = localStorage.getItem('toggleButtonsVisibility') || 'hide';
                 deps.applyToggleButtonsVisibility(toggleButtonsVisibility);
             });
@@ -324,6 +650,11 @@
         updatePositions,
         addMobileTouchNavigation,
         createMobileNavButtons,
+        createMobileModernShell,
+        activateMobileModernDestination,
+        openMobileHomeDrawer,
+        closeMobileHomeDrawer,
+        updateMobileActiveSetlist,
         makeToggleDraggable,
         initializeMobileUI,
     };

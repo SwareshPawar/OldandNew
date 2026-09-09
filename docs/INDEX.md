@@ -44,6 +44,12 @@ Welcome to the Old & New Songs Application documentation. Start here to find inf
 
 ## 🎵 Feature-Specific Documentation
 
+### Mobile Experience
+- **[Mobile View Migration](mobile-view-migration/README.md)** - Mobile-only redesign architecture, implementation phases, and working notes
+  - Three-destination mobile navigation: Home, Songs, and More
+  - Song Preview performance surface and focused drawers
+  - State-preservation, desktop-protection, and regression guardrails
+
 ### Loop & Rhythm System
 - **[LOOPS_ARCHITECTURE.md](LOOPS_ARCHITECTURE.md)** - Loop playback system architecture
   - Loop file structure and naming conventions
@@ -142,6 +148,7 @@ docs/
 ├── LOOP_PLAYER_DOCUMENTATION.md             ← Loop player details
 ├── CHORD_ACCIDENTAL_NORMALIZATION.md        ← Chord standards
 ├── RHYTHM_SET_PROFILE_LEARNING_PLAN.md      ← AI features (planned)
+├── mobile-view-migration/                    ← Mobile redesign plan and notes
 ├── CHANGELOG.md                             ← History & bugs
 ├── BUG_FIXES_ARCHIVE.md                     ← Past bug fixes
 ├── GIT_COMMIT_NOTES.md                      ← Recent commits

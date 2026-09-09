@@ -823,10 +823,11 @@ function showLoading(percent, message = null) {
 }
 
 function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
+    document.querySelectorAll('#loadingOverlay').forEach((overlay) => {
+        overlay.classList.add('hide');
+        overlay.style.setProperty('display', 'none', 'important');
+        overlay.setAttribute('aria-hidden', 'true');
+    });
     
     // Clear the safety timeout
     clearTimeout(window.loadingTimeout);
@@ -2945,6 +2946,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     function getMobileUIDeps() {
         return {
             applyToggleButtonsVisibility,
+            getCurrentViewingSetlist: () => currentViewingSetlist,
+            getCurrentSetlistType: () => currentSetlistType,
+            getSongs: () => songs,
+            showNotification: (message, type) => showNotification(message, type),
+            addToSpecificSetlist: (songId, setlistId) => addToSpecificSetlist(songId, setlistId),
         };
     }
 
