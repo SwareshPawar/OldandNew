@@ -4747,9 +4747,7 @@ body.dark-mode #installAppBtn {
         .mobile-selection-bar,
         .mobile-song-select-control,
         .mobile-preview-setlist-context,
-        .mobile-preview-action-row,
-        .mobile-preview-recommendations,
-        .mobile-preview-more-menu {
+        .mobile-preview-recommendations {
             display: none;
         }
 
@@ -4957,9 +4955,14 @@ body.dark-mode #installAppBtn {
                 bottom: var(--mobile-bottom-clearance);
             }
 
-            body.mobile-modern-mode .sidebar,
+            body.mobile-modern-mode .sidebar {
+                width: min(var(--sidebar-width), 88vw);
+                min-width: 0;
+                max-width: 100vw;
+            }
+
             body.mobile-modern-mode .songs-section {
-                width: min(88vw, 360px);
+                width: min(var(--songs-panel-width), 88vw);
                 min-width: 0;
                 max-width: 100vw;
             }
@@ -4970,7 +4973,7 @@ body.dark-mode #installAppBtn {
 
             body.mobile-modern-mode .sidebar.mobile-home-drawer-open {
                 z-index: 2200;
-                width: min(88vw, 360px);
+                width: min(var(--sidebar-width), 88vw);
                 box-shadow: 8px 0 28px rgba(62, 63, 41, 0.2);
             }
 
@@ -5121,7 +5124,6 @@ body.dark-mode #installAppBtn {
             body.mobile-modern-mode .preview-section .auto-scroll-controls,
             body.mobile-modern-mode .preview-section .toggle-suggested-songs,
             body.mobile-modern-mode .preview-section .mobile-preview-setlist-context,
-            body.mobile-modern-mode .preview-section .mobile-preview-action-row,
             body.mobile-modern-mode .preview-section .mobile-preview-recommendations {
                 display: flex;
             }
@@ -5201,95 +5203,61 @@ body.dark-mode #installAppBtn {
                 white-space: nowrap;
             }
 
-            body.mobile-modern-mode .mobile-preview-action-row {
+            .mobile-preview-floating-auto {
+                display: none;
+            }
+
+            body.mobile-modern-mode .mobile-preview-floating-auto {
+                position: fixed;
+                right: 16px;
+                bottom: calc(var(--mobile-bottom-clearance, 90px) + 16px);
+                z-index: 1500;
+                display: flex;
+                width: 52px;
+                height: 52px;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid rgba(255, 255, 255, 0.25);
+                border-radius: 50%;
+                background: var(--primary-color, #3e3f29);
+                color: #fff;
+                font-size: 18px;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+                cursor: pointer;
+                touch-action: manipulation;
+            }
+
+            body.mobile-modern-mode .mobile-preview-floating-auto.active {
+                background: var(--accent-color, #bca88d);
+            }
+
+            body.mobile-modern-mode .song-preview-actions {
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
                 gap: 6px;
                 margin: 10px 0;
             }
 
-            body.mobile-modern-mode .mobile-preview-action {
-                display: flex;
+            body.mobile-modern-mode .preview-action-btn {
                 min-height: 42px;
-                align-items: center;
-                justify-content: center;
-                gap: 5px;
-                padding: 7px 5px;
-                border: 1px solid rgba(62, 63, 41, 0.18);
-                border-radius: 7px;
-                background: var(--song-item-text-bg, #f7f3e8);
-                color: var(--primary-color, #3e3f29);
-                font: inherit;
-                font-size: 0.72rem;
-                font-weight: 700;
-                cursor: pointer;
-                touch-action: manipulation;
-            }
-
-            body.mobile-modern-mode .mobile-preview-action:active,
-            body.mobile-modern-mode .mobile-preview-action.active {
-                background: var(--accent-color, #bca88d);
-            }
-
-            body.mobile-modern-mode .song-preview-actions {
-                display: none;
-            }
-
-            body.mobile-modern-mode .song-preview-container.mobile-preview-more-open .song-preview-actions {
-                display: none;
-            }
-
-            body.mobile-modern-mode .mobile-preview-more-menu {
-                display: none;
-                margin: 0 0 10px;
-                padding: 6px;
-                gap: 4px;
-                flex-direction: column;
-                border: 1px solid rgba(62, 63, 41, 0.18);
+                padding: 9px 6px;
                 border-radius: 8px;
-                background: var(--song-item-text-bg, #f7f3e8);
-            }
-
-            body.mobile-modern-mode .song-preview-container.mobile-preview-more-open .mobile-preview-more-menu {
-                display: flex;
-            }
-
-            body.mobile-modern-mode .mobile-preview-more-item {
-                display: flex;
-                min-height: 40px;
-                align-items: center;
-                gap: 9px;
-                padding: 8px 10px;
-                border: 0;
-                border-radius: 6px;
-                background: transparent;
-                color: var(--primary-color, #3e3f29);
-                font: inherit;
-                font-size: 0.78rem;
-                font-weight: 600;
-                text-align: left;
-                cursor: pointer;
-            }
-
-            body.mobile-modern-mode .mobile-preview-more-item:active {
-                background: var(--accent-color, #bca88d);
+                font-size: 0.74rem;
+                gap: 4px;
             }
 
             body.dark-mode.mobile-modern-mode .mobile-preview-recommendations,
             body.dark-mode.mobile-modern-mode .song-preview-header .favorite-btn,
-            body.dark-mode.mobile-modern-mode .mobile-preview-setlist-context,
-            body.dark-mode.mobile-modern-mode .mobile-preview-action {
+            body.dark-mode.mobile-modern-mode .mobile-preview-setlist-context {
                 color: var(--text-color, #ece6d6);
             }
 
-            body.dark-mode.mobile-modern-mode .mobile-preview-setlist-context,
-            body.dark-mode.mobile-modern-mode .mobile-preview-action,
-            body.dark-mode.mobile-modern-mode .mobile-preview-more-menu,
-            body.dark-mode.mobile-modern-mode .mobile-preview-more-item {
+            body.dark-mode.mobile-modern-mode .mobile-preview-setlist-context {
                 border-color: rgba(236, 230, 214, 0.2);
                 background: var(--sidebar-bg, #23231a);
                 color: var(--text-color, #ece6d6);
             }
+
 
             body.mobile-modern-mode .filters-row {
                 position: relative;
