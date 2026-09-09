@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pads &amp; Tanpura - New &amp; Old</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="tool-page">
+        <header class="tool-page-header">
+            <button type="button" class="tool-page-back" id="toolPageBack" title="Back to New &amp; Old" aria-label="Back to New &amp; Old">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            </button>
+            <h1><i class="fas fa-drum" aria-hidden="true"></i> Pads &amp; Tanpura</h1>
+        </header>
+
+        <main class="tool-page-container">
+            <p class="tool-page-hint">Select a key, then play an atmosphere pad or tanpura drone in that key.</p>
+
+            <div class="pads-key-selector" id="padsKeySelector"></div>
+
+            <div class="pads-pad-row">
+                <button type="button" class="pads-pad-btn" id="padAtmosphere">
+                    <i class="fas fa-cloud" aria-hidden="true"></i>
+                    <span class="pads-pad-label">Atmosphere</span>
+                    <span class="pads-pad-state">Play</span>
+                </button>
+                <button type="button" class="pads-pad-btn" id="padTanpura">
+                    <i class="fas fa-guitar" aria-hidden="true"></i>
+                    <span class="pads-pad-label">Tanpura</span>
+                    <span class="pads-pad-state">Play</span>
+                </button>
+            </div>
+
+            <p class="pads-availability-hint" id="padsAvailabilityHint"></p>
+
+            <div class="pads-volume-row">
+                <label for="padsVolume"><i class="fas fa-volume-up" aria-hidden="true"></i> Volume</label>
+                <input type="range" id="padsVolume" min="0" max="100" value="50" title="Pads Volume">
+                <span class="pads-volume-value" id="padsVolumeValue">50%</span>
+            </div>
+        </main>
+    </div>
+
+    <nav class="mobile-modern-shell" id="mobileModernShell" aria-label="Primary mobile navigation">
+        <button class="mobile-modern-nav-item" type="button" data-tool-nav-back="true" aria-label="Home">
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>Home</span>
+        </button>
+        <button class="mobile-modern-nav-item" type="button" data-tool-nav-back="true" aria-label="Songs">
+            <i class="fas fa-music" aria-hidden="true"></i>
+            <span>Songs</span>
+        </button>
+        <button class="mobile-modern-nav-item" type="button" data-tool-nav-back="true" aria-label="Setlist">
+            <i class="fas fa-list" aria-hidden="true"></i>
+            <span>Setlist</span>
+        </button>
+        <button class="mobile-modern-nav-item mobile-modern-nav-more active" id="mobileToolsToggle" type="button" aria-label="More tools" aria-expanded="false">
+            <i class="fas fa-angle-double-right" aria-hidden="true"></i>
+            <span>More</span>
+        </button>
+    </nav>
+    <div class="mobile-tools-menu" id="mobileToolsMenu" aria-hidden="true">
+        <a class="mobile-tools-item" href="tuner.html">
+            <i class="fas fa-music" aria-hidden="true"></i>
+            <span>Tuner</span>
+        </a>
+        <a class="mobile-tools-item" href="pads-tanpura.html">
+            <i class="fas fa-drum" aria-hidden="true"></i>
+            <span>Pads &amp; Tanpura</span>
+        </a>
+    </div>
+
+    <script src="loop-player-pad.js"></script>
+    <script src="pads-tanpura.js"></script>
+</body>
+</html>

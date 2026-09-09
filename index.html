@@ -236,6 +236,13 @@
 
                 <li><button id="addSongBelowFavoritesBtn" class="sidebar-btn" style="width:100%;margin-top:10px;" title="Add New Song - Create a new song entry with lyrics, key, tempo and other details" aria-label="Add New Song"><i class="fa fa-plus"></i> Add New Song</button></li>
 
+                <li class="sidebar-tools-section">
+                    <div class="sidebar-tools-links">
+                        <a href="tuner.html" class="sidebar-btn sidebar-tool-link" title="Guitar Tuner - Tune using microphone or reference tones" aria-label="Guitar Tuner"><i class="fas fa-music" aria-hidden="true"></i> Tuner</a>
+                        <a href="pads-tanpura.html" class="sidebar-btn sidebar-tool-link" title="Pads and Tanpura - Play atmosphere pads or tanpura drone in any key" aria-label="Pads and Tanpura"><i class="fas fa-drum" aria-hidden="true"></i> Pads &amp; Tanpura</a>
+                    </div>
+                </li>
+
             </ul>
             </ul>
             <div class="sidebar-footer">
@@ -1375,7 +1382,21 @@
             <i class="fas fa-list" aria-hidden="true"></i>
             <span>Setlist</span>
         </button>
+        <button class="mobile-modern-nav-item mobile-modern-nav-more" id="mobileToolsToggle" type="button" aria-label="More tools" aria-expanded="false">
+            <i class="fas fa-angle-double-right" aria-hidden="true"></i>
+            <span>More</span>
+        </button>
     </nav>
+    <div class="mobile-tools-menu" id="mobileToolsMenu" aria-hidden="true">
+        <a class="mobile-tools-item" href="tuner.html">
+            <i class="fas fa-music" aria-hidden="true"></i>
+            <span>Tuner</span>
+        </a>
+        <a class="mobile-tools-item" href="pads-tanpura.html">
+            <i class="fas fa-drum" aria-hidden="true"></i>
+            <span>Pads &amp; Tanpura</span>
+        </a>
+    </div>
     <!-- Suggested Songs Drawer -->
 <div class="suggested-songs-drawer" id="suggestedSongsDrawer">
     <div class="suggested-songs-header">

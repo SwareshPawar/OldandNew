@@ -38,14 +38,16 @@ class LoopPlayerPad {
                 source: null,
                 gainNode: null,
                 crossfadeSource: null, // Secondary source for seamless looping
-                scheduledStopTime: null
+                scheduledStopTime: null,
+                playToken: 0 // Bumped on every start; invalidates stale scheduled crossfade callbacks
             },
             tanpura: {
                 isPlaying: false,
                 source: null,
                 gainNode: null,
                 crossfadeSource: null, // Secondary source for seamless looping
-                scheduledStopTime: null
+                scheduledStopTime: null,
+                playToken: 0 // Bumped on every start; invalidates stale scheduled crossfade callbacks
             }
         };
         this.currentSongKey = null;
@@ -976,6 +978,7 @@ class LoopPlayerPad {
             }
             atmospherePad.source = null;
             atmospherePad.isPlaying = false;
+            atmospherePad.playToken += 1;
             
             if (this.onMelodicPadToggle) {
                 this.onMelodicPadToggle('atmosphere', false);
@@ -993,6 +996,7 @@ class LoopPlayerPad {
             }
             tanpuraPad.source = null;
             tanpuraPad.isPlaying = false;
+            tanpuraPad.playToken += 1;
             
             if (this.onMelodicPadToggle) {
                 this.onMelodicPadToggle('tanpura', false);
@@ -1098,9 +1102,10 @@ class LoopPlayerPad {
 
         // Set playing state BEFORE starting crossfade loop (so scheduling checks pass)
         pad.isPlaying = true;
+        pad.playToken += 1;
         
         // Start the seamless crossfade looping
-        this._startCrossfadeLoop(padType, buffer);
+        this._startCrossfadeLoop(padType, buffer, pad.playToken);
         
         console.log(`Started ${padType} pad (key: ${effectiveKey}) with ${this.melodicFadeDuration}s fade-in and ${this.loopCrossfadeDuration}s crossfade looping`);
     }
@@ -1111,8 +1116,9 @@ class LoopPlayerPad {
      * @private
      * @param {string} padType - 'atmosphere' or 'tanpura'
      * @param {AudioBuffer} buffer - The audio buffer to loop
+     * @param {number} token - Generation token captured at start; guards against stale schedules
      */
-    _startCrossfadeLoop(padType, buffer) {
+    _startCrossfadeLoop(padType, buffer, token) {
         const pad = this.melodicPads[padType];
         const targetVolume = padType === 'atmosphere' ? this.atmosphereVolume : this.tanpuraVolume;
         const currentTime = this.audioContext.currentTime;
@@ -1141,7 +1147,7 @@ class LoopPlayerPad {
         
         // Schedule the first crossfade to happen before the buffer ends
         const firstCrossfadeTime = currentTime + bufferDuration - this.loopCrossfadeDuration;
-        this._scheduleCrossfadeLoop(padType, buffer, firstCrossfadeTime, sourceGain);
+        this._scheduleCrossfadeLoop(padType, buffer, firstCrossfadeTime, sourceGain, token);
     }
 
     /**
@@ -1151,10 +1157,11 @@ class LoopPlayerPad {
      * @param {AudioBuffer} buffer - The audio buffer to loop
      * @param {number} crossfadeStartTime - When to start the crossfade
      * @param {GainNode} oldSourceGain - The gain node of the currently playing source
+     * @param {number} token - Generation token; a stale token means a newer session has started
      */
-    _scheduleCrossfadeLoop(padType, buffer, crossfadeStartTime, oldSourceGain) {
+    _scheduleCrossfadeLoop(padType, buffer, crossfadeStartTime, oldSourceGain, token) {
         const pad = this.melodicPads[padType];
-        if (!pad.isPlaying) return; // Stop scheduling if pad was stopped
+        if (!pad.isPlaying || pad.playToken !== token) return; // Stop scheduling if pad was stopped or restarted
         
         const currentTime = this.audioContext.currentTime;
         const bufferDuration = buffer.duration;
@@ -1163,7 +1170,7 @@ class LoopPlayerPad {
         const scheduleDelay = Math.max(0, (crossfadeStartTime - currentTime - 0.1) * 1000);
         
         setTimeout(() => {
-            if (!pad.isPlaying) return; // Double-check still playing
+            if (!pad.isPlaying || pad.playToken !== token) return; // Double-check still playing this generation
             
             const now = this.audioContext.currentTime;
             
@@ -1212,7 +1219,7 @@ class LoopPlayerPad {
             
             // Schedule the next crossfade to happen before this new source ends
             const nextCrossfadeTime = now + bufferDuration - this.loopCrossfadeDuration;
-            this._scheduleCrossfadeLoop(padType, buffer, nextCrossfadeTime, newSourceGain);
+            this._scheduleCrossfadeLoop(padType, buffer, nextCrossfadeTime, newSourceGain, token);
             
         }, scheduleDelay);
     }
@@ -1231,6 +1238,7 @@ class LoopPlayerPad {
             pad.gainNode.gain.cancelScheduledValues(currentTime);
             pad.gainNode.gain.setValueAtTime(pad.gainNode.gain.value, currentTime);
             pad.gainNode.gain.linearRampToValueAtTime(0, currentTime + this.melodicFadeDuration);
+            pad.playToken += 1;
             
             // Schedule the actual stop after fade completes
             setTimeout(() => {

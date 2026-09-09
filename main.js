@@ -2137,14 +2137,32 @@ async function performInitialization() {
     setupSongStructureTags();
     setupWindowCloseConfirmation();
     updateProgress('setupUI', 90);
+
     // Handle initial page load with hash
     if (window.location.hash) {
         const songId = parseInt(window.location.hash.replace('#song-', ''));
         const song = songs.find(s => s.id === songId);
         if (song) {
-            navigationHistory = [song.id];
-            currentHistoryPosition = 0;
-            history.replaceState({ songId: song.id, position: 0 }, '', `#song-${song.id}`);
+            // Restore the full song navigation trail (not just this one song) so Previous/Next
+            // and browser back/forward can still step through songs visited before leaving.
+            let restoredHistory = [song.id];
+            let restoredPosition = 0;
+            try {
+                const savedHistory = JSON.parse(localStorage.getItem('navigationHistory') || 'null');
+                const savedPosition = parseInt(localStorage.getItem('currentHistoryPosition'), 10);
+                if (Array.isArray(savedHistory) && savedHistory.includes(song.id)) {
+                    restoredHistory = savedHistory;
+                    restoredPosition = !isNaN(savedPosition) && savedHistory[savedPosition] === song.id
+                        ? savedPosition
+                        : savedHistory.indexOf(song.id);
+                }
+            } catch (error) {
+                // Ignore malformed saved history; falls back to single-song trail
+            }
+
+            navigationHistory = restoredHistory;
+            currentHistoryPosition = restoredPosition;
+            history.replaceState({ songId: song.id, position: restoredPosition }, '', `#song-${song.id}`);
             // Determine context based on current view
             const historyContext = currentSetlistType === 'global' ? 'global-setlist' : 
                                  currentSetlistType === 'personal' ? 'user-setlist' : 'all-songs';
@@ -2187,8 +2205,9 @@ async function performInitialization() {
     setTimeout(() => {
         hideLoading();
         
-        // On mobile, ensure sidebar is visible after first load
-        if (window.innerWidth <= 768) {
+        // On mobile, ensure sidebar is visible after first load - but not when a song was
+        // just restored (e.g. from the URL hash), which should stay in Song Preview.
+        if (window.innerWidth <= 768 && !window.location.hash) {
             const sidebar = document.querySelector('.sidebar');
             if (sidebar && sidebar.classList.contains('hidden')) {
                 sidebar.classList.remove('hidden');
@@ -7900,6 +7919,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             localStorage.removeItem('autoScrollSpeed');
             localStorage.removeItem('sessionResetOption');
             localStorage.removeItem('memoryOptimization');
+            localStorage.removeItem('navigationHistory');
+            localStorage.removeItem('currentHistoryPosition');
             
             // Reset UI
             songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
@@ -8730,10 +8751,20 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 getNavigationHistory: () => navigationHistory,
                 setNavigationHistory: (nextHistory) => {
                     navigationHistory = nextHistory;
+                    try {
+                        localStorage.setItem('navigationHistory', JSON.stringify(nextHistory));
+                    } catch (error) {
+                        // Ignore storage errors (e.g. private browsing quota)
+                    }
                 },
                 getCurrentHistoryPosition: () => currentHistoryPosition,
                 setCurrentHistoryPosition: (nextPosition) => {
                     currentHistoryPosition = nextPosition;
+                    try {
+                        localStorage.setItem('currentHistoryPosition', String(nextPosition));
+                    } catch (error) {
+                        // Ignore storage errors (e.g. private browsing quota)
+                    }
                 },
                 getIsNavigatingHistory: () => isNavigatingHistory,
                 setIsNavigatingHistory: (nextValue) => {

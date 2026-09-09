@@ -40,6 +40,11 @@
         if (document.body.dataset.mobileTouchNavBound === 'true') return;
         document.body.dataset.mobileTouchNavBound = 'true';
 
+        // The modern bottom nav (Home/Songs/Setlist/More) already covers navigation, and this
+        // legacy edge-swipe gesture collides with the browser's native left-edge swipe-back
+        // gesture, re-showing the sidebar right when the user swipes back.
+        if (document.body.classList.contains('mobile-modern-mode')) return;
+
         const sidebar = document.querySelector('.sidebar');
         const songsSection = document.querySelector('.songs-section');
         if (!sidebar || !songsSection || window.innerWidth > 768) return;
@@ -497,6 +502,24 @@
         if (setlistDropdown && setlistDropdown.dataset.mobileHomeBound !== 'true') {
             setlistDropdown.dataset.mobileHomeBound = 'true';
             setlistDropdown.addEventListener('change', () => closeMobileHomeDrawer(), true);
+        }
+
+        const toolsToggle = document.getElementById('mobileToolsToggle');
+        const toolsMenu = document.getElementById('mobileToolsMenu');
+        if (toolsToggle && toolsMenu) {
+            toolsToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const isOpen = toolsMenu.classList.toggle('open');
+                toolsToggle.setAttribute('aria-expanded', String(isOpen));
+                toolsMenu.setAttribute('aria-hidden', String(!isOpen));
+            });
+            document.addEventListener('click', (event) => {
+                if (!toolsMenu.classList.contains('open')) return;
+                if (event.target.closest('#mobileToolsMenu') || event.target.closest('#mobileToolsToggle')) return;
+                toolsMenu.classList.remove('open');
+                toolsToggle.setAttribute('aria-expanded', 'false');
+                toolsMenu.setAttribute('aria-hidden', 'true');
+            });
         }
 
         ['globalSetlistContent', 'mySetlistContent', 'smartSetlistContent'].forEach((id) => {

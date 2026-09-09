@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guitar Tuner - New &amp; Old</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="tool-page">
+        <header class="tool-page-header">
+            <button type="button" class="tool-page-back" id="toolPageBack" title="Back to New &amp; Old" aria-label="Back to New &amp; Old">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            </button>
+            <h1><i class="fas fa-music" aria-hidden="true"></i> Guitar Tuner</h1>
+        </header>
+
+        <main class="tool-page-container">
+            <div class="tuner-mode-toggle">
+                <button type="button" class="tuner-mode-btn active" id="tunerModeMic">
+                    <i class="fas fa-microphone" aria-hidden="true"></i> Microphone
+                </button>
+                <button type="button" class="tuner-mode-btn" id="tunerModeTone">
+                    <i class="fas fa-wave-square" aria-hidden="true"></i> Tone Generator
+                </button>
+            </div>
+
+            <section id="tunerMicPanel" class="tuner-panel">
+                <p class="tool-page-hint">Standard tuning: E2 - A2 - D3 - G3 - B3 - E4. Play one string at a time.</p>
+                <div class="tuner-display">
+                    <div class="tuner-note" id="tunerNote">--</div>
+                    <div class="tuner-frequency" id="tunerFrequency">0.0 Hz</div>
+                    <div class="tuner-meter">
+                        <div class="tuner-meter-center"></div>
+                        <div class="tuner-needle" id="tunerNeedle"></div>
+                    </div>
+                    <div class="tuner-closest-string" id="tunerClosestString">Closest string: --</div>
+                </div>
+                <p class="tuner-status" id="tunerStatus">Tap Start Listening and allow microphone access.</p>
+                <div class="tuner-mic-actions">
+                    <button type="button" class="tool-page-btn" id="tunerStartMic">
+                        <i class="fas fa-microphone" aria-hidden="true"></i> Start Listening
+                    </button>
+                    <button type="button" class="tool-page-btn secondary" id="tunerStopMic">
+                        <i class="fas fa-stop" aria-hidden="true"></i> Stop
+                    </button>
+                </div>
+            </section>
+
+            <section id="tunerTonePanel" class="tuner-panel" style="display: none;">
+                <p class="tool-page-hint">Tap a note to play its reference pitch; tap it again (or another note) to stop.</p>
+                <div class="tuner-tone-buttons" id="tunerToneButtons"></div>
+            </section>
+        </main>
+    </div>
+
+    <nav class="mobile-modern-shell" id="mobileModernShell" aria-label="Primary mobile navigation">
+        <button class="mobile-modern-nav-item" type="button" data-tool-nav-back="true" aria-label="Home">
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>Home</span>
+        </button>
+        <button class="mobile-modern-nav-item" type="button" data-tool-nav-back="true" aria-label="Songs">
+            <i class="fas fa-music" aria-hidden="true"></i>
+            <span>Songs</span>
+        </button>
+        <button class="mobile-modern-nav-item" type="button" data-tool-nav-back="true" aria-label="Setlist">
+            <i class="fas fa-list" aria-hidden="true"></i>
+            <span>Setlist</span>
+        </button>
+        <button class="mobile-modern-nav-item mobile-modern-nav-more active" id="mobileToolsToggle" type="button" aria-label="More tools" aria-expanded="false">
+            <i class="fas fa-angle-double-right" aria-hidden="true"></i>
+            <span>More</span>
+        </button>
+    </nav>
+    <div class="mobile-tools-menu" id="mobileToolsMenu" aria-hidden="true">
+        <a class="mobile-tools-item" href="tuner.html">
+            <i class="fas fa-music" aria-hidden="true"></i>
+            <span>Tuner</span>
+        </a>
+        <a class="mobile-tools-item" href="pads-tanpura.html">
+            <i class="fas fa-drum" aria-hidden="true"></i>
+            <span>Pads &amp; Tanpura</span>
+        </a>
+    </div>
+
+    <script src="tuner.js"></script>
+</body>
+</html>
