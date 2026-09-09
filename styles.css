@@ -5140,6 +5140,63 @@ body.dark-mode #installAppBtn {
                 display: none;
             }
 
+            body.mobile-modern-mode .suggested-songs-drawer {
+                top: auto;
+                bottom: 0;
+                right: 0;
+                left: 0;
+                width: auto;
+                height: min(78vh, 640px);
+                padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+                border-radius: 16px 16px 0 0;
+                background: var(--sidebar-bg, #f7f3e8);
+                color: var(--primary-color, #3e3f29);
+                box-shadow: 0 -8px 28px rgba(62, 63, 41, 0.22);
+                transition: transform 0.3s ease;
+                transform: translateY(100%);
+                z-index: 2200;
+            }
+
+            body.mobile-modern-mode .suggested-songs-drawer.open {
+                transform: translateY(0);
+            }
+
+            body.mobile-modern-mode:has(.suggested-songs-drawer.open)::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 2190;
+                background: rgba(25, 28, 20, 0.42);
+            }
+
+            body.mobile-modern-mode .suggested-songs-header {
+                border-bottom-color: rgba(62, 63, 41, 0.18);
+            }
+
+            body.mobile-modern-mode .suggested-songs-header h3 {
+                color: var(--primary-color, #3e3f29);
+            }
+
+            body.mobile-modern-mode .close-suggested-songs {
+                color: var(--primary-color, #3e3f29);
+            }
+
+            body.mobile-modern-mode .suggested-song-item {
+                padding: 12px;
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+
+            body.dark-mode.mobile-modern-mode .suggested-songs-drawer {
+                background: var(--sidebar-bg, #23231a);
+                color: var(--text-color, #ece6d6);
+            }
+
+            body.dark-mode.mobile-modern-mode .suggested-songs-header h3,
+            body.dark-mode.mobile-modern-mode .close-suggested-songs {
+                color: var(--text-color, #ece6d6);
+            }
+
             body.mobile-modern-mode .song-preview-header {
                 position: relative;
                 display: flex;

@@ -620,7 +620,10 @@
             document.getElementById('toggleAutoScroll')?.click();
         });
 
-        document.getElementById('mobilePreviewRecommendations').addEventListener('click', () => {
+        document.getElementById('mobilePreviewRecommendations').addEventListener('click', (event) => {
+            // Stop the original click from bubbling to document, which would otherwise
+            // immediately re-close the drawer via the existing outside-click handler.
+            event.stopPropagation();
             document.getElementById('toggleSuggestedSongs')?.click();
         });
 
