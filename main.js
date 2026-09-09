@@ -6991,7 +6991,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             favoritesContent.innerHTML = '';
             // Update favorites count in showFavoritesEl
             if (showFavoritesEl) {
-                showFavoritesEl.innerHTML = `Favorites (<span class="favorites-count">${favorites.length}</span>)`;
+                showFavoritesEl.innerHTML = `<span class="favorites-label">Favorites</span> <span class="favorites-count-wrap">(<span class="favorites-count">${favorites.length}</span>)</span>`;
             }
         
             if (favorites.length === 0) {
