@@ -354,6 +354,12 @@
         const setlistDropdown = document.getElementById('setlistDropdown');
         const currentSetlistValue = setlistDropdown ? setlistDropdown.value : '';
         const isInSetlist = currentSetlistValue ? deps.isSongInCurrentSetlist(song.id, currentSetlistValue) : false;
+        const selectedSetlistOption = setlistDropdown && currentSetlistValue
+            ? setlistDropdown.options[setlistDropdown.selectedIndex]
+            : null;
+        const activeSetlistName = selectedSetlistOption
+            ? selectedSetlistOption.textContent.replace(/\s*\((My|Global)\)\s*$/, '').trim()
+            : '';
         const favorites = deps.getFavorites();
         const isFavorite = favorites.includes(song.id);
 
@@ -417,6 +423,9 @@
     <div class="song-slide">
         <div class="song-preview-header">
             <h2 class="song-preview-title">${song.title}</h2>
+            <button class="mobile-preview-recommendations" id="mobilePreviewRecommendations" type="button" aria-label="Suggested songs" title="Suggested songs">
+                <i class="fas fa-random" aria-hidden="true"></i>
+            </button>
             <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}" title="${isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}">
                 <i class="fas fa-heart"></i>
             </button>
@@ -495,6 +504,32 @@
             </button>` : ''}
         </div>
 
+        <div class="mobile-preview-action-row" id="mobilePreviewActionRow">
+            <button class="mobile-preview-action mobile-preview-setlist-action" id="mobilePreviewSetlistAction" type="button">
+                <i class="fas fa-plus" aria-hidden="true"></i>
+                <span>Setlist</span>
+            </button>
+            <button class="mobile-preview-action mobile-preview-auto-action" id="mobilePreviewAutoAction" type="button">
+                <i class="fas fa-play" aria-hidden="true"></i>
+                <span>AUTO</span>
+            </button>
+            <button class="mobile-preview-action mobile-preview-more-action" id="mobilePreviewMoreAction" type="button" aria-expanded="false">
+                <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                <span>More</span>
+            </button>
+        </div>
+
+        <div class="mobile-preview-more-menu" id="mobilePreviewMoreMenu" aria-hidden="true">
+            <button class="mobile-preview-more-item preview-edit-btn" id="mobilePreviewEditAction" type="button">
+                <i class="fas fa-edit" aria-hidden="true"></i>
+                <span>Edit Song</span>
+            </button>
+            ${isAdmin ? `<button class="mobile-preview-more-item preview-delete-btn" id="mobilePreviewDeleteAction" type="button">
+                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                <span>Delete Song</span>
+            </button>` : ''}
+        </div>
+
         <div class="song-preview-transpose">
             <div class="preview-transpose-label">
                 <i class="fas fa-music"></i>
@@ -515,6 +550,11 @@
                 <i class="fas fa-save"></i>
                 <span>Save</span>
             </button>
+        </div>
+
+        <div class="mobile-preview-setlist-context" id="mobilePreviewSetlistContext">
+            <span>Setlist</span>
+            <strong>${activeSetlistName || 'Selected'}</strong>
         </div>
 
         ${song.updatedAt && song.updatedBy || song.createdBy && song.createdAt ? `
@@ -585,6 +625,35 @@
                 deps.showNotification('Please select a setlist from the main dropdown first');
             }
         });
+
+        document.getElementById('mobilePreviewSetlistAction').addEventListener('click', () => {
+            document.getElementById('previewSetlistBtn')?.click();
+        });
+
+        document.getElementById('mobilePreviewAutoAction').addEventListener('click', () => {
+            document.getElementById('toggleAutoScroll')?.click();
+        });
+
+        document.getElementById('mobilePreviewRecommendations').addEventListener('click', () => {
+            document.getElementById('toggleSuggestedSongs')?.click();
+        });
+
+        document.getElementById('mobilePreviewMoreAction').addEventListener('click', (event) => {
+            const action = event.currentTarget;
+            const container = songPreviewEl.querySelector('.song-preview-container');
+            const isOpen = container?.classList.toggle('mobile-preview-more-open') || false;
+            action.setAttribute('aria-expanded', String(isOpen));
+            document.getElementById('mobilePreviewMoreMenu')?.setAttribute('aria-hidden', String(!isOpen));
+        });
+
+        document.getElementById('mobilePreviewEditAction')?.addEventListener('click', () => {
+            document.getElementById('previewEditBtn')?.click();
+        });
+
+        document.getElementById('mobilePreviewDeleteAction')?.addEventListener('click', () => {
+            document.getElementById('previewDeleteBtn')?.click();
+        });
+
 
         document.getElementById('previewEditBtn').addEventListener('click', () => {
             deps.editSong(song.id);
