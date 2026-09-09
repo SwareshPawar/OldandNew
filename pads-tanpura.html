@@ -8,29 +8,44 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="tool-page">
-        <header class="tool-page-header">
+    <div class="tool-page pads-page">
+        <header class="tool-page-header pads-header">
             <button type="button" class="tool-page-back" id="toolPageBack" title="Back to New &amp; Old" aria-label="Back to New &amp; Old">
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </button>
-            <h1><i class="fas fa-drum" aria-hidden="true"></i> Pads &amp; Tanpura</h1>
+            <div class="pads-title-group">
+                <h1><i class="fas fa-guitar" aria-hidden="true"></i> Pads &amp; Tanpura</h1>
+                <p class="pads-subtitle">Select a key, then play an atmosphere pad or tanpura drone</p>
+            </div>
+            <button type="button" class="metronome-menu-btn" id="padsInfoBtn" title="Info" aria-label="Info">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+            </button>
         </header>
 
-        <main class="tool-page-container">
-            <p class="tool-page-hint">Select a key, then play an atmosphere pad or tanpura drone in that key.</p>
-
+        <main class="tool-page-container pads-container">
+            <div class="pads-section-heading">
+                <span>1. Select Key</span>
+                <span class="pads-current-key-pill"><span id="padsCurrentKeyLabel">C</span> (current)</span>
+            </div>
             <div class="pads-key-selector" id="padsKeySelector"></div>
 
+            <div class="pads-section-heading">
+                <span>2. Choose Sound</span>
+            </div>
             <div class="pads-pad-row">
-                <button type="button" class="pads-pad-btn" id="padAtmosphere">
-                    <i class="fas fa-cloud" aria-hidden="true"></i>
-                    <span class="pads-pad-label">Atmosphere</span>
-                    <span class="pads-pad-state">Play</span>
+                <button type="button" class="pads-pad-btn pads-pad-atmosphere" id="padAtmosphere">
+                    <i class="fas fa-cloud pads-pad-icon" aria-hidden="true"></i>
+                    <span class="pads-pad-label">Atmosphere Pad</span>
+                    <span class="pads-pad-subtitle">Ambient background pad</span>
+                    <span class="pads-pad-play-circle"><i class="fas fa-play" aria-hidden="true"></i></span>
+                    <span class="pads-pad-state">Tap to Play</span>
                 </button>
-                <button type="button" class="pads-pad-btn" id="padTanpura">
-                    <i class="fas fa-guitar" aria-hidden="true"></i>
+                <button type="button" class="pads-pad-btn pads-pad-tanpura" id="padTanpura">
+                    <i class="fas fa-guitar pads-pad-icon" aria-hidden="true"></i>
                     <span class="pads-pad-label">Tanpura</span>
-                    <span class="pads-pad-state">Play</span>
+                    <span class="pads-pad-subtitle">Traditional drone</span>
+                    <span class="pads-pad-play-circle"><i class="fas fa-play" aria-hidden="true"></i></span>
+                    <span class="pads-pad-state">Tap to Play</span>
                 </button>
             </div>
 
@@ -40,6 +55,11 @@
                 <label for="padsVolume"><i class="fas fa-volume-up" aria-hidden="true"></i> Volume</label>
                 <input type="range" id="padsVolume" min="0" max="100" value="50" title="Pads Volume">
                 <span class="pads-volume-value" id="padsVolumeValue">50%</span>
+            </div>
+
+            <div class="tune-pitch-info-box pads-tip-box">
+                <i class="fas fa-lightbulb" aria-hidden="true"></i>
+                <span>Tip: Select a key, then play either the pad or tanpura. Use the volume slider to adjust the level.</span>
             </div>
         </main>
     </div>
@@ -70,6 +90,10 @@
         <a class="mobile-tools-item" href="pads-tanpura.html">
             <i class="fas fa-drum" aria-hidden="true"></i>
             <span>Pads &amp; Tanpura</span>
+        </a>
+        <a class="mobile-tools-item" href="metronome.html">
+            <i class="fas fa-drum-steelpan" aria-hidden="true"></i>
+            <span>Metronome</span>
         </a>
     </div>
 

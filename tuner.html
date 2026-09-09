@@ -3,42 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guitar Tuner - New &amp; Old</title>
+    <title>Tune &amp; Pitch - New &amp; Old</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="tool-page">
+    <div class="tool-page tune-pitch-page">
         <header class="tool-page-header">
             <button type="button" class="tool-page-back" id="toolPageBack" title="Back to New &amp; Old" aria-label="Back to New &amp; Old">
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </button>
-            <h1><i class="fas fa-music" aria-hidden="true"></i> Guitar Tuner</h1>
+            <div class="tune-pitch-title-group">
+                <h1>Tune &amp; Pitch</h1>
+                <p class="tune-pitch-subtitle">Tune your instrument or generate reference tones</p>
+            </div>
+            <button type="button" class="metronome-menu-btn" id="tunePitchMenuBtn" title="More" aria-label="More">
+                <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+            </button>
         </header>
 
-        <main class="tool-page-container">
-            <div class="tuner-mode-toggle">
-                <button type="button" class="tuner-mode-btn active" id="tunerModeMic">
-                    <i class="fas fa-microphone" aria-hidden="true"></i> Microphone
+        <main class="tool-page-container tune-pitch-container">
+            <div class="tune-pitch-tabs">
+                <button type="button" class="tune-pitch-tab active" id="tunerModeMic">
+                    <i class="fas fa-bullseye" aria-hidden="true"></i> Tuner
                 </button>
-                <button type="button" class="tuner-mode-btn" id="tunerModeTone">
+                <button type="button" class="tune-pitch-tab" id="tunerModeTone">
                     <i class="fas fa-wave-square" aria-hidden="true"></i> Tone Generator
                 </button>
             </div>
 
-            <section id="tunerMicPanel" class="tuner-panel">
-                <p class="tool-page-hint">Standard tuning: E2 - A2 - D3 - G3 - B3 - E4. Play one string at a time.</p>
-                <div class="tuner-display">
-                    <div class="tuner-note" id="tunerNote">--</div>
-                    <div class="tuner-frequency" id="tunerFrequency">0.0 Hz</div>
-                    <div class="tuner-meter">
-                        <div class="tuner-meter-center"></div>
-                        <div class="tuner-needle" id="tunerNeedle"></div>
-                    </div>
-                    <div class="tuner-closest-string" id="tunerClosestString">Closest string: --</div>
+            <section id="tunerMicPanel" class="tune-pitch-card">
+                <div class="tune-pitch-card-header">
+                    <h2>Chromatic Tuner</h2>
+                    <span class="tune-pitch-status-dot" id="tunerListeningStatus">
+                        <i class="fas fa-circle" aria-hidden="true"></i> Idle
+                    </span>
                 </div>
-                <p class="tuner-status" id="tunerStatus">Tap Start Listening and allow microphone access.</p>
-                <div class="tuner-mic-actions">
+
+                <div class="tune-pitch-note-display">
+                    <div class="tune-pitch-note" id="tunerNote">--</div>
+                    <div class="tune-pitch-cents" id="tunerCents">-- cents</div>
+                </div>
+
+                <div class="tuner-meter">
+                    <div class="tuner-meter-center"></div>
+                    <div class="tuner-needle" id="tunerNeedle"></div>
+                </div>
+                <div class="tune-pitch-meter-labels">
+                    <span>Flat</span>
+                    <span>Sharp</span>
+                </div>
+
+                <div class="tune-pitch-status-pill" id="tunerInTunePill">Tap Start Listening to begin</div>
+
+                <div class="tune-pitch-mic-actions">
                     <button type="button" class="tool-page-btn" id="tunerStartMic">
                         <i class="fas fa-microphone" aria-hidden="true"></i> Start Listening
                     </button>
@@ -46,11 +64,100 @@
                         <i class="fas fa-stop" aria-hidden="true"></i> Stop
                     </button>
                 </div>
+
+                <div class="tune-pitch-select-row">
+                    <div class="tune-pitch-select-group">
+                        <label for="tunerA4Reference">A4 Reference</label>
+                        <select id="tunerA4Reference">
+                            <option value="432">432 Hz</option>
+                            <option value="440" selected>440 Hz</option>
+                            <option value="442">442 Hz</option>
+                            <option value="444">444 Hz</option>
+                        </select>
+                    </div>
+                    <div class="tune-pitch-select-group">
+                        <label for="tunerInstrument">Instrument</label>
+                        <select id="tunerInstrument">
+                            <option value="chromatic">Chromatic</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="tune-pitch-note-row-label">Target Note (for reference)</div>
+                <div class="tune-pitch-note-row" id="tunerTargetNotes"></div>
+
+                <div class="tune-pitch-info-box">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <span>Play a note on your instrument. The tuner will detect the closest note and show the pitch difference.</span>
+                </div>
             </section>
 
-            <section id="tunerTonePanel" class="tuner-panel" style="display: none;">
-                <p class="tool-page-hint">Tap a note to play its reference pitch; tap it again (or another note) to stop.</p>
-                <div class="tuner-tone-buttons" id="tunerToneButtons"></div>
+            <section id="tunerTonePanel" class="tune-pitch-card" style="display: none;">
+                <h2>Reference Tone Generator</h2>
+                <p class="tune-pitch-card-subtitle">Play accurate reference tones for tuning, practice or pitch reference.</p>
+
+                <div class="tune-pitch-note-display">
+                    <div class="tune-pitch-note" id="toneNoteDisplay">A4</div>
+                    <div class="tune-pitch-cents" id="toneFreqDisplay">440 Hz</div>
+                </div>
+
+                <div class="tune-pitch-tone-controls">
+                    <button type="button" class="metronome-round-btn tune-pitch-round-btn" id="toneOctaveDown" aria-label="Lower octave">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="metronome-round-btn tune-pitch-round-btn" id="toneOctaveUp" aria-label="Raise octave">
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <button type="button" class="tune-pitch-play-btn" id="tonePlayBtn">
+                    <i class="fas fa-play" aria-hidden="true"></i> Play Tone
+                </button>
+
+                <div class="tune-pitch-note-row-label">Select Note</div>
+                <div class="tune-pitch-note-row" id="toneNoteButtons"></div>
+
+                <div class="tune-pitch-select-row">
+                    <div class="tune-pitch-select-group">
+                        <label for="toneOctaveSelect">Octave</label>
+                        <select id="toneOctaveSelect">
+                            <option value="2">2 (Low)</option>
+                            <option value="3">3</option>
+                            <option value="4" selected>4 (Middle)</option>
+                            <option value="5">5</option>
+                            <option value="6">6 (High)</option>
+                        </select>
+                    </div>
+                    <div class="tune-pitch-select-group">
+                        <label for="toneFrequencyReadout">Frequency</label>
+                        <input type="text" id="toneFrequencyReadout" readonly value="440 Hz">
+                    </div>
+                </div>
+
+                <div class="tune-pitch-note-row-label">Presets</div>
+                <div class="tune-pitch-presets-row" id="tonePresets">
+                    <button type="button" class="tune-pitch-preset-btn" data-freq="432">
+                        <span class="tune-pitch-preset-freq">432 Hz</span>
+                        <span class="tune-pitch-preset-label">Healing</span>
+                    </button>
+                    <button type="button" class="tune-pitch-preset-btn active" data-freq="440">
+                        <span class="tune-pitch-preset-freq">440 Hz</span>
+                        <span class="tune-pitch-preset-label">Standard</span>
+                    </button>
+                    <button type="button" class="tune-pitch-preset-btn" data-freq="442">
+                        <span class="tune-pitch-preset-freq">442 Hz</span>
+                        <span class="tune-pitch-preset-label">Orchestra</span>
+                    </button>
+                    <button type="button" class="tune-pitch-preset-btn" data-freq="444">
+                        <span class="tune-pitch-preset-freq">444 Hz</span>
+                        <span class="tune-pitch-preset-label">Bright</span>
+                    </button>
+                </div>
+
+                <div class="tune-pitch-info-box">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <span>Use reference tones to tune your instrument, check pitch, or practice ear training.</span>
+                </div>
             </section>
         </main>
     </div>
@@ -81,6 +188,10 @@
         <a class="mobile-tools-item" href="pads-tanpura.html">
             <i class="fas fa-drum" aria-hidden="true"></i>
             <span>Pads &amp; Tanpura</span>
+        </a>
+        <a class="mobile-tools-item" href="metronome.html">
+            <i class="fas fa-drum-steelpan" aria-hidden="true"></i>
+            <span>Metronome</span>
         </a>
     </div>
 

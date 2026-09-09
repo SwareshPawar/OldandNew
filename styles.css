@@ -4823,7 +4823,7 @@ body.dark-mode #installAppBtn {
 
             body.mobile-modern-mode .sidebar-tools-links {
                 display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: repeat(3, minmax(0, 1fr));
                 gap: 8px;
             }
 
@@ -5146,15 +5146,21 @@ body.dark-mode #installAppBtn {
 
             body.mobile-modern-mode .mobile-tools-item {
                 display: flex;
+                width: 100%;
                 min-height: 42px;
                 align-items: center;
                 gap: 10px;
                 padding: 8px 12px;
+                border: 0;
                 border-radius: 7px;
+                background: transparent;
                 color: var(--primary-color, #3e3f29);
                 text-decoration: none;
+                font: inherit;
                 font-size: 0.85rem;
                 font-weight: 600;
+                text-align: left;
+                cursor: pointer;
             }
 
             body.mobile-modern-mode .mobile-tools-item:active {
@@ -7885,10 +7891,10 @@ body.dark-mode #installAppBtn {
 }
 
 .pads-key-btn {
-    min-height: 44px;
+    min-height: 46px;
     border: 1px solid var(--song-item-border);
-    border-radius: 8px;
-    background: var(--sidebar-item-bg);
+    border-radius: 10px;
+    background: var(--form-bg, var(--sidebar-bg));
     color: var(--sidebar-text-color);
     font-weight: 700;
     cursor: pointer;
@@ -7911,24 +7917,65 @@ body.dark-mode #installAppBtn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    min-height: 90px;
+    gap: 4px;
+    min-height: 190px;
+    padding: 18px 12px;
     border: 2px solid var(--song-item-border);
-    border-radius: 12px;
+    border-radius: 16px;
     background: var(--sidebar-item-bg);
     color: var(--sidebar-text-color);
     font-size: 1rem;
     cursor: pointer;
 }
 
-.pads-pad-btn i {
-    font-size: 1.4rem;
+.pads-pad-atmosphere {
+    background: var(--primary-color);
+    color: var(--accent-color);
+    border-color: var(--primary-color);
+}
+
+.pads-pad-icon {
+    margin-bottom: 4px;
+    font-size: 1.6rem;
+}
+
+.pads-pad-label {
+    font-weight: 800;
+}
+
+.pads-pad-subtitle {
+    margin-bottom: 10px;
+    font-size: 0.72rem;
+    opacity: 0.8;
+}
+
+.pads-pad-play-circle {
+    display: flex;
+    width: 56px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.18);
+    color: inherit;
+    font-size: 1.1rem;
+}
+
+.pads-pad-atmosphere .pads-pad-play-circle {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.pads-pad-btn.playing .pads-pad-play-circle {
+    box-shadow: 0 0 0 4px rgba(197, 177, 148, 0.45);
+}
+
+.pads-pad-btn.playing .pads-pad-play-circle i::before {
+    content: "\f04d"; /* fa-stop */
 }
 
 .pads-pad-btn.playing {
-    background: var(--accent-color);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+    border-color: var(--accent-color);
 }
 
 .pads-pad-btn.unavailable {
@@ -7936,12 +7983,11 @@ body.dark-mode #installAppBtn {
     cursor: not-allowed;
 }
 
-.pads-pad-label {
-    font-weight: 800;
-}
-
 .pads-pad-state {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     opacity: 0.85;
 }
 
@@ -7957,6 +8003,11 @@ body.dark-mode #installAppBtn {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--song-item-border);
+    border-radius: 12px;
+    background: var(--sidebar-item-bg);
 }
 
 .pads-volume-row label {
@@ -7970,6 +8021,7 @@ body.dark-mode #installAppBtn {
 
 .pads-volume-row input[type="range"] {
     flex: 1;
+    accent-color: var(--accent-color);
 }
 
 .pads-volume-value {
@@ -7979,8 +8031,604 @@ body.dark-mode #installAppBtn {
     font-size: 0.85rem;
 }
 
+/* Pads & Tanpura header/sections */
+.pads-title-group {
+    flex: 1;
+    text-align: center;
+}
+
+.pads-title-group h1 {
+    margin: 0;
+}
+
+.pads-subtitle {
+    margin: 2px 0 0;
+    color: var(--accent-color);
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.pads-container {
+    max-width: 480px;
+}
+
+.pads-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: var(--song-meta-color);
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+.pads-current-key-pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--sidebar-item-bg);
+    border: 1px solid var(--song-item-border);
+    color: var(--sidebar-text-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.pads-tip-box {
+    margin-top: 4px;
+}
+
 @media (max-width: 768px) {
     .tool-page {
         padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
+}
+
+/* Metronome page */
+.metronome-menu-btn {
+    display: flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--accent-color);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.metronome-container {
+    max-width: 480px;
+}
+
+.metronome-eyebrow {
+    margin-bottom: 4px;
+    color: var(--song-meta-color);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.metronome-subtitle {
+    margin-bottom: 18px;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.metronome-section-label {
+    margin-top: 22px;
+}
+
+.metronome-card {
+    margin-bottom: 16px;
+    padding: 18px;
+    border-radius: 16px;
+}
+
+.metronome-tempo-card {
+    background: var(--primary-color);
+    color: var(--accent-color);
+    text-align: center;
+}
+
+.metronome-card-label {
+    margin-bottom: 6px;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+}
+
+.metronome-tempo-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0 18px;
+}
+
+.metronome-bpm {
+    font-size: 3.4rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.metronome-bpm-unit {
+    font-size: 0.95rem;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+.metronome-tempo-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.metronome-round-btn {
+    display: flex;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--accent-color);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.metronome-round-btn:active {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.metronome-slider {
+    flex: 1;
+    accent-color: var(--accent-color);
+}
+
+.metronome-range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 0.72rem;
+    opacity: 0.75;
+}
+
+.metronome-tap-card {
+    background: var(--accent-color);
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.metronome-card-title {
+    font-size: 1.15rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+}
+
+.metronome-tap-subtitle {
+    margin: 4px 0 14px;
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
+.metronome-tap-btn {
+    width: 100%;
+    min-height: 46px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(62, 63, 41, 0.18);
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.metronome-tap-btn:active {
+    background: rgba(62, 63, 41, 0.3);
+}
+
+.metronome-action-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.metronome-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-height: 66px;
+    border: 1px solid var(--song-item-border);
+    border-radius: 12px;
+    background: var(--sidebar-item-bg);
+    color: var(--sidebar-text-color);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.metronome-action-btn i {
+    font-size: 1.1rem;
+}
+
+.metronome-action-btn.active {
+    background: var(--accent-color);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.metronome-select-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.metronome-select-group {
+    padding: 10px 12px;
+    border: 1px solid var(--song-item-border);
+    border-radius: 12px;
+    background: var(--sidebar-item-bg);
+}
+
+.metronome-select-group label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--song-meta-color);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.metronome-select-group select {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--sidebar-text-color);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.metronome-quick-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.metronome-quick-btn {
+    min-height: 44px;
+    border: 1px solid var(--song-item-border);
+    border-radius: 10px;
+    background: var(--sidebar-item-bg);
+    color: var(--sidebar-text-color);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.metronome-quick-btn.active {
+    background: var(--accent-color);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Tune & Pitch page */
+.tune-pitch-title-group {
+    flex: 1;
+    text-align: center;
+}
+
+.tune-pitch-title-group h1 {
+    margin: 0;
+}
+
+.tune-pitch-subtitle {
+    margin: 2px 0 0;
+    color: var(--accent-color);
+    font-size: 0.78rem;
+    opacity: 0.9;
+}
+
+.tune-pitch-container {
+    max-width: 480px;
+}
+
+.tune-pitch-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 5px;
+    border-radius: 12px;
+    background: var(--sidebar-item-bg);
+    border: 1px solid var(--song-item-border);
+}
+
+.tune-pitch-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 42px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--sidebar-text-color);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tune-pitch-tab.active {
+    background: var(--primary-color);
+    color: var(--accent-color);
+}
+
+.tune-pitch-card {
+    margin-bottom: 16px;
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid var(--song-item-border);
+    background: var(--sidebar-item-bg);
+}
+
+.tune-pitch-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.tune-pitch-card-subtitle {
+    margin: 4px 0 14px;
+    color: var(--song-meta-color);
+    font-size: 0.82rem;
+}
+
+.tune-pitch-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.tune-pitch-status-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--song-meta-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.tune-pitch-status-dot i {
+    font-size: 0.5rem;
+    color: var(--secondary-color);
+}
+
+.tune-pitch-note-display {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.tune-pitch-note {
+    font-size: 3.2rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--title-color);
+}
+
+.tune-pitch-cents {
+    margin-top: 4px;
+    color: var(--song-meta-color);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.tune-pitch-meter-labels {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0 14px;
+    color: var(--song-meta-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.tune-pitch-status-pill {
+    margin-bottom: 16px;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(125, 141, 134, 0.18);
+    color: var(--sidebar-text-color);
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.tune-pitch-status-pill.in-tune {
+    background: rgba(39, 174, 96, 0.22);
+    color: #1f7a44;
+}
+
+.tune-pitch-status-pill.out-of-tune {
+    background: rgba(231, 76, 60, 0.18);
+    color: #c0392b;
+}
+
+.tune-pitch-mic-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.tune-pitch-select-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.tune-pitch-select-group {
+    padding: 10px 12px;
+    border: 1px solid var(--song-item-border);
+    border-radius: 12px;
+    background: var(--form-bg, var(--sidebar-bg));
+}
+
+.tune-pitch-select-group label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--song-meta-color);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.tune-pitch-select-group select,
+.tune-pitch-select-group input {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--sidebar-text-color);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.tune-pitch-note-row-label {
+    margin-bottom: 8px;
+    color: var(--song-meta-color);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.tune-pitch-note-row {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.tune-pitch-note-btn {
+    min-height: 38px;
+    border: 1px solid var(--song-item-border);
+    border-radius: 8px;
+    background: var(--form-bg, var(--sidebar-bg));
+    color: var(--sidebar-text-color);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tune-pitch-note-btn.active {
+    background: var(--primary-color);
+    color: var(--accent-color);
+    border-color: var(--primary-color);
+}
+
+.tune-pitch-info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(125, 141, 134, 0.14);
+    color: var(--song-meta-color);
+    font-size: 0.8rem;
+}
+
+.tune-pitch-info-box i {
+    margin-top: 2px;
+}
+
+.tune-pitch-tone-controls {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 14px;
+}
+
+.tune-pitch-round-btn {
+    background: var(--form-bg, var(--sidebar-bg));
+    color: var(--sidebar-text-color);
+    border: 1px solid var(--song-item-border);
+}
+
+.tune-pitch-round-btn:active {
+    background: var(--accent-color);
+    color: var(--primary-color);
+}
+
+.tune-pitch-play-btn {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 50px;
+    margin-bottom: 18px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--primary-color);
+    color: var(--accent-color);
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.tune-pitch-presets-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.tune-pitch-preset-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 50px;
+    border: 1px solid var(--song-item-border);
+    border-radius: 10px;
+    background: var(--form-bg, var(--sidebar-bg));
+    color: var(--sidebar-text-color);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tune-pitch-preset-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.tune-pitch-preset-btn.active {
+    background: var(--primary-color);
+    color: var(--accent-color);
+    border-color: var(--primary-color);
+}
+
+body.dark-mode .tune-pitch-status-pill.in-tune {
+    background: rgba(39, 174, 96, 0.3);
+    color: #6fd18e;
+}
+
+body.dark-mode .tune-pitch-status-pill.out-of-tune {
+    background: rgba(231, 76, 60, 0.28);
+    color: #ff8a75;
 }

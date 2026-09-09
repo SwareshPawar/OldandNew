@@ -43,7 +43,7 @@
             const btn = document.getElementById(padType === 'atmosphere' ? 'padAtmosphere' : 'padTanpura');
             if (!btn) return;
             btn.classList.toggle('playing', isPlaying);
-            btn.querySelector('.pads-pad-state').textContent = isPlaying ? 'Stop' : 'Play';
+            btn.querySelector('.pads-pad-state').textContent = isPlaying ? 'Playing...' : 'Tap to Play';
         };
         player.onMelodicError = (padType, error) => {
             console.warn(`Melodic pad error (${padType}):`, error);
@@ -81,6 +81,8 @@
         document.querySelectorAll('.pads-key-btn').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.key === key);
         });
+        const currentKeyLabel = document.getElementById('padsCurrentKeyLabel');
+        if (currentKeyLabel) currentKeyLabel.textContent = key;
 
         if (key === lastLoadedKey) return; // already on this key; keep any playing pad untouched
         lastLoadedKey = key;

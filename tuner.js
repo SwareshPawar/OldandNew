@@ -1,24 +1,15 @@
 // tuner.js
-// Standalone guitar tuner page: microphone pitch detection + reference tone generator.
+// Standalone Tune & Pitch page: chromatic tuner (microphone) + reference tone generator.
 (function () {
     'use strict';
 
-    const STANDARD_TUNING = [
-        { note: 'E2', freq: 82.41 },
-        { note: 'A2', freq: 110.00 },
-        { note: 'D3', freq: 146.83 },
-        { note: 'G3', freq: 196.00 },
-        { note: 'B3', freq: 246.94 },
-        { note: 'E4', freq: 329.63 }
-    ];
-
     const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-    // Mid octave (C4-B4) reference tones for the Tone Generator.
-    const MID_OCTAVE_NOTES = NOTE_NAMES.map((name, index) => ({
-        note: `${name}4`,
-        freq: Math.round(440 * Math.pow(2, (index - 9) / 12) * 100) / 100
-    }));
+    let a4Reference = 440;
+    let targetNote = 'A';
+    let toneNote = 'A';
+    let toneOctave = 4;
+    let isPlayingTone = false;
 
     let audioContext = null;
     let analyser = null;
@@ -26,7 +17,6 @@
     let rafId = null;
     let toneOscillator = null;
     let toneGain = null;
-    let activeToneButton = null;
     let smoothedFrequency = null;
     let lastDisplayUpdate = 0;
 
@@ -54,32 +44,39 @@
         });
     }
 
-    function frequencyToNoteName(frequency) {
-        const midi = Math.round(69 + 12 * Math.log2(frequency / 440));
-        const octave = Math.floor(midi / 12) - 1;
-        const name = NOTE_NAMES[((midi % 12) + 12) % 12];
-        return `${name}${octave}`;
-    }
-
-    // Cents deviation from the nearest chromatic pitch, regardless of instrument/string -
-    // this is what drives the in-tune (green) / out-of-tune (red) indicator for any note.
-    function centsFromNearestNote(frequency) {
-        const midi = 69 + 12 * Math.log2(frequency / 440);
-        const rounded = Math.round(midi);
-        return Math.round((midi - rounded) * 100);
-    }
-
-    function closestString(frequency) {
-        let closest = STANDARD_TUNING[0];
-        let smallestDiff = Infinity;
-        STANDARD_TUNING.forEach((string) => {
-            const diff = Math.abs(Math.log2(frequency / string.freq));
-            if (diff < smallestDiff) {
-                smallestDiff = diff;
-                closest = string;
+    // Use real browser back-navigation (not a fresh href) so the app tab can be
+    // restored from bfcache instead of reloading and refetching everything. Falls back to a
+    // direct navigation if history.back() turns out to be a no-op (e.g. no real prior entry).
+    function goBackToApp() {
+        const startHref = window.location.href;
+        window.history.back();
+        setTimeout(() => {
+            if (window.location.href === startHref) {
+                window.location.href = 'index.html';
             }
-        });
-        return closest;
+        }, 400);
+    }
+
+    // Standard equal-temperament frequency for a given note name + octave, relative to A4.
+    function noteToFrequency(noteName, octave, a4) {
+        const noteIndex = NOTE_NAMES.indexOf(noteName);
+        const midi = (octave + 1) * 12 + noteIndex;
+        return a4 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    // Cents deviation of a detected frequency from the closest octave of the chosen target note.
+    function centsFromTarget(frequency, note, a4) {
+        let bestCents = 0;
+        let bestAbs = Infinity;
+        for (let octave = 0; octave <= 8; octave++) {
+            const idealFreq = noteToFrequency(note, octave, a4);
+            const cents = 1200 * Math.log2(frequency / idealFreq);
+            if (Math.abs(cents) < bestAbs) {
+                bestAbs = Math.abs(cents);
+                bestCents = cents;
+            }
+        }
+        return Math.round(bestCents);
     }
 
     // Autocorrelation-based pitch detection (ACF2+ style), a common public-domain approach
@@ -136,14 +133,48 @@
         return sampleRate / t0;
     }
 
+    function updateTunerDisplay(cents, hasSignal) {
+        const noteEl = document.getElementById('tunerNote');
+        const centsEl = document.getElementById('tunerCents');
+        const needleEl = document.getElementById('tunerNeedle');
+        const pillEl = document.getElementById('tunerInTunePill');
+        if (noteEl) noteEl.textContent = targetNote;
+
+        if (!hasSignal) {
+            if (centsEl) centsEl.textContent = '-- cents';
+            if (needleEl) {
+                needleEl.style.left = '50%';
+                needleEl.parentElement.classList.remove('in-tune');
+            }
+            return;
+        }
+
+        const clamped = Math.max(-50, Math.min(50, cents));
+        if (centsEl) centsEl.textContent = `${cents > 0 ? '+' : ''}${cents} cents`;
+        if (needleEl) {
+            needleEl.style.left = `${50 + clamped}%`;
+            needleEl.parentElement.classList.toggle('in-tune', Math.abs(cents) <= 5);
+        }
+        if (pillEl) {
+            if (Math.abs(cents) <= 5) {
+                pillEl.textContent = 'In tune!';
+                pillEl.className = 'tune-pitch-status-pill in-tune';
+            } else {
+                pillEl.textContent = cents > 0 ? 'Sharp' : 'Flat';
+                pillEl.className = 'tune-pitch-status-pill out-of-tune';
+            }
+        }
+    }
+
     async function startMicTuner() {
-        const statusEl = document.getElementById('tunerStatus');
+        const statusEl = document.getElementById('tunerListeningStatus');
+        const pillEl = document.getElementById('tunerInTunePill');
         if (micStream) return;
 
         try {
             micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         } catch (error) {
-            if (statusEl) statusEl.textContent = 'Microphone access denied. Try the Tone Generator instead.';
+            if (pillEl) pillEl.textContent = 'Microphone access denied. Try the Tone Generator instead.';
             return;
         }
 
@@ -154,17 +185,13 @@
         source.connect(analyser);
 
         const buffer = new Float32Array(analyser.fftSize);
-        if (statusEl) statusEl.textContent = 'Listening... play a single string.';
-
-        const noteEl = document.getElementById('tunerNote');
-        const freqEl = document.getElementById('tunerFrequency');
-        const needleEl = document.getElementById('tunerNeedle');
-        const stringEl = document.getElementById('tunerClosestString');
+        if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" aria-hidden="true"></i> Listening...';
+        if (pillEl) pillEl.textContent = 'Play a note on your instrument';
 
         smoothedFrequency = null;
         lastDisplayUpdate = 0;
-        const DISPLAY_INTERVAL_MS = 120; // Throttle DOM updates so the needle doesn't jitter every frame
-        const SMOOTHING = 0.25; // Exponential moving average factor for the detected frequency
+        const DISPLAY_INTERVAL_MS = 120;
+        const SMOOTHING = 0.25;
 
         function update() {
             analyser.getFloatTimeDomainData(buffer);
@@ -177,18 +204,8 @@
                 const now = performance.now();
                 if (now - lastDisplayUpdate >= DISPLAY_INTERVAL_MS) {
                     lastDisplayUpdate = now;
-
-                    const nearestString = closestString(smoothedFrequency);
-                    const cents = centsFromNearestNote(smoothedFrequency);
-                    const clamped = Math.max(-50, Math.min(50, cents));
-
-                    if (noteEl) noteEl.textContent = frequencyToNoteName(smoothedFrequency);
-                    if (freqEl) freqEl.textContent = `${smoothedFrequency.toFixed(1)} Hz`;
-                    if (stringEl) stringEl.textContent = `Closest string: ${nearestString.note} (${nearestString.freq} Hz)`;
-                    if (needleEl) {
-                        needleEl.style.left = `${50 + clamped}%`;
-                        needleEl.parentElement.classList.toggle('in-tune', Math.abs(cents) <= 5);
-                    }
+                    const cents = centsFromTarget(smoothedFrequency, targetNote, a4Reference);
+                    updateTunerDisplay(cents, true);
                 }
             }
             rafId = requestAnimationFrame(update);
@@ -203,8 +220,26 @@
             micStream.getTracks().forEach((track) => track.stop());
             micStream = null;
         }
-        const statusEl = document.getElementById('tunerStatus');
-        if (statusEl) statusEl.textContent = 'Stopped. Tap Start Listening to resume.';
+        const statusEl = document.getElementById('tunerListeningStatus');
+        const pillEl = document.getElementById('tunerInTunePill');
+        if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" aria-hidden="true"></i> Idle';
+        if (pillEl) pillEl.textContent = 'Tap Start Listening to begin';
+        updateTunerDisplay(0, false);
+    }
+
+    function renderTargetNotes() {
+        const container = document.getElementById('tunerTargetNotes');
+        if (!container) return;
+        container.innerHTML = NOTE_NAMES.map((note) => `
+            <button type="button" class="tune-pitch-note-btn${note === targetNote ? ' active' : ''}" data-note="${note}">${note}</button>
+        `).join('');
+        container.querySelectorAll('.tune-pitch-note-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                targetNote = btn.dataset.note;
+                container.querySelectorAll('.tune-pitch-note-btn').forEach((b) => b.classList.toggle('active', b === btn));
+                updateTunerDisplay(0, false);
+            });
+        });
     }
 
     async function playReferenceTone(frequency) {
@@ -242,34 +277,71 @@
         }
     }
 
-    function renderToneButtons() {
-        const container = document.getElementById('tunerToneButtons');
-        if (!container) return;
-        container.innerHTML = MID_OCTAVE_NOTES.map((note) => `
-            <button type="button" class="tuner-tone-btn" data-freq="${note.freq}">
-                <span class="tuner-tone-note">${note.note}</span>
-                <span class="tuner-tone-freq">${note.freq} Hz</span>
-            </button>
-        `).join('');
+    function currentToneFrequency() {
+        return noteToFrequency(toneNote, toneOctave, a4Reference);
+    }
 
-        // Toggle play/stop like the Pads & Tanpura page: press once to start, press
-        // again (or press another note) to stop - instead of press-and-hold.
-        container.querySelectorAll('.tuner-tone-btn').forEach((button) => {
-            button.addEventListener('click', () => {
-                if (activeToneButton === button) {
-                    stopReferenceTone();
-                    button.classList.remove('active');
-                    activeToneButton = null;
-                    return;
-                }
-                if (activeToneButton) {
-                    activeToneButton.classList.remove('active');
-                }
-                playReferenceTone(parseFloat(button.dataset.freq));
-                button.classList.add('active');
-                activeToneButton = button;
+    function updateToneDisplay() {
+        const noteEl = document.getElementById('toneNoteDisplay');
+        const freqEl = document.getElementById('toneFreqDisplay');
+        const freqReadout = document.getElementById('toneFrequencyReadout');
+        const octaveSelect = document.getElementById('toneOctaveSelect');
+        const freq = currentToneFrequency();
+
+        if (noteEl) noteEl.textContent = `${toneNote}${toneOctave}`;
+        if (freqEl) freqEl.textContent = `${freq.toFixed(1)} Hz`;
+        if (freqReadout) freqReadout.value = `${freq.toFixed(1)} Hz`;
+        if (octaveSelect) octaveSelect.value = String(toneOctave);
+
+        document.querySelectorAll('#toneNoteButtons .tune-pitch-note-btn').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.note === toneNote);
+        });
+
+        if (isPlayingTone) {
+            playReferenceTone(freq);
+        }
+    }
+
+    function setOctave(nextOctave) {
+        toneOctave = Math.max(2, Math.min(6, nextOctave));
+        updateToneDisplay();
+    }
+
+    function toggleTonePlayback() {
+        const btn = document.getElementById('tonePlayBtn');
+        isPlayingTone = !isPlayingTone;
+        if (isPlayingTone) {
+            playReferenceTone(currentToneFrequency());
+            if (btn) btn.innerHTML = '<i class="fas fa-stop" aria-hidden="true"></i> Stop Tone';
+        } else {
+            stopReferenceTone();
+            if (btn) btn.innerHTML = '<i class="fas fa-play" aria-hidden="true"></i> Play Tone';
+        }
+    }
+
+    function renderToneNoteButtons() {
+        const container = document.getElementById('toneNoteButtons');
+        if (!container) return;
+        container.innerHTML = NOTE_NAMES.map((note) => `
+            <button type="button" class="tune-pitch-note-btn${note === toneNote ? ' active' : ''}" data-note="${note}">${note}</button>
+        `).join('');
+        container.querySelectorAll('.tune-pitch-note-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                toneNote = btn.dataset.note;
+                updateToneDisplay();
             });
         });
+    }
+
+    function setA4Reference(value, sourceEl) {
+        a4Reference = value;
+        const tunerSelect = document.getElementById('tunerA4Reference');
+        if (tunerSelect && tunerSelect !== sourceEl) tunerSelect.value = String(value);
+        document.querySelectorAll('.tune-pitch-preset-btn').forEach((btn) => {
+            btn.classList.toggle('active', parseInt(btn.dataset.freq, 10) === value);
+        });
+        updateToneDisplay();
+        updateTunerDisplay(0, false);
     }
 
     function setupModeToggle() {
@@ -285,11 +357,13 @@
             toneModeBtn.classList.toggle('active', !isMic);
             micPanel.style.display = isMic ? 'block' : 'none';
             tonePanel.style.display = isMic ? 'none' : 'block';
-            if (!isMic) stopMicTuner();
-            else {
+            if (!isMic) {
+                stopMicTuner();
+            } else if (isPlayingTone) {
+                isPlayingTone = false;
                 stopReferenceTone();
-                activeToneButton?.classList.remove('active');
-                activeToneButton = null;
+                const btn = document.getElementById('tonePlayBtn');
+                if (btn) btn.innerHTML = '<i class="fas fa-play" aria-hidden="true"></i> Play Tone';
             }
         }
 
@@ -297,29 +371,35 @@
         toneModeBtn.addEventListener('click', () => activate('tone'));
     }
 
-    // Use real browser back-navigation (not a fresh href) so the app tab can be
-    // restored from bfcache instead of reloading and refetching everything. Falls back to a
-    // direct navigation if history.back() turns out to be a no-op (e.g. no real prior entry).
-    function goBackToApp() {
-        const startHref = window.location.href;
-        window.history.back();
-        setTimeout(() => {
-            if (window.location.href === startHref) {
-                window.location.href = 'index.html';
-            }
-        }, 400);
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
         initMobileShell();
         setupModeToggle();
-        renderToneButtons();
+        renderTargetNotes();
+        renderToneNoteButtons();
+        updateToneDisplay();
 
         document.getElementById('tunerStartMic')?.addEventListener('click', startMicTuner);
         document.getElementById('tunerStopMic')?.addEventListener('click', stopMicTuner);
         document.getElementById('toolPageBack')?.addEventListener('click', goBackToApp);
         document.querySelectorAll('[data-tool-nav-back]').forEach((btn) => {
             btn.addEventListener('click', goBackToApp);
+        });
+
+        document.getElementById('tunerA4Reference')?.addEventListener('change', (event) => {
+            setA4Reference(parseInt(event.target.value, 10), event.target);
+        });
+
+        document.getElementById('toneOctaveDown')?.addEventListener('click', () => setOctave(toneOctave - 1));
+        document.getElementById('toneOctaveUp')?.addEventListener('click', () => setOctave(toneOctave + 1));
+        document.getElementById('toneOctaveSelect')?.addEventListener('change', (event) => {
+            setOctave(parseInt(event.target.value, 10));
+        });
+        document.getElementById('tonePlayBtn')?.addEventListener('click', toggleTonePlayback);
+
+        document.querySelectorAll('.tune-pitch-preset-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                setA4Reference(parseInt(btn.dataset.freq, 10), btn);
+            });
         });
     });
 
