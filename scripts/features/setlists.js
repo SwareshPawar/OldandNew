@@ -50,6 +50,10 @@
         const setlistDropdown = document.getElementById('setlistDropdown');
         const selectedValue = setlistDropdown ? setlistDropdown.value : '';
         if (selectedValue && selectedValue !== '') {
+            closeDropdownMenu();
+            if (window.innerWidth <= 768 && window.MobileUI && typeof window.MobileUI.closeMobileHomeDrawer === 'function') {
+                window.MobileUI.closeMobileHomeDrawer();
+            }
             if (selectedValue.startsWith('global_')) {
                 const setlistId = selectedValue.replace('global_', '');
                 deps.setActiveSetlistElementId(setlistId);
@@ -213,6 +217,12 @@
                     updateCustomDropdownDisplay(saved);
                     updateSetlistDropdownStyle(true);
                 }
+            } else if (hasGlobalData) {
+                const firstGlobalValue = `global_${globalSetlists[0]._id}`;
+                setlistDropdown.value = firstGlobalValue;
+                localStorage.setItem('selectedSetlist', firstGlobalValue);
+                updateCustomDropdownDisplay(firstGlobalValue);
+                updateSetlistDropdownStyle(true);
             }
         }
     }

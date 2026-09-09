@@ -945,6 +945,134 @@ No implementation changes are planned unless this verification discovers a concr
 - `node --check main.js` passed.
 - `git diff --check` passed.
 
+### 2026-09-09 - Mobile Primary Navigation: Home / Songs / Setlist
+
+**Status:** Implemented and verified.
+
+**Changes:**
+
+- Replaced the mobile bottom-nav `More` destination with `Setlist`.
+- Songs delegates to the existing `showAll` action and restores the complete catalogue.
+- Setlist delegates to the existing selected-setlist state and Global/My/Smart renderers.
+- When no setlist is selected, Setlist returns to the existing Home/setlist selection flow.
+- Song-level More inside Song Preview remains unchanged.
+- Home and existing Settings/preferences remain unchanged.
+
+**Verification at 375px:**
+
+- Bottom navigation labels are exactly Home, Songs, Setlist.
+- Songs restored the complete 552-song catalogue with catalogue mode active.
+- Setlist opened the selected existing setlist with 7 New and 4 Old rows.
+- No Setlist drawer or duplicate renderer opened.
+- Existing active setlist state was reused.
+
+**Desktop verification:**
+
+- Mobile navigation shell remains hidden at 1024px.
+- Existing desktop layout and controls remain unchanged.
+
+**Preserved:**
+
+- Home/settings behavior.
+- Catalogue search, filters, sort, favorites, Select mode, edit/delete, and add actions.
+- Existing setlist state/renderers/actions.
+- Song-level More, recommendations, transpose, auto-scroll, rhythm/loop, cache, and APIs.
+
+### 2026-09-09 - Default Initial Global Setlist Selection
+
+**Status:** Implemented and verified.
+
+- When no `localStorage.selectedSetlist` exists, the existing setlist dropdown population path now defaults to the first available Global Setlist.
+- Existing saved selection behavior remains unchanged.
+- The existing initialization restore path displays the selected Global Setlist in `#setlistSection`.
+- No new state, API, database, or renderer was introduced.
+
+**Fresh-load verification:**
+
+- Cleared `selectedSetlist` before reload.
+- First Global Setlist selected: `Minor Flow`.
+- Existing `selectedSetlist` key persisted as `global_68cfad9433e7101a8ee07d53`.
+- Existing setlist section rendered with 73 New and 18 Old rows.
+
+### 2026-09-09 - Smart Setlist Refresh Scan Error
+
+**Status:** Fixed and verified.
+
+**Root cause:**
+
+- Existing Smart Setlist records can contain serialized condition strings such as `"moods":"[]"` and `"taals":"[Deepchandi],Deepchandi"`.
+- `/api/songs/scan` assumed those fields were arrays and called `.map()` directly, producing `moods.map is not a function` and HTTP 500 during Smart refresh.
+
+**Correction:**
+
+- Added server-side normalization for Smart scan condition lists.
+- Supports existing arrays, JSON-encoded arrays, comma-separated values, and mixed serialized values.
+- Empty tempo bounds are normalized to `null` before the existing scan logic.
+- No database schema, Smart Setlist model, scoring behavior, or frontend flow changed.
+
+**Verification:**
+
+- Reproduced the exact failing `Deepchandi` conditions before the fix: HTTP 500, `moods.map is not a function`.
+- Restarted the local API with the corrected server code.
+- Replayed the exact scan request: HTTP 200 with Smart Setlist song results.
+- `node --check server.js` passed.
+
+### 2026-09-09 - Mobile Setlist Dropdown Transition Overlay Fix
+
+**Status:** Fixed and verified.
+
+**Root cause:**
+
+- Clicking `dropdownMainArea` correctly invoked the existing Global/My setlist renderer but did not close the mobile Home drawer or dropdown menu.
+- The stale Home backdrop left the Songs-panel setlist view visually greyed and could intercept input.
+
+**Correction:**
+
+- `handleDropdownMainAreaClick()` now closes the existing dropdown menu and, on mobile only, closes the Home drawer before invoking the existing setlist renderer.
+- No setlist renderer, state model, API, permission, or desktop behavior changed.
+
+**Verification at 375px:**
+
+- `dropdownMainArea` opened the selected Global setlist through the existing Songs-panel path.
+- Home backdrop computed to `display: none`.
+- Dropdown menu computed to `display: none`.
+- `#setlistSection` remained inside `.songs-section` with `display: block`.
+- Songs panel was visible and Preview opacity remained `1`.
+
+**Validation:**
+
+- `node --check scripts/features/setlists.js` passed.
+- `node --check scripts/features/mobile-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
+### 2026-09-09 - Song Preview More Menu Simplification
+
+**Status:** Implemented and verified.
+
+**Changes:**
+
+- Removed redundant Song Information from Song-level More because the existing metadata `More Info` control already exposes it.
+- Removed redundant Reset Transpose from Song-level More because the existing Transpose block already exposes Reset.
+- Removed redundant Rhythm / Loop entry from Song-level More; the existing loop/audio controls remain available in Preview.
+- Song-level More now exposes only the existing Edit Song and permission-aware Delete Song actions.
+- Kept the primary mobile action row as Setlist, AUTO, and More.
+- Kept AUTO connected to the existing auto-scroll implementation.
+- Kept the existing metadata More Info and Transpose Reset controls unchanged.
+
+**Verification at 375px:**
+
+- Primary actions: Setlist, AUTO, More.
+- Song-level More items: Edit Song, Delete Song.
+- Song Information and Reset Transpose More items are absent.
+- Existing metadata and transpose controls remain available.
+
+**Validation:**
+
+- `node --check scripts/features/song-preview-ui.js` passed.
+- `node --check main.js` passed.
+- `git diff --check` passed.
+
 ### Environment limitation
 
 The browser smoke check used an unauthenticated local file session. The existing application produced an authentication-related `401` warning while attempting protected data loading. This was not introduced by the mobile shell. Full authenticated checks still require a valid local session and running API environment.

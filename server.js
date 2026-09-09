@@ -2837,7 +2837,35 @@ app.delete('/api/songs', authMiddleware, requireAdmin, async (req, res) => {
 // Scan songs based on multiple filter conditions (requires authentication)
 app.post('/api/songs/scan', authMiddleware, async (req, res) => {
   try {
-    const { keys, tempoMin, tempoMax, times, taals, moods, genres, categories } = req.body;
+    const normalizeConditionList = (value) => {
+      if (Array.isArray(value)) return value.filter(Boolean).map(String);
+      if (value === null || value === undefined || value === '') return [];
+
+      const text = String(value).trim();
+      if (!text) return [];
+
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
+      } catch {
+        // Older Smart Setlists may store comma-separated or mixed serialized values.
+      }
+
+      return text
+        .split(',')
+        .map((item) => item.trim().replace(/^\[|\]$/g, '').trim())
+        .filter(Boolean);
+    };
+
+    const body = req.body || {};
+    const keys = normalizeConditionList(body.keys);
+    const times = normalizeConditionList(body.times);
+    const taals = normalizeConditionList(body.taals);
+    const moods = normalizeConditionList(body.moods);
+    const genres = normalizeConditionList(body.genres);
+    const categories = normalizeConditionList(body.categories);
+    const tempoMin = body.tempoMin === '' || body.tempoMin === undefined ? null : body.tempoMin;
+    const tempoMax = body.tempoMax === '' || body.tempoMax === undefined ? null : body.tempoMax;
     
     let query = {};
     

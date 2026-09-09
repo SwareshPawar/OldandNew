@@ -414,9 +414,6 @@
 
         const distinctChords = extractDistinctChords(song.lyrics, transposeLevel, song.manualChords, deps);
         const chordsDisplay = distinctChords.length > 0 ? distinctChords.join(', ') : '';
-        const hasSongInformation = Boolean(
-            chordsDisplay || song.artistDetails || song.mood || song.genres || song.genre || isAdmin
-        );
         const canonicalSongKey = deps.normalizeKeySignature(song.key);
         const displayKey = transposeLevel !== 0 ? transposeChord(canonicalSongKey, transposeLevel, deps) : canonicalSongKey;
         const isAdmin = deps.isAdmin();
@@ -523,25 +520,13 @@
         </div>
 
         <div class="mobile-preview-more-menu" id="mobilePreviewMoreMenu" aria-hidden="true">
-            ${hasSongInformation ? `<button class="mobile-preview-more-item" id="mobilePreviewInfoAction" type="button">
-                <i class="fas fa-info-circle" aria-hidden="true"></i>
-                <span>Song Information</span>
-            </button>` : ''}
-            <button class="mobile-preview-more-item" id="mobilePreviewEditAction" type="button">
+            <button class="mobile-preview-more-item preview-edit-btn" id="mobilePreviewEditAction" type="button">
                 <i class="fas fa-edit" aria-hidden="true"></i>
                 <span>Edit Song</span>
             </button>
-            <button class="mobile-preview-more-item" id="mobilePreviewResetAction" type="button">
-                <i class="fas fa-undo" aria-hidden="true"></i>
-                <span>Reset Transpose</span>
-            </button>
-            ${isAdmin ? `<button class="mobile-preview-more-item" id="mobilePreviewDeleteAction" type="button">
+            ${isAdmin ? `<button class="mobile-preview-more-item preview-delete-btn" id="mobilePreviewDeleteAction" type="button">
                 <i class="fas fa-trash-alt" aria-hidden="true"></i>
                 <span>Delete Song</span>
-            </button>` : ''}
-            ${typeof deps.getLoopPlayerHTML === 'function' ? `<button class="mobile-preview-more-item" id="mobilePreviewRhythmAction" type="button">
-                <i class="fas fa-drum" aria-hidden="true"></i>
-                <span>Rhythm / Loop</span>
             </button>` : ''}
         </div>
 
@@ -568,8 +553,8 @@
         </div>
 
         <div class="mobile-preview-setlist-context" id="mobilePreviewSetlistContext">
-            <span>Setlist · ${activeSetlistName || 'Active'}</span>
-            <strong>Active</strong>
+            <span>Setlist</span>
+            <strong>${activeSetlistName || 'Selected'}</strong>
         </div>
 
         ${song.updatedAt && song.updatedBy || song.createdBy && song.createdAt ? `
@@ -661,26 +646,14 @@
             document.getElementById('mobilePreviewMoreMenu')?.setAttribute('aria-hidden', String(!isOpen));
         });
 
-        document.getElementById('mobilePreviewInfoAction')?.addEventListener('click', () => {
-            document.getElementById('toggleMetaBtn')?.click();
-        });
-
         document.getElementById('mobilePreviewEditAction')?.addEventListener('click', () => {
             document.getElementById('previewEditBtn')?.click();
-        });
-
-        document.getElementById('mobilePreviewResetAction')?.addEventListener('click', () => {
-            document.getElementById('transposeReset')?.click();
         });
 
         document.getElementById('mobilePreviewDeleteAction')?.addEventListener('click', () => {
             document.getElementById('previewDeleteBtn')?.click();
         });
 
-        document.getElementById('mobilePreviewRhythmAction')?.addEventListener('click', () => {
-            const rhythmPanel = document.getElementById(`loopPlayerContainer-${song.id}`);
-            rhythmPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
 
         document.getElementById('previewEditBtn').addEventListener('click', () => {
             deps.editSong(song.id);

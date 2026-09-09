@@ -4760,6 +4760,193 @@ body.dark-mode #installAppBtn {
                 padding-bottom: calc(76px + env(safe-area-inset-bottom));
             }
 
+            /* Home is a compact dashboard on mobile; all actions remain the existing controls. */
+            body.mobile-modern-mode .sidebar-menu {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                padding: 12px 16px 8px;
+                overflow: visible;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > #userGreeting,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll),
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section {
+                grid-column: 1 / -1;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > #userGreeting {
+                display: block;
+                order: 1;
+                margin: 0 4px 2px;
+                color: var(--sidebar-text-color);
+                font-size: 0.82rem;
+                letter-spacing: 0.02em;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn {
+                order: 2;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > #logoutBtn {
+                order: 3;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) {
+                order: 4;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) {
+                order: 5;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites),
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) {
+                min-width: 0;
+                margin: 0;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) {
+                order: 6;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section {
+                order: 7;
+                margin: 6px 0 0;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section::before {
+                display: block;
+                margin: 0 4px 5px;
+                color: var(--secondary-text-color, #777966);
+                content: 'SETLISTS';
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn,
+            body.mobile-modern-mode .sidebar-menu > #logoutBtn {
+                min-height: 58px;
+                margin: 0;
+                padding: 9px 12px;
+                border-radius: 9px;
+                font-size: 0.78rem;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button {
+                justify-content: flex-start;
+                box-sizing: border-box;
+                white-space: nowrap;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button i {
+                width: 22px;
+                margin-right: 2px;
+                text-align: center;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i {
+                color: #cf4661;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button {
+                gap: 8px;
+                margin-top: 0 !important;
+                background: var(--sidebar-item-bg);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a {
+                min-height: 74px;
+                justify-content: flex-start;
+                padding: 12px 16px;
+                border-radius: 13px;
+                background: var(--primary-color, #3e3f29);
+                color: var(--form-bg, #f7f3e8);
+                font-size: 1rem;
+                font-weight: 800;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a::after {
+                margin-left: auto;
+                content: '→';
+                opacity: 0.75;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlists-container {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 7px;
+                margin: 0;
+                padding: 10px;
+                border: 1px solid var(--song-item-border);
+                border-radius: 10px;
+                background: var(--sidebar-item-bg);
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-selector,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder {
+                grid-column: 1 / -1;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder {
+                margin: 0;
+                padding: 0;
+                border: 0;
+                background: transparent;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header {
+                min-height: 48px;
+                padding: 9px 10px;
+                border-radius: 9px;
+                font-size: 0.78rem;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder-content,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-description-container {
+                grid-column: 1 / -1;
+            }
+
+            body.mobile-modern-mode .sidebar-footer {
+                display: block;
+                padding: 6px 16px 12px;
+            }
+
+            body.mobile-modern-mode .sidebar-footer .song-count {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+                margin: 0;
+                padding: 10px 8px;
+                font-size: 0.72rem;
+            }
+
+            body.mobile-modern-mode #settingsBtn {
+                display: flex;
+                box-sizing: border-box;
+                width: calc(100% - 32px);
+                min-height: 58px;
+                align-items: center;
+                margin: 0 16px 12px;
+                padding: 9px 12px;
+                border: 1px solid var(--song-item-border);
+                border-radius: 9px;
+                background: var(--sidebar-item-bg);
+                color: var(--sidebar-text-color);
+                font: inherit;
+                font-size: 0.78rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
             body.mobile-modern-mode .sidebar,
             body.mobile-modern-mode .songs-section,
             body.mobile-modern-mode .preview-section {
@@ -4992,8 +5179,8 @@ body.dark-mode #installAppBtn {
                 display: flex;
                 margin: 10px 0;
                 padding: 8px 10px;
-                gap: 2px;
-                flex-direction: column;
+                align-items: center;
+                gap: 6px;
                 border-left: 3px solid var(--accent-color, #bca88d);
                 background: rgba(188, 168, 141, 0.16);
                 color: var(--primary-color, #3e3f29);
