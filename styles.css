@@ -1567,17 +1567,12 @@
         }
 
         @media (min-width: 769px) {
-            :root {
-                --sidebar-width: 20vw !important;
-                --songs-panel-width: 20vw !important;
-            }
-
             .sidebar {
-                width: 20vw;
+                width: var(--sidebar-width);
             }
 
             .songs-section {
-                width: 20vw;
+                width: var(--songs-panel-width);
             }
 
             .sidebar-header {
@@ -4853,10 +4848,6 @@ body.dark-mode #installAppBtn {
         }
 
         @media (max-width: 768px) {
-            :root {
-                --sidebar-width: 60vw !important;
-                --songs-panel-width: 60vw !important;
-            }
 
             body.mobile-modern-mode {
                 --mobile-bottom-nav-height: 65px;

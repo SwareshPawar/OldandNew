@@ -157,6 +157,10 @@
         const sidebar = document.querySelector('.sidebar');
         const songsSection = document.querySelector('.songs-section');
 
+        // Nav item clicks stop propagation, so the document-level "click outside"
+        // closer for the suggested songs drawer never fires. Close it explicitly.
+        window.closeSuggestedSongsDrawer?.();
+
         navItems.forEach((item) => {
             const isActive = item.dataset.mobileDestination === destination;
             item.classList.toggle('active', isActive);

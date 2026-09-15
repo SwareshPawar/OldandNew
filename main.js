@@ -7182,8 +7182,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             let sidebarWidth = localStorage.getItem("sidebarWidth");
             let songsPanelWidth = localStorage.getItem("songsPanelWidth");
             if (!sidebarWidth || !songsPanelWidth) {
-                sidebarWidth = "70";
-                songsPanelWidth = "70";
+                const defaultWidth = window.innerWidth <= 768 ? "70" : "20";
+                sidebarWidth = defaultWidth;
+                songsPanelWidth = defaultWidth;
             }
             const previewMargin = localStorage.getItem("previewMargin") || "10";
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
