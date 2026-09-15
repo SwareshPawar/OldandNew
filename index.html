@@ -138,7 +138,7 @@
                 <div id="userGreeting" style="display:none;font-weight:bold;margin-bottom:8px;"></div>
                 <button id="logoutBtn" class="sidebar-btn btn-login" style="display:none;" title="Sign out from your account" aria-label="Logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 <button id="adminPanelBtn" class="sidebar-btn" style="display:none;" title="Admin Panel - Manage users, recommendation weights, and detect duplicates" aria-label="Admin Panel"><i class="fas fa-cogs"></i> Admin Panel</button>
-                <li><a href="#" class="active" id="showAll" title="View all songs in the database - Browse New and Old categories">All Songs</a></li>
+                <li><a href="#" class="active" id="showAll" title="View all songs in the database - Browse New and Old categories"><i class="fas fa-music" aria-hidden="true"></i> All Songs</a></li>
                 <li><a href="#" id="showFavorites" title="View your favorite songs - Heart icon to add/remove favorites"><i class="fas fa-heart" aria-hidden="true"></i> Favorites</a></li>
                 
                 <!-- Setlists Section -->
@@ -1394,6 +1394,10 @@
             <span>Metronome</span>
         </a>
     </div>
+    <button class="mobile-suggested-toggle" id="mobileSuggestedSongsToggle" type="button" aria-label="Open Suggested Songs" aria-expanded="false" hidden>
+        <i class="fas fa-chevron-up" aria-hidden="true"></i>
+        <span>Suggested Songs</span>
+    </button>
     <!-- Suggested Songs Drawer -->
 <div class="suggested-songs-drawer" id="suggestedSongsDrawer">
     <div class="suggested-songs-header">
@@ -1402,9 +1406,5 @@
     </div>
     <div id="suggestedSongsContent"></div>
 </div>
-
-<button class="toggle-suggested-songs" id="toggleSuggestedSongs" title="Recommended Songs - View AI-powered song recommendations based on current selection" aria-label="Toggle Suggested Songs">
-    <i class="fa fa-random"></i>
-</button>
 </body>
 </html>

@@ -4761,64 +4761,323 @@ body.dark-mode #installAppBtn {
             }
 
             /* Home is a compact dashboard on mobile; all actions remain the existing controls. */
-            body.mobile-modern-mode .sidebar-menu {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 8px;
-                padding: 12px 16px 8px;
-                overflow: visible;
+            body.mobile-modern-mode .sidebar {
+                width: min(88vw, 410px);
+                max-width: 100vw;
+                left: 0;
+                background: var(--sidebar-item-bg);
+                border-right: 1px solid rgba(62, 63, 41, 0.12);
+                box-shadow: 0 10px 28px rgba(62, 63, 41, 0.12);
             }
 
-            body.mobile-modern-mode .sidebar-menu > #userGreeting,
-            body.mobile-modern-mode .sidebar-menu > li:has(#showAll),
-            body.mobile-modern-mode .sidebar-menu > li.setlists-section {
-                grid-column: 1 / -1;
+            body.mobile-modern-mode .sidebar.hidden {
+                transform: translateX(-105%);
+            }
+
+            body.mobile-modern-mode .sidebar.mobile-home-drawer-open {
+                transform: translateX(0);
+                z-index: 2200;
+                width: min(88vw, 410px);
+                box-shadow: 8px 0 28px rgba(62, 63, 41, 0.15);
+            }
+
+            body.mobile-modern-mode .sidebar-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 12px 14px;
+                min-height: 64px;
+                background: var(--sidebar-item-bg);
+                border-bottom: 1px solid rgba(62, 63, 41, 0.12);
+                color: var(--sidebar-text-color);
+            }
+
+            body.mobile-modern-mode .sidebar-header h2 {
+                display: block;
+                margin: 0;
+                font-size: 1.08rem;
+                line-height: 1.2;
+                font-weight: 700;
+                letter-spacing: 0.01em;
+                color: var(--sidebar-text-color);
+            }
+
+            body.mobile-modern-mode .mobile-home-close {
+                position: static;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: transparent;
+                color: var(--sidebar-text-color);
+                border: 1px solid rgba(62, 63, 41, 0.18);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            body.mobile-modern-mode .sidebar-menu {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 10px 12px 8px;
+                overflow: visible;
+                margin: 0;
             }
 
             body.mobile-modern-mode .sidebar-menu > #userGreeting {
-                display: block;
-                order: 1;
-                margin: 0 4px 2px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                order: 0;
+                margin: 0 0 6px;
+                padding: 8px 6px 10px;
                 color: var(--sidebar-text-color);
-                font-size: 0.82rem;
-                letter-spacing: 0.02em;
+                font-size: 1rem;
+                font-weight: 700;
+                line-height: 1.3;
+                border-bottom: 1px solid rgba(62, 63, 41, 0.12);
             }
 
-            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn {
+            body.mobile-modern-mode .sidebar-menu > #userGreeting::before {
+                content: "SP";
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: var(--sidebar-item-hover-bg);
+                color: var(--sidebar-text-hover);
+                font-size: 0.7rem;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                flex-shrink: 0;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > #userGreeting span,
+            body.mobile-modern-mode .sidebar-menu > #userGreeting small,
+            body.mobile-modern-mode .sidebar-menu > #userGreeting .small-text {
+                display: block;
+                color: var(--secondary-text-color, #7D8D86);
+                font-size: 0.72rem;
+                font-weight: 500;
+                line-height: 1.25;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn,
+            body.mobile-modern-mode .sidebar-menu > #logoutBtn,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header,
+            body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section .sidebar-tool-link,
+            body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section .sidebar-tools-links a {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                min-height: 42px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                border: 1px solid rgba(62, 63, 41, 0.12);
+                background: var(--sidebar-item-bg);
+                color: var(--sidebar-text-color);
+                font-size: 0.78rem;
+                font-weight: 600;
+                box-shadow: none;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn,
+            body.mobile-modern-mode .sidebar-menu > #logoutBtn {
                 order: 2;
+                min-height: 40px;
+                padding: 9px 12px;
             }
 
             body.mobile-modern-mode .sidebar-menu > #logoutBtn {
                 order: 3;
             }
 
-            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) {
-                order: 4;
-            }
-
-            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) {
-                order: 5;
-            }
-
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll),
             body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites),
-            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) {
-                min-width: 0;
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn),
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section,
+            body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section {
                 margin: 0;
+                padding: 0;
             }
 
-            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) {
-                order: 6;
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll)::before,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section::before,
+            body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section::before {
+                display: block;
+                margin: 0 0 4px 2px;
+                color: var(--secondary-text-color, #7D8D86);
+                font-size: 0.66rem;
+                font-weight: 800;
+                letter-spacing: 0.08em;
             }
 
-            body.mobile-modern-mode .sidebar-menu > li.setlists-section {
-                order: 7;
-                margin: 6px 0 0;
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll)::before { content: "SONGS"; }
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section::before { content: "SETLISTS"; }
+            body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section::before { content: "TOOLS"; }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a {
+                background: var(--sidebar-item-hover-bg);
+                border-color: rgba(62, 63, 41, 0.18);
+                color: var(--sidebar-text-hover);
+                font-weight: 700;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a::after,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a::after {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 24px;
+                padding: 2px 6px;
+                border-radius: 999px;
+                font-size: 0.66rem;
+                font-weight: 700;
+                line-height: 1.1;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a::after {
+                content: "402";
+                background: rgba(62, 63, 41, 0.08);
+                color: var(--sidebar-text-hover);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a::after {
+                content: "13";
+                background: rgba(62, 63, 41, 0.08);
+                color: var(--sidebar-text-color);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a i,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button i,
+            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn i,
+            body.mobile-modern-mode .sidebar-menu > #logoutBtn i {
+                width: 16px;
+                font-size: 0.95rem;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i {
+                color: var(--favorite-color, #ff0000);
+                background: color-mix(in srgb, var(--favorite-color, #ff0000) 12%, var(--sidebar-item-bg));
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlists-container,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder {
+                display: block;
+                margin: 0;
+                padding: 0;
+                border: 0;
+                background: transparent;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 38px;
+                padding: 9px 10px;
+                border-radius: 10px;
+                border: 1px solid rgba(62, 63, 41, 0.12);
+                background: var(--sidebar-item-bg);
+                color: var(--sidebar-text-color);
+                font-size: 0.76rem;
+                font-weight: 600;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header i,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header span {
+                color: var(--sidebar-text-color);
             }
 
             body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section {
-                order: 8;
-                grid-column: 1 / -1;
-                margin: 6px 0 0;
+                margin-top: 2px;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section .sidebar-tools-links {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                margin: 0;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.sidebar-tools-section .sidebar-tool-link {
+                justify-content: center;
+                min-height: 42px;
+                padding: 0 12px;
+                text-align: center;
+                font-size: 0.72rem;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button {
+                justify-content: center;
+                font-size: 0.82rem;
+            }
+
+            body.mobile-modern-mode .sidebar-footer {
+                display: block;
+                padding: 8px 12px 12px;
+            }
+
+            body.mobile-modern-mode .sidebar-footer .song-count {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px;
+                margin: 0;
+                padding: 10px 6px;
+                font-size: 0.7rem;
+                color: var(--sidebar-text-color);
+                border: 1px solid rgba(62, 63, 41, 0.12);
+                border-radius: 10px;
+                background: var(--sidebar-item-bg);
+            }
+
+            body.mobile-modern-mode .theme-toggle {
+                margin-top: 8px;
+                border-radius: 10px;
+            }
+
+            body.mobile-modern-mode #settingsBtn {
+                display: flex;
+                width: 100%;
+                min-height: 42px;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 12px;
+                border: 1px solid rgba(62, 63, 41, 0.12);
+                border-radius: 10px;
+                background: var(--sidebar-item-bg);
+                font-size: 0.74rem;
+                color: var(--sidebar-text-color);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a::before,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a::before,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button::before,
+            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn::before,
+            body.mobile-modern-mode .sidebar-menu > #logoutBtn::before {
+                display: none;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a.active,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a.active,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a:hover,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a:hover,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button:hover,
+            body.mobile-modern-mode .sidebar-menu > #adminPanelBtn:hover,
+            body.mobile-modern-mode .sidebar-menu > #logoutBtn:hover {
+                background: rgba(62, 63, 41, 0.06);
+                border-color: rgba(62, 63, 41, 0.18);
+                transform: none;
+                box-shadow: none;
             }
 
             body.mobile-modern-mode .sidebar-tools-links {
@@ -4969,6 +5228,290 @@ body.dark-mode #installAppBtn {
                 font-size: 0.78rem;
                 font-weight: 600;
                 cursor: pointer;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a {
+                justify-content: flex-start;
+                min-height: 42px;
+                padding: 8px 10px;
+                border-radius: 9px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-align: left;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a {
+                background: var(--sidebar-item-hover-bg);
+                color: var(--sidebar-text-hover);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a i,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header > i:nth-of-type(2),
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button i,
+            body.mobile-modern-mode #adminPanelBtn i,
+            body.mobile-modern-mode #settingsBtn i,
+            body.mobile-modern-mode #logoutBtn i {
+                display: inline-flex;
+                width: 30px;
+                height: 30px;
+                align-items: center;
+                justify-content: center;
+                margin: 0 10px 0 0;
+                border-radius: 7px;
+                background: rgba(62, 63, 41, 0.08);
+                color: var(--primary-color);
+                flex: 0 0 30px;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i {
+                color: var(--favorite-color, #ff0000);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a {
+                border: 0;
+                background: transparent;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a::after,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a::after {
+                margin-left: auto;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a::after {
+                content: "13";
+                min-width: 24px;
+                padding: 2px 6px;
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--favorite-color, #ff0000) 12%, var(--sidebar-item-bg));
+                color: var(--favorite-color, #ff0000);
+                font-size: 0.66rem;
+                text-align: center;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlists-container {
+                gap: 9px;
+                margin: 0;
+                padding: 6px 0;
+                border: 1px solid var(--song-item-border);
+                border-radius: 10px;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-selector,
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder {
+                margin: 0;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header {
+                justify-content: flex-start;
+                min-height: 42px;
+                padding: 6px 10px;
+                border: 0;
+                background: transparent;
+                color: var(--sidebar-text-color);
+                font-size: 0.78rem;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header .folder-icon {
+                order: 3;
+                margin-left: auto;
+                color: var(--primary-color);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header > i:nth-of-type(2) {
+                order: 1;
+                margin-right: 10px;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder:nth-child(3) .folder-header > i:nth-of-type(2) {
+                color: var(--info-color);
+                background: color-mix(in srgb, var(--info-color) 12%, var(--sidebar-item-bg));
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder:nth-child(4) .folder-header > i:nth-of-type(2) {
+                color: var(--accent-color);
+                background: color-mix(in srgb, var(--accent-color) 22%, var(--sidebar-item-bg));
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder:nth-child(5) .folder-header > i:nth-of-type(2) {
+                color: var(--success-color);
+                background: color-mix(in srgb, var(--success-color) 12%, var(--sidebar-item-bg));
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header span {
+                order: 2;
+                color: var(--sidebar-text-color);
+                font-weight: 700;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i {
+                color: var(--favorite-color, #ff0000) !important;
+                background: rgba(255, 0, 0, 0.12);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a::after {
+                color: var(--favorite-color, #ff0000) !important;
+                background: rgba(255, 0, 0, 0.12);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder:nth-child(3) .folder-header > i:nth-of-type(2) {
+                color: var(--info-color) !important;
+                background: rgba(102, 126, 234, 0.12);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder:nth-child(4) .folder-header > i:nth-of-type(2) {
+                color: var(--accent-color) !important;
+                background: rgba(197, 177, 148, 0.22);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .setlist-folder:nth-child(5) .folder-header > i:nth-of-type(2) {
+                color: var(--success-color) !important;
+                background: rgba(40, 167, 69, 0.12);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.mobile-modern-mode #adminPanelBtn,
+            body.mobile-modern-mode #settingsBtn,
+            body.mobile-modern-mode #logoutBtn {
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button i,
+            body.mobile-modern-mode #adminPanelBtn i,
+            body.mobile-modern-mode #settingsBtn i,
+            body.mobile-modern-mode #logoutBtn i {
+                margin-right: 10px;
+            }
+
+            body.mobile-modern-mode #settingsBtn {
+                min-height: 42px;
+                margin: 0 12px 8px;
+                width: calc(100% - 24px);
+                padding: 6px 10px;
+            }
+
+            body.mobile-modern-mode .sidebar-footer .song-count {
+                min-height: 82px;
+                align-items: center;
+                border-radius: 9px;
+                background: var(--sidebar-item-bg);
+            }
+
+            body.mobile-modern-mode .sidebar-footer .song-count > div {
+                display: flex;
+                min-height: 58px;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                gap: 3px;
+                border-right: 1px solid rgba(62, 63, 41, 0.12);
+                text-align: center;
+            }
+
+            body.mobile-modern-mode .sidebar-footer .song-count > div:last-child {
+                border-right: 0;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a,
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a,
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.mobile-modern-mode #adminPanelBtn,
+            body.mobile-modern-mode #logoutBtn,
+            body.mobile-modern-mode #settingsBtn,
+            body.mobile-modern-mode .theme-toggle,
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header {
+                box-sizing: border-box;
+                border: 1px solid var(--song-item-border);
+                background-color: var(--sidebar-item-bg);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showAll) a {
+                border-color: var(--sidebar-item-hover-bg);
+                background-color: var(--sidebar-item-hover-bg);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a {
+                min-height: 42px;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header {
+                margin-bottom: 2px;
+                min-height: 42px;
+                border-radius: 9px;
+                box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.mobile-modern-mode #adminPanelBtn,
+            body.mobile-modern-mode #logoutBtn,
+            body.mobile-modern-mode #settingsBtn,
+            body.mobile-modern-mode .theme-toggle {
+                min-height: 42px;
+            }
+
+            body.dark-mode.mobile-modern-mode .sidebar-header {
+                border-bottom-color: var(--sidebar-item-hover-bg);
+            }
+
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#showAll) a,
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a,
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.dark-mode.mobile-modern-mode #adminPanelBtn,
+            body.dark-mode.mobile-modern-mode #logoutBtn,
+            body.dark-mode.mobile-modern-mode #settingsBtn,
+            body.dark-mode.mobile-modern-mode .theme-toggle,
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li.setlists-section .folder-header {
+                border: 1px solid var(--sidebar-item-hover-bg);
+                background-color: var(--sidebar-item-bg);
+                color: var(--sidebar-text-color);
+            }
+
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#showAll) a {
+                background-color: var(--sidebar-item-hover-bg);
+                color: var(--sidebar-text-hover);
+            }
+
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i,
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#showAll) a i,
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button i,
+            body.dark-mode.mobile-modern-mode #adminPanelBtn i,
+            body.dark-mode.mobile-modern-mode #settingsBtn i,
+            body.dark-mode.mobile-modern-mode #logoutBtn i {
+                background-color: var(--sidebar-item-hover-bg);
+                border: 1px solid var(--sidebar-item-hover-bg);
+            }
+
+            body.dark-mode.mobile-modern-mode .sidebar-menu > li:has(#showFavorites) a i {
+                background-color: rgba(255, 0, 0, 0.2);
+                border-color: var(--favorite-color);
+            }
+
+            body.dark-mode.mobile-modern-mode .sidebar-footer .song-count {
+                border: 1px solid var(--sidebar-item-hover-bg);
+            }
+
+            body.dark-mode.mobile-modern-mode .sidebar-footer .song-count > div {
+                border-right-color: var(--sidebar-item-hover-bg);
+            }
+
+            body.mobile-modern-mode:not(.dark-mode) .sidebar-menu > li:has(#showAll) a,
+            body.mobile-modern-mode:not(.dark-mode) .sidebar-menu > li:has(#showFavorites) a,
+            body.mobile-modern-mode:not(.dark-mode) .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.mobile-modern-mode:not(.dark-mode) #adminPanelBtn,
+            body.mobile-modern-mode:not(.dark-mode) #logoutBtn,
+            body.mobile-modern-mode:not(.dark-mode) #settingsBtn,
+            body.mobile-modern-mode:not(.dark-mode) .theme-toggle,
+            body.mobile-modern-mode:not(.dark-mode) .sidebar-menu > li.setlists-section .folder-header {
+                border-color: var(--song-item-border) !important;
+            }
+
+            body.mobile-modern-mode:not(.dark-mode) .sidebar-menu > li:has(#showAll) a {
+                border-color: var(--sidebar-item-hover-bg) !important;
             }
 
             body.mobile-modern-mode .sidebar,
@@ -5224,8 +5767,7 @@ body.dark-mode #installAppBtn {
 
             body.mobile-modern-mode .preview-section .auto-scroll-controls,
             body.mobile-modern-mode .preview-section .toggle-suggested-songs,
-            body.mobile-modern-mode .preview-section .mobile-preview-setlist-context,
-            body.mobile-modern-mode .preview-section .mobile-preview-recommendations {
+            body.mobile-modern-mode .preview-section .mobile-preview-setlist-context {
                 display: flex;
             }
 
@@ -5236,16 +5778,18 @@ body.dark-mode #installAppBtn {
 
             body.mobile-modern-mode .suggested-songs-drawer {
                 top: auto;
-                bottom: 0;
-                right: 0;
-                left: 0;
+                bottom: calc(var(--mobile-bottom-nav-height) + 34px + env(safe-area-inset-bottom));
+                right: 6px;
+                left: 6px;
                 width: auto;
-                height: min(78vh, 640px);
-                padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+                height: min(68vh, 520px);
+                padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
                 border-radius: 16px 16px 0 0;
-                background: var(--sidebar-bg, #f7f3e8);
+                background: var(--sidebar-item-bg);
                 color: var(--primary-color, #3e3f29);
-                box-shadow: 0 -8px 28px rgba(62, 63, 41, 0.22);
+                border: 2px solid var(--song-item-border);
+                box-shadow: 0 -8px 28px rgba(62, 63, 41, 0.3);
+                overflow-y: auto;
                 transition: transform 0.3s ease;
                 transform: translateY(100%);
                 z-index: 2200;
@@ -5264,7 +5808,12 @@ body.dark-mode #installAppBtn {
             }
 
             body.mobile-modern-mode .suggested-songs-header {
-                border-bottom-color: rgba(62, 63, 41, 0.18);
+                min-height: 36px;
+                margin: -10px -10px 10px;
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--song-item-border);
+                border-radius: 14px 14px 0 0;
+                background: var(--sidebar-item-hover-bg);
             }
 
             body.mobile-modern-mode .suggested-songs-header h3 {
@@ -5277,18 +5826,41 @@ body.dark-mode #installAppBtn {
 
             body.mobile-modern-mode .suggested-song-item {
                 padding: 12px;
-                min-height: 44px;
+                min-height: 54px;
+                margin: 0;
+                border: 1px solid var(--song-item-border);
+                border-radius: 9px;
+                background: var(--song-item-bg);
+                box-shadow: 0 2px 6px rgba(62, 63, 41, 0.12);
                 touch-action: manipulation;
             }
 
+            body.mobile-modern-mode #suggestedSongsContent {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
             body.dark-mode.mobile-modern-mode .suggested-songs-drawer {
-                background: var(--sidebar-bg, #23231a);
+                background: var(--sidebar-item-bg);
                 color: var(--text-color, #ece6d6);
+                border-color: var(--sidebar-item-hover-bg);
             }
 
             body.dark-mode.mobile-modern-mode .suggested-songs-header h3,
             body.dark-mode.mobile-modern-mode .close-suggested-songs {
                 color: var(--text-color, #ece6d6);
+            }
+
+            body.dark-mode.mobile-modern-mode .suggested-songs-header {
+                background: var(--sidebar-item-hover-bg);
+                border-bottom-color: var(--sidebar-item-hover-bg);
+            }
+
+            body.dark-mode.mobile-modern-mode .suggested-song-item {
+                background: var(--song-item-bg);
+                border-color: var(--sidebar-item-hover-bg);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
             }
 
             body.mobile-modern-mode .song-preview-header {
@@ -5308,7 +5880,6 @@ body.dark-mode #installAppBtn {
                 white-space: nowrap;
             }
 
-            body.mobile-modern-mode .mobile-preview-recommendations,
             body.mobile-modern-mode .song-preview-header .favorite-btn {
                 width: 38px;
                 min-width: 38px;
@@ -5323,12 +5894,49 @@ body.dark-mode #installAppBtn {
                 cursor: pointer;
             }
 
-            body.mobile-modern-mode .mobile-preview-recommendations {
+            body.mobile-modern-mode .song-preview-header .favorite-btn {
                 order: 2;
+                display: inline-flex !important;
+                visibility: visible;
+                opacity: 1;
+                color: var(--favorite-color, #ff0000);
             }
 
-            body.mobile-modern-mode .song-preview-header .favorite-btn {
-                order: 3;
+            body.mobile-modern-mode .mobile-suggested-toggle {
+                position: fixed;
+                right: 8px;
+                left: 8px;
+                bottom: calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 2px);
+                z-index: 2210;
+                display: inline-flex;
+                min-height: 32px;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 5px 12px;
+                border: 1px solid var(--song-item-border);
+                border-radius: 8px 8px 0 0;
+                background: var(--sidebar-item-bg);
+                color: var(--sidebar-text-color);
+                box-shadow: 0 -2px 8px rgba(62, 63, 41, 0.12);
+                font: inherit;
+                font-size: 0.7rem;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
+            body.mobile-modern-mode .mobile-suggested-toggle[hidden] {
+                display: none;
+            }
+
+            body.mobile-modern-mode .mobile-suggested-toggle i {
+                font-size: 0.72rem;
+            }
+
+            body.dark-mode.mobile-modern-mode .mobile-suggested-toggle {
+                border-color: var(--sidebar-item-hover-bg);
+                background: var(--sidebar-item-bg);
+                color: var(--sidebar-text-color);
             }
 
             body.mobile-modern-mode .song-preview-header .favorite-btn.favorited {

@@ -7,13 +7,12 @@
         if (document.body.dataset.suggestedSongsClosingBound === 'true') return;
         document.body.dataset.suggestedSongsClosingBound = 'true';
 
-        const toggleBtn = document.getElementById('toggleSuggestedSongs');
         const closeBtn = document.getElementById('closeSuggestedSongs');
 
         document.addEventListener('click', (event) => {
             if (deps.getSuggestedSongsDrawerOpen() &&
                 !event.target.closest('#suggestedSongsDrawer') &&
-                event.target !== toggleBtn) {
+                !event.target.closest('#mobileSuggestedSongsToggle')) {
                 deps.closeSuggestedSongsDrawer();
             }
         });

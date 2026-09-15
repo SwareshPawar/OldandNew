@@ -358,6 +358,8 @@
         }
 
         songPreviewEl.innerHTML = '';
+        window.closeSuggestedSongsDrawer?.();
+        document.getElementById('mobileSuggestedSongsToggle')?.removeAttribute('hidden');
         songPreviewEl.dataset.songId = song.id;
         songPreviewEl.dataset.originalLyrics = song.lyrics || song.editSongLyrics || song.content || song.text || '';
         songPreviewEl.dataset.originalKey = deps.normalizeKeySignature(song.key);
@@ -435,9 +437,6 @@
     <div class="song-slide">
         <div class="song-preview-header">
             <h2 class="song-preview-title">${song.title}</h2>
-            <button class="mobile-preview-recommendations" id="mobilePreviewRecommendations" type="button" aria-label="Suggested songs" title="Suggested songs">
-                <i class="fas fa-random" aria-hidden="true"></i>
-            </button>
             <button class="favorite-btn${isFavorite ? ' favorited' : ''}" id="previewFavoriteBtn" data-song-id="${song.id}" title="${isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}">
                 <i class="fas fa-heart"></i>
             </button>
@@ -619,14 +618,6 @@
         document.getElementById('mobilePreviewFloatingAuto').addEventListener('click', () => {
             document.getElementById('toggleAutoScroll')?.click();
         });
-
-        document.getElementById('mobilePreviewRecommendations').addEventListener('click', (event) => {
-            // Stop the original click from bubbling to document, which would otherwise
-            // immediately re-close the drawer via the existing outside-click handler.
-            event.stopPropagation();
-            document.getElementById('toggleSuggestedSongs')?.click();
-        });
-
 
         document.getElementById('previewEditBtn').addEventListener('click', () => {
             deps.editSong(song.id);

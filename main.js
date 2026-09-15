@@ -6969,13 +6969,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         function setupSuggestedSongsClosing() {
             if (window.DOMHelpers) return window.DOMHelpers.setupSuggestedSongsClosing(getDomDeps());
             const drawer = document.getElementById('suggestedSongsDrawer');
-            const toggleBtn = document.getElementById('toggleSuggestedSongs');
             
             // Click outside to close
             document.addEventListener('click', (e) => {
                 if (suggestedSongsDrawerOpen && 
                     !e.target.closest('#suggestedSongsDrawer') && 
-                    e.target !== toggleBtn) {
+                    !e.target.closest('#mobileSuggestedSongsToggle')) {
                     closeSuggestedSongsDrawer();
                 }
             });
@@ -8302,32 +8301,43 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     
         function toggleSuggestedSongsDrawer() {
             const drawer = document.getElementById('suggestedSongsDrawer');
-            const toggleBtn = document.getElementById('toggleSuggestedSongs');
             
-            if (!drawer || !toggleBtn) {
+            if (!drawer) {
                 return;
             }
             
             if (suggestedSongsDrawerOpen) {
                 drawer.classList.remove('open');
-                toggleBtn.style.right = '20px';
             } else {
                 showSuggestedSongs();
                 drawer.classList.add('open');
-                toggleBtn.style.right = '370px';
             }
             
             suggestedSongsDrawerOpen = !suggestedSongsDrawerOpen;
+            updateSuggestedSongsToggle();
+        }
+
+        function updateSuggestedSongsToggle() {
+            const toggle = document.getElementById('mobileSuggestedSongsToggle');
+            if (!toggle) return;
+            const icon = toggle.querySelector('i');
+            const isOpen = suggestedSongsDrawerOpen;
+            if (icon) icon.className = isOpen ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.setAttribute('aria-label', isOpen ? 'Close Suggested Songs' : 'Open Suggested Songs');
         }
     
         function closeSuggestedSongsDrawer() {
             const drawer = document.getElementById('suggestedSongsDrawer');
-            const toggleBtn = document.getElementById('toggleSuggestedSongs');
             
+            if (!drawer) return;
             drawer.classList.remove('open');
-            toggleBtn.style.right = '20px';
             suggestedSongsDrawerOpen = false;
+            updateSuggestedSongsToggle();
         }
+
+        window.toggleSuggestedSongsDrawer = toggleSuggestedSongsDrawer;
+        window.closeSuggestedSongsDrawer = closeSuggestedSongsDrawer;
     
         function renderDeleteSongs() {
             deleteContent.innerHTML = '';
@@ -10404,7 +10414,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             // Settings
             const settingsBtn = document.createElement("button");
             settingsBtn.id = "settingsBtn";
-            settingsBtn.textContent = "🛠 Settings";
+            settingsBtn.innerHTML = '<i class="fas fa-tools" aria-hidden="true"></i> Settings';
             settingsBtn.className = "sidebar-settings-btn"; // Optional: for styling
 
             const sidebar = document.querySelector(".sidebar");
@@ -10435,7 +10445,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             });
     
             // Suggested songs
-            const suggestedSongsBtn = document.getElementById('toggleSuggestedSongs');
+            const suggestedSongsBtn = document.getElementById('mobileSuggestedSongsToggle');
             const suggestedSongsCloseBtn = document.getElementById('closeSuggestedSongs');
             
             if (suggestedSongsBtn) {
@@ -10447,11 +10457,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             }
             document.addEventListener('click', (e) => {
                 const drawer = document.getElementById('suggestedSongsDrawer');
-                const toggleBtn = document.getElementById('toggleSuggestedSongs');
+                const toggleBtn = document.getElementById('mobileSuggestedSongsToggle');
                 
                 if (suggestedSongsDrawerOpen && 
                     !e.target.closest('#suggestedSongsDrawer') && 
-                    e.target !== toggleBtn) {
+                    e.target !== toggleBtn && !e.target.closest('#mobileSuggestedSongsToggle')) {
                     closeSuggestedSongsDrawer();
                 }
             });
