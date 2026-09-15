@@ -1566,37 +1566,6 @@
             letter-spacing: 0.02em;
         }
 
-        .suggested-songs-content {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .toggle-suggested-songs {
-        position: fixed;
-        right: 20px;
-        top: 80px;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--accent-color);
-    color: var(--primary-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        z-index: 1250;
-        transition: all 0.3s;
-        border: none;
-    }
-
-        .toggle-suggested-songs:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        /* Desktop: Always show stationary toggle button at full opacity */
         @media (min-width: 769px) {
             :root {
                 --sidebar-width: 20vw !important;
@@ -1688,9 +1657,6 @@
                 border-radius: 9px;
             }
 
-            .toggle-suggested-songs {
-                opacity: 1 !important;
-            }
         }
 
 
@@ -4882,8 +4848,7 @@ body.dark-mode #installAppBtn {
         .mobile-catalog-toolbar,
         .mobile-selection-bar,
         .mobile-song-select-control,
-        .mobile-preview-setlist-context,
-        .mobile-preview-recommendations {
+        .mobile-preview-setlist-context {
             display: none;
         }
 
@@ -5954,13 +5919,11 @@ body.dark-mode #installAppBtn {
             }
 
             body.mobile-modern-mode .preview-section .auto-scroll-controls,
-            body.mobile-modern-mode .preview-section .toggle-suggested-songs,
             body.mobile-modern-mode .preview-section .mobile-preview-setlist-context {
                 display: flex;
             }
 
-            body.mobile-modern-mode .preview-section .auto-scroll-controls,
-            body.mobile-modern-mode .toggle-suggested-songs {
+            body.mobile-modern-mode .preview-section .auto-scroll-controls {
                 display: none;
             }
 
@@ -6222,7 +6185,6 @@ body.dark-mode #installAppBtn {
                 color: var(--btn-text-light) !important;
             }
 
-            body.dark-mode.mobile-modern-mode .mobile-preview-recommendations,
             body.dark-mode.mobile-modern-mode .song-preview-header .favorite-btn,
             body.dark-mode.mobile-modern-mode .mobile-preview-setlist-context {
                 color: var(--text-color, #ece6d6);
@@ -7608,11 +7570,6 @@ body.dark-mode #installAppBtn {
         padding: 8px;
     }
     
-    .toggle-suggested-songs {
-        right: 10px;
-        bottom: 180px;
-    }
-    
     /* Individual toggle button positioning now handled by JavaScript */
 
     .sidebar {
@@ -8809,6 +8766,62 @@ body.mobile-modern-mode .suggested-song-item button.suggested-add-setlist-btn.ad
     background: var(--info-color) !important;
     background-image: none !important;
     border-color: var(--info-color) !important;
+}
+
+.song-preview-header > #previewFavoriteBtn {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    padding: 0;
+    border: 2px solid var(--favorite-color) !important;
+    border-radius: 50%;
+    background: var(--sidebar-item-bg) !important;
+    color: var(--favorite-color) !important;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.song-preview-header > #previewFavoriteBtn i {
+    color: var(--favorite-color) !important;
+    font-size: 1rem;
+}
+
+.song-preview-header > #previewFavoriteBtn.favorited {
+    background: rgba(255, 0, 0, 0.12) !important;
+}
+
+.song-preview-header {
+    display: flex !important;
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+    align-items: center;
+    gap: 10px;
+    box-sizing: border-box;
+}
+
+.song-preview-header > .song-preview-title {
+    display: block !important;
+    min-width: 0;
+    flex: 1 1 auto;
+    max-width: none;
+    overflow: visible !important;
+    color: var(--title-color) !important;
+    font-size: clamp(1rem, 4vw, 1.4rem);
+    line-height: 1.25;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+.song-preview-header > #previewFavoriteBtn {
+    flex: 0 0 38px;
 }
 
 .pads-pad-btn.unavailable {
