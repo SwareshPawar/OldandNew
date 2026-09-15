@@ -8189,6 +8189,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             }
 
             const suggestedSongs = getSuggestedSongs(currentSongId);
+            const selectedSetlistDropdown = document.getElementById('setlistDropdown');
+            const selectedSetlistId = selectedSetlistDropdown?.value || '';
             
             const suggestedSongsContent = document.getElementById('suggestedSongsContent');
             if (!suggestedSongsContent) {
@@ -8226,8 +8228,14 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 
                 const div = document.createElement('div');
                 div.className = 'suggested-song-item';
+                const isInSelectedSetlist = selectedSetlistId
+                    ? isSongInCurrentSetlist(song.id, selectedSetlistId)
+                    : false;
                 div.innerHTML = `
-                    <div class="suggested-song-title">${song.title}</div>
+                    <div class="suggested-song-card-header">
+                        <div class="suggested-song-title">${song.title}</div>
+                        ${selectedSetlistId ? `<button class="preview-action-btn preview-setlist-btn suggested-add-setlist-btn ${isInSelectedSetlist ? 'remove in-setlist' : 'add'}" type="button" title="${isInSelectedSetlist ? 'Remove from selected setlist' : 'Add to selected setlist'}" aria-label="${isInSelectedSetlist ? 'Remove from selected setlist' : 'Add to selected setlist'}"><i class="fas ${isInSelectedSetlist ? 'fa-check' : 'fa-plus'}" aria-hidden="true"></i></button>` : ''}
+                    </div>
                     <div class="suggested-song-meta">
                         Key: ${displayKey} | Tempo: ${song.tempo} | Time: ${song.time || song.timeSignature} | Taal: ${song.taal}
                     </div>
@@ -8236,6 +8244,20 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     </div>
                     <div class="suggested-song-match">Match Score: ${song.matchScore}%</div>
                 `;
+                const setlistButton = div.querySelector('.suggested-add-setlist-btn');
+                setlistButton?.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    checkSongInSetlistAndToggle(song.id, selectedSetlistId);
+                    const nowInSetlist = !setlistButton.classList.contains('in-setlist');
+                    setlistButton.classList.toggle('in-setlist', nowInSetlist);
+                    setlistButton.classList.toggle('add', !nowInSetlist);
+                    setlistButton.classList.toggle('remove', nowInSetlist);
+                    setlistButton.title = nowInSetlist ? 'Remove from selected setlist' : 'Add to selected setlist';
+                    setlistButton.setAttribute('aria-label', setlistButton.title);
+                    const icon = setlistButton.querySelector('i');
+                    if (icon) icon.className = `fas ${nowInSetlist ? 'fa-check' : 'fa-plus'}`;
+                });
                 // <div class="suggested-song-meta">
                 //         Language Match: ${song.languageScore}% |
                 //         ${song.scaleMatch ? '✓ Same Scale' : '✗ Different Scale'} |

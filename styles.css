@@ -1496,6 +1496,49 @@
             line-height: 1.2;
         }
 
+        .suggested-song-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .suggested-song-card-header .suggested-song-title {
+            padding-right: 36px;
+        }
+
+        .suggested-add-setlist-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+            display: inline-flex;
+            width: 28px;
+            height: 28px;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 28px;
+            padding: 0;
+            border: 1px solid var(--song-item-border);
+            border-radius: 7px;
+            background: var(--success-color);
+            color: var(--btn-text-light);
+            cursor: pointer;
+        }
+
+        .suggested-add-setlist-btn.in-setlist,
+        .suggested-add-setlist-btn.add,
+        .suggested-add-setlist-btn.remove {
+            border-color: var(--success-color);
+            background: var(--success-color);
+            color: var(--btn-text-light);
+        }
+
+        .suggested-add-setlist-btn:hover {
+            border-color: var(--accent-color);
+            background: var(--sidebar-item-hover-bg);
+        }
+
         .suggested-song-meta {
             font-size: 0.8rem;
             color: var(--song-meta-color);
@@ -1557,9 +1600,14 @@
         @media (min-width: 769px) {
             :root {
                 --sidebar-width: 20vw !important;
+                --songs-panel-width: 20vw !important;
             }
 
             .sidebar {
+                width: 20vw;
+            }
+
+            .songs-section {
                 width: 20vw;
             }
 
@@ -2336,9 +2384,9 @@ body.dark-mode #installAppBtn {
         }
 
         .add-setlist-btn {
-            background: var(--accent-color);
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
+            background: var(--info-color);
+            border: 1px solid var(--info-color);
+            color: var(--btn-text-light);
             cursor: pointer;
             padding: 6px 8px;
             border-radius: 6px;
@@ -2349,8 +2397,9 @@ body.dark-mode #installAppBtn {
 
         .add-setlist-btn:hover {
             opacity: 1;
-            background: var(--primary-color);
-            color: var(--accent-color);
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: var(--primary-color);
             transform: scale(1.05);
         }
 
@@ -4841,6 +4890,7 @@ body.dark-mode #installAppBtn {
         @media (max-width: 768px) {
             :root {
                 --sidebar-width: 60vw !important;
+                --songs-panel-width: 60vw !important;
             }
 
             body.mobile-modern-mode {
@@ -6148,6 +6198,28 @@ body.dark-mode #installAppBtn {
                 border-radius: 8px;
                 font-size: 0.74rem;
                 gap: 4px;
+            }
+
+            body.mobile-modern-mode .suggested-song-item .suggested-add-setlist-btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                width: 28px;
+                min-width: 28px;
+                height: 28px;
+                min-height: 28px;
+                padding: 0;
+                border-radius: 7px;
+                font-size: 0.78rem;
+                gap: 0;
+            }
+
+            body.mobile-modern-mode .suggested-song-item .suggested-add-setlist-btn.add,
+            body.mobile-modern-mode .suggested-song-item .suggested-add-setlist-btn.remove,
+            body.mobile-modern-mode .suggested-song-item .suggested-add-setlist-btn.in-setlist {
+                background: var(--success-color) !important;
+                border-color: var(--success-color) !important;
+                color: var(--btn-text-light) !important;
             }
 
             body.dark-mode.mobile-modern-mode .mobile-preview-recommendations,
@@ -8722,6 +8794,21 @@ body.dark-mode #installAppBtn {
 
 .pads-pad-btn.playing {
     border-color: var(--accent-color);
+}
+
+body.mobile-modern-mode .suggested-song-item button.suggested-add-setlist-btn.add,
+body.mobile-modern-mode .suggested-song-item button.suggested-add-setlist-btn.remove,
+body.mobile-modern-mode .suggested-song-item button.suggested-add-setlist-btn.in-setlist {
+    background: var(--success-color) !important;
+    background-image: none !important;
+    border: 1px solid var(--success-color) !important;
+    color: var(--btn-text-light) !important;
+}
+
+body.mobile-modern-mode .suggested-song-item button.suggested-add-setlist-btn.add {
+    background: var(--info-color) !important;
+    background-image: none !important;
+    border-color: var(--info-color) !important;
 }
 
 .pads-pad-btn.unavailable {
