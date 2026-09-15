@@ -1555,6 +1555,91 @@
 
         /* Desktop: Always show stationary toggle button at full opacity */
         @media (min-width: 769px) {
+            :root {
+                --sidebar-width: 20vw !important;
+            }
+
+            .sidebar {
+                width: 20vw;
+            }
+
+            .sidebar-header {
+                padding: 16px 14px 13px;
+                border-bottom-width: 2px;
+            }
+
+            .sidebar-menu {
+                gap: 8px;
+                padding: 8px;
+            }
+
+            .sidebar-menu a,
+            .sidebar-btn {
+                min-height: 42px;
+                padding: 9px 11px;
+                border-radius: 9px;
+            }
+
+            .sidebar-menu a i,
+            .sidebar-btn i {
+                width: 28px;
+                height: 28px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 7px;
+                background: rgba(62, 63, 41, 0.08);
+            }
+
+            .sidebar-menu > li:has(#showFavorites) a i {
+                color: var(--favorite-color);
+                background: rgba(255, 0, 0, 0.12);
+            }
+
+            .sidebar-menu > li.setlists-section .setlists-container {
+                display: grid;
+                gap: 8px;
+                padding: 6px 0;
+                border: 1px solid var(--song-item-border);
+                border-radius: 10px;
+                background: transparent;
+            }
+
+            .sidebar-menu > li.setlists-section .folder-header {
+                min-height: 42px;
+                margin: 0 4px;
+                padding: 7px 9px;
+                border: 1px solid var(--song-item-border);
+                border-radius: 9px;
+                background: var(--sidebar-item-bg);
+            }
+
+            .sidebar-menu > li.setlists-section .folder-header > i:nth-of-type(2) {
+                display: inline-flex;
+                width: 28px;
+                height: 28px;
+                align-items: center;
+                justify-content: center;
+                border-radius: 7px;
+                color: var(--info-color);
+                background: rgba(102, 126, 234, 0.12);
+            }
+
+            .sidebar-menu > li.setlists-section .setlist-folder:nth-child(4) .folder-header > i:nth-of-type(2) {
+                color: var(--accent-color);
+                background: rgba(197, 177, 148, 0.22);
+            }
+
+            .sidebar-menu > li.setlists-section .setlist-folder:nth-child(5) .folder-header > i:nth-of-type(2) {
+                color: var(--success-color);
+                background: rgba(40, 167, 69, 0.12);
+            }
+
+            .sidebar-footer .song-count {
+                border: 1px solid var(--song-item-border);
+                border-radius: 9px;
+            }
+
             .toggle-suggested-songs {
                 opacity: 1 !important;
             }
@@ -4754,6 +4839,10 @@ body.dark-mode #installAppBtn {
         }
 
         @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 60vw !important;
+            }
+
             body.mobile-modern-mode {
                 --mobile-bottom-nav-height: 65px;
                 --mobile-bottom-clearance: calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom) + 12px);
@@ -5512,6 +5601,55 @@ body.dark-mode #installAppBtn {
 
             body.mobile-modern-mode:not(.dark-mode) .sidebar-menu > li:has(#showAll) a {
                 border-color: var(--sidebar-item-hover-bg) !important;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button,
+            body.mobile-modern-mode #adminPanelBtn,
+            body.mobile-modern-mode #logoutBtn,
+            body.mobile-modern-mode #settingsBtn,
+            body.mobile-modern-mode .theme-toggle {
+                display: flex;
+                width: 100%;
+                align-items: center;
+                gap: 8px;
+                box-sizing: border-box;
+            }
+
+            body.mobile-modern-mode .sidebar-menu > li:has(#addSongBelowFavoritesBtn) button i {
+                color: var(--info-color);
+                background: rgba(102, 126, 234, 0.14);
+            }
+
+            body.mobile-modern-mode #adminPanelBtn i {
+                color: var(--success-color);
+                background: rgba(40, 167, 69, 0.14);
+            }
+
+            body.mobile-modern-mode #settingsBtn i {
+                color: var(--info-color);
+                background: rgba(102, 126, 234, 0.14);
+            }
+
+            body.mobile-modern-mode .theme-toggle i {
+                color: var(--warning-color);
+                background: rgba(243, 156, 18, 0.16);
+            }
+
+            body.mobile-modern-mode #logoutBtn {
+                color: var(--error-color) !important;
+                border-color: var(--error-color) !important;
+                background: rgba(231, 76, 60, 0.1) !important;
+                isolation: isolate;
+            }
+
+            body.mobile-modern-mode #logoutBtn i {
+                color: var(--error-color) !important;
+                background: rgba(231, 76, 60, 0.16) !important;
+                border-color: var(--error-color) !important;
+            }
+
+            body.dark-mode.mobile-modern-mode #logoutBtn {
+                background: rgba(231, 76, 60, 0.16) !important;
             }
 
             body.mobile-modern-mode .sidebar,
