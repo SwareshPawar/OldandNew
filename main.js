@@ -8178,8 +8178,18 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 };
             });
 
-            // Sort by priority
-            return scoredSongs.sort((a, b) => b.matchScore - a.matchScore).slice(0, 20);
+            // Sort by priority, then drop stale duplicate entries (same title from duplicate song records)
+            const seenTitles = new Set();
+            const uniqueScoredSongs = scoredSongs
+                .sort((a, b) => b.matchScore - a.matchScore)
+                .filter(song => {
+                    const titleKey = (song.title || '').trim().toLowerCase();
+                    if (!titleKey || seenTitles.has(titleKey)) return false;
+                    seenTitles.add(titleKey);
+                    return true;
+                });
+
+            return uniqueScoredSongs.slice(0, 20);
         }      
     
         function showSuggestedSongs() {

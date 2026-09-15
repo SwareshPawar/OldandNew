@@ -150,6 +150,27 @@
         }
     }
 
+    function updateSuggestedToggleVisibility() {
+        const toggle = document.getElementById('mobileSuggestedSongsToggle');
+        const drawer = document.getElementById('suggestedSongsDrawer');
+        const sidebar = document.querySelector('.sidebar');
+        const songsSection = document.querySelector('.songs-section');
+        const panelOpen = (sidebar && !sidebar.classList.contains('hidden')) ||
+            (songsSection && !songsSection.classList.contains('hidden'));
+
+        if (panelOpen) {
+            window.closeSuggestedSongsDrawer?.();
+            toggle?.setAttribute('hidden', '');
+            // Force the drawer fully out of the DOM flow so it can't peek behind the panel.
+            drawer?.setAttribute('hidden', '');
+        } else {
+            drawer?.removeAttribute('hidden');
+            if (document.getElementById('songPreview')?.dataset.songId) {
+                toggle?.removeAttribute('hidden');
+            }
+        }
+    }
+
     function activateMobileModernDestination(destination) {
         const navItems = document.querySelectorAll('[data-mobile-destination]');
         const currentItem = Array.from(navItems).find((item) => item.classList.contains('active'));
@@ -208,6 +229,7 @@
         }
 
         updatePositions();
+        updateSuggestedToggleVisibility();
     }
 
     function updateMobileSetlistDrawerTitle(deps) {
@@ -230,6 +252,7 @@
         document.querySelector('.songs-section')?.classList.remove('hidden');
         document.querySelector('.preview-section')?.classList.remove('full-width');
         updatePositions();
+        updateSuggestedToggleVisibility();
     }
 
     function closeMobileSetlistDrawer() {
@@ -259,6 +282,7 @@
         backdrop.classList.add('open');
         backdrop.setAttribute('aria-hidden', 'false');
         document.body.classList.add('mobile-home-open');
+        updateSuggestedToggleVisibility();
     }
 
     function closeMobileHomeDrawer() {
@@ -291,6 +315,7 @@
         document.body.classList.remove('mobile-home-open');
         delete document.body.dataset.mobileHomeState;
         updatePositions();
+        updateSuggestedToggleVisibility();
     }
 
     function getMobileSelectedSetlist() {
