@@ -2004,8 +2004,6 @@ async function performInitialization() {
     // Show loader immediately at 0%
     showLoading(0, 'Opening cached app...');
     console.log('🚀 Opening app from cache...');
-
-    window.MobileUI?.resetTransientPanelState?.();
     
     // Restore JWT and user state
     jwtToken = localStorage.getItem('jwtToken') || '';
