@@ -40,6 +40,10 @@
                 } else {
                     deps.updateAuthButtons();
 
+                    if (global.MobileUI && typeof global.MobileUI.initializeMobileUI === 'function') {
+                        global.MobileUI.initializeMobileUI(deps);
+                    }
+
                     if (deps.initializationState.isInitialized) {
                         await deps.loadUserData();
                         await deps.loadMySetlists();
@@ -116,6 +120,9 @@
         deps.clearSmartSetlists();
         deps.showNotification('Logged out');
         deps.updateAuthButtons();
+        if (global.MobileUI && typeof global.MobileUI.initializeMobileUI === 'function') {
+            global.MobileUI.initializeMobileUI(deps);
+        }
         global.setTimeout(() => { global.location.reload(); }, 500);
     }
 

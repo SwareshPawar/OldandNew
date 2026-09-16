@@ -249,6 +249,44 @@ Song Preview is the primary performance surface opened from Songs, not a fourth 
 - Service-worker caching behavior
 - Standalone admin pages
 
+### 2026-09-16 - Tool Tab Integration Plan
+
+**Status:** Proposed for review and future implementation.
+
+**Scope:**
+
+Add an in-app tab experience for Metronome, Pads & Tanpura, and Tune & Pitch without replacing the direct standalone tool pages.
+
+**High-level implementation path:**
+
+1. Remove the duplicate top-level API base declaration in `pads-tanpura.js` before any SPA tab work begins.
+2. Add the desktop Tools folder and the existing mobile More menu entry points in `index.html`.
+3. Embed each tool’s main content into hidden view sections inside the main app shell.
+4. Add a dedicated controller for showing and hiding tool views while preserving the current app panels.
+5. Use `history.pushState()` and `popstate` for browser back/forward behavior between tool views and app panels.
+6. Keep Metronome and Pads/Tanpura audio alive when the user navigates elsewhere in the app, while stopping Tuner microphone capture on leave.
+7. Validate there is no full reload, no visual flash, no duplicate listeners, and no dark-mode regression.
+
+**Decision record:**
+
+- Standalone tool pages remain fully functional and direct-linkable.
+- The SPA tool controller is an internal navigation enhancement used only when the user is already inside the app.
+- Audio behavior is treated as intentionally different by tool type: mic capture stops on leave, background playback remains active for Metronome and Pads/Tanpura.
+
+**Files expected to be involved:**
+
+- `index.html`
+- `main.js`
+- `metronome.js`
+- `pads-tanpura.js`
+- `tuner.js`
+- `scripts/features/mobile-ui.js`
+- new tool-view controller file under `scripts/features/`
+
+**Review checkpoint:**
+
+Revisit this entry before implementation begins and update it if the final audio behavior or navigation pattern changes.
+
 ## Validation Record
 
 ### Browser smoke checks

@@ -1174,6 +1174,10 @@ async function loadSongsWithProgress(forceRefresh = false) {
 document.addEventListener('DOMContentLoaded', () => {
     // Always fetch latest weights on app load
     fetchRecommendationWeights();
+
+    if (window.MobileUI && typeof window.MobileUI.createMobileModernShell === 'function') {
+        window.MobileUI.createMobileModernShell();
+    }
     
     // Auth state is already initialized globally - no need to reload
 
@@ -10519,8 +10523,27 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             function attachSetlistEventListeners() {
                 const globalHeader = document.getElementById('globalSetlistHeader');
                 const myHeader = document.getElementById('mySetlistHeader');
+                const toolsHeader = document.getElementById('toolsFolderHeader');
                 const addGlobalBtn = document.getElementById('addGlobalSetlistBtn');
                 const addMyBtn = document.getElementById('addMySetlistBtn');
+                
+                if (toolsHeader && !toolsHeader._toolsListenerAttached) {
+                    toolsHeader._toolsListenerAttached = true;
+                    toolsHeader.addEventListener('click', function(e) {
+                        if (e.target.closest('a')) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const toolsContent = document.getElementById('toolsFolderContent');
+                        const toolsIcon = document.getElementById('toolsFolderIcon');
+
+                        if (toolsContent && toolsIcon) {
+                            const isExpanded = toolsContent.style.display === 'block';
+                            toolsContent.style.display = isExpanded ? 'none' : 'block';
+                            toolsIcon.classList.toggle('expanded', !isExpanded);
+                        }
+                    });
+                }
                 
                 // Remove any existing listeners
                 if (globalHeader && !globalHeader._setlistListenerAttached) {

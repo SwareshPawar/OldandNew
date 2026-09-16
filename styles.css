@@ -8486,11 +8486,25 @@ body.dark-mode #installAppBtn {
 /* ===============================
    STANDALONE TOOL PAGES (Tuner, Pads & Tanpura)
    =============================== */
+.mobile-tools-menu {
+    display: none;
+}
+
 .tool-page {
     min-height: 100vh;
     background: var(--light-bg);
     color: var(--text-color);
     padding-bottom: 40px;
+}
+
+body.tool-view-active .app-container {
+    display: none;
+}
+
+body.tool-view-active .mobile-nav-container,
+body.tool-view-active .mobile-suggested-toggle,
+body.tool-view-active .floating-stop-btn {
+    display: none !important;
 }
 
 .tool-page-header {

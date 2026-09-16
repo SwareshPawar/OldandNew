@@ -1,10 +1,7 @@
 // pads-tanpura.js
 // Standalone key-driven Atmosphere/Tanpura pad player, reusing the existing LoopPlayerPad audio engine.
-// Declared here (top-level, outside the IIFE below) so loop-player-pad.js's own
-// `typeof API_BASE_URL` check can see it - matches the resolution used by the main app,
-// so melodic sample URLs resolve correctly in production too, not just on localhost.
-const API_BASE_URL = window.AppApiBase ? window.AppApiBase.resolve() : window.location.origin;
-
+// The main app already defines the shared API base URL; avoid redeclaring a second
+// global here because the tool scripts can be loaded into the same document.
 (function () {
     'use strict';
 
@@ -14,6 +11,8 @@ const API_BASE_URL = window.AppApiBase ? window.AppApiBase.resolve() : window.lo
     let lastLoadedKey = null;
 
     function initMobileShell() {
+        if (window.MobileUI) return;
+
         const applyMode = () => document.body.classList.toggle('mobile-modern-mode', window.innerWidth <= 768);
         applyMode();
         window.addEventListener('resize', applyMode);
@@ -21,19 +20,25 @@ const API_BASE_URL = window.AppApiBase ? window.AppApiBase.resolve() : window.lo
         const toggle = document.getElementById('mobileToolsToggle');
         const menu = document.getElementById('mobileToolsMenu');
         if (!toggle || !menu) return;
+        if (toggle.dataset.mobileToolsBound === 'true') return;
+        toggle.dataset.mobileToolsBound = 'true';
+
+        const syncState = (isOpen) => {
+            toggle.classList.toggle('active', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            menu.classList.toggle('open', isOpen);
+            menu.setAttribute('aria-hidden', String(!isOpen));
+        };
 
         toggle.addEventListener('click', (event) => {
             event.stopPropagation();
-            const isOpen = menu.classList.toggle('open');
-            toggle.setAttribute('aria-expanded', String(isOpen));
-            menu.setAttribute('aria-hidden', String(!isOpen));
+            const isOpen = !menu.classList.contains('open');
+            syncState(isOpen);
         });
         document.addEventListener('click', (event) => {
             if (!menu.classList.contains('open')) return;
             if (event.target.closest('#mobileToolsMenu') || event.target.closest('#mobileToolsToggle')) return;
-            menu.classList.remove('open');
-            toggle.setAttribute('aria-expanded', 'false');
-            menu.setAttribute('aria-hidden', 'true');
+            syncState(false);
         });
     }
 
@@ -146,9 +151,22 @@ const API_BASE_URL = window.AppApiBase ? window.AppApiBase.resolve() : window.lo
 
         document.getElementById('padAtmosphere')?.addEventListener('click', toggleAtmosphere);
         document.getElementById('padTanpura')?.addEventListener('click', toggleTanpura);
-        document.getElementById('toolPageBack')?.addEventListener('click', goBackToApp);
+        const toolPageBack = document.getElementById('padsToolPageBack');
+        toolPageBack?.addEventListener('click', () => {
+            if (window.ToolViews && typeof window.ToolViews.hideToolView === 'function') {
+                window.ToolViews.hideToolView();
+                return;
+            }
+            goBackToApp();
+        });
         document.querySelectorAll('[data-tool-nav-back]').forEach((btn) => {
-            btn.addEventListener('click', goBackToApp);
+            btn.addEventListener('click', () => {
+                if (window.ToolViews && typeof window.ToolViews.hideToolView === 'function') {
+                    window.ToolViews.hideToolView();
+                    return;
+                }
+                goBackToApp();
+            });
         });
 
         const volumeSlider = document.getElementById('padsVolume');

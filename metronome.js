@@ -20,6 +20,8 @@
     let tapTimes = [];
 
     function initMobileShell() {
+        if (window.MobileUI) return;
+
         const applyMode = () => document.body.classList.toggle('mobile-modern-mode', window.innerWidth <= 768);
         applyMode();
         window.addEventListener('resize', applyMode);
@@ -27,19 +29,25 @@
         const toggle = document.getElementById('mobileToolsToggle');
         const menu = document.getElementById('mobileToolsMenu');
         if (!toggle || !menu) return;
+        if (toggle.dataset.mobileToolsBound === 'true') return;
+        toggle.dataset.mobileToolsBound = 'true';
+
+        const syncState = (isOpen) => {
+            toggle.classList.toggle('active', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            menu.classList.toggle('open', isOpen);
+            menu.setAttribute('aria-hidden', String(!isOpen));
+        };
 
         toggle.addEventListener('click', (event) => {
             event.stopPropagation();
-            const isOpen = menu.classList.toggle('open');
-            toggle.setAttribute('aria-expanded', String(isOpen));
-            menu.setAttribute('aria-hidden', String(!isOpen));
+            const isOpen = !menu.classList.contains('open');
+            syncState(isOpen);
         });
         document.addEventListener('click', (event) => {
             if (!menu.classList.contains('open')) return;
             if (event.target.closest('#mobileToolsMenu') || event.target.closest('#mobileToolsToggle')) return;
-            menu.classList.remove('open');
-            toggle.setAttribute('aria-expanded', 'false');
-            menu.setAttribute('aria-hidden', 'true');
+            syncState(false);
         });
     }
 
@@ -181,9 +189,22 @@
         setBpm(DEFAULT_BPM);
         document.getElementById('metronomeAccentBtn')?.classList.add('active');
 
-        document.getElementById('toolPageBack')?.addEventListener('click', goBackToApp);
+        const toolPageBack = document.getElementById('metronomeToolPageBack');
+        toolPageBack?.addEventListener('click', () => {
+            if (window.ToolViews && typeof window.ToolViews.hideToolView === 'function') {
+                window.ToolViews.hideToolView();
+                return;
+            }
+            goBackToApp();
+        });
         document.querySelectorAll('[data-tool-nav-back]').forEach((btn) => {
-            btn.addEventListener('click', goBackToApp);
+            btn.addEventListener('click', () => {
+                if (window.ToolViews && typeof window.ToolViews.hideToolView === 'function') {
+                    window.ToolViews.hideToolView();
+                    return;
+                }
+                goBackToApp();
+            });
         });
 
         document.getElementById('metronomeMinus')?.addEventListener('click', () => setBpm(bpm - 1));

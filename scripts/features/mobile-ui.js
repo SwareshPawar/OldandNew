@@ -301,6 +301,9 @@
 
     function activateMobileModernDestination(destination) {
         window.closeSuggestedSongsDrawer?.();
+        if (window.ToolViews?.activeTool?.()) {
+            window.ToolViews.hideToolView();
+        }
 
         if (destination === 'home') {
             const sidebar = document.querySelector('.sidebar');
@@ -561,10 +564,15 @@
 
     function createMobileModernShell() {
         const shell = document.getElementById('mobileModernShell');
-        if (!shell || shell.dataset.bound === 'true') return;
+        if (!shell) return;
+
+        document.body.classList.toggle('mobile-modern-mode', window.innerWidth <= 768);
+
+        if (shell.dataset.bound === 'true') {
+            return;
+        }
 
         shell.dataset.bound = 'true';
-        document.body.classList.toggle('mobile-modern-mode', window.innerWidth <= 768);
 
         if (document.body.dataset.mobileModernResizeBound !== 'true') {
             document.body.dataset.mobileModernResizeBound = 'true';
@@ -618,19 +626,34 @@
         const toolsToggle = document.getElementById('mobileToolsToggle');
         const toolsMenu = document.getElementById('mobileToolsMenu');
         if (toolsToggle && toolsMenu) {
-            toolsToggle.addEventListener('click', (event) => {
-                event.stopPropagation();
-                const isOpen = toolsMenu.classList.toggle('open');
+            if (toolsToggle.dataset.menuBound === 'true') {
+                return;
+            }
+
+            toolsToggle.dataset.menuBound = 'true';
+
+            const syncToolsToggleState = (isOpen) => {
+                toolsToggle.classList.toggle('active', isOpen);
                 toolsToggle.setAttribute('aria-expanded', String(isOpen));
+                toolsMenu.classList.toggle('open', isOpen);
                 safeSetAriaHidden(toolsMenu, !isOpen);
-            });
-            document.addEventListener('click', (event) => {
-                if (!toolsMenu.classList.contains('open')) return;
-                if (event.target.closest('#mobileToolsMenu') || event.target.closest('#mobileToolsToggle')) return;
-                toolsMenu.classList.remove('open');
-                toolsToggle.setAttribute('aria-expanded', 'false');
-                safeSetAriaHidden(toolsMenu, true);
-            });
+            };
+
+            toolsToggle.onclick = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const isOpen = !toolsMenu.classList.contains('open');
+                syncToolsToggleState(isOpen);
+            };
+
+            if (!document.body.dataset.mobileToolsDocumentBound) {
+                document.body.dataset.mobileToolsDocumentBound = 'true';
+                document.addEventListener('click', (event) => {
+                    if (!toolsMenu.classList.contains('open')) return;
+                    if (event.target.closest('#mobileToolsMenu') || event.target.closest('#mobileToolsToggle')) return;
+                    syncToolsToggleState(false);
+                }, true);
+            }
         }
 
         ['globalSetlistContent', 'mySetlistContent', 'smartSetlistContent'].forEach((id) => {
