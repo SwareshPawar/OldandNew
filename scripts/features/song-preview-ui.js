@@ -359,11 +359,14 @@
 
         songPreviewEl.innerHTML = '';
         window.closeSuggestedSongsDrawer?.();
-        document.getElementById('mobileSuggestedSongsToggle')?.removeAttribute('hidden');
+        if (window.innerWidth <= 768) {
+            window.MobileUI?.closeAllMobileDrawers?.();
+        }
         songPreviewEl.dataset.songId = song.id;
         songPreviewEl.dataset.originalLyrics = song.lyrics || song.editSongLyrics || song.content || song.text || '';
         songPreviewEl.dataset.originalKey = deps.normalizeKeySignature(song.key);
         songPreviewEl.dataset.openingContext = openingContext;
+        window.updateSuggestedToggleVisibility?.();
 
         const setlistDropdown = document.getElementById('setlistDropdown');
         const currentSetlistValue = setlistDropdown ? setlistDropdown.value : '';

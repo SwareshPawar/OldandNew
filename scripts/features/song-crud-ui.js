@@ -154,6 +154,12 @@
                 localStorage.setItem('songsSyncTimestamp', timestamp);
 
                 console.log(`🗑️ Deleted song ${songId} from cache and backend`);
+                const songPreviewEl = deps.getSongPreviewEl ? deps.getSongPreviewEl() : document.getElementById('songPreview');
+                if (songPreviewEl && songPreviewEl.dataset.songId == songId) {
+                    songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
+                    delete songPreviewEl.dataset.songId;
+                    window.updateSuggestedToggleVisibility?.();
+                }
                 deps.showNotification('Song deleted successfully');
                 if (typeof postDeleteCallback === 'function') {
                     postDeleteCallback();

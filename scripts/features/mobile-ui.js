@@ -155,108 +155,198 @@
         const drawer = document.getElementById('suggestedSongsDrawer');
         const sidebar = document.querySelector('.sidebar');
         const songsSection = document.querySelector('.songs-section');
+        const hasSongSelected = Boolean(document.getElementById('songPreview')?.dataset.songId);
         const panelOpen = (sidebar && !sidebar.classList.contains('hidden')) ||
             (songsSection && !songsSection.classList.contains('hidden'));
 
-        if (panelOpen) {
+        if (!hasSongSelected || panelOpen) {
             window.closeSuggestedSongsDrawer?.();
             toggle?.setAttribute('hidden', '');
-            // Force the drawer fully out of the DOM flow so it can't peek behind the panel.
+            // Force the drawer fully out of the DOM flow so it can't peek behind the panel or when no song is selected.
             drawer?.setAttribute('hidden', '');
         } else {
             drawer?.removeAttribute('hidden');
-            if (document.getElementById('songPreview')?.dataset.songId) {
-                toggle?.removeAttribute('hidden');
-            }
+            toggle?.removeAttribute('hidden');
         }
     }
 
-    function activateMobileModernDestination(destination) {
+    window.updateSuggestedToggleVisibility = updateSuggestedToggleVisibility;
+
+    function setNavDestinationActive(destination) {
         const navItems = document.querySelectorAll('[data-mobile-destination]');
-        const currentItem = Array.from(navItems).find((item) => item.classList.contains('active'));
-        const isSameDestination = currentItem?.dataset.mobileDestination === destination;
-        const sidebar = document.querySelector('.sidebar');
-        const songsSection = document.querySelector('.songs-section');
-
-        // Nav item clicks stop propagation, so the document-level "click outside"
-        // closer for the suggested songs drawer never fires. Close it explicitly.
-        window.closeSuggestedSongsDrawer?.();
-
         navItems.forEach((item) => {
             const isActive = item.dataset.mobileDestination === destination;
             item.classList.toggle('active', isActive);
             item.setAttribute('aria-current', isActive ? 'page' : 'false');
         });
+    }
 
-        if (destination === 'home') {
-            const homeDrawerOpen = document.body.classList.contains('mobile-home-open') ||
-                sidebar?.classList.contains('mobile-home-drawer-open') ||
-                (sidebar && !sidebar.classList.contains('hidden'));
-            if (isSameDestination && homeDrawerOpen) {
-                closeMobileHomeDrawer();
-            } else {
-                openMobileHomeDrawer();
+    function safeSetAriaHidden(element, isHidden) {
+        if (!element) return;
+        if (isHidden) {
+            if (document.activeElement && (document.activeElement === element || element.contains(document.activeElement))) {
+                document.activeElement.blur();
             }
-        } else if (destination === 'songs') {
-            closeMobileHomeDrawer();
-            if (sidebar && songsSection) {
-                if (isSameDestination && !songsSection.classList.contains('hidden')) {
-                    songsSection.classList.add('hidden');
-                } else {
-                    document.getElementById('showAll')?.click();
-                    sidebar.classList.add('hidden');
-                    songsSection.classList.remove('hidden');
-                }
-            }
-        } else if (destination === 'setlist') {
-            closeMobileHomeDrawer();
-            if (songsSection && isSameDestination && !songsSection.classList.contains('hidden')) {
-                songsSection.classList.add('hidden');
-            } else {
-                const currentSetlist = mobileUIDeps?.getCurrentViewingSetlist?.();
-                if (!currentSetlist) {
-                    openMobileHomeDrawer(mobileUIDeps);
-                } else if (mobileUIDeps?.getCurrentSetlistType?.() === 'global') {
-                    mobileUIDeps.openGlobalSetlist?.(currentSetlist._id);
-                } else if (mobileUIDeps?.getCurrentSetlistType?.() === 'my') {
-                    mobileUIDeps.openMySetlist?.(currentSetlist._id);
-                } else if (mobileUIDeps?.getCurrentSetlistType?.() === 'smart') {
-                    mobileUIDeps.openSmartSetlist?.(currentSetlist.id || currentSetlist._id);
-                }
-                sidebar?.classList.add('hidden');
-                songsSection?.classList.remove('hidden');
-            }
+            element.setAttribute('aria-hidden', 'true');
+        } else {
+            element.setAttribute('aria-hidden', 'false');
         }
+    }
 
+    function clearNavDestinationActive(destination) {
+        const navItems = document.querySelectorAll('[data-mobile-destination]');
+        navItems.forEach((item) => {
+            if (!destination || item.dataset.mobileDestination === destination) {
+                item.classList.remove('active');
+                item.setAttribute('aria-current', 'false');
+            }
+        });
+    }
+
+    function openMobileSongsDrawer() {
+        const sidebar = document.querySelector('.sidebar');
+        const songsSection = document.querySelector('.songs-section');
+        const setlistSection = document.getElementById('setlistSection');
+        const backdrop = document.getElementById('mobileSongsBackdrop');
+        if (!songsSection) return;
+
+        closeMobileHomeDrawer();
+        if (sidebar) sidebar.classList.add('hidden');
+        if (setlistSection) setlistSection.style.display = 'none';
+
+        songsSection.classList.remove('hidden');
+        if (backdrop) {
+            backdrop.classList.add('open');
+            safeSetAriaHidden(backdrop, false);
+        }
+        document.body.classList.add('mobile-songs-open');
+        document.body.classList.remove('mobile-setlist-open');
+        setNavDestinationActive('songs');
         updatePositions();
         updateSuggestedToggleVisibility();
     }
 
-    function updateMobileSetlistDrawerTitle(deps) {
-        return deps?.getCurrentViewingSetlist?.() || null;
+    function closeMobileSongsDrawer() {
+        const songsSection = document.querySelector('.songs-section');
+        const backdrop = document.getElementById('mobileSongsBackdrop');
+        if (songsSection) songsSection.classList.add('hidden');
+        if (backdrop) {
+            backdrop.classList.remove('open');
+            safeSetAriaHidden(backdrop, true);
+        }
+        document.body.classList.remove('mobile-songs-open');
+        clearNavDestinationActive('songs');
+        updatePositions();
+        updateSuggestedToggleVisibility();
     }
 
     function openMobileSetlistDrawer(deps) {
-        const section = document.getElementById('setlistSection');
-        if (!section) return;
-
-        if (!deps?.getCurrentViewingSetlist?.()) {
-            deps?.showNotification?.('Please select a setlist first');
+        const effectiveDeps = deps || mobileUIDeps;
+        const currentSetlist = effectiveDeps?.getCurrentViewingSetlist?.();
+        if (!currentSetlist) {
+            effectiveDeps?.showNotification?.('Please select a setlist first');
+            openMobileHomeDrawer(effectiveDeps);
             return;
         }
 
+        const sidebar = document.querySelector('.sidebar');
+        const songsSection = document.querySelector('.songs-section');
+        const setlistSection = document.getElementById('setlistSection');
+        const backdrop = document.getElementById('mobileSongsBackdrop');
+        if (!songsSection) return;
+
         closeMobileHomeDrawer();
-        updateMobileSetlistDrawerTitle(deps);
-        section.style.display = 'block';
-        document.querySelector('.sidebar')?.classList.add('hidden');
-        document.querySelector('.songs-section')?.classList.remove('hidden');
-        document.querySelector('.preview-section')?.classList.remove('full-width');
+        if (sidebar) sidebar.classList.add('hidden');
+
+        if (effectiveDeps?.getCurrentSetlistType?.() === 'global') {
+            effectiveDeps.openGlobalSetlist?.(currentSetlist._id);
+        } else if (effectiveDeps?.getCurrentSetlistType?.() === 'my') {
+            effectiveDeps.openMySetlist?.(currentSetlist._id);
+        } else if (effectiveDeps?.getCurrentSetlistType?.() === 'smart') {
+            effectiveDeps.openSmartSetlist?.(currentSetlist.id || currentSetlist._id);
+        }
+
+        if (setlistSection) setlistSection.style.display = 'block';
+        songsSection.classList.remove('hidden');
+        if (backdrop) {
+            backdrop.classList.add('open');
+            safeSetAriaHidden(backdrop, false);
+        }
+        document.body.classList.add('mobile-setlist-open');
+        document.body.classList.remove('mobile-songs-open');
+        setNavDestinationActive('setlist');
         updatePositions();
         updateSuggestedToggleVisibility();
     }
 
     function closeMobileSetlistDrawer() {
+        const songsSection = document.querySelector('.songs-section');
+        const backdrop = document.getElementById('mobileSongsBackdrop');
+        if (songsSection) songsSection.classList.add('hidden');
+        if (backdrop) {
+            backdrop.classList.remove('open');
+            safeSetAriaHidden(backdrop, true);
+        }
+        document.body.classList.remove('mobile-setlist-open');
+        clearNavDestinationActive('setlist');
+        updatePositions();
+        updateSuggestedToggleVisibility();
+    }
+
+    function closeAllMobileDrawers() {
         closeMobileHomeDrawer();
+        closeMobileSongsDrawer();
+        closeMobileSetlistDrawer();
+    }
+
+    function activateMobileModernDestination(destination) {
+        window.closeSuggestedSongsDrawer?.();
+
+        if (destination === 'home') {
+            const sidebar = document.querySelector('.sidebar');
+            const homeDrawerOpen = document.body.classList.contains('mobile-home-open') ||
+                sidebar?.classList.contains('mobile-home-drawer-open');
+            if (homeDrawerOpen) {
+                closeMobileHomeDrawer();
+            } else {
+                closeMobileSongsDrawer();
+                closeMobileSetlistDrawer();
+                openMobileHomeDrawer();
+            }
+        } else if (destination === 'songs') {
+            const songsSection = document.querySelector('.songs-section');
+            const setlistSection = document.getElementById('setlistSection');
+            const isSetlistVisible = setlistSection && setlistSection.style.display !== 'none';
+            const favoritesSection = document.getElementById('favoritesSection');
+            const isFavoritesVisible = favoritesSection && favoritesSection.style.display === 'block';
+            const songsOpen = document.body.classList.contains('mobile-songs-open') ||
+                (!songsSection?.classList.contains('hidden') && !isSetlistVisible && !isFavoritesVisible);
+            if (songsOpen) {
+                closeMobileSongsDrawer();
+            } else {
+                closeMobileHomeDrawer();
+                closeMobileSetlistDrawer();
+                document.getElementById('showAll')?.click();
+                openMobileSongsDrawer();
+            }
+        } else if (destination === 'setlist') {
+            const songsSection = document.querySelector('.songs-section');
+            const setlistSection = document.getElementById('setlistSection');
+            const isSetlistVisible = setlistSection && setlistSection.style.display === 'block';
+            const setlistOpen = document.body.classList.contains('mobile-setlist-open') ||
+                (!songsSection?.classList.contains('hidden') && isSetlistVisible);
+            if (setlistOpen) {
+                closeMobileSetlistDrawer();
+            } else {
+                closeMobileHomeDrawer();
+                closeMobileSongsDrawer();
+                openMobileSetlistDrawer(mobileUIDeps);
+            }
+        }
+    }
+
+    function updateMobileSetlistDrawerTitle(deps) {
+        return deps?.getCurrentViewingSetlist?.() || null;
     }
 
     function openMobileHomeDrawer(deps) {
@@ -264,56 +354,35 @@
         const songsSection = document.querySelector('.songs-section');
         const previewSection = document.querySelector('.preview-section');
         const backdrop = document.getElementById('mobileHomeBackdrop');
-        if (!sidebar || !songsSection || !backdrop) return;
+        if (!sidebar || !backdrop) return;
 
-        if (!document.body.dataset.mobileHomeState) {
-            document.body.dataset.mobileHomeState = JSON.stringify({
-                sidebarHidden: sidebar.classList.contains('hidden'),
-                songsHidden: songsSection.classList.contains('hidden'),
-                sidebarScrollTop: sidebar.scrollTop,
-                songsScrollTop: songsSection.scrollTop,
-                previewScrollTop: previewSection ? previewSection.scrollTop : 0,
-            });
-        }
+        closeMobileSongsDrawer();
+        closeMobileSetlistDrawer();
 
-        songsSection.classList.add('hidden');
+        if (songsSection) songsSection.classList.add('hidden');
         sidebar.classList.remove('hidden');
         sidebar.classList.add('mobile-home-drawer-open');
-        backdrop.classList.add('open');
-        backdrop.setAttribute('aria-hidden', 'false');
+        if (backdrop) {
+            backdrop.classList.add('open');
+            safeSetAriaHidden(backdrop, false);
+        }
         document.body.classList.add('mobile-home-open');
+        setNavDestinationActive('home');
+        updatePositions();
         updateSuggestedToggleVisibility();
     }
 
     function closeMobileHomeDrawer() {
         const sidebar = document.querySelector('.sidebar');
-        const songsSection = document.querySelector('.songs-section');
-        const previewSection = document.querySelector('.preview-section');
         const backdrop = document.getElementById('mobileHomeBackdrop');
-        if (!sidebar || !songsSection || !backdrop) return;
+        if (!sidebar || !backdrop) return;
 
-        const savedState = document.body.dataset.mobileHomeState;
-        if (savedState) {
-            try {
-                const state = JSON.parse(savedState);
-                sidebar.classList.add('hidden');
-                songsSection.classList.add('hidden');
-                sidebar.scrollTop = state.sidebarScrollTop || 0;
-                songsSection.scrollTop = state.songsScrollTop || 0;
-                if (previewSection) previewSection.scrollTop = state.previewScrollTop || 0;
-            } catch (error) {
-                sidebar.classList.add('hidden');
-            }
-        } else {
-            sidebar.classList.add('hidden');
-            songsSection.classList.add('hidden');
-        }
-
+        sidebar.classList.add('hidden');
         sidebar.classList.remove('mobile-home-drawer-open');
         backdrop.classList.remove('open');
-        backdrop.setAttribute('aria-hidden', 'true');
+        safeSetAriaHidden(backdrop, true);
         document.body.classList.remove('mobile-home-open');
-        delete document.body.dataset.mobileHomeState;
+        clearNavDestinationActive('home');
         updatePositions();
         updateSuggestedToggleVisibility();
     }
@@ -514,16 +583,29 @@
 
         const closeButton = document.getElementById('mobileHomeClose');
         const backdrop = document.getElementById('mobileHomeBackdrop');
+        const songsBackdrop = document.getElementById('mobileSongsBackdrop');
         const setlistDropdown = document.getElementById('setlistDropdown');
         const setlistCloseButton = document.getElementById('mobileSetlistClose');
         const setlistBackdrop = document.getElementById('mobileSetlistBackdrop');
         closeButton?.addEventListener('click', closeMobileHomeDrawer);
         backdrop?.addEventListener('click', closeMobileHomeDrawer);
+        songsBackdrop?.addEventListener('click', () => {
+            closeMobileSongsDrawer();
+            closeMobileSetlistDrawer();
+        });
         // True document-level capture so this runs before the target's own bubble-phase
         // handler (registering directly on #showAll/#showFavorites does not guarantee order).
         document.addEventListener('click', (event) => {
-            if (event.target.closest('#showAll') || event.target.closest('#showFavorites')) {
+            if (event.target.closest('#showAll')) {
                 closeMobileHomeDrawer();
+                if (window.innerWidth <= 768) {
+                    openMobileSongsDrawer();
+                }
+            } else if (event.target.closest('#showFavorites')) {
+                closeMobileHomeDrawer();
+                if (window.innerWidth <= 768) {
+                    openMobileSongsDrawer();
+                }
             }
         }, true);
         setlistCloseButton?.addEventListener('click', closeMobileSetlistDrawer);
@@ -540,14 +622,14 @@
                 event.stopPropagation();
                 const isOpen = toolsMenu.classList.toggle('open');
                 toolsToggle.setAttribute('aria-expanded', String(isOpen));
-                toolsMenu.setAttribute('aria-hidden', String(!isOpen));
+                safeSetAriaHidden(toolsMenu, !isOpen);
             });
             document.addEventListener('click', (event) => {
                 if (!toolsMenu.classList.contains('open')) return;
                 if (event.target.closest('#mobileToolsMenu') || event.target.closest('#mobileToolsToggle')) return;
                 toolsMenu.classList.remove('open');
                 toolsToggle.setAttribute('aria-expanded', 'false');
-                toolsMenu.setAttribute('aria-hidden', 'true');
+                safeSetAriaHidden(toolsMenu, true);
             });
         }
 
@@ -569,8 +651,7 @@
                     mobileUIDeps?.openMySetlist?.(item.dataset.setlistId);
                 }
                 window.setTimeout(() => {
-                    document.querySelector('.songs-section')?.classList.remove('hidden');
-                    document.getElementById('setlistSection').style.display = 'block';
+                    openMobileSetlistDrawer(mobileUIDeps);
                 }, 0);
             }, true);
         });
@@ -762,8 +843,6 @@
                 }
                 createMobileNavButtons();
                 createMobileModernShell();
-                const toggleButtonsVisibility = localStorage.getItem('toggleButtonsVisibility') || 'hide';
-                deps.applyToggleButtonsVisibility(toggleButtonsVisibility);
             });
         }
     }
@@ -776,9 +855,13 @@
         activateMobileModernDestination,
         openMobileHomeDrawer,
         closeMobileHomeDrawer,
+        openMobileSongsDrawer,
+        closeMobileSongsDrawer,
         openMobileSetlistDrawer,
         closeMobileSetlistDrawer,
+        closeAllMobileDrawers,
         makeToggleDraggable,
         initializeMobileUI,
+        updateSuggestedToggleVisibility,
     };
 })(window);

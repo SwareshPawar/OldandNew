@@ -1243,6 +1243,7 @@
         }
 
         .chord-line {
+            font-size: var(--lyrics-font-size, 1rem);
             margin-bottom: -4px;
             white-space: pre;
             font-weight: bold;
@@ -1252,6 +1253,7 @@
 
         /* Lyric Line Styles - Fix for preserving newlines */
         .lyric-line {
+            font-size: var(--lyrics-font-size, 1rem);
             white-space: pre-wrap;
             line-height: 1.4;
             margin: 0;
@@ -1415,22 +1417,27 @@
 
         /* Suggested Songs Drawer */
         .suggested-songs-drawer {
+            box-sizing: border-box;
             position: fixed;
             top: 0;
-            right: -350px;
+            right: -380px;
             width: 350px;
             height: 100%;
             background: var(--light-bg);
             box-shadow: -5px 0 15px rgba(0,0,0,0.1);
             z-index: 1240;
-            transition: right 0.3s ease;
+            transition: right 0.3s ease, visibility 0.3s ease;
             overflow-y: auto;
             padding: 12px;
             color: var(--text-color);
+            visibility: hidden;
+            pointer-events: none;
         }
 
         .suggested-songs-drawer.open {
             right: 0;
+            visibility: visible;
+            pointer-events: auto;
         }
 
         .suggested-songs-header {
@@ -1719,6 +1726,8 @@
     --lyrics-text-color: #3E3F29;
     --title-color: #3E3F29;
     --chord-color: #64756e;
+    --lyrics-font-size: 1rem;
+    --song-title-font-size: 1.05rem;
     
     /* Input & Form Colors */
     --input-bg: #F1F0E4;
@@ -3624,7 +3633,7 @@ body.dark-mode #installAppBtn {
         }
 
         .song-title {
-            font-size: 1.05rem;
+            font-size: var(--song-title-font-size, 1.05rem);
             font-weight: 600;
             margin: 0;
             line-height: 1.3;
@@ -3771,6 +3780,7 @@ body.dark-mode #installAppBtn {
             }
 
         .song-lyrics {
+            font-size: var(--lyrics-font-size, 1rem);
             white-space: pre-wrap;
             margin-top: 20px;
             line-height: 1.6;
@@ -4295,7 +4305,7 @@ body.dark-mode #installAppBtn {
             }
 
             .song-title {
-                font-size: 1.05rem;
+                font-size: var(--song-title-font-size, 1.05rem);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -4362,7 +4372,7 @@ body.dark-mode #installAppBtn {
             }
 
             .song-title {
-                font-size: 1.1rem;
+                font-size: var(--song-title-font-size, 1.1rem);
                 line-height: 1.4;
                 white-space: nowrap;
                 overflow: hidden;
@@ -4417,7 +4427,7 @@ body.dark-mode #installAppBtn {
             }
 
             .song-title {
-                font-size: 0.9rem;
+                font-size: var(--song-title-font-size, 0.9rem);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -5680,7 +5690,9 @@ body.dark-mode #installAppBtn {
                 max-width: 100vw;
             }
 
-            body.mobile-modern-mode.mobile-home-open {
+            body.mobile-modern-mode.mobile-home-open,
+            body.mobile-modern-mode.mobile-songs-open,
+            body.mobile-modern-mode.mobile-setlist-open {
                 overflow: hidden;
             }
 
@@ -5690,7 +5702,14 @@ body.dark-mode #installAppBtn {
                 box-shadow: 8px 0 28px rgba(62, 63, 41, 0.2);
             }
 
-            body.mobile-modern-mode .mobile-home-backdrop {
+            body.mobile-modern-mode .songs-section:not(.hidden) {
+                z-index: 2200;
+                box-shadow: 8px 0 28px rgba(62, 63, 41, 0.2);
+            }
+
+            body.mobile-modern-mode .mobile-home-backdrop,
+            body.mobile-modern-mode .mobile-songs-backdrop,
+            body.mobile-modern-mode .mobile-setlist-backdrop {
                 position: fixed;
                 inset: 0;
                 z-index: 2100;
@@ -5700,7 +5719,9 @@ body.dark-mode #installAppBtn {
                 cursor: pointer;
             }
 
-            body.mobile-modern-mode .mobile-home-backdrop.open {
+            body.mobile-modern-mode .mobile-home-backdrop.open,
+            body.mobile-modern-mode .mobile-songs-backdrop.open,
+            body.mobile-modern-mode .mobile-setlist-backdrop.open {
                 display: block;
             }
 
@@ -5919,6 +5940,7 @@ body.dark-mode #installAppBtn {
             }
 
             body.mobile-modern-mode .suggested-songs-drawer {
+                box-sizing: border-box;
                 top: auto;
                 bottom: calc(var(--mobile-bottom-nav-height) + 34px + env(safe-area-inset-bottom));
                 right: 6px;
@@ -5932,13 +5954,17 @@ body.dark-mode #installAppBtn {
                 border: 2px solid var(--song-item-border);
                 box-shadow: 0 -8px 28px rgba(62, 63, 41, 0.3);
                 overflow-y: auto;
-                transition: transform 0.3s ease;
-                transform: translateY(100%);
+                transition: transform 0.3s ease, visibility 0.3s ease;
+                transform: translateY(calc(100% + var(--mobile-bottom-nav-height) + 50px + env(safe-area-inset-bottom)));
+                visibility: hidden;
+                pointer-events: none;
                 z-index: 2200;
             }
 
             body.mobile-modern-mode .suggested-songs-drawer.open {
                 transform: translateY(0);
+                visibility: visible;
+                pointer-events: auto;
             }
 
             body.mobile-modern-mode:has(.suggested-songs-drawer.open)::before {
@@ -6044,6 +6070,24 @@ body.dark-mode #installAppBtn {
                 color: var(--favorite-color, #ff0000);
             }
 
+            .mobile-suggested-toggle {
+                display: none;
+            }
+
+            .mobile-suggested-toggle[hidden],
+            body.mobile-modern-mode .mobile-suggested-toggle[hidden] {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+
+            .suggested-songs-drawer[hidden],
+            body.mobile-modern-mode .suggested-songs-drawer[hidden] {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+
             body.mobile-modern-mode .mobile-suggested-toggle {
                 position: fixed;
                 right: 8px;
@@ -6068,7 +6112,9 @@ body.dark-mode #installAppBtn {
             }
 
             body.mobile-modern-mode .mobile-suggested-toggle[hidden] {
-                display: none;
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
             }
 
             body.mobile-modern-mode .mobile-suggested-toggle i {
@@ -6253,7 +6299,7 @@ body.dark-mode #installAppBtn {
             }
 
             body.mobile-modern-mode .song-item .song-title {
-                font-size: 0.92rem;
+                font-size: var(--song-title-font-size, 0.92rem);
             }
 
             body.mobile-modern-mode .song-item .song-meta {

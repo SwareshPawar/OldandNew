@@ -2186,6 +2186,8 @@ async function performInitialization() {
                 showPreview(song, true, historyContext);
             } else {
                 songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
+                delete songPreviewEl.dataset.songId;
+                window.updateSuggestedToggleVisibility?.();
             }
         }
     });
@@ -3003,7 +3005,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
 
     function getMobileUIDeps() {
         return {
-            applyToggleButtonsVisibility,
             getCurrentViewingSetlist: () => currentViewingSetlist,
             getCurrentSetlistType: () => currentSetlistType,
             getCurrentSetlistId: () => currentViewingSetlist?._id || currentViewingSetlist?.id || '',
@@ -7172,12 +7173,22 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         }
     
 
+        function applyFontSize(size) {
+            const sizeMap = {
+                'small-2': { lyrics: '0.78rem', title: '0.85rem' },
+                'small-1': { lyrics: '0.88rem', title: '0.95rem' },
+                'default': { lyrics: '1rem', title: '1.05rem' },
+                'large-1': { lyrics: '1.2rem', title: '1.2rem' },
+                'large-2': { lyrics: '1.45rem', title: '1.35rem' }
+            };
+            const config = sizeMap[size] || sizeMap['default'];
+            document.documentElement.style.setProperty('--lyrics-font-size', config.lyrics);
+            document.documentElement.style.setProperty('--song-title-font-size', config.title);
+            document.body.dataset.uiFontSize = size || 'default';
+        }
+        window.applyFontSize = applyFontSize;
+
         function loadSettings() {
-            const savedHeader = localStorage.getItem("sidebarHeader");
-            if (savedHeader) document.querySelector(".sidebar-header h2").textContent = savedHeader;
-
-            const sessionResetOption = localStorage.getItem("sessionResetOption") || "manual";
-
             // Default panel width on first load, before any setting is saved
             let sidebarWidth = localStorage.getItem("sidebarWidth");
             let songsPanelWidth = localStorage.getItem("songsPanelWidth");
@@ -7186,24 +7197,23 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 sidebarWidth = defaultWidth;
                 songsPanelWidth = defaultWidth;
             }
-            const previewMargin = localStorage.getItem("previewMargin") || "10";
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
-            const toggleButtonsVisibility = localStorage.getItem("toggleButtonsVisibility") || "hide";
+            const savedFontSize = localStorage.getItem("uiFontSize") || "default";
 
             document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
-            document.documentElement.style.setProperty('--preview-margin-left', `${previewMargin}px`);
 
-            document.getElementById('panelWidthInput').value = sidebarWidth;
-            document.getElementById('previewMarginInput').value = previewMargin;
-            document.getElementById('autoScrollSpeedInput').value = savedAutoScrollSpeed;
-            document.getElementById("sessionResetOption").value = sessionResetOption;
-            document.getElementById("toggleButtonsVisibility").value = toggleButtonsVisibility;
+            const panelWidthEl = document.getElementById('panelWidthInput');
+            if (panelWidthEl) panelWidthEl.value = sidebarWidth;
+
+            const autoScrollEl = document.getElementById('autoScrollSpeedInput');
+            if (autoScrollEl) autoScrollEl.value = savedAutoScrollSpeed;
+
+            const fontSizeEl = document.getElementById('uiFontSizeInput');
+            if (fontSizeEl) fontSizeEl.value = savedFontSize;
             
-            autoScrollSpeed = parseInt(savedAutoScrollSpeed);
-            
-            // Apply toggle buttons visibility
-            applyToggleButtonsVisibility(toggleButtonsVisibility);
+            autoScrollSpeed = parseInt(savedAutoScrollSpeed, 10) || 1500;
+            applyFontSize(savedFontSize);
         }
     
             
@@ -7215,18 +7225,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             if (!lyricsContainer) return;
             lyricsContainer.classList.remove('lyrics-bg-New', 'lyrics-bg-Old');
             lyricsContainer.classList.add(isNew ? 'lyrics-bg-New' : 'lyrics-bg-Old');
-        }
-        
-        function applyToggleButtonsVisibility(visibility) {
-            const toggleButtons = document.querySelectorAll('.panel-toggle.draggable');
-            
-            toggleButtons.forEach(button => {
-                if (visibility === 'hide') {
-                    button.style.display = 'none';
-                } else {
-                    button.style.display = '';  // Use CSS default (flex/block)
-                }
-            });
         }
     
         function addPanelToggles() {
@@ -7452,8 +7450,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     existingContainer.remove();
                 }
                 createMobileNavButtons();
-                const toggleButtonsVisibility = localStorage.getItem("toggleButtonsVisibility") || "hide";
-                applyToggleButtonsVisibility(toggleButtonsVisibility);
             });
         }
 
@@ -7921,9 +7917,13 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             localStorage.removeItem('memoryOptimization');
             localStorage.removeItem('navigationHistory');
             localStorage.removeItem('currentHistoryPosition');
+            localStorage.removeItem('uiFontSize');
+            applyFontSize('default');
             
             // Reset UI
             songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
+            delete songPreviewEl.dataset.songId;
+            window.updateSuggestedToggleVisibility?.();
             NewContent.innerHTML = '<p>No songs found.</p>';
             OldContent.innerHTML = '<p>No songs found.</p>';
             NewSetlistSongs.innerHTML = '<p>Your New setlist is empty.</p>';
@@ -9565,38 +9565,24 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         }
 
         function saveSettings() {
-            const newHeader = document.getElementById("sidebarHeaderInput").value;
-            const newSetlist = document.getElementById("setlistTextInput").value;
-            const sidebarWidth = document.getElementById("panelWidthInput").value;
-            const songsPanelWidth = document.getElementById("panelWidthInput").value;
-            const previewMargin = document.getElementById("previewMarginInput").value;
-            const newAutoScrollSpeed = document.getElementById("autoScrollSpeedInput").value;
-            const sessionResetOption = document.getElementById("sessionResetOption").value;
-            const toggleButtonsVisibility = document.getElementById("toggleButtonsVisibility").value;
-
-            document.querySelector(".sidebar-header h2").textContent = newHeader;
+            const sidebarWidth = document.getElementById("panelWidthInput")?.value || "20";
+            const songsPanelWidth = sidebarWidth;
+            const newAutoScrollSpeed = document.getElementById("autoScrollSpeedInput")?.value || "1500";
+            const newFontSize = document.getElementById("uiFontSizeInput")?.value || "default";
 
             document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}%`);
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
-            document.documentElement.style.setProperty('--preview-margin-left', `${previewMargin}px`);
 
-            localStorage.setItem("sidebarHeader", newHeader);
-            localStorage.setItem("setlistText", newSetlist);
             try {
                 localStorage.setItem("sidebarWidth", sidebarWidth);
                 localStorage.setItem("songsPanelWidth", songsPanelWidth);
-                localStorage.setItem("previewMargin", previewMargin);
                 localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
-                localStorage.setItem("sessionResetOption", sessionResetOption);
-                localStorage.setItem("toggleButtonsVisibility", toggleButtonsVisibility);
+                localStorage.setItem("uiFontSize", newFontSize);
             } catch (e) {
                 console.warn('Failed to save settings to localStorage:', e);
-                // Continue without saving settings
             }
-            autoScrollSpeed = parseInt(newAutoScrollSpeed);
-            
-            // Apply toggle buttons visibility
-            applyToggleButtonsVisibility(toggleButtonsVisibility);
+            autoScrollSpeed = parseInt(newAutoScrollSpeed, 10) || 1500;
+            applyFontSize(newFontSize);
         }
     
         function addEventListeners() {
@@ -10264,7 +10250,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     renderSongs('Old', keyFilter.value, genreFilter.value);
                 }
                 songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics"></div>';
-                songPreviewEl.dataset.songId = '';
+                delete songPreviewEl.dataset.songId;
+                window.updateSuggestedToggleVisibility?.();
                 showNotification('All songs have been deleted.');
                 confirmDeleteAllModal.style.display = 'none';
             });
@@ -10457,9 +10444,24 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             }
     
             settingsBtn.addEventListener("click", () => {
-                document.getElementById("sidebarHeaderInput").value = document.querySelector(".sidebar-header h2").textContent;
-                document.getElementById("setlistTextInput").value = ""; // No longer using showSetlist element
+                const sidebarWidth = localStorage.getItem("sidebarWidth") || (window.innerWidth <= 768 ? "70" : "20");
+                const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
+                const savedFontSize = localStorage.getItem("uiFontSize") || "default";
+
+                const panelWidthEl = document.getElementById('panelWidthInput');
+                if (panelWidthEl) panelWidthEl.value = sidebarWidth;
+
+                const autoScrollEl = document.getElementById('autoScrollSpeedInput');
+                if (autoScrollEl) autoScrollEl.value = savedAutoScrollSpeed;
+
+                const fontSizeEl = document.getElementById('uiFontSizeInput');
+                if (fontSizeEl) fontSizeEl.value = savedFontSize;
+
                 document.getElementById("settingsModal").style.display = "flex";
+            });
+
+            document.getElementById('uiFontSizeInput')?.addEventListener('change', (e) => {
+                applyFontSize(e.target.value);
             });
     
             document.getElementById("settingsForm").addEventListener("submit", function (e) {

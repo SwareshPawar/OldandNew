@@ -9,10 +9,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
         <link rel="stylesheet" href="styles.css">
 
-    <!-- Apple PWA meta tags for iOS support -->
+    <!-- Apple and Standard PWA meta tags -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Old & New Songs">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -275,7 +277,7 @@
             </div>
         </div>
 
-        <button class="mobile-home-backdrop" id="mobileHomeBackdrop" type="button" aria-label="Close Home menu"></button>
+        <button class="mobile-home-backdrop" id="mobileHomeBackdrop" type="button" tabindex="-1" aria-label="Close Home menu" aria-hidden="true"></button>
 
         <!-- Songs Panel -->
         <div class="songs-section hidden">
@@ -338,7 +340,7 @@
                     <div class="search-results-header">Search Results</div>
                     <div id="searchResultsContent" class="scrollable-results"></div>
                 </div>
-                <button class="mobile-filters-backdrop" id="mobileFiltersBackdrop" type="button" aria-label="Close filters"></button>
+                <button class="mobile-filters-backdrop" id="mobileFiltersBackdrop" type="button" tabindex="-1" aria-label="Close filters" aria-hidden="true"></button>
             </div>
             <div class="tab-content active" id="NewContent"></div>
             <div class="tab-content" id="OldContent"></div>
@@ -385,6 +387,8 @@
                 <button id="mobileSelectionAction" type="button" disabled>Add songs</button>
             </div>
         </div>
+        <button class="mobile-songs-backdrop" id="mobileSongsBackdrop" type="button" tabindex="-1" aria-label="Close songs panel" aria-hidden="true"></button>
+        <button class="mobile-setlist-backdrop" id="mobileSetlistBackdrop" type="button" tabindex="-1" aria-label="Close setlist panel" aria-hidden="true" style="display:none;"></button>
 
         <!-- Preview Section -->
         <div class="preview-section" id="songPreview">
@@ -748,22 +752,6 @@
             <h3>Settings</h3>
             <form id="settingsForm">
                 <div class="settings-grid">
-                    <div class="settings-group" style="display: none;">
-                        <label for="sidebarHeaderInput">Sidebar Header:</label>
-                        <input type="text" id="sidebarHeaderInput" >
-                    </div>
-                    <div class="settings-group" style="display: none;">
-                        <label for="setlistTextInput">Setlist Menu Text:</label>
-                        <input type="text" id="setlistTextInput" >
-                    </div>
-                    <div class="settings-group">
-                        <label for="sessionResetOption">Session Reset:</label>
-                        <select id="sessionResetOption">
-                            <option value="manual">Manual (default)</option>
-                            <option value="onClose">Reset on window close</option>
-                            <option value="onRefresh">Reset on page refresh</option>
-                        </select>
-                    </div>
                     <div class="settings-group">
                         <label for="panelWidthInput">Panel Width (%):</label>
                         <select id="panelWidthInput">
@@ -778,10 +766,6 @@
                         </select>
                     </div>
                     <div class="settings-group">
-                        <label for="previewMarginInput">Preview Margin Left (px):</label>
-                        <input type="number" id="previewMarginInput" min="0" max="100" value="5">
-                    </div>
-                    <div class="settings-group">
                         <label for="autoScrollSpeedInput">Auto Scroll Speed:</label>
                         <select id="autoScrollSpeedInput">
                             <option value="2000">Slow</option>
@@ -790,10 +774,13 @@
                         </select>
                     </div>
                     <div class="settings-group">
-                        <label for="toggleButtonsVisibility">Show Toggle Buttons:</label>
-                        <select id="toggleButtonsVisibility">
-                            <option value="hide" selected>Hide</option>
-                            <option value="show">Show</option>
+                        <label for="uiFontSizeInput">Size:</label>
+                        <select id="uiFontSizeInput">
+                            <option value="small-2">Small 2</option>
+                            <option value="small-1">Small 1</option>
+                            <option value="default" selected>Default</option>
+                            <option value="large-1">Large 1</option>
+                            <option value="large-2">Large 2</option>
                         </select>
                     </div>
                 </div>
@@ -1399,7 +1386,7 @@
         <span>Suggested Songs</span>
     </button>
     <!-- Suggested Songs Drawer -->
-<div class="suggested-songs-drawer" id="suggestedSongsDrawer">
+<div class="suggested-songs-drawer" id="suggestedSongsDrawer" hidden>
     <div class="suggested-songs-header">
         <h3>Suggested Songs</h3>
         <button class="close-suggested-songs" id="closeSuggestedSongs" title="Close Recommendations - Hide suggested songs panel" aria-label="Close Suggested Songs">&times;</button>
