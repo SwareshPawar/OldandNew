@@ -1024,6 +1024,9 @@
             document.querySelector('.songs-section')?.classList.remove('hidden');
             document.querySelector('.sidebar')?.classList.add('hidden');
             document.querySelector('.preview-section')?.classList.remove('full-width');
+        } else {
+            document.querySelector('.songs-section')?.classList.remove('hidden');
+            window.MobileUI?.updatePositions?.();
         }
     }
 
@@ -1135,6 +1138,9 @@
             document.querySelector('.songs-section')?.classList.remove('hidden');
             document.querySelector('.sidebar')?.classList.add('hidden');
             document.querySelector('.preview-section')?.classList.remove('full-width');
+        } else {
+            document.querySelector('.songs-section')?.classList.remove('hidden');
+            window.MobileUI?.updatePositions?.();
         }
     }
 

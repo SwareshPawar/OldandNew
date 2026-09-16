@@ -4485,6 +4485,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             document.querySelector('.songs-section').classList.remove('hidden');
             document.querySelector('.sidebar').classList.add('hidden');
             document.querySelector('.preview-section').classList.remove('full-width');
+        } else {
+            document.querySelector('.songs-section')?.classList.remove('hidden');
+            window.MobileUI?.updatePositions?.();
         }
     }
 
@@ -4671,6 +4674,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             document.querySelector('.songs-section').classList.remove('hidden');
             document.querySelector('.sidebar').classList.add('hidden');
             document.querySelector('.preview-section').classList.remove('full-width');
+        } else {
+            document.querySelector('.songs-section')?.classList.remove('hidden');
+            window.MobileUI?.updatePositions?.();
         }
     }
 
@@ -6475,6 +6481,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             document.querySelector('.songs-section').classList.remove('hidden');
             document.querySelector('.sidebar').classList.add('hidden');
             document.querySelector('.preview-section').classList.remove('full-width');
+        } else {
+            document.querySelector('.songs-section')?.classList.remove('hidden');
+            window.MobileUI?.updatePositions?.();
         }
         
         // Show notification
@@ -7188,15 +7197,34 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         }
         window.applyFontSize = applyFontSize;
 
-        function loadSettings() {
-            // Default panel width on first load, before any setting is saved
-            let sidebarWidth = localStorage.getItem("sidebarWidth");
-            let songsPanelWidth = localStorage.getItem("songsPanelWidth");
-            if (!sidebarWidth || !songsPanelWidth) {
-                const defaultWidth = window.innerWidth <= 768 ? "70" : "20";
-                sidebarWidth = defaultWidth;
-                songsPanelWidth = defaultWidth;
+        const PANEL_WIDTH_SETTINGS = {
+            desktop: {
+                sidebarKey: 'desktopSidebarWidth',
+                songsKey: 'desktopSongsPanelWidth',
+                defaultWidth: '20'
+            },
+            mobile: {
+                sidebarKey: 'mobileSidebarWidth',
+                songsKey: 'mobileSongsPanelWidth',
+                defaultWidth: '60'
             }
+        };
+
+        function getPanelWidthSettingsMode() {
+            return window.innerWidth <= 768 ? 'mobile' : 'desktop';
+        }
+
+        function getPanelWidthSettings() {
+            return PANEL_WIDTH_SETTINGS[getPanelWidthSettingsMode()];
+        }
+
+        let activePanelWidthSettingsMode = getPanelWidthSettingsMode();
+
+        function loadSettings() {
+            activePanelWidthSettingsMode = getPanelWidthSettingsMode();
+            const panelSettings = getPanelWidthSettings();
+            const sidebarWidth = localStorage.getItem(panelSettings.sidebarKey) || panelSettings.defaultWidth;
+            const songsPanelWidth = localStorage.getItem(panelSettings.songsKey) || sidebarWidth;
             const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
             const savedFontSize = localStorage.getItem("uiFontSize") || "default";
 
@@ -7215,6 +7243,13 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             autoScrollSpeed = parseInt(savedAutoScrollSpeed, 10) || 1500;
             applyFontSize(savedFontSize);
         }
+
+        window.addEventListener('resize', () => {
+            const nextPanelWidthSettingsMode = getPanelWidthSettingsMode();
+            if (nextPanelWidthSettingsMode === activePanelWidthSettingsMode) return;
+            loadSettings();
+            if (typeof updatePositions === 'function') updatePositions();
+        });
     
             
         function applyLyricsBackground(isNew) {
@@ -7332,6 +7367,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             
             document.querySelector('.mobile-nav-sidebar').addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (window.innerWidth > 768) {
+                    sidebar.classList.toggle('hidden');
+                    updatePositions();
+                    return;
+                }
                 sidebar.classList.toggle('hidden');
                 if (!sidebar.classList.contains('hidden')) {
                     songsSection.classList.add('hidden');
@@ -7341,6 +7381,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             
             document.querySelector('.mobile-nav-songs').addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (window.innerWidth > 768) {
+                    songsSection.classList.toggle('hidden');
+                    updatePositions();
+                    return;
+                }
                 songsSection.classList.toggle('hidden');
                 if (!songsSection.classList.contains('hidden')) {
                     sidebar.classList.add('hidden');
@@ -7377,19 +7422,22 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         function updatePositions() {
             if (window.MobileUI) return window.MobileUI.updatePositions(getMobileUIDeps());
             if (window.innerWidth > 768) {
-                if (document.querySelector('.sidebar').classList.contains('hidden')) {
-                    document.querySelector('.songs-section').style.left = '0';
-                    document.querySelector('.preview-section').style.marginLeft =
-                        document.querySelector('.songs-section').classList.contains('hidden') ?
-                        'var(--preview-margin-left)' :
-                        'calc(var(--songs-panel-width) + var(--preview-margin-left))';
-                } else {
-                    document.querySelector('.songs-section').style.left = 'var(--sidebar-width)';
-                    document.querySelector('.preview-section').style.marginLeft =
-                        document.querySelector('.songs-section').classList.contains('hidden') ?
-                        'calc(var(--sidebar-width) + var(--preview-margin-left))' :
-                        'calc(var(--sidebar-width) + var(--songs-panel-width) + var(--preview-margin-left))';
-                }
+                document.querySelector('.sidebar')?.classList.remove('mobile-home-drawer-open');
+                const sidebar = document.querySelector('.sidebar');
+                const songsSection = document.querySelector('.songs-section');
+                const previewSection = document.querySelector('.preview-section');
+                const sidebarHidden = sidebar?.classList.contains('hidden');
+                const songsHidden = songsSection?.classList.contains('hidden');
+                const sidebarOffset = sidebarHidden ? '' : 'var(--sidebar-width, 20%)';
+                const songsOffset = songsHidden ? '' : 'var(--songs-panel-width, 35%)';
+
+                songsSection.style.left = sidebarHidden ? '0' : 'var(--sidebar-width, 20%)';
+                previewSection.style.marginLeft = sidebarOffset && songsOffset
+                    ? `calc(${sidebarOffset} + ${songsOffset} + var(--preview-margin-left, 0px))`
+                    : sidebarOffset || songsOffset
+                        ? `calc(${sidebarOffset || songsOffset} + var(--preview-margin-left, 0px))`
+                        : 'var(--preview-margin-left, 0px)';
+                document.querySelector('.preview-section')?.classList.remove('full-width');
             } else {
                 document.querySelector('.songs-section').style.left = '0';
                 document.querySelector('.preview-section').style.marginLeft = '0';
@@ -7831,6 +7879,10 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             localStorage.removeItem('setlistText');
             localStorage.removeItem('sidebarWidth');
             localStorage.removeItem('songsPanelWidth');
+            localStorage.removeItem('desktopSidebarWidth');
+            localStorage.removeItem('desktopSongsPanelWidth');
+            localStorage.removeItem('mobileSidebarWidth');
+            localStorage.removeItem('mobileSongsPanelWidth');
             localStorage.removeItem('previewMargin');
             localStorage.removeItem('autoScrollSpeed');
             localStorage.removeItem('sessionResetOption');
@@ -9485,7 +9537,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         }
 
         function saveSettings() {
-            const sidebarWidth = document.getElementById("panelWidthInput")?.value || "20";
+            const panelSettings = getPanelWidthSettings();
+            const sidebarWidth = document.getElementById("panelWidthInput")?.value || panelSettings.defaultWidth;
             const songsPanelWidth = sidebarWidth;
             const newAutoScrollSpeed = document.getElementById("autoScrollSpeedInput")?.value || "1500";
             const newFontSize = document.getElementById("uiFontSizeInput")?.value || "default";
@@ -9494,8 +9547,10 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             document.documentElement.style.setProperty('--songs-panel-width', `${songsPanelWidth}%`);
 
             try {
-                localStorage.setItem("sidebarWidth", sidebarWidth);
-                localStorage.setItem("songsPanelWidth", songsPanelWidth);
+                localStorage.setItem(panelSettings.sidebarKey, sidebarWidth);
+                localStorage.setItem(panelSettings.songsKey, songsPanelWidth);
+                localStorage.removeItem("sidebarWidth");
+                localStorage.removeItem("songsPanelWidth");
                 localStorage.setItem("autoScrollSpeed", newAutoScrollSpeed);
                 localStorage.setItem("uiFontSize", newFontSize);
             } catch (e) {
@@ -9708,6 +9763,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     document.querySelector('.songs-section').classList.remove('hidden');
                     document.querySelector('.sidebar').classList.add('hidden');
                     document.querySelector('.preview-section').classList.remove('full-width');
+                } else {
+                    document.querySelector('.songs-section')?.classList.remove('hidden');
+                    window.MobileUI?.updatePositions?.();
                 }
             });
 
@@ -9729,6 +9787,9 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     document.querySelector('.songs-section').classList.remove('hidden');
                     document.querySelector('.sidebar').classList.add('hidden');
                     document.querySelector('.preview-section').classList.remove('full-width');
+                } else {
+                    document.querySelector('.songs-section')?.classList.remove('hidden');
+                    window.MobileUI?.updatePositions?.();
                 }
             });
     
@@ -10364,7 +10425,8 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             }
     
             settingsBtn.addEventListener("click", () => {
-                const sidebarWidth = localStorage.getItem("sidebarWidth") || (window.innerWidth <= 768 ? "70" : "20");
+                const panelSettings = getPanelWidthSettings();
+                const sidebarWidth = localStorage.getItem(panelSettings.sidebarKey) || panelSettings.defaultWidth;
                 const savedAutoScrollSpeed = localStorage.getItem("autoScrollSpeed") || "1500";
                 const savedFontSize = localStorage.getItem("uiFontSize") || "default";
 

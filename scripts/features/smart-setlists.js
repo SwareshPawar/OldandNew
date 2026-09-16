@@ -296,10 +296,10 @@
             loadFunction: null,
             emptyMessage: 'No smart setlists yet',
             icon: 'fa-brain',
-            showHandler: showSmartSetlistInMainSection,
-            editHandler: editSmartSetlist,
-            deleteHandler: deleteSmartSetlist,
-            refreshHandler: updateSmartSetlist,
+            showHandler: (setlistId) => showSmartSetlistInMainSection(setlistId, deps),
+            editHandler: (setlistId) => editSmartSetlist(setlistId, deps),
+            deleteHandler: (setlistId) => deleteSmartSetlist(setlistId, deps),
+            refreshHandler: (setlistId) => updateSmartSetlist(setlistId, deps),
             descriptionHideTypes: ['my', 'global'],
             checkPermissions: (setlist) => {
                 const currentUser = deps.getCurrentUser();

@@ -18,17 +18,19 @@
         if (!sidebar || !songsSection || !previewSection) return;
 
         if (window.innerWidth > 768) {
-            if (sidebar.classList.contains('hidden')) {
-                songsSection.style.left = '0';
-                previewSection.style.marginLeft = songsSection.classList.contains('hidden')
-                    ? 'var(--preview-margin-left)'
-                    : 'calc(var(--songs-panel-width) + var(--preview-margin-left))';
-            } else {
-                songsSection.style.left = 'var(--sidebar-width)';
-                previewSection.style.marginLeft = songsSection.classList.contains('hidden')
-                    ? 'calc(var(--sidebar-width) + var(--preview-margin-left))'
-                    : 'calc(var(--sidebar-width) + var(--songs-panel-width) + var(--preview-margin-left))';
-            }
+            sidebar.classList.remove('mobile-home-drawer-open');
+            const sidebarHidden = sidebar.classList.contains('hidden');
+            const songsHidden = songsSection.classList.contains('hidden');
+            const sidebarOffset = sidebarHidden ? '' : 'var(--sidebar-width, 20%)';
+            const songsOffset = songsHidden ? '' : 'var(--songs-panel-width, 35%)';
+
+            songsSection.style.left = sidebarHidden ? '0' : 'var(--sidebar-width, 20%)';
+            previewSection.style.marginLeft = sidebarOffset && songsOffset
+                ? `calc(${sidebarOffset} + ${songsOffset} + var(--preview-margin-left, 0px))`
+                : sidebarOffset || songsOffset
+                    ? `calc(${sidebarOffset || songsOffset} + var(--preview-margin-left, 0px))`
+                    : 'var(--preview-margin-left, 0px)';
+            previewSection.classList.remove('full-width');
         } else {
             songsSection.style.left = '0';
             previewSection.style.marginLeft = '0';
@@ -121,6 +123,11 @@
 
         document.querySelector('.mobile-nav-sidebar')?.addEventListener('click', (event) => {
             event.stopPropagation();
+            if (window.innerWidth > 768) {
+                sidebar.classList.toggle('hidden');
+                updatePositions();
+                return;
+            }
             sidebar.classList.toggle('hidden');
             if (!sidebar.classList.contains('hidden')) {
                 songsSection.classList.add('hidden');
@@ -130,6 +137,11 @@
 
         document.querySelector('.mobile-nav-songs')?.addEventListener('click', (event) => {
             event.stopPropagation();
+            if (window.innerWidth > 768) {
+                songsSection.classList.toggle('hidden');
+                updatePositions();
+                return;
+            }
             songsSection.classList.toggle('hidden');
             if (!songsSection.classList.contains('hidden')) {
                 sidebar.classList.add('hidden');
@@ -156,10 +168,11 @@
         const sidebar = document.querySelector('.sidebar');
         const songsSection = document.querySelector('.songs-section');
         const hasSongSelected = Boolean(document.getElementById('songPreview')?.dataset.songId);
+        const isMobile = window.innerWidth <= 768;
         const panelOpen = (sidebar && !sidebar.classList.contains('hidden')) ||
             (songsSection && !songsSection.classList.contains('hidden'));
 
-        if (!hasSongSelected || panelOpen) {
+        if (!hasSongSelected || (isMobile && panelOpen)) {
             window.closeSuggestedSongsDrawer?.();
             toggle?.setAttribute('hidden', '');
             // Force the drawer fully out of the DOM flow so it can't peek behind the panel or when no song is selected.
@@ -357,6 +370,13 @@
         const songsSection = document.querySelector('.songs-section');
         const previewSection = document.querySelector('.preview-section');
         const backdrop = document.getElementById('mobileHomeBackdrop');
+        if (window.innerWidth > 768) {
+            sidebar?.classList.remove('hidden', 'mobile-home-drawer-open');
+            songsSection?.classList.remove('hidden');
+            previewSection?.classList.remove('full-width');
+            updatePositions();
+            return;
+        }
         if (!sidebar || !backdrop) return;
 
         closeMobileSongsDrawer();
@@ -377,6 +397,15 @@
 
     function closeMobileHomeDrawer() {
         const sidebar = document.querySelector('.sidebar');
+        if (window.innerWidth > 768) {
+            sidebar?.classList.remove('hidden', 'mobile-home-drawer-open');
+            document.getElementById('mobileHomeBackdrop')?.classList.remove('open');
+            document.body.classList.remove('mobile-home-open');
+            clearNavDestinationActive('home');
+            updatePositions();
+            updateSuggestedToggleVisibility();
+            return;
+        }
         const backdrop = document.getElementById('mobileHomeBackdrop');
         if (!sidebar || !backdrop) return;
 
@@ -533,11 +562,13 @@
             filtersToggle?.setAttribute('aria-expanded', 'false');
         };
         filtersToggle?.addEventListener('click', () => {
+            if (window.innerWidth > 768) return;
             const isOpen = songsSection?.classList.toggle('mobile-filters-open');
             filtersToggle.setAttribute('aria-expanded', String(Boolean(isOpen)));
         });
         filtersBackdrop?.addEventListener('click', closeFilters);
         sortToggle?.addEventListener('click', () => {
+            if (window.innerWidth > 768) return;
             songsSection?.classList.add('mobile-filters-open');
             filtersToggle?.setAttribute('aria-expanded', 'true');
             sortFilter?.focus();
@@ -605,14 +636,20 @@
         // handler (registering directly on #showAll/#showFavorites does not guarantee order).
         document.addEventListener('click', (event) => {
             if (event.target.closest('#showAll')) {
-                closeMobileHomeDrawer();
                 if (window.innerWidth <= 768) {
+                    closeMobileHomeDrawer();
                     openMobileSongsDrawer();
+                } else {
+                    document.querySelector('.songs-section')?.classList.remove('hidden');
+                    updatePositions();
                 }
             } else if (event.target.closest('#showFavorites')) {
-                closeMobileHomeDrawer();
                 if (window.innerWidth <= 768) {
+                    closeMobileHomeDrawer();
                     openMobileSongsDrawer();
+                } else {
+                    document.querySelector('.songs-section')?.classList.remove('hidden');
+                    updatePositions();
                 }
             }
         }, true);
@@ -620,7 +657,14 @@
         setlistBackdrop?.addEventListener('click', closeMobileSetlistDrawer);
         if (setlistDropdown && setlistDropdown.dataset.mobileHomeBound !== 'true') {
             setlistDropdown.dataset.mobileHomeBound = 'true';
-            setlistDropdown.addEventListener('change', () => closeMobileHomeDrawer(), true);
+            setlistDropdown.addEventListener('change', () => {
+                if (window.innerWidth <= 768) {
+                    closeMobileHomeDrawer();
+                } else {
+                    document.querySelector('.songs-section')?.classList.remove('hidden');
+                    updatePositions();
+                }
+            }, true);
         }
 
         const toolsToggle = document.getElementById('mobileToolsToggle');
@@ -661,6 +705,7 @@
             if (!content || content.dataset.mobileSetlistBound === 'true') return;
             content.dataset.mobileSetlistBound = 'true';
             content.addEventListener('click', (event) => {
+                if (window.innerWidth > 768) return;
                 const item = event.target.closest('.setlist-item');
                 if (!item) return;
                 event.preventDefault();
