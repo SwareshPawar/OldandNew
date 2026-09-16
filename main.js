@@ -2112,7 +2112,6 @@ async function performInitialization() {
     updateProgress('setupUI', 10);
     loadSettings();
     addEventListeners();
-    addPanelToggles();
     updateProgress('setupUI', 30);
     
     if (window.MobileUI && typeof window.MobileUI.initializeMobileUI === 'function') {
@@ -2410,9 +2409,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         const confirmDeleteAll = document.getElementById('confirmDeleteAll');
         const searchInput = document.getElementById('searchInput');
         const clearSearchBtn = document.getElementById('clearSearch');
-    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
-    const toggleSongsBtn = document.getElementById('toggle-songs');
-    const toggleAllPanelsBtn = document.getElementById('toggle-all-panels');
     const toggleAutoScrollBtn = document.getElementById('toggleAutoScroll');
     const keepScreenOnBtn = document.getElementById('keepScreenOnBtn');
     const editSetlistSectionBtn = document.getElementById('editSetlistSectionBtn');
@@ -7231,86 +7227,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             lyricsContainer.classList.add(isNew ? 'lyrics-bg-New' : 'lyrics-bg-Old');
         }
     
-        function addPanelToggles() {
-            const sidebar = document.querySelector('.sidebar');
-            const songsSection = document.querySelector('.songs-section');
-            const previewSection = document.querySelector('.preview-section');
-    
-            if (!sidebar || !songsSection || !previewSection || !toggleSidebarBtn || !toggleSongsBtn || !toggleAllPanelsBtn) {
-                return;
-            }
-    
-            toggleSidebarBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Don't toggle if the button was just dragged
-                if (toggleSidebarBtn._wasDragged) {
-                    toggleSidebarBtn._wasDragged = false;
-                    return;
-                }
-                sidebar.classList.toggle('hidden');
-                if (window.innerWidth <= 768) {
-                    if (!sidebar.classList.contains('hidden')) {
-                        songsSection.classList.add('hidden');
-                    }
-                }
-                updatePositions();
-            });
-    
-            toggleSongsBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Don't toggle if the button was just dragged
-                if (toggleSongsBtn._wasDragged) {
-                    toggleSongsBtn._wasDragged = false;
-                    return;
-                }
-                songsSection.classList.toggle('hidden');
-                if (window.innerWidth <= 768) {
-                    if (!songsSection.classList.contains('hidden')) {
-                        sidebar.classList.add('hidden');
-                    }
-                }
-                updatePositions();
-            });
-    
-            toggleAllPanelsBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Don't toggle if the button was just dragged
-                if (toggleAllPanelsBtn._wasDragged) {
-                    toggleAllPanelsBtn._wasDragged = false;
-                    return;
-                }
-                const areBothHidden = sidebar.classList.contains('hidden') && songsSection.classList.contains('hidden');
-                sidebar.classList.toggle('hidden', !areBothHidden);
-                songsSection.classList.toggle('hidden', !areBothHidden);
-                toggleAllPanelsBtn.querySelector('i').className = areBothHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
-                updatePositions();
-            });
-    
-            document.addEventListener('click', (e) => {
-                if (window.innerWidth <= 768 &&
-                    !e.target.closest('.sidebar') &&
-                    !e.target.closest('.songs-section') &&
-                    !e.target.closest('.panel-toggle') &&
-                    !e.target.closest('.modal')) {
-                    sidebar.classList.add('hidden');
-                    songsSection.classList.add('hidden');
-                    toggleAllPanelsBtn.querySelector('i').className = 'fas fa-eye';
-                    updatePositions();
-                }
-            });
-    
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('hidden');
-                songsSection.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('hidden');
-                songsSection.classList.add('hidden');
-            }
-            updatePositions();
-    
-            window.addEventListener('resize', updatePositions);
-        }
-
         // Mobile touch navigation enhancements
         function addMobileTouchNavigation() {
             if (window.MobileUI) return window.MobileUI.addMobileTouchNavigation(getMobileUIDeps());
@@ -10512,11 +10428,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             applyTheme(isDarkMode);
             });
     
-            // Make toggle buttons draggable
-            makeToggleDraggable('toggle-sidebar');
-            makeToggleDraggable('toggle-songs');
-            makeToggleDraggable('toggle-all-panels');
-
             // ====================== SETLIST EVENT LISTENERS ======================
             
             // Attach direct event listeners to specific elements to avoid conflicts
@@ -11052,197 +10963,6 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             }
 
             // ====================== END SETLIST EVENT LISTENERS ======================
-        }
-    
-        function makeToggleDraggable(id) {
-            if (window.MobileUI) return window.MobileUI.makeToggleDraggable(id, getMobileUIDeps());
-            const el = document.getElementById(id);
-            if (!el) return;
-            
-            // Prevent multiple initializations
-            if (el._isDraggableInitialized) return;
-            el._isDraggableInitialized = true;
-            
-            let isDragging = false, offsetX = 0, offsetY = 0;
-            let dragStarted = false; // To distinguish between click and drag
-
-            const savePosition = () => {
-                const pos = { top: el.style.top, left: el.style.left, right: el.style.right, bottom: el.style.bottom };
-                localStorage.setItem(id + '-pos', JSON.stringify(pos));
-            };
-
-            const restorePosition = () => {
-            const saved = localStorage.getItem(id + '-pos');
-            const minPadding = 20;
-            const btnSize = 36;
-            const spacing = 60; // Consistent spacing on all devices
-            const allIds = ['toggle-sidebar', 'toggle-songs', 'toggle-all-panels'];
-            const idx = allIds.indexOf(id);
-
-            if (saved) {
-                let pos;
-                try {
-                    pos = JSON.parse(saved);
-                } catch (e) {
-                    // Failed to parse saved position - continue without restoring
-                    return;
-                }
-                // Clamp to viewport
-                let top = parseInt(pos.top) || minPadding;
-                let left = parseInt(pos.left) || '';
-                let right = parseInt(pos.right) || '';
-                let bottom = parseInt(pos.bottom) || '';
-
-                // Clamp left/top to avoid offscreen
-                top = Math.max(minPadding, Math.min(top, window.innerHeight - btnSize - minPadding));
-                if (left !== '') left = Math.max(minPadding, Math.min(left, window.innerWidth - btnSize - minPadding));
-                el.style.top = top + 'px';
-                el.style.left = left !== '' ? left + 'px' : '';
-                el.style.right = right !== '' ? right + 'px' : '';
-                el.style.bottom = bottom !== '' ? bottom + 'px' : '';
-            } else {
-                // Default: position vertically on right edge, centered
-                const centerY = Math.floor(window.innerHeight / 2);
-                // Calculate total height of all buttons with spacing
-                const totalHeight = allIds.length * btnSize + (allIds.length - 1) * spacing;
-                const startY = centerY - Math.floor(totalHeight / 2);
-                
-                el.style.top = Math.max(minPadding, startY + idx * (btnSize + spacing)) + 'px';
-                el.style.left = '';
-                el.style.right = minPadding + 'px';
-                el.style.bottom = '';
-            }
-        };
-
-        // Snap to nearest edge and prevent overlap/offscreen
-                function snapToEdge() {
-            const rect = el.getBoundingClientRect();
-            const winW = window.innerWidth;
-            const winH = window.innerHeight;
-            const gap = 15;
-            const btnSize = rect.width || 36;
-
-            // Clamp to viewport
-            let left = Math.max(gap, Math.min(rect.left, winW - btnSize - gap));
-            let top = Math.max(gap, Math.min(rect.top, winH - btnSize - gap));
-
-            // Prevent overlap with other buttons
-            const allButtons = document.querySelectorAll('.panel-toggle.draggable');
-            for (const otherBtn of allButtons) {
-                if (otherBtn === el) continue;
-                const otherRect = otherBtn.getBoundingClientRect();
-                if (
-                    left < otherRect.right &&
-                    left + btnSize > otherRect.left &&
-                    top < otherRect.bottom &&
-                    top + btnSize > otherRect.top
-                ) {
-                    // Move right or down to avoid overlap
-                    left = otherRect.right + gap;
-                    if (left > winW - btnSize - gap) {
-                        left = gap;
-                        top = otherRect.bottom + gap;
-                        if (top > winH - btnSize - gap) top = gap;
-                    }
-                }
-            }
-
-            // Reset all positions
-            el.style.left = left + 'px';
-            el.style.top = top + 'px';
-            el.style.right = '';
-            el.style.bottom = '';
-            savePosition();
-        }
-
-            // Snap to nearest edge
-            
-
-            const onMove = (clientX, clientY) => {
-                if (!isDragging) return;
-                dragStarted = true; // Mark that actual dragging has started
-                let newLeft = clientX - offsetX;
-                let newTop = clientY - offsetY;
-                el.style.left = newLeft + 'px';
-                el.style.top = newTop + 'px';
-                el.style.right = '';
-                el.style.bottom = '';
-            };
-
-            const onEnd = () => {
-                if (isDragging && dragStarted) {
-                    snapToEdge();
-                    // Mark that the element was dragged to prevent click event
-                    el._wasDragged = true;
-                    // Clear the flag after a short delay to allow normal clicks later
-                    setTimeout(() => {
-                        el._wasDragged = false;
-                    }, 100);
-                }
-                isDragging = false;
-                dragStarted = false;
-                document.body.style.userSelect = '';
-            };
-
-            const onMouseDown = (e) => {
-                e.preventDefault();
-                isDragging = true;
-                dragStarted = false;
-                const rect = el.getBoundingClientRect();
-                offsetX = e.clientX - rect.left;
-                offsetY = e.clientY - rect.top;
-                document.body.style.userSelect = 'none';
-            };
-
-            const onMouseMove = (e) => {
-                if (isDragging) {
-                    onMove(e.clientX, e.clientY);
-                }
-            };
-
-            const onTouchStart = (e) => {
-                isDragging = true;
-                dragStarted = false;
-                const touch = e.touches[0];
-                const rect = el.getBoundingClientRect();
-                offsetX = touch.clientX - rect.left;
-                offsetY = touch.clientY - rect.top;
-            };
-
-            const onTouchMove = (e) => {
-                if (isDragging) {
-                    const touch = e.touches[0];
-                    onMove(touch.clientX, touch.clientY);
-                    e.preventDefault();
-                }
-            };
-
-            // Add event listeners
-            el.addEventListener('mousedown', onMouseDown);
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onEnd);
-
-            el.addEventListener('touchstart', onTouchStart, { passive: false });
-            el.addEventListener('touchmove', onTouchMove, { passive: false });
-            el.addEventListener('touchend', onEnd);
-
-            // Snap to edge on window resize
-            window.addEventListener('resize', snapToEdge);
-
-            restorePosition();
-
-            let timeout;
-            const showTemporarily = () => {
-                el.classList.add('showing');
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    el.classList.remove('showing');
-                }, 3000);
-            };
-
-            el.addEventListener('mouseenter', () => el.classList.add('showing'));
-            el.addEventListener('mouseleave', () => el.classList.remove('showing'));
-            el.addEventListener('touchstart', showTemporarily, { passive: true });
         }
     
         // Global functions

@@ -14,9 +14,6 @@
         min-width: 0 ;
         max-width: 100vw ;
     }
-    #toggle-all-panels {
-        display: none ;
-    }
     .sidebar {
         width: var(--sidebar-width) ;
         min-width: 0 ;
@@ -1401,20 +1398,6 @@
                 font-size: 0.7rem;
             }
         }
-
-
-
-
-        #toggle-sidebar {
-            z-index: 1200 ; /* Ensure always on top */
-        }
-        #toggle-songs {
-            z-index: 1200 ; /* Ensure always on top */
-        }
-        #toggle-all-panels {
-            z-index: 1200 ; /* Ensure always on top */
-        }
-
         /* Suggested Songs Drawer */
         .suggested-songs-drawer {
             box-sizing: border-box;
@@ -1878,50 +1861,6 @@
             color: var(--text-color);
         }
 
-        /* Panel Toggles */
-        .panel-toggle.draggable {
-            position: fixed;
-            z-index: 1200;
-            padding: 8px;
-            background: var(--accent-color);
-            color: var(--primary-color);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
-            opacity: 0.9;
-            transform: scale(1);
-            border: none;
-        }
-
-        /* Default positioning for panel toggles - before JavaScript repositions them */
-        #toggle-sidebar {
-            top: calc(50% - 70px);
-            right: 20px;
-        }
-
-        #toggle-songs {
-            top: calc(50% - 10px);
-            right: 20px;
-        }
-
-        #toggle-all-panels {
-            top: calc(50% + 50px);
-            right: 20px;
-        }
-
-        /* Desktop: Always show panel toggles at full opacity */
-        @media (min-width: 769px) {
-            .panel-toggle.draggable {
-                opacity: 1 !important;
-            }
-        }
-
 #installAppBtn {
     display: none;
     position: fixed;
@@ -1965,24 +1904,6 @@ body.dark-mode #installAppBtn {
     }
 }
 
-        /* Add a container for your toggles */
-.panel-toggle-row {
-    position: fixed;
-    top: 12px;
-    left: 0;
-    width: 100vw;
-    display: flex;
-    gap: 12px;
-    justify-content: flex-start;
-    z-index: 1200;
-    pointer-events: none; /* Only buttons inside are interactive */
-}
-.panel-toggle-row .panel-toggle.draggable {
-    position: static;
-    pointer-events: auto;
-    margin: 0;
-}
-
         .sidebar-footer {
             margin-top: auto;
             padding: 5px;
@@ -1997,49 +1918,6 @@ body.dark-mode #installAppBtn {
             gap: 10px;
         }
         
-        .panel-toggle.draggable:hover,
-        .panel-toggle.draggable.showing {
-            transform: scale(1.1);
-            opacity: 1;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            justify-content: space-between;
-        }
-
-        .panel-toggle.draggable:active {
-            transform: scale(0.95);
-            transition: transform 0.1s ease;
-        }
-
-        .panel-toggle::after {
-            content: '';
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: var(--accent-color);
-            animation: pulse 2s infinite;
-            justify-content: space-between;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 0.8;
-            }
-
-            50% {
-                transform: scale(1.5);
-                opacity: 0.4;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 0.8;
-            }
-        }
-
         /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
@@ -4837,7 +4715,7 @@ body.dark-mode #installAppBtn {
             body {
                 padding-bottom: 80px;
             }
-            
+
             .preview-section {
                 padding-bottom: 10px;
             }
@@ -5751,8 +5629,7 @@ body.dark-mode #installAppBtn {
                 color: var(--text-color, #ece6d6);
             }
 
-            body.mobile-modern-mode .mobile-nav-container,
-            body.mobile-modern-mode .panel-toggle.draggable {
+            body.mobile-modern-mode .mobile-nav-container {
                 display: none !important;
             }
 
@@ -7591,14 +7468,6 @@ body.dark-mode #installAppBtn {
         align-items: flex-start;
         display: flex;
         gap: 5px;
-    }
-
-    #toggle-sidebar,
-    #toggle-songs,
-    #toggle-all-panels {
-        /* Ensure JavaScript has control over positioning on mobile */
-        position: fixed ;
-        z-index: 1100 ;
     }
 
     .suggested-songs-drawer {

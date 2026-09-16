@@ -48,7 +48,7 @@ Song Preview is the primary performance surface opened from Songs, not a fourth 
 - Main orchestration: `main.js`.
 - Mobile helper owner: `scripts/features/mobile-ui.js`.
 - Existing mobile state: `.hidden` classes on `.sidebar` and `.songs-section`; the preview remains underneath when both are hidden.
-- Existing legacy mobile controls: generated `.mobile-nav-container`, draggable `.panel-toggle` controls, and swipe navigation.
+- Existing compatibility mobile controls: generated `.mobile-nav-container` and swipe navigation. The obsolete draggable panel controls have been removed.
 - Current mobile boundary: `max-width: 768px`; desktop-specific rules begin at `769px`.
 - Song Preview owner: `scripts/features/song-preview-ui.js`.
 - Setlist owner: `scripts/features/setlists.js` and `scripts/features/smart-setlists.js`.

@@ -73,8 +73,8 @@ Use this document for exhaustive lookup. Use docs/CODEBASE_GUIDE.md for architec
 - Functions: fetchRecommendationWeights, fetchUsers, initializeAdminUI, loadUsers, loadWeightsToForm, markAdmin, registerGlobals, removeAdminRole, renderUsers, saveRecommendationWeightsToBackend, showAdminNotification, showAdminPanelModal, updateWeightsTotalBar
 
 ### scripts/features/mobile-ui.js
-- Total: 5 (Declared: 5, Class methods: 0)
-- Functions: addMobileTouchNavigation, createMobileNavButtons, initializeMobileUI, makeToggleDraggable, updatePositions
+- Total: 4 (Declared: 4, Class methods: 0)
+- Functions: addMobileTouchNavigation, createMobileNavButtons, initializeMobileUI, updatePositions
 
 ### scripts/shared/admin-page.js
 - Total: 5 (Declared: 5, Class methods: 0)

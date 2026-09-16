@@ -532,8 +532,6 @@ Representative functions:
 - addMobileTouchNavigation
 - setupAutoScroll
 - toggleAutoScroll
-- makeToggleDraggable
-- snapToEdge
 
 For the exhaustive list, use docs/FUNCTION_INVENTORY.md.
 
