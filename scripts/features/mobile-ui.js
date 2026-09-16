@@ -226,6 +226,7 @@
         closeMobileHomeDrawer();
         if (sidebar) sidebar.classList.add('hidden');
         if (setlistSection) setlistSection.style.display = 'none';
+        songsSection.classList.remove('mobile-setlist-mode');
 
         songsSection.classList.remove('hidden');
         if (backdrop) {
@@ -296,6 +297,7 @@
         const songsSection = document.querySelector('.songs-section');
         const backdrop = document.getElementById('mobileSongsBackdrop');
         if (songsSection) songsSection.classList.add('hidden');
+        songsSection?.classList.remove('mobile-setlist-mode');
         if (backdrop) {
             backdrop.classList.remove('open');
             safeSetAriaHidden(backdrop, true);
@@ -310,6 +312,21 @@
         closeMobileHomeDrawer();
         closeMobileSongsDrawer();
         closeMobileSetlistDrawer();
+    }
+
+    function resetTransientPanelState() {
+        const songsSection = document.querySelector('.songs-section');
+        const setlistSection = document.getElementById('setlistSection');
+        const setlistActions = document.getElementById('setlistSectionActions');
+
+        document.body.classList.remove('mobile-home-open', 'mobile-songs-open', 'mobile-setlist-open');
+        songsSection?.classList.remove('mobile-setlist-mode', 'mobile-filters-open');
+        songsSection?.classList.add('hidden');
+        if (setlistSection) setlistSection.style.display = 'none';
+        if (setlistActions) setlistActions.style.display = 'none';
+        document.getElementById('mobileHomeBackdrop')?.classList.remove('open');
+        document.getElementById('mobileSongsBackdrop')?.classList.remove('open');
+        document.getElementById('mobileSetlistBackdrop')?.classList.remove('open');
     }
 
     function activateMobileModernDestination(destination) {
@@ -731,6 +748,7 @@
 
     function initializeMobileUI(deps) {
         mobileUIDeps = deps || null;
+        resetTransientPanelState();
         createMobileNavButtons();
         createMobileModernShell();
         setupMobileCatalogue();
@@ -768,6 +786,7 @@
         openMobileSetlistDrawer,
         closeMobileSetlistDrawer,
         closeAllMobileDrawers,
+        resetTransientPanelState,
         initializeMobileUI,
         updateSuggestedToggleVisibility,
     };

@@ -551,17 +551,20 @@ window.dataCache = {
     userdata: null,
     'global-setlists': null,
     'my-setlists': null,
+    'smart-setlists': null,
     lastFetch: {
         songs: null,
         userdata: null,
         'global-setlists': null,
-        'my-setlists': null
+        'my-setlists': null,
+        'smart-setlists': null
     },
     lastSyncTimestamp: {
         songs: null, // For delta sync - tracks when we last synced songs
         userdata: null,
         'global-setlists': null,
-        'my-setlists': null
+        'my-setlists': null,
+        'smart-setlists': null
     }
 };
 
@@ -572,6 +575,9 @@ try {
     const storedSongs = localStorage.getItem('songs');
     const storedSongsTimestamp = localStorage.getItem('songsTimestamp');
     const storedSyncTimestamp = localStorage.getItem('songsSyncTimestamp');
+    const storedGlobalSetlists = localStorage.getItem('globalSetlists');
+    const storedMySetlists = localStorage.getItem('mySetlists');
+    const storedSmartSetlists = localStorage.getItem('smartSetlists');
 
     function isCacheFresh(type, timestamp) {
         if (!timestamp) return false;
@@ -580,23 +586,24 @@ try {
         return cacheAge < expiry;
     }
 
-    if (storedSongs && storedSongsTimestamp) {
-        if (isCacheFresh('songs', storedSongsTimestamp)) {
-            window.dataCache.songs = JSON.parse(storedSongs).map(normalizeSongAccidentals);
-            window.dataCache.lastFetch.songs = parseInt(storedSongsTimestamp);
-            // Load last sync timestamp for delta sync
-            if (storedSyncTimestamp) {
-                window.dataCache.lastSyncTimestamp.songs = storedSyncTimestamp;
-            }
-        } else {
-            const cacheAge = Date.now() - parseInt(storedSongsTimestamp);
-            const expiry = CACHE_EXPIRY.songs;
-            localStorage.removeItem('songs');
-            localStorage.removeItem('songsTimestamp');
-            localStorage.removeItem('songsSyncTimestamp');
+    if (storedSongs) {
+        window.dataCache.songs = JSON.parse(storedSongs).map(normalizeSongAccidentals);
+        window.dataCache.lastFetch.songs = storedSongsTimestamp ? parseInt(storedSongsTimestamp) : Date.now();
+        if (storedSyncTimestamp) {
+            window.dataCache.lastSyncTimestamp.songs = storedSyncTimestamp;
         }
     } else {
         // No cached songs found, will fetch from API
+    }
+
+    if (storedGlobalSetlists) {
+        window.dataCache['global-setlists'] = JSON.parse(storedGlobalSetlists);
+    }
+    if (storedMySetlists) {
+        window.dataCache['my-setlists'] = JSON.parse(storedMySetlists);
+    }
+    if (storedSmartSetlists) {
+        window.dataCache['smart-setlists'] = JSON.parse(storedSmartSetlists);
     }
 } catch (e) {
     console.warn('Error loading songs from localStorage:', e);
@@ -823,19 +830,33 @@ document.addEventListener('scroll', schedulePrefetch);
 // Disable Live Server WebSocket if it's causing delays
 
 // Global loading functions
-function showLoading(percent, message = null) {
+function showLoading(percent, message = null, options = null) {
     const overlay = document.getElementById('loadingOverlay');
     const percentEl = document.getElementById('loadingPercent');
     const messageEl = document.getElementById('loadingMessage');
-    if (overlay) overlay.style.display = 'flex';
+    if (overlay) {
+        overlay.classList.remove('hide');
+        overlay.removeAttribute('aria-hidden');
+        overlay.style.setProperty('display', 'flex', 'important');
+    }
     if (percentEl && typeof percent === 'number') percentEl.textContent = percent + '%';
     if (messageEl && message) messageEl.textContent = message;
+
+    if (options) {
+        window.loadingOptions = options;
+    }
+    const loadingOptions = window.loadingOptions || {};
     
-    // Safety timeout - hide loading after 30 seconds max
+    // Safety timeout
     clearTimeout(window.loadingTimeout);
     window.loadingTimeout = setTimeout(() => {
-        console.warn('Loading timeout reached - too many songs to download');
+        console.warn('Loading timeout reached');
         hideLoading();
+
+        if (loadingOptions.mode === 'sync') {
+            showNotification('Sync is taking longer than expected. You can keep browsing cached songs and try again later.', 'error');
+            return;
+        }
         
         // Show message asking user to refresh
         const shouldRefresh = confirm('Loading is taking longer than expected due to the large number of songs.\n\nWould you like to refresh the page to retry?');
@@ -844,7 +865,7 @@ function showLoading(percent, message = null) {
         } else {
             showNotification('If songs don\'t load, please refresh the page manually', 5000);
         }
-    }, 30000);
+    }, loadingOptions.timeoutMs || 30000);
 }
 
 function hideLoading() {
@@ -856,6 +877,7 @@ function hideLoading() {
     
     // Clear the safety timeout
     clearTimeout(window.loadingTimeout);
+    window.loadingOptions = null;
 }
 
 // Debug function to manually hide loader
@@ -896,6 +918,13 @@ const loadingTasks = {
 };
 
 let currentProgress = 0;
+
+function resetLoadingProgress() {
+    Object.keys(loadingTasks).forEach((key) => {
+        loadingTasks[key].completed = false;
+    });
+    currentProgress = 0;
+}
 
 // Global progress update function - callable from any initialization phase
 function updateProgress(taskName, customPercent = null) {
@@ -1172,9 +1201,6 @@ async function loadSongsWithProgress(forceRefresh = false) {
 
 // Merge all DOMContentLoaded logic into one handler
 document.addEventListener('DOMContentLoaded', () => {
-    // Always fetch latest weights on app load
-    fetchRecommendationWeights();
-
     if (window.MobileUI && typeof window.MobileUI.createMobileModernShell === 'function') {
         window.MobileUI.createMobileModernShell();
     }
@@ -1203,8 +1229,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch {}
         }
     }
-    updateLocalTransposeCache();
-
     // Inject spinner overlay and start initialization (only if authenticated)
     (async () => {
         // Inject spinner overlay if absent
@@ -1220,50 +1244,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const isAuthenticated = token && isJwtValid(token);
 
         if (!isAuthenticated) {
-            // User not logged in - show auth choice modal and wait
-            console.log('⚠️ User not authenticated - showing auth choice modal');
-            
-            // Show a message instead of loading
-            showLoading(0, 'Please sign in to continue');
-            
-            // Show auth choice modal after a brief delay
-            setTimeout(() => {
-                hideLoading();
-                
-                // Show a modal with both Login and Register options
-                let modal = document.getElementById('authChoiceModal');
-                if (!modal) {
-                    modal = document.createElement('div');
-                    modal.id = 'authChoiceModal';
-                    modal.className = 'modal';
-                    modal.innerHTML = `
-                        <div class="modal-content" style="text-align:center;">
-                            <h3>Welcome!</h3>
-                            <p>Please login or register to continue.</p>
-                            <button id="authLoginBtn" class="btn btn-primary" style="margin:8px 0 8px 0;width:80%;">Login</button>
-                            <button id="authRegisterBtn" class="btn btn-secondary" style="margin-bottom:8px;width:80%;">Register</button>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-                    document.getElementById('authLoginBtn').onclick = () => {
-                        modal.style.display = 'none';
-                        showLoginModal();
-                    };
-                    document.getElementById('authRegisterBtn').onclick = () => {
-                        modal.style.display = 'none';
-                        showRegisterModal();
-                    };
-                }
-                modal.style.display = 'flex';
-            }, 500);
-            
-            return; // Don't initialize until user logs in
+            localStorage.removeItem('jwtToken');
+            jwtToken = '';
         }
 
-        // User is authenticated - proceed with initialization
+        // Open from cache. Network sync is user-initiated through Sync App.
         if (!initializationState.isInitialized && !initializationState.isInitializing) {
-            // Show loading immediately
-            showLoading(0, 'Initializing...');
             window.init();
         }
     })();
@@ -1288,7 +1274,6 @@ document.addEventListener('DOMContentLoaded', () => {
     populateRhythmCategoryDropdown('songRhythmCategory');
     populateRhythmCategoryDropdown('editSongRhythmCategory');
 
-    hydrateRhythmFamilies();
     updateRhythmSetIdPreview('songRhythmFamily', 'songRhythmSetNo', 'songRhythmSetIdPreview');
     updateRhythmSetIdPreview('editSongRhythmFamily', 'editSongRhythmSetNo', 'editSongRhythmSetIdPreview');
 
@@ -1353,15 +1338,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auth UI
     if (typeof updateAuthButtons === 'function') updateAuthButtons();
-    if (jwtToken && isJwtValid(jwtToken) && typeof loadUserData === 'function') {
-        loadUserData().then(() => {
-            if (typeof updateAuthButtons === 'function') updateAuthButtons();
-        });
-    } else if (!isJwtValid(jwtToken)) {
+    if (!isJwtValid(jwtToken)) {
         localStorage.removeItem('jwtToken');
         jwtToken = '';
-        if (typeof updateAuthButtons === 'function') updateAuthButtons();
     }
+    if (typeof updateAuthButtons === 'function') updateAuthButtons();
 
     // Tap tempo
     setupTapTempo('tapTempoBtn', 'songTempo');
@@ -1483,45 +1464,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (data.user) localStorage.setItem('currentUser', JSON.stringify(data.user));
                     } catch (e) {
                         console.warn('Failed to save authentication data:', e);
-                        // Continue anyway - authentication still works for this session
                     }
                     jwtToken = data.token;
                     currentUser = data.user;
-                    
-                    // Close login modal
+
                     document.getElementById('loginModal').style.display = 'none';
-                    
                     showNotification('Login successful!', 2000);
-                    
-                    // Check if app was already initialized (subsequent login)
+
                     if (initializationState.isInitialized) {
-                        // App already loaded - just update UI and load user-specific data
                         updateAuthButtons();
-                        await loadUserData();
-                        await loadMySetlists();
-                        await loadSmartSetlistsFromServer();
-                        renderMySetlists();
-                        renderSmartSetlists();
+                        await syncAppData({ silent: true });
                     } else if (!initializationState.isInitializing) {
-                        // First-time login - start full initialization with loader
-                        console.log('🚀 Starting initialization after login...');
-                        showLoading(0, 'Initializing...');
                         await window.init();
-                        
-                        // After initialization, show sidebar on mobile
-                        if (window.innerWidth <= 768) {
-                            const sidebar = document.querySelector('.sidebar');
-                            if (sidebar) {
-                                sidebar.classList.remove('hidden');
-                                console.log('📱 Mobile: Showing sidebar after login');
-                            }
-                        }
                     }
                 } else {
-                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.textContent = data.error || data.message || 'Login failed';
                     errorDiv.style.display = 'block';
                 }
-            } catch {
+            } catch (err) {
                 errorDiv.textContent = 'Network error';
                 errorDiv.style.display = 'block';
             }
@@ -2042,15 +2002,24 @@ window.init = async function init() {
 
 async function performInitialization() {
     // Show loader immediately at 0%
-    showLoading(0, 'Initializing...');
-    console.log('🚀 Starting app initialization...');
+    showLoading(0, 'Opening cached app...');
+    console.log('🚀 Opening app from cache...');
+
+    window.MobileUI?.resetTransientPanelState?.();
     
     // Restore JWT and user state
     jwtToken = localStorage.getItem('jwtToken') || '';
     if (jwtToken && isJwtValid(jwtToken)) {
         updateAuthButtons();
-        await loadUserData();
+        try {
+            const storedUser = localStorage.getItem('currentUser');
+            currentUser = storedUser ? JSON.parse(storedUser) : currentUser;
+        } catch {
+            currentUser = null;
+        }
     } else {
+        localStorage.removeItem('jwtToken');
+        jwtToken = '';
         updateAuthButtons();
     }
     
@@ -2071,28 +2040,25 @@ async function performInitialization() {
         setupSearchableMultiselect('editSongArtist', 'editArtistDropdown', 'editSelectedArtists', ARTISTS, true);
     }
     
-    // Always show loading and load songs - let loadSongsWithProgress handle caching
-    console.log('� Loading songs with progress indication...');
-    await loadSongsWithProgress();
-    
-    console.log('📊 Songs loaded:', songs.length, '- Loading setlists...');
+    songs = Array.isArray(window.dataCache.songs) ? window.dataCache.songs.map(normalizeSongAccidentals) : [];
+    window.songs = songs;
+    globalSetlists = Array.isArray(window.dataCache['global-setlists']) ? window.dataCache['global-setlists'] : [];
+    mySetlists = Array.isArray(window.dataCache['my-setlists']) ? window.dataCache['my-setlists'] : [];
+    smartSetlists = Array.isArray(window.dataCache['smart-setlists']) ? window.dataCache['smart-setlists'] : [];
+
+    console.log('📊 Cached app data loaded:', songs.length, 'songs');
     
     // Load setlists efficiently (70-80%)
     updateProgress('loadSetlists', 20);
-    await loadGlobalSetlists();
     updateProgress('loadSetlists', 50);
-    if (jwtToken && isJwtValid(jwtToken)) {
-        await loadMySetlists();
-        await loadSmartSetlistsFromServer(); // Load smart setlists if authenticated
-    }
     updateProgress('loadSetlists', 90);
     
     console.log('✅ Setlists loaded - Setting up UI components...');
     
-    // Ensure setlist folders have initial content
-    renderGlobalSetlists();
-    renderMySetlists();
-    renderSmartSetlists();
+    // Ensure setlist folders show cached content only. Sync App refreshes from the server.
+    if (globalSetlists.length > 0) renderGlobalSetlists();
+    if (mySetlists.length > 0) renderMySetlists();
+    if (smartSetlists.length > 0) renderSmartSetlists();
     
     // Populate setlist dropdown after setlists are loaded
     populateSetlistDropdown();
@@ -2128,6 +2094,9 @@ async function performInitialization() {
     applyLyricsBackground(document.getElementById('NewTab').classList.contains('active'));
     // connectWebSocket(); // Removed - not needed and may cause delays
     updateSongCount();
+    if (typeof renderFavorites === 'function') {
+        renderFavorites();
+    }
     updateProgress('setupUI', 70);
     initScreenWakeLock();
     if (window.DOMHelpers && typeof window.DOMHelpers.initializeDomUI === 'function') {
@@ -2190,6 +2159,8 @@ async function performInitialization() {
             } else {
                 songPreviewEl.innerHTML = '<h2>Select a song</h2><div class="song-lyrics">No song is selected</div>';
                 delete songPreviewEl.dataset.songId;
+                ensureCacheStartCard();
+                bindCacheStartActions();
                 window.updateSuggestedToggleVisibility?.();
             }
         }
@@ -2218,6 +2189,10 @@ async function performInitialization() {
                 sidebar.classList.remove('hidden');
                 console.log('📱 Mobile: Showing sidebar after initialization');
             }
+        }
+
+        if (typeof showNotification === 'function') {
+            showNotification('Tip: use Home > Sync App to get the latest songs, favorites and setlists.', 6000);
         }
     }, 300); // Small delay to ensure UI has rendered
 }
@@ -2275,6 +2250,22 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
         // songs is now global - don't redeclare it here
         let favorites = [];
         let userDataSaveQueue = Promise.resolve();
+        function loadCachedFavorites() {
+            try {
+                const cachedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                favorites = Array.isArray(cachedFavorites) ? cachedFavorites : [];
+            } catch {
+                favorites = [];
+            }
+        }
+        function cacheFavorites() {
+            try {
+                localStorage.setItem('favorites', JSON.stringify(Array.isArray(favorites) ? favorites : []));
+            } catch (error) {
+                console.warn('Failed to cache favorites:', error);
+            }
+        }
+        loadCachedFavorites();
         let keepScreenOn = false;
         let autoScrollSpeed;
         try {
@@ -2326,19 +2317,13 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             jwtToken = localStorage.getItem('jwtToken');
         }
 
-        // On script load, update UI and user data if logged in and token is valid
-        if (jwtToken && isJwtValid(jwtToken)) {
-            loadUserData().then(() => {
-                updateAuthButtons();
-            });
-        } else if (jwtToken && !isJwtValid(jwtToken)) {
+        // On script load, verify local JWT status only. Sync App refreshes network data.
+        if (jwtToken && !isJwtValid(jwtToken)) {
             // Remove expired token only if it is actually expired
             localStorage.removeItem('jwtToken');
             jwtToken = '';
-            updateAuthButtons();
-        } else {
-            updateAuthButtons();
         }
+        updateAuthButtons();
 
             
         async function loadSongsFromFile() {
@@ -2929,9 +2914,17 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             showPreview,
             KEYS,
             getGlobalSetlists: () => globalSetlists,
-            setGlobalSetlists: (v) => { globalSetlists = v; },
+            setGlobalSetlists: (v) => {
+                globalSetlists = v;
+                window.dataCache['global-setlists'] = v;
+                try { localStorage.setItem('globalSetlists', JSON.stringify(v)); } catch (e) { console.warn('Failed to cache global setlists:', e); }
+            },
             getMySetlists: () => mySetlists,
-            setMySetlists: (v) => { mySetlists = v; },
+            setMySetlists: (v) => {
+                mySetlists = v;
+                window.dataCache['my-setlists'] = v;
+                try { localStorage.setItem('mySetlists', JSON.stringify(v)); } catch (e) { console.warn('Failed to cache my setlists:', e); }
+            },
             getCurrentViewingSetlist: () => currentViewingSetlist,
             setCurrentViewingSetlist: (v) => { currentViewingSetlist = v; },
             getCurrentSetlistType: () => currentSetlistType,
@@ -2961,7 +2954,11 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             getCurrentUser: () => currentUser,
             getSongs: () => songs,
             getSmartSetlists: () => smartSetlists,
-            setSmartSetlists: (value) => { smartSetlists = value; },
+            setSmartSetlists: (value) => {
+                smartSetlists = value;
+                window.dataCache['smart-setlists'] = value;
+                try { localStorage.setItem('smartSetlists', JSON.stringify(value)); } catch (e) { console.warn('Failed to cache smart setlists:', e); }
+            },
             getSmartSetlistScanResults: () => smartSetlistScanResults,
             setSmartSetlistScanResults: (value) => { smartSetlistScanResults = value; },
             getCurrentViewingSetlist: () => currentViewingSetlist,
@@ -7172,11 +7169,12 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 type = 'info';
             }
             
+            clearTimeout(window.notificationTimeout);
             notificationEl.textContent = message;
             notificationEl.classList.remove('error', 'success', 'info');
             notificationEl.classList.add('show', type);
             
-            setTimeout(() => {
+            window.notificationTimeout = setTimeout(() => {
                 notificationEl.classList.remove('show', 'error', 'success', 'info');
             }, duration);
         }
@@ -7493,14 +7491,18 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
     
    
 
-        async function loadUserData() {
+        async function loadUserData(forceRefresh = false) {
             try {
-                const response = await cachedFetch(`${API_BASE_URL}/api/userdata`);
+                const response = await cachedFetch(`${API_BASE_URL}/api/userdata`, forceRefresh);
                 if (response.ok) {
                     const data = await response.json();
                     // Always update favorites from backend
                     favorites = Array.isArray(data.favorites) ? data.favorites : [];
                     if (!Array.isArray(favorites)) favorites = [];
+                    cacheFavorites();
+                    if (data.transpose) {
+                        localStorage.setItem('transposeCache', JSON.stringify(data.transpose));
+                    }
                     if (data.user && data.user.username) {
                         currentUser = data.user;
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -7560,6 +7562,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 const data = await response.json();
                 if (data && data.message === 'User data updated') {
                     // Success! Invalidate userdata cache so next fetch gets fresh data
+                    cacheFavorites();
                     invalidateCache(['userdata']);
                     return true;
                 } else {
@@ -7606,6 +7609,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                     if (data.songs && Array.isArray(data.songs)) {
                         songs = data.songs;
                         favorites = data.favorites || [];
+                        cacheFavorites();
                         saveSongs();
                         queueSaveUserData();
                         
@@ -9256,6 +9260,7 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
                 nowFavorite = false;
             }
             showNotification(`"${song.title}" ${nowFavorite ? 'added to' : 'removed from'} favorites`);
+            cacheFavorites();
             queueSaveUserData();
             const favButtons = document.querySelectorAll(`.favorite-btn[data-song-id="${id}"]`);
             favButtons.forEach(btn => {
@@ -9559,10 +9564,138 @@ function updateTaalDropdown(timeSelectId, taalSelectId, selectedTaal = null) {
             autoScrollSpeed = parseInt(newAutoScrollSpeed, 10) || 1500;
             applyFontSize(newFontSize);
         }
+
+        function ensureCacheStartCard() {
+            const preview = document.getElementById('songPreview');
+            if (!preview || document.getElementById('cacheStartCard')) return;
+
+            const card = document.createElement('div');
+            card.className = 'cache-start-card';
+            card.id = 'cacheStartCard';
+            card.innerHTML = `
+                <button type="button" class="btn btn-primary cache-sync-btn" id="syncAppBtn" title="Sync App - Refresh songs and setlists from the server" aria-label="Sync App">
+                    <i class="fas fa-sync" aria-hidden="true"></i> Sync App
+                </button>
+                <button type="button" class="btn btn-secondary cache-browse-btn" id="browseCachedBtn" title="Browse Cached Songs" aria-label="Browse Cached Songs">
+                    <i class="fas fa-music" aria-hidden="true"></i> Browse Cached Songs
+                </button>
+            `;
+
+            const lyrics = preview.querySelector('.song-lyrics');
+            if (lyrics) {
+                preview.insertBefore(card, lyrics);
+            } else {
+                preview.appendChild(card);
+            }
+        }
+
+        function ensureHomeSyncButton() {
+            if (document.getElementById('syncAppHomeBtn')) return;
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (!logoutBtn) return;
+
+            const button = document.createElement('button');
+            button.id = 'syncAppHomeBtn';
+            button.className = 'sidebar-btn';
+            button.title = 'Sync App - Refresh songs, favorites and setlists from the server';
+            button.setAttribute('aria-label', 'Sync App');
+            button.innerHTML = '<i class="fas fa-sync" aria-hidden="true"></i> Sync App';
+            logoutBtn.insertAdjacentElement('afterend', button);
+        }
+
+        async function syncAppData(options = {}) {
+            const { silent = false } = options;
+            jwtToken = localStorage.getItem('jwtToken') || '';
+            if (!jwtToken || !isJwtValid(jwtToken)) {
+                localStorage.removeItem('jwtToken');
+                jwtToken = '';
+                updateAuthButtons();
+                if (!silent) {
+                    showNotification('Please log in to sync app data.', 'error');
+                    showLoginModal();
+                }
+                return false;
+            }
+
+            try {
+                if (!silent) {
+                    resetLoadingProgress();
+                    showLoading(0, 'Syncing app...', { mode: 'sync', timeoutMs: 120000 });
+                }
+                if (!silent) updateProgress('loadUserData', 20);
+                await loadUserData(true);
+                if (!silent) updateProgress('loadUserData');
+                if (!silent) updateProgress('populateDropdowns', 20);
+                await fetchRecommendationWeights();
+                await hydrateRhythmFamilies();
+                if (!silent) updateProgress('populateDropdowns');
+                await loadSongsWithProgress(true);
+                if (!silent) updateProgress('loadSetlists', 20);
+                await loadGlobalSetlists(true);
+                if (!silent) updateProgress('loadSetlists', 50);
+                await loadMySetlists(true);
+                await loadSmartSetlistsFromServer();
+                if (!silent) updateProgress('loadSetlists');
+
+                if (!silent) updateProgress('setupUI', 35);
+                renderGlobalSetlists();
+                renderMySetlists();
+                renderSmartSetlists();
+                populateSetlistDropdown();
+                updateAllSetlistButtonStates();
+                updateSongCount();
+                updateAuthButtons();
+                if (!silent) updateProgress('setupUI');
+                if (!silent) updateProgress('finalSetup');
+                document.getElementById('cacheStartCard')?.classList.add('synced');
+                if (!silent) showNotification('App synced successfully.', 'success');
+                return true;
+            } catch (error) {
+                console.error('App sync failed:', error);
+                if (!silent) showNotification('Sync failed. You can keep browsing cached songs.', 'error');
+                return false;
+            } finally {
+                if (!silent) hideLoading();
+            }
+        }
+
+        window.syncAppData = syncAppData;
+
+        function bindCacheStartActions() {
+            const syncAppBtn = document.getElementById('syncAppBtn');
+            if (syncAppBtn && syncAppBtn.dataset.bound !== 'true') {
+                syncAppBtn.dataset.bound = 'true';
+                syncAppBtn.addEventListener('click', () => syncAppData());
+            }
+
+            const syncAppHomeBtn = document.getElementById('syncAppHomeBtn');
+            if (syncAppHomeBtn && syncAppHomeBtn.dataset.bound !== 'true') {
+                syncAppHomeBtn.dataset.bound = 'true';
+                syncAppHomeBtn.addEventListener('click', () => syncAppData());
+            }
+
+            const browseCachedBtn = document.getElementById('browseCachedBtn');
+            if (browseCachedBtn && browseCachedBtn.dataset.bound !== 'true') {
+                browseCachedBtn.dataset.bound = 'true';
+                browseCachedBtn.addEventListener('click', () => {
+                    if (window.innerWidth <= 768 && window.MobileUI?.openMobileSongsDrawer) {
+                        window.MobileUI.openMobileSongsDrawer();
+                    } else {
+                        document.querySelector('.songs-section')?.classList.remove('hidden');
+                        window.MobileUI?.updatePositions?.();
+                    }
+                    showNotification(`Browsing ${songs.length} cached songs.`, 'success');
+                });
+            }
+        }
     
         function addEventListeners() {
             const hasExtractedAdminUI = !!(window.AdminUI && typeof window.AdminUI.initializeAdminUI === 'function');
             const hasExtractedRhythmSetsUI = !!(window.RhythmSetsUI && typeof window.RhythmSetsUI.initializeRhythmSetsUI === 'function');
+
+            ensureCacheStartCard();
+            ensureHomeSyncButton();
+            bindCacheStartActions();
 
             if (hasExtractedAdminUI) {
                 window.AdminUI.initializeAdminUI(getAdminUIDeps());
