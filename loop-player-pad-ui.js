@@ -478,25 +478,21 @@ function updateLoopPlayerStartPadUI(container, loopPlayer) {
  * Initialize loop player for a song
  */
 async function initializeLoopPlayer(songId) {
+    console.log('🎵 Initializing loop player for song:', songId);
+    
     // Check if songs array exists
     if (typeof songs === 'undefined') {
+        console.log('❌ Songs array not available');
         return;
     }
     
     // Check if song is in the songs array
     const song = songs.find(s => s.id == songId);
     if (!song) {
-        return;
-    }
-
-    const assignedRhythmSetId = String(song.rhythmSetId || '').trim();
-    if (!assignedRhythmSetId) {
-        const container = document.getElementById(`loopPlayerContainer-${songId}`);
-        if (container) container.style.display = 'none';
+        console.log('❌ Song not found in songs array:', songId);
         return;
     }
     
-    console.log('🎵 Initializing loop player for song:', songId);
     console.log('🎵 Found song for loop resolve:', { 
         id: song.id, 
         title: song.title, 
@@ -507,7 +503,7 @@ async function initializeLoopPlayer(songId) {
     const matchResult = await findMatchingLoopSet(song);
     
     if (!matchResult) {
-        console.log('Loop player hidden: no matching loop set found for song:', songId);
+        console.log('❌ No matching loop set found for song:', songId);
         const container = document.getElementById(`loopPlayerContainer-${songId}`);
         if (container) container.style.display = 'none';
         return;
